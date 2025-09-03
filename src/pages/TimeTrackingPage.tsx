@@ -23,6 +23,7 @@ import { TimeCorrectionManager } from '@/components/time-entries/TimeCorrectionM
 import ScheduleManagerDashboard from '@/components/schedule/ScheduleManagerDashboard';
 import ScheduleEmployeeDashboard from '@/components/schedule/ScheduleEmployeeDashboard';
 import { TeamMembersGridView } from '@/components/time-management/TeamMembersGridView';
+import ScheduleCoverageDashboard from '@/components/schedule/ScheduleCoverageDashboard';
 
 const TimeTrackingPage = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -223,15 +224,22 @@ const TimeTrackingPage = () => {
                   </div>
                 </Card>
               ) : (
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Team Time Tracking</h3>
-                  <TeamMembersGridView
-                    teamMembers={users}
-                    teamStats={teamStats}
-                    isLoading={usersLoading || statsLoading}
-                    onSelectMember={setSelectedUserId}
-                    weekDate={weekDate}
-                  />
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Schedule Coverage Overview</h3>
+                    <ScheduleCoverageDashboard selectedTeamId={selectedTeamId} />
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Team Time Tracking</h3>
+                    <TeamMembersGridView
+                      teamMembers={users}
+                      teamStats={teamStats}
+                      isLoading={usersLoading || statsLoading}
+                      onSelectMember={setSelectedUserId}
+                      weekDate={weekDate}
+                    />
+                  </div>
                 </div>
               )}
 

@@ -36,7 +36,7 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
         .from('time_entries')
         .select(`
           *,
-          users!inner(id, name)
+          user_id
         `)
         .eq('organization_id', user.organizationId)
         .gte('clock_in', weekStart.toISOString())
@@ -45,12 +45,15 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
 
       if (timeError) throw timeError;
 
-      // Fetch teams data with member count
+      // Fetch teams data with actual member data
       let teamsQuery = supabase
         .from('teams')
         .select(`
           *,
-          team_memberships(count)
+          team_memberships!inner(
+            user_id,
+            users!inner(id, name)
+          )
         `)
         .eq('organization_id', user.organizationId)
         .eq('is_active', true);
@@ -63,46 +66,75 @@ export const useTeamTimeStats = (weekDate: Date, selectedTeamId?: string | null)
 
       if (teamsError) throw teamsError;
 
+      // Create a map of team members for efficient lookup
+      const teamMembersMap = new Map<string, Set<string>>();
+      teams?.forEach(team => {
+        const memberIds = new Set<string>();
+        if (Array.isArray(team.team_memberships)) {
+          team.team_memberships.forEach((membership: any) => {
+            if (membership.user_id) {
+              memberIds.add(membership.user_id);
+            }
+          });
+        }
+        teamMembersMap.set(team.id, memberIds);
+      });
+
       // Process data to create team stats
       const statsMap = new Map<string, TeamTimeStats>();
 
       // Initialize stats for each team
       teams?.forEach(team => {
-        const memberCount = Array.isArray(team.team_memberships) ? team.team_memberships.length : 0;
+        const memberIds = teamMembersMap.get(team.id) || new Set();
         statsMap.set(team.id, {
           teamId: team.id,
           teamName: team.name,
-          memberCount,
+          memberCount: memberIds.size,
           totalHours: 0,
           scheduledHours: 0,
           activeMembers: 0,
           overtimeHours: 0,
           complianceIssues: 0,
-          weeklyTarget: memberCount * 40, // Assume 40 hour target per member
+          weeklyTarget: memberIds.size * 40, // Assume 40 hour target per member
         });
       });
 
-      // For now, we'll create mock data since we need team membership information
-      // In a real implementation, this would require proper team membership tracking
+      // Process time entries to calculate real stats
+      const teamActiveMembers = new Map<string, Set<string>>();
+      
       timeEntries?.forEach(entry => {
-        if (entry.duration_minutes) {
+        if (entry.duration_minutes && entry.user_id) {
           const hours = entry.duration_minutes / 60;
+          const userId = entry.user_id;
           
-          // For demo purposes, assign to first team or create a default team stat
-          if (statsMap.size > 0) {
-            const firstTeam = Array.from(statsMap.values())[0];
-            firstTeam.totalHours += hours;
-            
-            if (hours > 8) {
-              firstTeam.overtimeHours += (hours - 8);
+          // Find which team this user belongs to
+          for (const [teamId, memberIds] of teamMembersMap.entries()) {
+            if (memberIds.has(userId)) {
+              const teamStats = statsMap.get(teamId);
+              if (teamStats) {
+                teamStats.totalHours += hours;
+                
+                // Track active members
+                if (!teamActiveMembers.has(teamId)) {
+                  teamActiveMembers.set(teamId, new Set());
+                }
+                teamActiveMembers.get(teamId)!.add(userId);
+                
+                // Calculate overtime (hours > 8 per day)
+                if (hours > 8) {
+                  teamStats.overtimeHours += (hours - 8);
+                }
+              }
+              break; // User found in this team, no need to check others
             }
           }
         }
       });
 
-      // Set some mock active members for demo
-      statsMap.forEach(stats => {
-        stats.activeMembers = Math.min(stats.memberCount, Math.max(1, Math.floor(stats.totalHours / 8)));
+      // Set active members count
+      statsMap.forEach((stats, teamId) => {
+        const activeSet = teamActiveMembers.get(teamId);
+        stats.activeMembers = activeSet ? activeSet.size : 0;
       });
 
 

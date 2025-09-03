@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Users, Clock, Settings, Plus, TrendingUp, Target, Activity } from 'lucide-react';
-import ScheduleCoverageDashboard from './ScheduleCoverageDashboard';
+
 import { EmployeeScheduleManager } from './EmployeeScheduleManager';
 import { ScheduleTemplateManager } from './ScheduleTemplateManager';
 import { TeamScheduleSelector } from './TeamScheduleSelector';
@@ -168,8 +168,6 @@ const ScheduleManagerDashboard: React.FC = () => {
         </div>
 
         <TabsContent value="calendar" className="space-y-6 animate-fade-in">
-          <ScheduleCoverageDashboard selectedTeamId={selectedTeamId} />
-          
           {/* Modern Schedule Grid */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">

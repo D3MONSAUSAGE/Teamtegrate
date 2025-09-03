@@ -25,6 +25,16 @@ interface TeamMembersGridViewProps {
   weekDate: Date;
 }
 
+interface UserTimeEntry {
+  userId: string;
+  totalHours: number;
+  completedShifts: number;
+  scheduledHours: number;
+  overtimeHours: number;
+  lastClockIn?: string;
+  isActive: boolean;
+}
+
 export const TeamMembersGridView: React.FC<TeamMembersGridViewProps> = ({
   teamMembers,
   teamStats = [],
@@ -32,23 +42,100 @@ export const TeamMembersGridView: React.FC<TeamMembersGridViewProps> = ({
   onSelectMember,
   weekDate
 }) => {
-  // Convert team members to display format with mock stats
+  // Get real user time data by fetching time entries for this week
+  const [userTimeData, setUserTimeData] = React.useState<Map<string, UserTimeEntry>>(new Map());
+  const [fetchingUserData, setFetchingUserData] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchUserTimeEntries = async () => {
+      if (teamMembers.length === 0) return;
+      
+      setFetchingUserData(true);
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { startOfWeek, endOfWeek } = await import('date-fns');
+        
+        const weekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(weekDate, { weekStartsOn: 1 });
+        
+        const userIds = teamMembers.map(m => m.id);
+        
+        const { data: timeEntries } = await supabase
+          .from('time_entries')
+          .select('*')
+          .in('user_id', userIds)
+          .gte('clock_in', weekStart.toISOString())
+          .lte('clock_in', weekEnd.toISOString())
+          .not('clock_out', 'is', null);
+        
+        const userDataMap = new Map<string, UserTimeEntry>();
+        
+        // Initialize all users with zero data
+        teamMembers.forEach(member => {
+          userDataMap.set(member.id, {
+            userId: member.id,
+            totalHours: 0,
+            completedShifts: 0,
+            scheduledHours: 40, // Default scheduled hours
+            overtimeHours: 0,
+            isActive: false
+          });
+        });
+        
+        // Process time entries
+        timeEntries?.forEach(entry => {
+          if (entry.duration_minutes && entry.user_id) {
+            const userData = userDataMap.get(entry.user_id);
+            if (userData) {
+              const hours = entry.duration_minutes / 60;
+              userData.totalHours += hours;
+              userData.completedShifts += 1;
+              
+              if (hours > 8) {
+                userData.overtimeHours += (hours - 8);
+              }
+              
+              // Check if they've worked recently (last 24 hours)
+              const lastClockin = new Date(entry.clock_in);
+              const daysSinceLastWork = (Date.now() - lastClockin.getTime()) / (1000 * 60 * 60 * 24);
+              if (daysSinceLastWork < 1) {
+                userData.isActive = true;
+                userData.lastClockIn = entry.clock_in;
+              }
+            }
+          }
+        });
+        
+        setUserTimeData(userDataMap);
+      } catch (error) {
+        console.error('Error fetching user time data:', error);
+      } finally {
+        setFetchingUserData(false);
+      }
+    };
+    
+    fetchUserTimeEntries();
+  }, [teamMembers, weekDate]);
+
+  // Convert team members to display format with real stats
   const memberStats: TeamMemberStats[] = teamMembers.map(member => {
+    const userData = userTimeData.get(member.id);
     const stats = teamStats.find(s => s.userId === member.id);
+    
     return {
       userId: member.id,
       name: member.name,
       email: member.email,
-      totalHours: stats?.totalHours || Math.floor(Math.random() * 40) + 10,
-      scheduledHours: stats?.scheduledHours || 40,
-      isActive: stats?.isActive || Math.random() > 0.3,
-      lastClockIn: stats?.lastClockIn,
-      complianceIssues: stats?.complianceIssues || Math.floor(Math.random() * 3),
-      overtimeHours: stats?.overtimeHours || Math.floor(Math.random() * 10)
+      totalHours: userData?.totalHours || 0,
+      scheduledHours: userData?.scheduledHours || 40,
+      isActive: userData?.isActive || false,
+      lastClockIn: userData?.lastClockIn,
+      complianceIssues: stats?.complianceIssues || 0,
+      overtimeHours: userData?.overtimeHours || 0
     };
   });
 
-  if (isLoading) {
+  if (isLoading || fetchingUserData) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -128,7 +215,7 @@ export const TeamMembersGridView: React.FC<TeamMembersGridViewProps> = ({
                   <Clock className="h-4 w-4 text-primary" />
                   <div>
                     <p className="font-medium">{member.totalHours.toFixed(1)}h</p>
-                    <p className="text-xs text-muted-foreground">Tracked</p>
+                    <p className="text-xs text-muted-foreground">{userTimeData.get(member.userId)?.completedShifts || 0} shifts</p>
                   </div>
                 </div>
                 
