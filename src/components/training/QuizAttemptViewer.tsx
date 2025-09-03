@@ -61,10 +61,31 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
 
   const getAnswerStatus = (userAnswer: string, question: any) => {
     if (!question) return false;
-    if (question.question_type === 'short_answer') {
-      return evaluateShortAnswer(userAnswer || '', question.correct_answer || '', question.options || {});
+    
+    // Handle both camelCase and snake_case property formats
+    const correctAnswer = question.correctAnswer || question.correct_answer || '';
+    const questionType = question.questionType || question.question_type || '';
+    
+    if (questionType === 'short_answer') {
+      // Match QuizTaker's evaluation approach
+      const opts = question.options || {};
+      const mergedOpts = {
+        ...opts,
+        acceptedAnswers: Array.isArray(opts?.acceptedAnswers) ? opts.acceptedAnswers : [],
+      };
+      
+      console.log('🔍 Evaluating short answer:', {
+        userAnswer: userAnswer || '',
+        correctAnswer,
+        options: mergedOpts,
+        questionId: question.id
+      });
+      
+      return evaluateShortAnswer(userAnswer || '', correctAnswer, mergedOpts);
     }
-    return (userAnswer || '') === (question.correct_answer || '');
+    
+    // For multiple choice and true/false, use exact matching
+    return (userAnswer || '') === correctAnswer;
   };
 
   const exportAttemptToPDF = (attempt: any) => {

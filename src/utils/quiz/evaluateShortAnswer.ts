@@ -17,19 +17,26 @@ const defaultOptions: Required<Omit<ShortAnswerOptions, 'acceptedAnswers' | 'req
   caseInsensitive: true,
   ignoreWhitespace: true,
   ignorePunctuation: true,
-  matchType: 'exact',
+  matchType: 'contains', // Changed from 'exact' to 'contains' for more forgiving matching
 };
 
 function normalize(input: string, opts: ShortAnswerOptions): string {
   let s = input;
+  
   if (opts.caseInsensitive ?? defaultOptions.caseInsensitive) s = s.toLowerCase();
+  
   if (opts.ignorePunctuation ?? defaultOptions.ignorePunctuation) {
     // Remove punctuation, keep letters, numbers, and whitespace
     s = s.replace(/[^\p{L}\p{N}\s]/gu, '');
   }
+  
   if (opts.ignoreWhitespace ?? defaultOptions.ignoreWhitespace) {
     s = s.trim().replace(/\s+/g, ' ');
   }
+  
+  // Remove diacritics/accents for more forgiving matching
+  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
   return s;
 }
 
