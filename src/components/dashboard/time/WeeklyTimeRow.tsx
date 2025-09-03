@@ -13,6 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface WeeklyTimeRowProps {
   day: Date;
   dayEntries: Array<{
+    id?: string;
+    user_id?: string;
     clock_in: string;
     clock_out?: string | null;
     duration_minutes?: number | null;

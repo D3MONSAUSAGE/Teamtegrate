@@ -8,6 +8,8 @@ import { CalendarDays } from 'lucide-react';
 
 interface WeeklyTimeReportProps {
   entries: Array<{
+    id: string;
+    user_id: string;
     clock_in: string;
     clock_out?: string | null;
     duration_minutes?: number | null;

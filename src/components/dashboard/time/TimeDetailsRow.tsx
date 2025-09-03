@@ -3,9 +3,12 @@ import React from 'react';
 import { formatTime12Hour } from '@/utils/timeUtils';
 import { Coffee, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import TimeEntryActionButtons from './TimeEntryActionButtons';
 
 interface TimeDetailsRowProps {
   entry: {
+    id?: string;
+    user_id?: string;
     clock_in: string;
     clock_out?: string | null;
     duration_minutes?: number | null;
@@ -37,11 +40,14 @@ const TimeDetailsRow: React.FC<TimeDetailsRowProps> = ({ entry }) => {
         <span>{entry.clock_out ? formatTime12Hour(entry.clock_out) : 'ongoing'}</span>
       </div>
       
-      {(isBreak || isLunch) && (
-        <span className="ml-auto text-sm text-muted-foreground capitalize">
-          {entry.notes?.split(' ')[0]}
-        </span>
-      )}
+      <div className="ml-auto flex items-center gap-2">
+        {(isBreak || isLunch) && (
+          <span className="text-sm text-muted-foreground capitalize">
+            {entry.notes?.split(' ')[0]}
+          </span>
+        )}
+        <TimeEntryActionButtons entry={entry} />
+      </div>
     </div>
   );
 };
