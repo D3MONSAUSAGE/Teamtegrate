@@ -2,15 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Clock, 
-  Users, 
-  TrendingUp, 
-  Calendar,
-  AlertTriangle,
-  CheckCircle2
-} from 'lucide-react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { MetricCardsGrid } from './MetricCardsGrid';
+import { useTeamTotalMetrics } from '@/hooks/useTimeManagementMetrics';
 
 interface TeamStats {
   teamId: string;
@@ -68,22 +62,14 @@ export const TeamTotalsView: React.FC<TeamTotalsViewProps> = ({
     ? Math.round((totals.totalHours / totals.weeklyTarget) * 100)
     : 0;
 
+  const teamMetrics = useTeamTotalMetrics(totals);
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-2">
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded w-1/2"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      <MetricCardsGrid 
+        metrics={[]}
+        isLoading={true}
+      />
     );
   }
 
@@ -103,76 +89,10 @@ export const TeamTotalsView: React.FC<TeamTotalsViewProps> = ({
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totals.totalHours.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
-              of {totals.weeklyTarget} targeted
-            </p>
-            <Progress 
-              value={completionPercentage} 
-              className="mt-2" 
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totals.activeMembers}</div>
-            <p className="text-xs text-muted-foreground">
-              of {totals.totalMembers} total members
-            </p>
-            <Progress 
-              value={(totals.activeMembers / totals.totalMembers) * 100} 
-              className="mt-2" 
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overtime Hours</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {totals.overtimeHours.toFixed(1)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {((totals.overtimeHours / totals.totalHours) * 100).toFixed(1)}% of total
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compliance</CardTitle>
-            {totals.complianceIssues > 0 
-              ? <AlertTriangle className="h-4 w-4 text-destructive" />
-              : <CheckCircle2 className="h-4 w-4 text-green-600" />
-            }
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${
-              totals.complianceIssues > 0 ? 'text-destructive' : 'text-green-600'
-            }`}>
-              {totals.complianceIssues}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {totals.complianceIssues === 0 ? 'All compliant' : 'Issues detected'}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <MetricCardsGrid 
+        metrics={teamMetrics}
+        isLoading={isLoading}
+      />
 
       {/* Individual Team Breakdown */}
       {displayStats.length > 1 && (

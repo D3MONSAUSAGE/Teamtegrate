@@ -1,7 +1,9 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Clock, Calendar, TrendingUp } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Users, Clock, Calendar, Target } from 'lucide-react';
 import { EmployeeSchedule } from '@/hooks/useScheduleManagement';
+import { MetricCardsGrid } from '@/components/time-management/MetricCardsGrid';
+import { useScheduleMetrics } from '@/hooks/useTimeManagementMetrics';
 
 interface TeamScheduleStatsProps {
   schedules: EmployeeSchedule[];
@@ -33,33 +35,25 @@ export const TeamScheduleStats: React.FC<TeamScheduleStatsProps> = ({
     const scheduledShifts = thisWeek.filter(s => s.status === 'scheduled').length;
 
     return {
-      totalEmployees: uniqueEmployees.size,
       thisWeekShifts: thisWeek.length,
+      activeMembers: uniqueEmployees.size,
+      totalMembers: uniqueEmployees.size,
       totalHours: Math.round(totalHours),
-      completedShifts,
-      scheduledShifts,
-      completionRate: thisWeek.length > 0 ? Math.round((completedShifts / thisWeek.length) * 100) : 0
+      overtimeHours: 0,
+      complianceIssues: 0,
+      coverage: thisWeek.length > 0 ? Math.round((completedShifts / thisWeek.length) * 100) : 0
     };
   };
 
   const stats = getTeamStats();
+  const scheduleMetrics = useScheduleMetrics(stats);
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="h-4 w-20 bg-muted rounded"></div>
-              <div className="h-4 w-4 bg-muted rounded"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 w-12 bg-muted rounded mb-1"></div>
-              <div className="h-3 w-16 bg-muted rounded"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <MetricCardsGrid 
+        metrics={[]}
+        isLoading={true}
+      />
     );
   }
 
@@ -71,59 +65,10 @@ export const TeamScheduleStats: React.FC<TeamScheduleStatsProps> = ({
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalEmployees}</div>
-            <p className="text-xs text-muted-foreground">
-              Active members
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Week</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.thisWeekShifts}</div>
-            <p className="text-xs text-muted-foreground">
-              Scheduled shifts
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalHours}</div>
-            <p className="text-xs text-muted-foreground">
-              This week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completionRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              Shift completion rate
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <MetricCardsGrid 
+        metrics={scheduleMetrics}
+        isLoading={false}
+      />
     </div>
   );
 };

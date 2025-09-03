@@ -10,9 +10,10 @@ import { TeamScheduleSelector } from './TeamScheduleSelector';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import ModernScheduleHeader from './modern/ModernScheduleHeader';
-import ModernMetricCard from './modern/ModernMetricCard';
 import WeeklyScheduleTrend from './modern/WeeklyScheduleTrend';
 import ModernScheduleGrid from './modern/ModernScheduleGrid';
+import { MetricCardsGrid } from '@/components/time-management/MetricCardsGrid';
+import { useScheduleMetrics } from '@/hooks/useTimeManagementMetrics';
 
 const ScheduleManagerDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('calendar');
@@ -47,15 +48,21 @@ const ScheduleManagerDashboard: React.FC = () => {
       return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     }, 0);
 
-    return {
+    const stats = {
       thisWeekShifts: thisWeekSchedules.length,
-      activeEmployees: uniqueEmployees.size,
+      activeMembers: uniqueEmployees.size,
+      totalMembers: uniqueEmployees.size,
       totalHours: Math.round(totalHours),
+      overtimeHours: 0,
+      complianceIssues: 0,
       coverage: thisWeekSchedules.length > 0 ? Math.min(100, Math.round((thisWeekSchedules.length / (7 * 3)) * 100)) : 0
     };
+    
+    return stats;
   };
 
-  const stats = getStats();
+  const statsData = getStats();
+  const scheduleMetrics = useScheduleMetrics(statsData);
 
   // Load current week data on mount and when team changes
   useEffect(() => {
@@ -110,47 +117,10 @@ const ScheduleManagerDashboard: React.FC = () => {
       </ModernScheduleHeader>
 
       {/* Modern Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <ModernMetricCard
-          title="This Week Shifts"
-          value={stats.thisWeekShifts}
-          change={{ value: '+12%', trend: 'up' }}
-          icon={Calendar}
-          progress={75}
-          description="Scheduled shifts"
-          gradient="from-primary/10 to-primary/5"
-        />
-        
-        <ModernMetricCard
-          title="Active Team"
-          value={stats.activeEmployees}
-          change={{ value: '+3', trend: 'up' }}
-          icon={Users}
-          progress={88}
-          description="Team members"
-          gradient="from-accent/10 to-accent/5"
-        />
-        
-        <ModernMetricCard
-          title="Total Hours"
-          value={`${stats.totalHours}h`}
-          change={{ value: '+18h', trend: 'up' }}
-          icon={Clock}
-          progress={92}
-          description="This week"
-          gradient="from-success/10 to-success/5"
-        />
-        
-        <ModernMetricCard
-          title="Coverage Rate"
-          value={`${stats.coverage}%`}
-          change={{ value: '+5%', trend: 'up' }}
-          icon={Target}
-          progress={stats.coverage}
-          description="Schedule coverage"
-          gradient="from-warning/10 to-warning/5"
-        />
-      </div>
+      <MetricCardsGrid 
+        metrics={scheduleMetrics}
+        isLoading={isLoading}
+      />
 
       {/* Weekly Trend Chart */}
       <WeeklyScheduleTrend data={trendData} />
