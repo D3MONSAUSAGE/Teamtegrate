@@ -29,49 +29,62 @@ interface TeamStats extends BaseStats {
   scheduledHours: number;
 }
 
-export const useScheduleMetrics = (stats: ScheduleStats): MetricData[] => {
-  return useMemo(() => [
-    {
-      id: 'shifts',
-      title: 'This Week Shifts',
-      value: stats.thisWeekShifts,
-      subtitle: 'Scheduled shifts',
-      icon: Calendar,
-      change: { value: '+12%', trend: 'up' },
-      progress: 75,
-      gradient: "from-primary/10 to-primary/5"
-    },
-    {
-      id: 'team',
-      title: 'Active Team',
-      value: stats.activeMembers,
-      subtitle: 'Team members',
-      icon: Users,
-      change: { value: '+3', trend: 'up' },
-      progress: Math.round((stats.activeMembers / stats.totalMembers) * 100),
-      gradient: "from-accent/10 to-accent/5"
-    },
-    {
-      id: 'hours',
-      title: 'Total Hours',
-      value: `${stats.totalHours}h`,
-      subtitle: 'This week',
-      icon: Clock,
-      change: { value: '+18h', trend: 'up' },
-      progress: 92,
-      gradient: "from-success/10 to-success/5"
-    },
-    {
-      id: 'coverage',
-      title: 'Coverage Rate',
-      value: `${stats.coverage}%`,
-      subtitle: 'Schedule coverage',
-      icon: Target,
-      change: { value: '+5%', trend: 'up' },
-      progress: stats.coverage,
-      gradient: "from-warning/10 to-warning/5"
-    }
-  ], [stats]);
+export const useScheduleMetrics = (stats: ScheduleStats | null): MetricData[] => {
+  return useMemo(() => {
+    // Handle null/undefined stats with default values
+    const safeStats = stats || {
+      thisWeekShifts: 0,
+      activeMembers: 0,
+      totalMembers: 1, // Prevent division by zero
+      totalHours: 0,
+      overtimeHours: 0,
+      complianceIssues: 0,
+      coverage: 0
+    };
+
+    return [
+      {
+        id: 'shifts',
+        title: 'This Week Shifts',
+        value: safeStats.thisWeekShifts,
+        subtitle: 'Scheduled shifts',
+        icon: Calendar,
+        change: { value: '+12%', trend: 'up' },
+        progress: 75,
+        gradient: "from-primary/10 to-primary/5"
+      },
+      {
+        id: 'team',
+        title: 'Active Team',
+        value: safeStats.activeMembers,
+        subtitle: 'Team members',
+        icon: Users,
+        change: { value: '+3', trend: 'up' },
+        progress: Math.round((safeStats.activeMembers / safeStats.totalMembers) * 100),
+        gradient: "from-accent/10 to-accent/5"
+      },
+      {
+        id: 'hours',
+        title: 'Total Hours',
+        value: `${safeStats.totalHours}h`,
+        subtitle: 'This week',
+        icon: Clock,
+        change: { value: '+18h', trend: 'up' },
+        progress: 92,
+        gradient: "from-success/10 to-success/5"
+      },
+      {
+        id: 'coverage',
+        title: 'Coverage Rate',
+        value: `${safeStats.coverage}%`,
+        subtitle: 'Schedule coverage',
+        icon: Target,
+        change: { value: '+5%', trend: 'up' },
+        progress: safeStats.coverage,
+        gradient: "from-warning/10 to-warning/5"
+      }
+    ];
+  }, [stats]);
 };
 
 export const useTeamTotalMetrics = (stats: TeamStats): MetricData[] => {

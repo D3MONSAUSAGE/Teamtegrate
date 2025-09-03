@@ -29,6 +29,11 @@ const ScheduleManagerDashboard: React.FC = () => {
 
   // Calculate stats based on current data and team filter
   const getStats = () => {
+    // Handle case where employeeSchedules is not loaded yet
+    if (!employeeSchedules || employeeSchedules.length === 0) {
+      return null;
+    }
+
     const filteredSchedules = selectedTeamId 
       ? employeeSchedules.filter(s => s.team_id === selectedTeamId)
       : employeeSchedules;
