@@ -16,7 +16,7 @@ import { uploadInvoiceFileSimple } from './invoice-upload/SimpleInvoiceUpload';
 interface InvoiceMetadata {
   invoiceNumber: string;
   invoiceDate: string;
-  branch: string;
+  teamId: string;
 }
 
 interface InvoiceUploadProps {
@@ -26,7 +26,7 @@ interface InvoiceUploadProps {
 const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(undefined);
-  const [branch, setBranch] = useState('');
+  const [teamId, setTeamId] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
@@ -71,7 +71,8 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
         .insert({
           invoice_number: metadata.invoiceNumber,
           invoice_date: metadata.invoiceDate,
-          branch: metadata.branch,
+          branch: '', // Temporary fallback for backward compatibility
+          team_id: metadata.teamId,
           uploader_name: user.name || user.email,
           file_name: file.name,
           file_type: file.type,
@@ -115,7 +116,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       // Reset form
       setInvoiceNumber('');
       setInvoiceDate(undefined);
-      setBranch('');
+      setTeamId('');
       
       // Reset upload status after a delay
       setTimeout(() => {
@@ -137,7 +138,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   }, [user?.organizationId, user?.name, user?.email, user?.id, onUploadSuccess]);
 
   const handleFileUpload = useCallback(async (file: File) => {
-    if (!invoiceNumber || !invoiceDate || !branch) {
+    if (!invoiceNumber || !invoiceDate || !teamId) {
       toast.error('Please fill in all invoice details before uploading');
       return;
     }
@@ -145,11 +146,11 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     const metadata: InvoiceMetadata = {
       invoiceNumber: invoiceNumber,
       invoiceDate: invoiceDate.toISOString(),
-      branch: branch,
+      teamId: teamId,
     };
 
     await uploadInvoice(file, metadata);
-  }, [invoiceNumber, invoiceDate, branch, uploadInvoice]);
+  }, [invoiceNumber, invoiceDate, teamId, uploadInvoice]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -199,7 +200,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     return <InvoiceAccessRestriction />;
   }
 
-  const hasRequiredFields = !!(invoiceNumber && invoiceDate && branch);
+  const hasRequiredFields = !!(invoiceNumber && invoiceDate && teamId);
   const isUploadDisabled = isUploading || !hasRequiredFields;
 
   return (
@@ -217,8 +218,8 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           setInvoiceNumber={setInvoiceNumber}
           invoiceDate={invoiceDate}
           setInvoiceDate={setInvoiceDate}
-          branch={branch}
-          setBranch={setBranch}
+          teamId={teamId}
+          setTeamId={setTeamId}
           isUploading={isUploading}
         />
 

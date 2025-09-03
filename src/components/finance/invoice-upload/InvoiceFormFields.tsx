@@ -5,18 +5,21 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, Users, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useInvoiceTeams } from '@/hooks/useInvoiceTeams';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InvoiceFormFieldsProps {
   invoiceNumber: string;
   setInvoiceNumber: (value: string) => void;
   invoiceDate: Date | undefined;
   setInvoiceDate: (date: Date | undefined) => void;
-  branch: string;
-  setBranch: (value: string) => void;
+  teamId: string;
+  setTeamId: (value: string) => void;
   isUploading: boolean;
 }
 
@@ -25,11 +28,13 @@ const InvoiceFormFields: React.FC<InvoiceFormFieldsProps> = ({
   setInvoiceNumber,
   invoiceDate,
   setInvoiceDate,
-  branch,
-  setBranch,
+  teamId,
+  setTeamId,
   isUploading
 }) => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const { teams, isLoading: teamsLoading, error: teamsError } = useInvoiceTeams();
 
   return (
     <div className={cn("grid gap-4", isMobile ? "gap-4" : "gap-6")}>
@@ -79,17 +84,53 @@ const InvoiceFormFields: React.FC<InvoiceFormFieldsProps> = ({
       </div>
       
       <div className="grid gap-2">
-        <Label htmlFor="branch" className={isMobile ? "text-base font-semibold" : "text-sm font-medium"}>
-          Branch/Location *
+        <Label htmlFor="team" className={isMobile ? "text-base font-semibold" : "text-sm font-medium"}>
+          Team *
         </Label>
-        <Input
-          id="branch"
-          value={branch}
-          onChange={(e) => setBranch(e.target.value)}
-          placeholder="Enter branch or location"
-          className={isMobile ? "h-14 text-lg border-2" : "h-10"}
-          disabled={isUploading}
-        />
+        {teamsError ? (
+          <div className="flex items-center gap-2 p-3 text-sm text-destructive border border-destructive/20 rounded-md bg-destructive/5">
+            <AlertCircle className="h-4 w-4" />
+            <span>Error loading teams: {teamsError}</span>
+          </div>
+        ) : teams.length === 0 && !teamsLoading ? (
+          <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground border border-border rounded-md bg-muted/50">
+            <Users className="h-4 w-4" />
+            <span>
+              {user?.role === 'manager' 
+                ? 'You are not managing any teams. Contact your admin to be assigned as a team manager.'
+                : 'No teams available in your organization.'
+              }
+            </span>
+          </div>
+        ) : (
+          <Select
+            value={teamId}
+            onValueChange={setTeamId}
+            disabled={isUploading || teamsLoading || teams.length === 0}
+          >
+            <SelectTrigger className={cn(
+              "w-full border-2", 
+              isMobile ? "h-14 text-lg" : "h-10"
+            )}>
+              <SelectValue 
+                placeholder={teamsLoading ? "Loading teams..." : "Select team"} 
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {teams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>{team.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({team.member_count} members)
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
     </div>
   );
