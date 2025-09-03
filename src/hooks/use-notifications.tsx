@@ -13,6 +13,8 @@ export interface Notification {
   content: string | null;
   read: boolean;
   created_at: string;
+  priority?: 'high' | 'medium' | 'low';
+  category?: 'work' | 'personal' | 'system';
 }
 
 export function useNotifications() {
@@ -21,16 +23,28 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const isMobile = useIsMobile();
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (options?: {
+    limit?: number;
+    dateRange?: { from: Date; to: Date };
+  }) => {
     if (!user) return;
     
-    // Limit to fewer notifications on mobile to improve performance
-    const limit = isMobile ? 10 : 20;
+    // Use provided limit or default based on device
+    const limit = options?.limit || (isMobile ? 50 : 100);
     
-    const { data, error } = await supabase
+    let query = supabase
       .from("notifications")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", user.id);
+
+    // Apply date range filter if provided
+    if (options?.dateRange) {
+      query = query
+        .gte("created_at", options.dateRange.from.toISOString())
+        .lte("created_at", options.dateRange.to.toISOString());
+    }
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -88,18 +102,22 @@ export function useNotifications() {
   }, [user?.id]); // Only depend on user.id
 
   // Mark notification(s) as read
-  const markAsRead = async (id?: string) => {
+  const markAsRead = async (ids?: string | string[]) => {
     if (!user) return;
     
     try {
-      if (id) {
+      if (ids) {
+        const idArray = Array.isArray(ids) ? ids : [ids];
         await supabase
           .from("notifications")
           .update({ read: true })
-          .eq("id", id)
+          .in("id", idArray)
           .eq("user_id", user.id);
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        
+        setNotifications((prev) => 
+          prev.map((n) => idArray.includes(n.id) ? { ...n, read: true } : n)
+        );
+        setUnreadCount((prev) => Math.max(0, prev - idArray.length));
       } else {
         await supabase
           .from("notifications")
@@ -113,5 +131,62 @@ export function useNotifications() {
     }
   };
 
-  return { notifications, unreadCount, markAsRead, fetchNotifications };
+  // Mark notification(s) as unread
+  const markAsUnread = async (ids: string | string[]) => {
+    if (!user) return;
+    
+    try {
+      const idArray = Array.isArray(ids) ? ids : [ids];
+      await supabase
+        .from("notifications")
+        .update({ read: false })
+        .in("id", idArray)
+        .eq("user_id", user.id);
+      
+      setNotifications((prev) => 
+        prev.map((n) => idArray.includes(n.id) ? { ...n, read: false } : n)
+      );
+      setUnreadCount((prev) => prev + idArray.length);
+    } catch (error) {
+      console.error("Error marking notifications as unread:", error);
+    }
+  };
+
+  // Delete notification(s)
+  const deleteNotifications = async (ids: string | string[]) => {
+    if (!user) return;
+    
+    try {
+      const idArray = Array.isArray(ids) ? ids : [ids];
+      await supabase
+        .from("notifications")
+        .delete()
+        .in("id", idArray)
+        .eq("user_id", user.id);
+      
+      setNotifications((prev) => prev.filter((n) => !idArray.includes(n.id)));
+      setUnreadCount((prev) => {
+        const deletedUnread = notifications.filter(n => idArray.includes(n.id) && !n.read).length;
+        return Math.max(0, prev - deletedUnread);
+      });
+    } catch (error) {
+      console.error("Error deleting notifications:", error);
+    }
+  };
+
+  // Archive notification(s) - For future use, currently just deletes 
+  const archiveNotifications = async (ids: string | string[]) => {
+    // For now, archive means delete since we don't have archived field
+    await deleteNotifications(ids);
+  };
+
+  return { 
+    notifications, 
+    unreadCount, 
+    markAsRead, 
+    markAsUnread,
+    deleteNotifications,
+    archiveNotifications,
+    fetchNotifications 
+  };
 }
