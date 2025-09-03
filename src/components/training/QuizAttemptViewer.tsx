@@ -99,8 +99,15 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
 
     if (quiz?.quiz_questions && attempt.answers) {
       quiz.quiz_questions.forEach((question: any, index: number) => {
-                      const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
-        const isCorrect = getAnswerStatus(userAnswer?.answer || '', question.correct_answer);
+        const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
+        const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+        console.log('🔍 PDF Export - Question', index + 1, ':', {
+          questionId: question.id,
+          userAnswer: userAnswer?.answer,
+          correctAnswer: question.correct_answer,
+          questionType: question.question_type,
+          isCorrect
+        });
 
         pdf.setFontSize(10);
         
@@ -152,7 +159,14 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
 
     const csvData = quiz.quiz_questions.map((question: any, index: number) => {
       const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
-      const isCorrect = getAnswerStatus(userAnswer?.answer || '', question.correct_answer);
+      const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+      console.log('🔍 CSV Export - Question', index + 1, ':', {
+        questionId: question.id,
+        userAnswer: userAnswer?.answer,
+        correctAnswer: question.correct_answer,
+        questionType: question.question_type,
+        isCorrect
+      });
       
       return {
         'Question Number': index + 1,
@@ -414,7 +428,16 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                   <div className="space-y-4">
                     {quiz.quiz_questions.map((question: any, index: number) => {
                       const userAnswer = selectedAttempt.answers?.find((a: any) => a.question_id === question.id);
-                      const isCorrect = getAnswerStatus(userAnswer?.answer || '', question.correct_answer);
+                      const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+                      
+                      console.log('🔍 Question Analysis - Q' + (index + 1) + ':', {
+                        questionId: question.id,
+                        questionType: question.question_type,
+                        userAnswer: userAnswer?.answer || 'No answer provided',
+                        correctAnswer: question.correct_answer || question.correctAnswer,
+                        isCorrect,
+                        points: question.points
+                      });
                       
                       return (
                         <Card key={question.id} className={`border-l-4 ${
