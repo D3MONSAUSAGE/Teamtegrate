@@ -151,6 +151,14 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     const pageWidth = pdf.internal.pageSize.getWidth();
     let yPosition = 20;
 
+    // Get adjusted scores and overrides
+    const overrides = attempt.overrides || [];
+    const hasOverrides = overrides.length > 0;
+    const finalScore = hasOverrides ? attempt.adjusted_score : attempt.score;
+    const finalPassed = hasOverrides ? attempt.adjusted_passed : attempt.passed;
+    const totalAdjustment = overrides.reduce((sum: number, override: any) => 
+      sum + (override.override_score - override.original_score), 0);
+
     // Header
     pdf.setFontSize(18);
     pdf.text('Quiz Attempt Details', pageWidth / 2, yPosition, { align: 'center' });
@@ -165,10 +173,30 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     pdf.text(`Attempt: ${attempt.attempt_number}`, 20, yPosition);
     yPosition += 8;
     pdf.text(`Date: ${format(new Date(attempt.started_at), 'PPP')}`, 20, yPosition);
+    yPosition += 12;
+
+    // Score Information (Enhanced with overrides)
+    pdf.setFontSize(12);
+    pdf.text('Score Summary:', 20, yPosition);
     yPosition += 8;
-    pdf.text(`Score: ${attempt.score}/${attempt.max_score} (${Math.round((attempt.score / attempt.max_score) * 100)}%)`, 20, yPosition);
-    yPosition += 8;
-    pdf.text(`Status: ${attempt.passed ? 'PASSED' : 'FAILED'}`, 20, yPosition);
+    
+    pdf.setFontSize(10);
+    pdf.text(`Original Score: ${attempt.score}/${attempt.max_score} (${Math.round((attempt.score / attempt.max_score) * 100)}%)`, 25, yPosition);
+    yPosition += 6;
+    
+    if (hasOverrides) {
+      pdf.text(`Manual Adjustments: ${totalAdjustment > 0 ? '+' : ''}${totalAdjustment} points`, 25, yPosition);
+      yPosition += 6;
+      pdf.text(`Final Score: ${finalScore}/${attempt.max_score} (${Math.round((finalScore / attempt.max_score) * 100)}%)`, 25, yPosition);
+      yPosition += 6;
+      pdf.text(`Override Count: ${overrides.length} question${overrides.length !== 1 ? 's' : ''}`, 25, yPosition);
+      yPosition += 6;
+    } else {
+      pdf.text(`Final Score: ${finalScore}/${attempt.max_score} (${Math.round((finalScore / attempt.max_score) * 100)}%)`, 25, yPosition);
+      yPosition += 6;
+    }
+    
+    pdf.text(`Status: ${finalPassed ? 'PASSED' : 'FAILED'}`, 25, yPosition);
     yPosition += 15;
 
     // Questions and Answers
@@ -177,16 +205,18 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     yPosition += 10;
 
     if (quiz?.quiz_questions && attempt.answers) {
+      const overrideMap = overrides.reduce((acc: any, override: any) => {
+        acc[override.question_id] = override;
+        return acc;
+      }, {});
+
       quiz.quiz_questions.forEach((question: any, index: number) => {
         const userAnswer = attempt.answers.find((a: any) => a.question_id === question.id);
-        const isCorrect = getAnswerStatus(userAnswer?.answer || '', question);
-        console.log('🔍 PDF Export - Question', index + 1, ':', {
-          questionId: question.id,
-          userAnswer: userAnswer?.answer,
-          correctAnswer: question.correct_answer,
-          questionType: question.question_type,
-          isCorrect
-        });
+        const originalCorrect = getAnswerStatus(userAnswer?.answer || '', question);
+        const override = overrideMap[question.id];
+        const finalCorrect = override ? override.override_score > 0 : originalCorrect;
+        const originalPoints = originalCorrect ? question.points : 0;
+        const finalPoints = override ? override.override_score : originalPoints;
 
         pdf.setFontSize(10);
         
@@ -208,9 +238,31 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
         yPosition += 6;
         pdf.text(`Correct Answer: ${question.correct_answer}`, 25, yPosition);
         yPosition += 6;
-        pdf.text(`Status: ${isCorrect ? '✓ CORRECT' : '✗ INCORRECT'}`, 25, yPosition);
-        yPosition += 6;
-        pdf.text(`Points: ${isCorrect ? question.points : 0}/${question.points}`, 25, yPosition);
+        
+        // Status with override indication
+        if (override) {
+          pdf.text(`Original Status: ${originalCorrect ? '✓ CORRECT' : '✗ INCORRECT'}`, 25, yPosition);
+          yPosition += 6;
+          pdf.text(`Final Status: ${finalCorrect ? '✓ CORRECT (Override)' : '✗ INCORRECT (Override)'}`, 25, yPosition);
+          yPosition += 6;
+          pdf.text(`Points: ${originalPoints} → ${finalPoints}/${question.points} (Manual Override)`, 25, yPosition);
+          yPosition += 6;
+          if (override.reason) {
+            const reasonLines = pdf.splitTextToSize(`Reason: ${override.reason}`, pageWidth - 50);
+            reasonLines.forEach((line: string) => {
+              if (yPosition > 270) {
+                pdf.addPage();
+                yPosition = 20;
+              }
+              pdf.text(line, 25, yPosition);
+              yPosition += 6;
+            });
+          }
+        } else {
+          pdf.text(`Status: ${originalCorrect ? '✓ CORRECT' : '✗ INCORRECT'}`, 25, yPosition);
+          yPosition += 6;
+          pdf.text(`Points: ${originalPoints}/${question.points}`, 25, yPosition);
+        }
         yPosition += 10;
 
         if (question.explanation) {
@@ -225,6 +277,29 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
           });
           yPosition += 5;
         }
+      });
+    }
+
+    // Override summary section if there are overrides
+    if (hasOverrides) {
+      if (yPosition > 240) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+      pdf.setFontSize(14);
+      pdf.text('Manual Score Adjustments:', 20, yPosition);
+      yPosition += 10;
+      
+      pdf.setFontSize(10);
+      overrides.forEach((override: any, index: number) => {
+        const questionNumber = quiz?.quiz_questions?.findIndex((q: any) => q.id === override.question_id) + 1 || '?';
+        pdf.text(`Question ${questionNumber}: ${override.original_score} → ${override.override_score} points`, 25, yPosition);
+        yPosition += 6;
+        if (override.reason) {
+          pdf.text(`Reason: ${override.reason}`, 30, yPosition);
+          yPosition += 6;
+        }
+        yPosition += 2;
       });
     }
 

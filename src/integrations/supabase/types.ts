@@ -4898,6 +4898,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      calculate_quiz_attempt_final_score: {
+        Args: { attempt_id: string }
+        Returns: Json
+      }
       can_change_user_role: {
         Args: { new_role: string; requester_id: string; target_user_id: string }
         Returns: Json
@@ -5084,6 +5088,27 @@ export type Database = {
         Args: { project_id_param: string }
         Returns: Json
       }
+      get_quiz_attempts_with_final_scores: {
+        Args: { organization_id_param: string; quiz_id_param: string }
+        Returns: {
+          answers: Json
+          attempt_number: number
+          completed_at: string
+          final_passed: boolean
+          final_score: number
+          has_overrides: boolean
+          id: string
+          max_score: number
+          organization_id: string
+          original_passed: boolean
+          original_score: number
+          override_count: number
+          quiz_id: string
+          started_at: string
+          total_adjustment: number
+          user_id: string
+        }[]
+      }
       get_team_stats: {
         Args: { org_id: string }
         Returns: Json
@@ -5177,6 +5202,10 @@ export type Database = {
           organization_id: string
         }
         Returns: Json
+      }
+      update_assignment_completion_score: {
+        Args: { attempt_id: string }
+        Returns: undefined
       }
       update_daily_summary: {
         Args: { target_date: string; target_user_id: string }

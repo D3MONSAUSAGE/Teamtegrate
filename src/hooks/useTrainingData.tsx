@@ -491,12 +491,21 @@ export const useSubmitQuizAttempt = () => {
       if (error) throw error;
 
       // Update assignment status if this quiz was assigned
+      // Get final score calculation to ensure assignment reflects any existing overrides
+      const { data: finalScoreData } = await supabase
+        .rpc('calculate_quiz_attempt_final_score', { attempt_id: data.id });
+      
+      const finalScoreResult = finalScoreData as any;
+      const finalScore = finalScoreResult?.final_score || score;
+      const finalPassed = finalScoreResult?.final_passed || passed;
+      const completionPercentage = Math.round((finalScore / maxScore) * 100);
+      
       await supabase
         .from('training_assignments')
         .update({
-          status: 'completed',
+          status: finalPassed ? 'completed' : 'failed',
           completed_at: new Date().toISOString(),
-          completion_score: Math.round((score / maxScore) * 100)
+          completion_score: completionPercentage
         })
         .eq('assigned_to', user.id)
         .eq('content_id', quizId)
