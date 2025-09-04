@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { enhancedNotifications } from '@/utils/enhancedNotifications';
 
 export interface QuizAnswerOverride {
   id: string;
@@ -59,40 +60,62 @@ export const useCreateQuizOverride = () => {
 
   return useMutation({
     mutationFn: async (overrideData: CreateOverrideData) => {
+      console.log('🔥 Creating quiz override:', {
+        overrideData,
+        userId: user?.id,
+        userRole: user?.role,
+        orgId: user?.organizationId
+      });
+
       if (!user || !['admin', 'superadmin', 'manager'].includes(user.role)) {
-        throw new Error('Unauthorized to create overrides');
+        console.error('❌ Unauthorized user role:', { userId: user?.id, role: user?.role });
+        throw new Error('Unauthorized: Only admins, superadmins, and managers can create overrides');
       }
+
+      const insertData = {
+        ...overrideData,
+        organization_id: user.organizationId,
+        overridden_by: user.id,
+      };
+
+      console.log('📝 Inserting override data:', insertData);
 
       const { data, error } = await supabase
         .from('quiz_answer_overrides')
-        .insert({
-          ...overrideData,
-          organization_id: user.organizationId,
-          overridden_by: user.id,
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('💥 Supabase insert error:', error);
+        throw error;
+      }
+
+      console.log('✅ Override created successfully:', data);
       return data;
     },
     onSuccess: (data) => {
+      console.log('🎉 Override creation success callback:', data);
+      
       // Invalidate queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['quiz-overrides', data.quiz_attempt_id] });
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       
-      toast({
-        title: "Override Applied",
-        description: "Quiz answer has been manually overridden successfully.",
-      });
+      // Success notification is now handled in the component for better UX
     },
-    onError: (error) => {
-      console.error('Error creating quiz override:', error);
-      toast({
-        title: "Error",
-        description: "Failed to apply override. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error('💥 Override creation error callback:', error);
+      
+      // Enhanced error logging
+      const errorInfo = {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint
+      };
+      console.error('💥 Detailed error info:', errorInfo);
+      
+      // Error notification is now handled in the component for better UX
     },
   });
 };
@@ -111,9 +134,24 @@ export const useUpdateQuizOverride = () => {
       overrideId: string; 
       updates: Partial<Pick<QuizAnswerOverride, 'override_score' | 'reason'>> 
     }) => {
+      console.log('🔄 Updating quiz override:', {
+        overrideId,
+        updates,
+        userId: user?.id,
+        userRole: user?.role
+      });
+
       if (!user || !['admin', 'superadmin', 'manager'].includes(user.role)) {
-        throw new Error('Unauthorized to update overrides');
+        console.error('❌ Unauthorized user role for update:', { userId: user?.id, role: user?.role });
+        throw new Error('Unauthorized: Only admins, superadmins, and managers can update overrides');
       }
+
+      if (!overrideId) {
+        console.error('❌ Missing override ID for update');
+        throw new Error('Invalid override ID');
+      }
+
+      console.log('📝 Updating override in database:', { overrideId, updates });
 
       const { data, error } = await supabase
         .from('quiz_answer_overrides')
@@ -122,25 +160,35 @@ export const useUpdateQuizOverride = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('💥 Supabase update error:', error);
+        throw error;
+      }
+
+      console.log('✅ Override updated successfully:', data);
       return data;
     },
     onSuccess: (data) => {
+      console.log('🎉 Override update success callback:', data);
+      
       queryClient.invalidateQueries({ queryKey: ['quiz-overrides', data.quiz_attempt_id] });
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       
-      toast({
-        title: "Override Updated",
-        description: "Quiz override has been updated successfully.",
-      });
+      // Success notification is now handled in the component for better UX
     },
-    onError: (error) => {
-      console.error('Error updating quiz override:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update override. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error('💥 Override update error callback:', error);
+      
+      // Enhanced error logging
+      const errorInfo = {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint
+      };
+      console.error('💥 Detailed update error info:', errorInfo);
+      
+      // Error notification is now handled in the component for better UX
     },
   });
 };
