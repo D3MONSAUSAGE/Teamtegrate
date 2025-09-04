@@ -5,8 +5,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { generateProjectBadgeColor } from '@/utils/colorUtils';
-import { useTask } from '@/contexts/task';
 import { AlertCircle, Clock, Flag, CheckCircle2, Circle, Pause } from 'lucide-react';
+import { Project } from '@/types';
 
 interface CalendarTaskItemProps {
   task: Task;
@@ -15,6 +15,7 @@ interface CalendarTaskItemProps {
   onClick?: () => void;
   projectName?: string;
   draggable?: boolean;
+  projects?: Project[];
 }
 
 const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({ 
@@ -23,9 +24,9 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   minimal = false,
   onClick,
   projectName,
-  draggable = false
+  draggable = false,
+  projects = []
 }) => {
-  const { projects } = useTask();
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', task.id);

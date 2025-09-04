@@ -3,26 +3,28 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/contexts/AuthContext';
-import { useTask } from '@/contexts/task';
 import { MessageCirclePlus } from 'lucide-react';
 
 interface TaskCommentFormProps {
   taskId: string;
+  onCommentAdd?: (taskId: string, commentText: string) => Promise<void>;
 }
 
-const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
+const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId, onCommentAdd }) => {
   const [comment, setComment] = useState('');
   const { user } = useAuth();
-  const { addCommentToTask } = useTask();
   
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!comment.trim() || !user) return;
+    if (!comment.trim() || !user || !onCommentAdd) return;
     
-    addCommentToTask(taskId, comment);
-    
-    setComment('');
+    try {
+      await onCommentAdd(taskId, comment);
+      setComment('');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
   };
   
   return (
@@ -37,7 +39,7 @@ const TaskCommentForm: React.FC<TaskCommentFormProps> = ({ taskId }) => {
       </div>
       <Button 
         type="submit"
-        disabled={!comment.trim()}
+        disabled={!comment.trim() || !onCommentAdd}
         className="flex items-center gap-2"
       >
         <MessageCirclePlus className="h-4 w-4" />

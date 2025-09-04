@@ -16,6 +16,12 @@ interface CalendarContentProps {
   onDateCreate: (date: Date) => void;
   onMeetingManage?: () => void;
   onUpdateTask?: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  projects?: Project[];
+}
+
+interface Project {
+  id: string;
+  title: string;
 }
 
 const CalendarContent: React.FC<CalendarContentProps> = ({
@@ -27,7 +33,8 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
   onTaskClick,
   onDateCreate,
   onMeetingManage,
-  onUpdateTask
+  onUpdateTask,
+  projects = []
 }) => {
   const [showMeetingModal, setShowMeetingModal] = React.useState(false);
 
@@ -71,6 +78,7 @@ const CalendarContent: React.FC<CalendarContentProps> = ({
             onDateCreate={onDateCreate}
             onMeetingClick={handleMeetingClick}
             onUpdateTask={onUpdateTask}
+            projects={projects}
           />
         )}
       </div>

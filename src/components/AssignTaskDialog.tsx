@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTask } from '@/contexts/task';
 import { Task } from '@/types';
 import { Check, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,12 +20,12 @@ interface AssignTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task;
+  onAssignTask?: (taskId: string, userId: string, userName: string) => Promise<void>;
 }
 
-const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange, task }) => {
+const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange, task, onAssignTask }) => {
   const [search, setSearch] = useState('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const { assignTaskToUser } = useTask();
   
   // Load team members when dialog opens
   useEffect(() => {
@@ -79,10 +78,19 @@ const AssignTaskDialog: React.FC<AssignTaskDialogProps> = ({ open, onOpenChange,
     );
   });
   
-  const handleAssign = (memberId: string, memberName: string) => {
-    devLog.taskOperation('Task assignment', { memberId, memberName, taskId: task.id });
-    assignTaskToUser(task.id, memberId, memberName);
-    onOpenChange(false);
+  const handleAssign = async (memberId: string, memberName: string) => {
+    if (!onAssignTask) {
+      console.warn('No assign function provided');
+      return;
+    }
+    
+    try {
+      devLog.taskOperation('Task assignment', { memberId, memberName, taskId: task.id });
+      await onAssignTask(task.id, memberId, memberName);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error assigning task:', error);
+    }
   };
   
   return (

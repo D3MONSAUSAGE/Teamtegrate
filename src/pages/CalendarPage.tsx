@@ -12,6 +12,7 @@ import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { MeetingManagementModal } from '@/components/meetings/MeetingManagementModal';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useTask } from '@/contexts/task';
+import TaskProviderErrorBoundary from '@/components/ui/TaskProviderErrorBoundary';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 
 const CalendarPage = () => {
@@ -22,16 +23,26 @@ const CalendarPage = () => {
   let updateTask: ((taskId: string, updates: Partial<Task>) => Promise<void>) | undefined;
   let deleteTask: ((taskId: string) => Promise<void>) | undefined;
   let createTask: ((task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Task | undefined>) | undefined;
+  let addCommentToTask: ((taskId: string, commentText: string) => Promise<void>) | undefined;
+  let assignTaskToUser: ((taskId: string, userId: string, userName: string) => Promise<void>) | undefined;
+  let projects: any[] = [];
+  
   try {
     const taskContext = useTask();
     updateTask = taskContext.updateTask;
     deleteTask = taskContext.deleteTask;
     createTask = taskContext.createTask;
+    addCommentToTask = taskContext.addCommentToTask;
+    assignTaskToUser = taskContext.assignTaskToUser;
+    projects = taskContext.projects || [];
   } catch (error) {
     console.warn('TaskProvider not available, disabling task operations');
     updateTask = undefined;
     deleteTask = undefined;
     createTask = undefined;
+    addCommentToTask = undefined;
+    assignTaskToUser = undefined;
+    projects = [];
   }
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -131,7 +142,8 @@ const CalendarPage = () => {
   }).length;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <TaskProviderErrorBoundary>
+      <div className="min-h-screen bg-white dark:bg-gray-900">
       <GoogleCalendarHeader 
         selectedDate={selectedDate}
         viewType={viewType}
@@ -193,17 +205,18 @@ const CalendarPage = () => {
 
         {/* Main Calendar Content */}
         <div className="flex-1">
-          <CalendarContent
-            viewType={viewType}
-            onViewChange={setViewType}
-            selectedDate={selectedDate}
-            tasks={tasks}
-            meetings={meetingRequests}
-            onTaskClick={handleTaskClick}
-            onDateCreate={handleDateCreate}
-            onMeetingManage={handleMeetingManagement}
-            onUpdateTask={updateTask}
-          />
+        <CalendarContent
+          viewType={viewType}
+          onViewChange={setViewType}
+          selectedDate={selectedDate}
+          tasks={tasks}
+          meetings={meetingRequests}
+          onTaskClick={handleTaskClick}
+          onDateCreate={handleDateCreate}
+          onMeetingManage={handleMeetingManagement}
+          onUpdateTask={updateTask}
+          projects={projects}
+        />
         </div>
       </div>
       
@@ -213,6 +226,7 @@ const CalendarPage = () => {
         task={selectedTask}
         onUpdateTaskStatus={updateTask ? async (taskId, status) => updateTask(taskId, { status }) : undefined}
         onDeleteTask={deleteTask}
+        onCommentAdd={addCommentToTask}
       />
 
       <EnhancedCreateTaskDialog
@@ -234,7 +248,8 @@ const CalendarPage = () => {
         open={isMeetingManagementOpen}
         onOpenChange={setIsMeetingManagementOpen}
       />
-    </div>
+      </div>
+    </TaskProviderErrorBoundary>
   );
 };
 

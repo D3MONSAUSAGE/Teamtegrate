@@ -20,6 +20,7 @@ interface TaskDetailDialogProps {
   onDelete?: (taskId: string) => void;
   onUpdateTaskStatus?: (taskId: string, status: Task['status']) => Promise<void>;
   onDeleteTask?: (taskId: string) => Promise<void>;
+  onCommentAdd?: (taskId: string, commentText: string) => Promise<void>;
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
@@ -29,7 +30,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   onEdit,
   onDelete,
   onUpdateTaskStatus,
-  onDeleteTask
+  onDeleteTask,
+  onCommentAdd
 }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   
@@ -200,7 +202,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
           {/* Comments Section */}
           <TaskDetailComments 
             taskId={task.id} 
-            comments={task.comments} 
+            comments={task.comments}
+            onCommentAdd={onCommentAdd}
           />
         </div>
       </DialogContent>

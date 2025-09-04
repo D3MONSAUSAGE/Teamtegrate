@@ -9,9 +9,10 @@ import { TaskComment } from "@/types";
 interface TaskDetailCommentsProps {
   taskId: string;
   comments?: TaskComment[];
+  onCommentAdd?: (taskId: string, commentText: string) => Promise<void>;
 }
 
-const TaskDetailComments: React.FC<TaskDetailCommentsProps> = ({ taskId, comments }) => {
+const TaskDetailComments: React.FC<TaskDetailCommentsProps> = ({ taskId, comments, onCommentAdd }) => {
   return (
     <>
       <Separator className="my-4" />
@@ -27,7 +28,7 @@ const TaskDetailComments: React.FC<TaskDetailCommentsProps> = ({ taskId, comment
           <div className="text-sm text-muted-foreground mt-2">No comments yet</div>
         )}
         
-        <TaskCommentForm taskId={taskId} />
+        <TaskCommentForm taskId={taskId} onCommentAdd={onCommentAdd} />
       </div>
     </>
   );

@@ -20,6 +20,7 @@ import CalendarTaskItem from './CalendarTaskItem';
 import { CompactMeetingIndicator } from '@/components/meetings/CompactMeetingIndicator';
 import { Plus, Calendar } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
+import { Project } from '@/types';
 
 interface CalendarMonthViewProps {
   selectedDate: Date;
@@ -29,6 +30,7 @@ interface CalendarMonthViewProps {
   onDateCreate: (date: Date) => void;
   onMeetingClick?: () => void;
   onUpdateTask?: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  projects?: Project[];
 }
 
 const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({ 
@@ -38,7 +40,8 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   onTaskClick,
   onDateCreate,
   onMeetingClick,
-  onUpdateTask
+  onUpdateTask,
+  projects = []
 }) => {
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
@@ -201,6 +204,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         minimal={true}
                         onClick={() => onTaskClick(task)}
                         draggable={true}
+                        projects={projects}
                       />
                     ))}
                     {dayTasks.length > maxVisibleTasks && (
