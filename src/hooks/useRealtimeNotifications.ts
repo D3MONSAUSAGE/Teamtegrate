@@ -38,6 +38,18 @@ export const useRealtimeNotifications = () => {
         case 'schedule_update':
           await playAppSound('status-change', soundSettings.volume);
           break;
+        case 'meeting_response_accepted':
+          await playAppSound('success', soundSettings.volume);
+          break;
+        case 'meeting_response_declined':
+        case 'meeting_cancellation':
+          await playAppSound('error', soundSettings.volume);
+          break;
+        case 'meeting_invitation':
+        case 'meeting_update':
+        case 'meeting_response_tentative':
+          await playAppSound('status-change', soundSettings.volume);
+          break;
         default:
           await playAppSound('success', soundSettings.volume);
       }
@@ -91,11 +103,40 @@ export const useRealtimeNotifications = () => {
     await playNotificationSoundEffect(notification.type);
     await addVibrationAndHaptics(notification.type);
     
-    // Show toast for foreground notifications
-    toast.info(notification.title, {
-      description: notification.content,
-      duration: 5000,
-    });
+    // Enhanced toast display with meeting-specific formatting
+    if (notification.type?.startsWith('meeting_response_')) {
+      const responseType = notification.type.replace('meeting_response_', '');
+      const emoji = responseType === 'accepted' ? '✅' : responseType === 'declined' ? '❌' : '⏳';
+      const color = responseType === 'accepted' ? 'success' : responseType === 'declined' ? 'destructive' : 'warning';
+      
+      toast.info(`${emoji} ${notification.title}`, {
+        description: notification.content,
+        duration: 6000,
+        action: {
+          label: 'View Meetings',
+          onClick: () => window.location.href = '/dashboard/meetings'
+        }
+      });
+    } else if (notification.type?.startsWith('meeting_')) {
+      let emoji = '📅';
+      if (notification.type === 'meeting_cancellation') emoji = '❌';
+      else if (notification.type === 'meeting_update') emoji = '📝';
+      
+      toast.info(`${emoji} ${notification.title}`, {
+        description: notification.content,
+        duration: 6000,
+        action: {
+          label: 'View Meetings',
+          onClick: () => window.location.href = '/dashboard/meetings'
+        }
+      });
+    } else {
+      // Standard toast for other notifications
+      toast.info(notification.title, {
+        description: notification.content,
+        duration: 5000,
+      });
+    }
 
     // Show local notification for consistency
     await showLocalNotification(notification);
