@@ -4092,6 +4092,64 @@ export type Database = {
           },
         ]
       }
+      training_assignment_audit: {
+        Row: {
+          action_type: string
+          assignment_id: string
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string
+          performed_by: string
+          reason: string | null
+        }
+        Insert: {
+          action_type: string
+          assignment_id: string
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id: string
+          performed_by: string
+          reason?: string | null
+        }
+        Update: {
+          action_type?: string
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string
+          performed_by?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_assignment_audit_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "training_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignment_audit_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignment_audit_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_assignments: {
         Row: {
           assigned_at: string
@@ -4111,6 +4169,10 @@ export type Database = {
           organization_id: string
           original_assignment_id: string | null
           priority: string | null
+          reassigned_by: string | null
+          reassigned_from: string | null
+          reassignment_date: string | null
+          reassignment_reason: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -4133,6 +4195,10 @@ export type Database = {
           organization_id: string
           original_assignment_id?: string | null
           priority?: string | null
+          reassigned_by?: string | null
+          reassigned_from?: string | null
+          reassignment_date?: string | null
+          reassignment_reason?: string | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -4155,11 +4221,37 @@ export type Database = {
           organization_id?: string
           original_assignment_id?: string | null
           priority?: string | null
+          reassigned_by?: string | null
+          reassigned_from?: string | null
+          reassignment_date?: string | null
+          reassignment_reason?: string | null
           started_at?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "training_assignments_reassigned_by_fkey"
+            columns: ["reassigned_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_reassigned_by_fkey"
+            columns: ["reassigned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_assignments_reassigned_from_fkey"
+            columns: ["reassigned_from"]
+            isOneToOne: false
+            referencedRelation: "training_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       training_courses: {
         Row: {

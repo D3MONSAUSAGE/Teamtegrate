@@ -22,6 +22,7 @@ import {
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
 import { useTrainingCourses, useQuizzes, useCreateTrainingAssignment } from '@/hooks/useTrainingData';
 import { format } from 'date-fns';
+import TrainingReassignmentManager from './TrainingReassignmentManager';
 
 interface UserAssignmentProps {
   open: boolean;
@@ -120,8 +121,9 @@ const UserAssignment: React.FC<UserAssignmentProps> = ({ open, onOpenChange }) =
         </DialogHeader>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="assign">New Assignment</TabsTrigger>
+            <TabsTrigger value="reassign">Reassignment</TabsTrigger>
             <TabsTrigger value="history">Assignment History</TabsTrigger>
           </TabsList>
 
@@ -286,6 +288,13 @@ const UserAssignment: React.FC<UserAssignmentProps> = ({ open, onOpenChange }) =
                 {createAssignment.isPending ? 'Assigning...' : `Assign to ${selectedUsers.length} User${selectedUsers.length !== 1 ? 's' : ''}`}
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="reassign" className="space-y-4">
+            <TrainingReassignmentManager 
+              open={true} 
+              onOpenChange={() => {}} 
+            />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
