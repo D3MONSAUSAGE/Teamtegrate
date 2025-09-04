@@ -25,7 +25,7 @@ const ReassignTrainingDialog: React.FC<ReassignTrainingDialogProps> = ({
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [reason, setReason] = useState<string>('');
 
-  const { data: users = [] } = useOrganizationUsers();
+  const { users = [] } = useOrganizationUsers();
   const reassignMutation = useReassignTraining();
   const reassignComplianceMutation = useReassignCompliance();
 
