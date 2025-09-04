@@ -748,7 +748,19 @@ export const useTrainingAssignments = (userId?: string) => {
       
       const { data, error } = await supabase
         .from('training_assignments')
-        .select('*')
+        .select(`
+          *,
+          training_courses!inner(
+            id,
+            title,
+            description,
+            is_external,
+            external_base_url,
+            url_parameters,
+            completion_method,
+            category
+          )
+        `)
         .eq('assigned_to', targetUserId)
         .order('assigned_at', { ascending: false });
       
