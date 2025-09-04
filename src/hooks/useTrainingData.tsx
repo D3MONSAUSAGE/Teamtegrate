@@ -196,48 +196,64 @@ export const useQuizResultsWithNames = (quizId?: string) => {
       if (!quizId || !user?.organizationId) return [];
       
       try {
-        // Use the new database function to get attempts with final scores
-        const { data: attemptsWithScores, error: functionError } = await supabase
-          .rpc('get_quiz_attempts_with_final_scores', { quiz_id_param: quizId });
-        
-        if (functionError) {
-          console.error('Database function error, falling back to manual calculation:', functionError);
-          throw functionError;
+        // Use the improved database function to get attempts with final scores
+        const { data: attempts, error } = await supabase.rpc(
+          'get_quiz_attempts_with_final_scores',
+          { 
+            quiz_id_param: quizId, 
+            organization_id_param: user.organizationId 
+          }
+        );
+
+        if (error) {
+          console.error('Database function error:', error);
+          // Fallback to manual calculation on database function failure
+          return await fallbackManualCalculation(quizId, user.organizationId);
         }
-        
-        if (!attemptsWithScores || attemptsWithScores.length === 0) return [];
-        
-        // Get overrides for all attempts for additional details
-        const attemptIds = attemptsWithScores.map((attempt: any) => attempt.id);
-        const { data: overrides } = await supabase
+
+        if (!attempts || attempts.length === 0) {
+          return [];
+        }
+
+        // Fetch all overrides for these attempts for additional context
+        const attemptIds = attempts.map((attempt: any) => attempt.id);
+        const { data: overrides = [] } = await supabase
           .from('quiz_answer_overrides')
           .select('*')
-          .in('quiz_attempt_id', attemptIds)
-          .eq('organization_id', user.organizationId);
-        
+          .in('quiz_attempt_id', attemptIds);
+
         // Group overrides by attempt ID
-        const overridesMap = (overrides || []).reduce((acc, override) => {
+        const overridesMap = overrides.reduce((acc: any, override: any) => {
           if (!acc[override.quiz_attempt_id]) {
             acc[override.quiz_attempt_id] = [];
           }
           acc[override.quiz_attempt_id].push(override);
           return acc;
-        }, {} as Record<string, any[]>);
-        
-        // Format the data to match expected structure
-        return attemptsWithScores.map((attempt: any) => ({
+        }, {});
+
+        return attempts.map((attempt: any) => ({
           ...attempt,
+          // Ensure user data is properly structured
+          user: {
+            name: attempt.name || 'Unknown User',
+            email: attempt.email || '',
+            role: attempt.role || 'user'
+          },
+          // Also keep the users property for backward compatibility
           users: {
-            id: attempt.user_id,
-            name: attempt.name,
-            email: attempt.email,
-            role: attempt.role
+            name: attempt.name || 'Unknown User',
+            email: attempt.email || '',
+            role: attempt.role || 'user'
           },
           overrides: overridesMap[attempt.id] || [],
-          // Database function already calculated these
-          adjusted_score: attempt.adjusted_score,
-          adjusted_passed: attempt.adjusted_passed,
-          has_overrides: attempt.has_overrides
+          // Use database function results with fallbacks
+          score: attempt.original_score || 0,
+          passed: attempt.original_passed || false,
+          adjusted_score: attempt.final_score || attempt.original_score || 0,
+          adjusted_passed: attempt.final_passed || attempt.original_passed || false,
+          has_overrides: attempt.has_overrides || false,
+          total_adjustment: attempt.total_adjustment || 0,
+          override_count: attempt.override_count || 0
         }));
         
       } catch (error) {
@@ -246,83 +262,122 @@ export const useQuizResultsWithNames = (quizId?: string) => {
         return await fallbackManualCalculation(quizId, user.organizationId);
       }
     },
-    enabled: !!quizId && !!user?.organizationId
+    enabled: !!quizId && !!user?.organizationId,
+    retry: 1, // Only retry once to avoid infinite loops
+    staleTime: 30000 // Cache results for 30 seconds
   });
 };
 
-// Fallback function for manual calculation
+// Enhanced fallback function for manual calculation with better error handling
 const fallbackManualCalculation = async (quizId: string, organizationId: string) => {
-  // Get quiz attempts first
-  const { data: attempts, error: attemptsError } = await supabase
-    .from('quiz_attempts')
-    .select('*')
-    .eq('quiz_id', quizId)
-    .eq('organization_id', organizationId)
-    .order('started_at', { ascending: false });
+  console.warn('Using fallback manual calculation for quiz results');
   
-  if (attemptsError) throw attemptsError;
-  if (!attempts || attempts.length === 0) return [];
-  
-  // Get unique user IDs from attempts
-  const userIds = Array.from(new Set(attempts.map(attempt => attempt.user_id)));
-  
-  // Get user information for these IDs
-  const { data: users, error: usersError } = await supabase
-    .from('users')
-    .select('id, name, email, role')
-    .in('id', userIds)
-    .eq('organization_id', organizationId);
-  
-  if (usersError) throw usersError;
-  
-  // Get attempt IDs for override lookup
-  const attemptIds = attempts.map(attempt => attempt.id);
-  
-  // Get quiz answer overrides for all attempts
-  const { data: overrides, error: overridesError } = await supabase
-    .from('quiz_answer_overrides')
-    .select('*')
-    .in('quiz_attempt_id', attemptIds)
-    .eq('organization_id', organizationId);
-  
-  if (overridesError) throw overridesError;
-  
-  // Group overrides by attempt ID
-  const overridesMap = (overrides || []).reduce((acc, override) => {
-    if (!acc[override.quiz_attempt_id]) {
-      acc[override.quiz_attempt_id] = [];
+  try {
+    // Get quiz attempts with user data
+    const { data: attempts, error: attemptsError } = await supabase
+      .from('quiz_attempts')
+      .select(`
+        *,
+        users!inner(name, email, role)
+      `)
+      .eq('quiz_id', quizId)
+      .eq('organization_id', organizationId)
+      .order('started_at', { ascending: false });
+
+    if (attemptsError) {
+      console.error('Error fetching quiz attempts in fallback:', attemptsError);
+      throw attemptsError;
     }
-    acc[override.quiz_attempt_id].push(override);
-    return acc;
-  }, {} as Record<string, any[]>);
-  
-  // Get quiz data to determine passing score
-  const { data: quizData } = await supabase
-    .from('quizzes')
-    .select('passing_score')
-    .eq('id', quizId)
-    .single();
-  
-  const passingScore = quizData?.passing_score || 70;
-  
-  // Combine attempts with user data and calculate adjusted scores
-  return attempts.map(attempt => {
-    const attemptOverrides = overridesMap[attempt.id] || [];
-    const adjustedScore = attemptOverrides.reduce((score, override) => {
-      return score + (override.override_score - override.original_score);
-    }, attempt.score);
+
+    if (!attempts || attempts.length === 0) {
+      return [];
+    }
+
+    // Get all overrides for these attempts
+    const attemptIds = attempts.map(attempt => attempt.id);
+    let overrides: any[] = [];
     
-    const adjustedPassed = (adjustedScore / attempt.max_score * 100) >= passingScore;
-    
-    return {
-      ...attempt,
-      users: users?.find(u => u.id === attempt.user_id) || null,
-      overrides: attemptOverrides,
-      adjusted_score: Math.max(0, adjustedScore),
-      adjusted_passed: adjustedPassed,
-      has_overrides: attemptOverrides.length > 0
-    };
-  });
+    if (attemptIds.length > 0) {
+      const { data: overridesData, error: overridesError } = await supabase
+        .from('quiz_answer_overrides')
+        .select('*')
+        .in('quiz_attempt_id', attemptIds);
+      
+      if (overridesError) {
+        console.error('Error fetching overrides in fallback:', overridesError);
+        // Continue without overrides rather than failing
+      } else {
+        overrides = overridesData || [];
+      }
+    }
+
+    // Group overrides by attempt ID
+    const overridesMap = overrides.reduce((acc: any, override: any) => {
+      if (!acc[override.quiz_attempt_id]) {
+        acc[override.quiz_attempt_id] = [];
+      }
+      acc[override.quiz_attempt_id].push(override);
+      return acc;
+    }, {});
+
+    // Get quiz passing score
+    const { data: quiz } = await supabase
+      .from('quizzes')
+      .select('passing_score')
+      .eq('id', quizId)
+      .single();
+
+    const passingScore = quiz?.passing_score || 70;
+
+    return attempts.map((attempt: any) => {
+      const attemptOverrides = overridesMap[attempt.id] || [];
+      const totalAdjustment = attemptOverrides.reduce((sum: number, override: any) => 
+        sum + ((override.override_score || 0) - (override.original_score || 0)), 0
+      );
+      
+      const originalScore = attempt.score || 0;
+      const adjustedScore = Math.max(0, originalScore + totalAdjustment);
+      const maxScore = attempt.max_score || 0;
+      const adjustedPercentage = maxScore > 0 ? (adjustedScore / maxScore) * 100 : 0;
+      const adjustedPassed = adjustedPercentage >= passingScore;
+
+      return {
+        ...attempt,
+        // Ensure proper user structure for both user and users properties
+        user: {
+          name: attempt.users?.name || 'Unknown User',
+          email: attempt.users?.email || '',
+          role: attempt.users?.role || 'user'
+        },
+        users: {
+          name: attempt.users?.name || 'Unknown User',
+          email: attempt.users?.email || '',
+          role: attempt.users?.role || 'user'
+        },
+        // Add both original and adjusted properties for compatibility
+        score: originalScore,
+        passed: attempt.passed || false,
+        overrides: attemptOverrides,
+        adjusted_score: adjustedScore,
+        adjusted_passed: adjustedPassed,
+        has_overrides: attemptOverrides.length > 0,
+        total_adjustment: totalAdjustment,
+        override_count: attemptOverrides.length,
+        // Additional properties for consistency with database function
+        original_score: originalScore,
+        final_score: adjustedScore,
+        original_passed: attempt.passed || false,
+        final_passed: adjustedPassed,
+        name: attempt.users?.name || 'Unknown User',
+        email: attempt.users?.email || '',
+        role: attempt.users?.role || 'user'
+      };
+    });
+  } catch (error) {
+    console.error('Error in fallback manual calculation:', error);
+    // Return empty array rather than throwing to prevent complete failure
+    return [];
+  }
 };
 
 // Training Statistics Hook
@@ -497,7 +552,7 @@ export const useCreateQuiz = () => {
   });
 };
 
-// Submit Quiz Attempt Mutation
+// Enhanced Submit Quiz Attempt Mutation with Assignment Score Sync
 export const useSubmitQuizAttempt = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -511,118 +566,163 @@ export const useSubmitQuizAttempt = () => {
       passed: boolean;
       timeSpent: number;
     }) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      if (!user?.organizationId) throw new Error('No organization found');
-      
-      // Get current attempt number for this user and quiz
-      const { count: existingAttempts } = await supabase
+      if (!user) throw new Error('User not authenticated');
+
+      // Get current attempt number
+      const { data: existingAttempts } = await supabase
         .from('quiz_attempts')
-        .select('*', { count: 'exact', head: true })
+        .select('attempt_number')
         .eq('quiz_id', quizId)
-        .eq('user_id', user.id);
-      
-      const attemptNumber = (existingAttempts || 0) + 1;
-      
-      const { data, error } = await supabase
+        .eq('user_id', user.id)
+        .order('attempt_number', { ascending: false })
+        .limit(1);
+
+      const attemptNumber = (existingAttempts?.[0]?.attempt_number || 0) + 1;
+
+      // Insert the quiz attempt
+      const { data: attempt, error } = await supabase
         .from('quiz_attempts')
         .insert({
           quiz_id: quizId,
           user_id: user.id,
+          organization_id: user.organizationId,
           attempt_number: attemptNumber,
           score,
           max_score: maxScore,
           passed,
           answers,
-          organization_id: user.organizationId,
+          started_at: new Date(Date.now() - timeSpent * 1000).toISOString(),
           completed_at: new Date().toISOString()
         })
         .select()
         .single();
-      
-      if (error) throw error;
 
-      // Update assignment status if this quiz was assigned
-      // Get final score calculation to ensure assignment reflects any existing overrides
+      if (error) {
+        console.error('Error submitting quiz attempt:', error);
+        throw error;
+      }
+
+      // Calculate final score (with potential overrides)
       let finalScore = score;
       let finalPassed = passed;
       
       try {
-        const { data: finalScoreData, error: scoreError } = await supabase
-          .rpc('calculate_quiz_attempt_final_score', { attempt_id: data.id });
+        const { data: finalScoreData } = await supabase.rpc(
+          'calculate_quiz_attempt_final_score',
+          { attempt_id: attempt.id }
+        );
         
-        if (scoreError) {
-          console.error('Error calculating final score:', scoreError);
-          // Keep original values as fallback
-        } else {
-          const finalScoreResult = finalScoreData as any;
-          finalScore = finalScoreResult?.final_score || score;
-          finalPassed = finalScoreResult?.final_passed || passed;
-        }
-      } catch (error) {
-        console.error('Error in final score calculation:', error);
-        // Keep original values as fallback
-      }
-      const completionPercentage = Math.round((finalScore / maxScore) * 100);
-      
-      await supabase
-        .from('training_assignments')
-        .update({
-          status: finalPassed ? 'completed' : 'failed',
-          completed_at: new Date().toISOString(),
-          completion_score: completionPercentage
-        })
-        .eq('assigned_to', user.id)
-        .eq('content_id', quizId)
-        .eq('assignment_type', 'quiz')
-        .in('status', ['pending', 'in_progress']);
-
-      // If quiz is passed, mark the associated module as completed
-      if (passed) {
-        // Get the module_id and course_id for this quiz
-        const { data: quizData } = await supabase
-          .from('quizzes')
-          .select(`
-            module_id,
-            training_modules!inner(course_id)
-          `)
-          .eq('id', quizId)
-          .single();
-
-        if (quizData?.module_id && quizData.training_modules?.course_id) {
-          // Insert or update user training progress for the module
-          const { error: progressError } = await supabase
-            .from('user_training_progress')
-            .upsert({
-              user_id: user.id,
-              module_id: quizData.module_id,
-              course_id: quizData.training_modules.course_id,
-              organization_id: user.organizationId,
-              status: 'completed',
-              progress_percentage: 100,
-              completed_at: new Date().toISOString()
-            }, {
-              onConflict: 'user_id,course_id,module_id',
-              ignoreDuplicates: false
-            });
-
-          if (progressError) {
-            console.error('Failed to update module progress:', progressError);
+        if (finalScoreData && typeof finalScoreData === 'object') {
+          const scoreResult = finalScoreData as any;
+          if (!scoreResult.error) {
+            finalScore = scoreResult.final_score || score;
+            finalPassed = scoreResult.final_passed || passed;
           }
         }
+      } catch (error) {
+        console.warn('Could not calculate final score, using original:', error);
       }
-      
-      return data;
+
+      // Update related training assignment if it exists
+      try {
+        // Find related training assignment
+        const { data: assignment } = await supabase
+          .from('training_assignments')
+          .select('id, content_id')
+          .eq('assigned_to', user.id)
+          .eq('organization_id', user.organizationId)
+          .eq('assignment_type', 'quiz')
+          .eq('content_id', quizId)
+          .in('status', ['pending', 'in_progress'])
+          .single();
+
+        if (assignment) {
+          // Update assignment with completion data
+          const updateData: any = {
+            completion_score: Math.round((finalScore / maxScore) * 100),
+            updated_at: new Date().toISOString()
+          };
+
+          // If quiz passed, mark assignment as completed
+          if (finalPassed) {
+            updateData.status = 'completed';
+            updateData.completed_at = new Date().toISOString();
+          }
+
+          const { error: assignmentUpdateError } = await supabase
+            .from('training_assignments')
+            .update(updateData)
+            .eq('id', assignment.id);
+
+          if (assignmentUpdateError) {
+            console.error('Error updating assignment:', assignmentUpdateError);
+            // Don't throw - assignment update is secondary to quiz submission
+          }
+        }
+      } catch (assignmentError) {
+        console.warn('Could not update related training assignment:', assignmentError);
+        // Don't throw - assignment update is secondary to quiz submission
+      }
+
+      // If quiz is passed with final score, mark the associated module as completed
+      if (finalPassed) {
+        try {
+          // Get the module_id and course_id for this quiz
+          const { data: quizData } = await supabase
+            .from('quizzes')
+            .select(`
+              module_id,
+              training_modules!inner(course_id)
+            `)
+            .eq('id', quizId)
+            .single();
+
+          if (quizData?.module_id && quizData.training_modules?.course_id) {
+            // Insert or update user training progress for the module
+            const { error: progressError } = await supabase
+              .from('user_training_progress')
+              .upsert({
+                user_id: user.id,
+                module_id: quizData.module_id,
+                course_id: quizData.training_modules.course_id,
+                organization_id: user.organizationId,
+                status: 'completed',
+                progress_percentage: 100,
+                completed_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,course_id,module_id',
+                ignoreDuplicates: false
+              });
+
+            if (progressError) {
+              console.error('Failed to update module progress:', progressError);
+            }
+          }
+        } catch (moduleError) {
+          console.warn('Could not update module progress:', moduleError);
+        }
+      }
+
+      return {
+        ...attempt,
+        final_score: finalScore,
+        final_passed: finalPassed
+      };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
-      queryClient.invalidateQueries({ queryKey: ['training-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['quiz-results-with-names'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-progress'] });
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['training-stats'] });
       queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
-      queryClient.invalidateQueries({ queryKey: ['video-progress'] });
+      
+      console.log('Quiz attempt submitted successfully:', data);
       enhancedNotifications.success('Quiz completed successfully!');
     },
-    onError: (error: any) => {
-      console.error('Error submitting quiz attempt:', error);
+    onError: (error) => {
+      console.error('Failed to submit quiz attempt:', error);
       enhancedNotifications.error('Failed to submit quiz attempt');
     }
   });

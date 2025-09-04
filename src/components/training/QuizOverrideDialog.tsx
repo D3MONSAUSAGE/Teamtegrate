@@ -40,39 +40,52 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const score = parseInt(overrideScore);
-    if (isNaN(score) || score < 0 || score > maxPoints) {
+    // Enhanced validation
+    const scoreValue = parseInt(overrideScore);
+    
+    if (!overrideScore || isNaN(scoreValue) || scoreValue < 0 || scoreValue > maxPoints) {
+      console.error('Invalid override score:', overrideScore);
       return;
     }
 
-    if (!reason.trim()) {
+    if (!reason.trim() || reason.trim().length < 5) {
+      console.error('Reason must be at least 5 characters');
       return;
     }
+
+    if (!question?.id || !quizAttemptId) {
+      console.error('Missing required data for override');
+      return;
+    }
+
+    const overrideData = {
+      quiz_attempt_id: quizAttemptId,
+      question_id: question.id,
+      original_score: originalScore,
+      override_score: scoreValue,
+      reason: reason.trim()
+    };
 
     try {
       if (isEditing) {
         await updateMutation.mutateAsync({
           overrideId: existingOverride.id,
           updates: {
-            override_score: score,
-            reason: reason.trim(),
+            override_score: scoreValue,
+            reason: reason.trim()
           }
         });
       } else {
-        await createMutation.mutateAsync({
-          quiz_attempt_id: quizAttemptId,
-          question_id: question.id,
-          original_score: originalScore,
-          override_score: score,
-          reason: reason.trim(),
-        });
+        await createMutation.mutateAsync(overrideData);
       }
       
+      // Reset form and close dialog
       onOpenChange(false);
       setOverrideScore('0');
       setReason('');
     } catch (error) {
       console.error('Error applying override:', error);
+      // Error is already handled by the mutation hooks
     }
   };
 
