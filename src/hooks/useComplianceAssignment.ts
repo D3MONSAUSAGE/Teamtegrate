@@ -60,7 +60,7 @@ export const useComplianceTemplates = () => {
         .select('*')
         .eq('organization_id', user.organizationId)
         .eq('is_active', true)
-        .order('name');
+        .order('title');
 
       if (error) throw error;
       return data || [];
@@ -90,7 +90,7 @@ export const useAssignCompliance = () => {
         .from('compliance_training_records')
         .select('id')
         .eq('user_id', userId)
-        .eq('compliance_template_id', templateId)
+        .eq('template_id', templateId)
         .single();
 
       if (existing) {
@@ -102,14 +102,9 @@ export const useAssignCompliance = () => {
         .insert({
           user_id: userId,
           organization_id: user.organizationId,
-          compliance_template_id: templateId,
-          assigned_by: user.id,
-          assigned_at: new Date().toISOString(),
-          due_date: dueDate,
-          priority,
-          notes,
+          template_id: templateId,
           is_completed: false,
-          language: 'en',
+          language_selected: 'en',
           role_classification: 'employee'
         })
         .select()
@@ -147,7 +142,7 @@ export const useBulkAssignCompliance = () => {
       const { data: existingAssignments } = await supabase
         .from('compliance_training_records')
         .select('user_id')
-        .eq('compliance_template_id', templateId)
+        .eq('template_id', templateId)
         .in('user_id', userIds);
 
       const existingUserIds = existingAssignments?.map(a => a.user_id) || [];
@@ -160,14 +155,9 @@ export const useBulkAssignCompliance = () => {
       const assignments = newUserIds.map(userId => ({
         user_id: userId,
         organization_id: user.organizationId,
-        compliance_template_id: templateId,
-        assigned_by: user.id,
-        assigned_at: new Date().toISOString(),
-        due_date: dueDate,
-        priority,
-        notes,
+        template_id: templateId,
         is_completed: false,
-        language: 'en',
+        language_selected: 'en',
         role_classification: 'employee'
       }));
 
@@ -214,24 +204,11 @@ export const useComplianceAssignments = (filters?: {
 
       let query = supabase
         .from('compliance_training_records')
-        .select(`
-          *,
-          compliance_training_templates!inner (
-            id,
-            name,
-            description
-          ),
-          users!inner (
-            id,
-            name,
-            email,
-            role
-          )
-        `)
+        .select('*')
         .eq('organization_id', user.organizationId);
 
       if (filters?.templateId && filters.templateId !== 'all') {
-        query = query.eq('compliance_template_id', filters.templateId);
+        query = query.eq('template_id', filters.templateId);
       }
 
       if (filters?.userId) {
@@ -242,14 +219,7 @@ export const useComplianceAssignments = (filters?: {
         query = query.eq('is_completed', filters.status === 'completed');
       }
 
-      const { data, error } = await supabase.from('compliance_training_records').select(`
-        *,
-        compliance_training_templates (
-          id,
-          name,
-          description
-        )
-      `).eq('organization_id', user.organizationId);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -262,10 +232,20 @@ export const useComplianceAssignments = (filters?: {
         .select('id, name, email, role')
         .in('id', userIds);
 
+      // Fetch template data separately
+      const templateIds = data?.map(record => record.template_id) || [];
+      if (templateIds.length === 0) return [];
+
+      const { data: templates } = await supabase
+        .from('compliance_training_templates')
+        .select('id, title, description')
+        .in('id', templateIds);
+
       // Combine the data
       return data?.map(record => ({
         ...record,
-        user: users?.find(u => u.id === record.user_id)
+        user: users?.find(u => u.id === record.user_id),
+        compliance_training_templates: templates?.find(t => t.id === record.template_id)
       })) || [];
     },
     enabled: !!user?.organizationId,
