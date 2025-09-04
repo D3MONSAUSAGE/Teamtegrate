@@ -155,7 +155,7 @@ export const useEnhancedTimeTracking = () => {
 
         setSessionState(prev => ({
           ...prev,
-          isActive: !isBreakSession,
+          isActive: true, // Always true when we have an active session (work or break)
           isOnBreak: isBreakSession,
           breakType: isBreakSession ? 
             (activeSession.notes?.includes('Lunch') ? 'Lunch' : 
@@ -249,7 +249,7 @@ export const useEnhancedTimeTracking = () => {
 
   // Start a break
   const startBreak = useCallback(async (breakType: 'Coffee' | 'Lunch' | 'Rest') => {
-    if (!sessionState.isActive || isLoading) return;
+    if (!sessionState.isActive || sessionState.isOnBreak || isLoading || !user?.organizationId) return;
 
     console.log('Starting break:', breakType, 'Current state:', sessionState);
 
@@ -283,7 +283,7 @@ export const useEnhancedTimeTracking = () => {
     } catch (error) {
       console.error('Start break error:', error);
       setLastError('Failed to start break');
-      toast.error('Failed to start break');
+      toast.error(`Failed to start ${breakType.toLowerCase()} break. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -291,7 +291,7 @@ export const useEnhancedTimeTracking = () => {
 
   // Resume work from break
   const resumeWork = useCallback(async () => {
-    if (!sessionState.isOnBreak || isLoading) return;
+    if (!sessionState.isOnBreak || isLoading || !user?.organizationId) return;
 
     try {
       setIsLoading(true);
@@ -323,7 +323,7 @@ export const useEnhancedTimeTracking = () => {
     } catch (error) {
       console.error('Resume work error:', error);
       setLastError('Failed to resume work');
-      toast.error('Failed to resume work');
+      toast.error('Failed to resume work. Please try again.');
     } finally {
       setIsLoading(false);
     }
