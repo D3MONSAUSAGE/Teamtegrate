@@ -15,7 +15,8 @@ import {
   BookOpen,
   PenTool,
   Shield,
-  MapPin
+  MapPin,
+  FileCheck
 } from 'lucide-react';
 import ComplianceTrainingTemplateManager from './ComplianceTrainingTemplateManager';
 
@@ -33,6 +34,7 @@ interface ManagementPanelProps {
   onAssignCompliance?: () => void;
   onComplianceRetrainingSettings?: () => void;
   onViewComplianceDashboard?: () => void;
+  onCertificateReview?: () => void;
   userRole: string;
   showOnlyOnboarding?: boolean;
 }
@@ -51,6 +53,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onAssignCompliance,
   onComplianceRetrainingSettings,
   onViewComplianceDashboard,
+  onCertificateReview,
   userRole,
   showOnlyOnboarding = false
 }) => {
@@ -144,6 +147,14 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onViewComplianceDashboard,
       primary: false,
       color: 'from-teal-500 to-teal-400'
+    }] : []),
+    ...(onCertificateReview ? [{
+      title: 'Certificate Review',
+      description: 'Review and verify external training certificates',
+      icon: FileCheck,
+      onClick: onCertificateReview,
+      primary: false,
+      color: 'from-violet-500 to-violet-400'
     }] : []),
     ...(onStartOnboarding ? [{
       title: 'Start Onboarding',
