@@ -111,7 +111,9 @@ export const useRealTeamMembers = (teamId?: string) => {
   });
 
   // Calculate performance data
-  const teamMembersWithPerformance: TeamMemberPerformanceData[] = teamMembers.map(member => {
+  const teamMembersWithPerformance: TeamMemberPerformanceData[] = teamMembers
+    .filter(member => member.user && member.team) // Filter out members with missing user or team data
+    .map(member => {
     const userTasks = tasks.filter(task => 
       task.user_id === member.user_id || 
       task.assigned_to_id === member.user_id ||
@@ -150,12 +152,12 @@ export const useRealTeamMembers = (teamId?: string) => {
 
     return {
       id: member.user_id,
-      name: member.user.name,
-      email: member.user.email,
+      name: member.user?.name || 'Unknown User',
+      email: member.user?.email || 'unknown@example.com',
       role: member.role,
-      avatar_url: member.user.avatar_url,
+      avatar_url: member.user?.avatar_url,
       team_id: member.team_id,
-      team_name: member.team.name,
+      team_name: member.team?.name || 'Unknown Team',
       joined_at: member.joined_at,
       totalTasks,
       completedTasks,
