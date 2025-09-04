@@ -103,7 +103,7 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({
                   onClick={() => onViewAssignment(priorityAssignment)}
                   className="gap-2"
                 >
-                  Continue <ArrowRight className="h-4 w-4" />
+                  {priorityAssignment.status === 'pending' ? 'Start' : 'Continue'} <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
               {priorityAssignment.progress && (

@@ -21,7 +21,10 @@ import { NewEmployeeWizard } from '@/components/onboarding/wizard/NewEmployeeWiz
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
 import { useDemoOnboarding } from '@/hooks/onboarding/useDemoOnboarding';
-import { useTrainingCourses, useQuizzes, useTrainingAssignments } from '@/hooks/useTrainingData';
+import { useTrainingCourses, useQuizzes, useTrainingAssignments, useUpdateAssignmentStatus, useQuizAttempts } from '@/hooks/useTrainingData';
+import QuizTaker from '@/components/training/QuizTaker';
+import CourseAssignmentViewer from '@/components/training/CourseAssignmentViewer';
+import { useQueryClient } from '@tanstack/react-query';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
@@ -37,12 +40,17 @@ const TrainingPage = () => {
   const [isRetrainingSettingsOpen, setIsRetrainingSettingsOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [isQuizTakerOpen, setIsQuizTakerOpen] = useState(false);
+  const [isCourseViewerOpen, setIsCourseViewerOpen] = useState(false);
+  const [selectedCourseAssignment, setSelectedCourseAssignment] = useState<any>(null);
   
   const { data: courses = [], isLoading: coursesLoading } = useTrainingCourses();
   const { data: allQuizzes = [], isLoading: quizzesLoading } = useQuizzes();
   const { data: assignments = [] } = useTrainingAssignments();
   const { data: onboardingInstance } = useMyOnboarding();
   const { createDemo, isCreating } = useDemoOnboarding();
+  const updateStatus = useUpdateAssignmentStatus();
+  const queryClient = useQueryClient();
 
   const canManageContent = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
@@ -107,13 +115,78 @@ const TrainingPage = () => {
     setIsQuizEditorOpen(true);
   };
 
-  const handleViewAssignment = (assignment: any) => {
-    // Navigate to assignment or open in modal
-    console.log('Viewing assignment:', assignment);
+  const handleViewAssignment = async (assignment: any) => {
+    if (assignment.assignment_type === 'quiz') {
+      // Find the quiz data
+      const quiz = allQuizzes.find(q => q.id === assignment.content_id);
+      if (quiz) {
+        // Transform quiz data to match QuizTaker interface
+        const transformedQuiz = {
+          ...quiz,
+          questions: (quiz.quiz_questions || []).map((q: any) => ({
+            ...q,
+            questionText: q.question_text,
+            questionType: q.question_type,
+            correctAnswer: q.correct_answer
+          })),
+          passingScore: quiz.passing_score,
+          maxAttempts: quiz.max_attempts,
+          timeLimitMinutes: quiz.time_limit_minutes
+        };
+        setSelectedQuiz(transformedQuiz);
+        setIsQuizTakerOpen(true);
+        
+        // Update assignment status to in_progress
+        if (assignment.status === 'pending') {
+          await updateStatus.mutateAsync({
+            assignmentId: assignment.id,
+            status: 'in_progress',
+            startedAt: new Date().toISOString()
+          });
+        }
+      }
+    } else if (assignment.assignment_type === 'course') {
+      // Handle course assignments
+      setSelectedCourseAssignment(assignment);
+      setIsCourseViewerOpen(true);
+      
+      // Update assignment status to in_progress
+      if (assignment.status === 'pending') {
+        await updateStatus.mutateAsync({
+          assignmentId: assignment.id,
+          status: 'in_progress',
+          startedAt: new Date().toISOString()
+        });
+      }
+    }
   };
 
   const handleStartOnboarding = () => {
     setIsOnboardingWizardOpen(true);
+  };
+
+  const handleQuizComplete = () => {
+    setIsQuizTakerOpen(false);
+    setSelectedQuiz(null);
+    // Refresh assignments to reflect completion
+    queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+  };
+
+  const handleQuizExit = () => {
+    setIsQuizTakerOpen(false);
+    setSelectedQuiz(null);
+  };
+
+  const handleCourseComplete = () => {
+    setIsCourseViewerOpen(false);
+    setSelectedCourseAssignment(null);
+    // Refresh assignments to reflect completion
+    queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+  };
+
+  const handleCourseExit = () => {
+    setIsCourseViewerOpen(false);
+    setSelectedCourseAssignment(null);
   };
 
   return (
@@ -292,6 +365,32 @@ const TrainingPage = () => {
           open={isRetrainingSettingsOpen}
           onOpenChange={setIsRetrainingSettingsOpen}
         />
+
+        {/* Quiz Taker Dialog */}
+        {selectedQuiz && (
+          <Dialog open={isQuizTakerOpen} onOpenChange={setIsQuizTakerOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+              <QuizTaker
+                quiz={selectedQuiz}
+                onComplete={handleQuizComplete}
+                onExit={handleQuizExit}
+                currentAttempts={0}
+                hasNextModule={false}
+                onRetakeQuiz={() => setIsQuizTakerOpen(true)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Course Assignment Viewer */}
+        {selectedCourseAssignment && (
+          <CourseAssignmentViewer
+            open={isCourseViewerOpen}
+            onOpenChange={setIsCourseViewerOpen}
+            assignment={selectedCourseAssignment}
+            onComplete={handleCourseComplete}
+          />
+        )}
     </div>
   );
 };
