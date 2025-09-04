@@ -11,11 +11,12 @@ import CalendarList from '@/components/calendar/CalendarList';
 import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { MeetingManagementModal } from '@/components/meetings/MeetingManagementModal';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
-
+import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 
 const CalendarPage = () => {
   const { tasks, isLoading } = useCalendarTasks();
+  const { updateTask } = useTask();
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -186,6 +187,7 @@ const CalendarPage = () => {
             onTaskClick={handleTaskClick}
             onDateCreate={handleDateCreate}
             onMeetingManage={handleMeetingManagement}
+            onUpdateTask={updateTask}
           />
         </div>
       </div>

@@ -19,7 +19,6 @@ import { cn } from '@/lib/utils';
 import CalendarTaskItem from './CalendarTaskItem';
 import { CompactMeetingIndicator } from '@/components/meetings/CompactMeetingIndicator';
 import { Plus, Calendar } from 'lucide-react';
-import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 
 interface CalendarMonthViewProps {
@@ -29,6 +28,7 @@ interface CalendarMonthViewProps {
   onTaskClick: (task: Task) => void;
   onDateCreate: (date: Date) => void;
   onMeetingClick?: () => void;
+  onUpdateTask?: (taskId: string, updates: Partial<Task>) => Promise<void>;
 }
 
 const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({ 
@@ -37,9 +37,9 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   meetings,
   onTaskClick,
   onDateCreate,
-  onMeetingClick
+  onMeetingClick,
+  onUpdateTask
 }) => {
-  const { updateTask } = useTask();
   const monthStart = startOfMonth(selectedDate);
   const monthEnd = endOfMonth(selectedDate);
   const startDate = startOfWeek(monthStart);
@@ -49,6 +49,8 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   
   const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
     e.preventDefault();
+    if (!onUpdateTask) return;
+    
     const taskId = e.dataTransfer.getData('text/plain');
     
     try {
@@ -56,7 +58,7 @@ const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
       const newDeadline = new Date(targetDate);
       newDeadline.setHours(23, 59, 59, 999);
       
-      await updateTask(taskId, {
+      await onUpdateTask(taskId, {
         deadline: newDeadline
       });
       
