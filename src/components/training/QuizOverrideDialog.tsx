@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { useCreateQuizOverride, useUpdateQuizOverride } from '@/hooks/useQuizOverrides';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuizOverrideDialogProps {
   open: boolean;
@@ -32,8 +33,9 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
 
   const createMutation = useCreateQuizOverride();
   const updateMutation = useUpdateQuizOverride();
+  const { toast } = useToast();
 
-  const isEditing = !!existingOverride;
+  const isEditing = !!existingOverride?.id;
   const maxPoints = question?.points || 1;
   const originalScore = userAnswer?.score || 0;
 
@@ -67,7 +69,8 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
     };
 
     try {
-      if (isEditing) {
+      if (isEditing && existingOverride?.id) {
+        console.log('Updating override with ID:', existingOverride.id, 'Score:', scoreValue, 'Reason:', reason.trim());
         await updateMutation.mutateAsync({
           overrideId: existingOverride.id,
           updates: {
@@ -76,6 +79,7 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
           }
         });
       } else {
+        console.log('Creating new override:', overrideData);
         await createMutation.mutateAsync(overrideData);
       }
       
@@ -85,7 +89,17 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
       setReason('');
     } catch (error) {
       console.error('Error applying override:', error);
-      // Error is already handled by the mutation hooks
+      
+      // Show error toast with Supabase error details
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to apply override. Please try again.';
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -109,9 +123,9 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
               <DialogTitle>
                 {isEditing ? 'Edit Manual Override' : 'Manual Answer Override'}
               </DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Override the automated scoring for this question
-              </p>
+              <DialogDescription>
+                Override the automated scoring for this question with manual evaluation and justification.
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -219,9 +233,11 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
                   createMutation.isPending || 
                   updateMutation.isPending ||
                   !reason.trim() ||
+                  reason.trim().length < 5 ||
                   isNaN(parseInt(overrideScore)) ||
                   parseInt(overrideScore) < 0 ||
-                  parseInt(overrideScore) > maxPoints
+                  parseInt(overrideScore) > maxPoints ||
+                  (isEditing && !existingOverride?.id)
                 }
               >
                 {createMutation.isPending || updateMutation.isPending 
