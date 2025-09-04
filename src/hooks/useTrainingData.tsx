@@ -468,7 +468,15 @@ export const useCreateCourse = () => {
           : null,
         is_active: course.is_active ?? true,
         organization_id: user.organizationId,
-        created_by: user.id
+        created_by: user.id,
+        // External course fields
+        is_external: course.is_external ?? false,
+        external_base_url: course.is_external ? course.external_url : null,
+        completion_method: course.completion_method ?? 'internal',
+        // Store certificate requirement in url_parameters
+        url_parameters: course.is_external && course.requires_certificate 
+          ? { requires_certificate: true }
+          : {}
       };
 
       // Create course first
@@ -480,8 +488,8 @@ export const useCreateCourse = () => {
 
       if (courseError) throw courseError;
 
-      // Create modules if provided (map to DB schema)
-      if (modules.length > 0) {
+      // Only create modules for internal courses
+      if (!course.is_external && modules.length > 0) {
         const modulesToInsert = modules.map((module: any, idx: number) => ({
           title: module.title,
           description: module.description ?? null,

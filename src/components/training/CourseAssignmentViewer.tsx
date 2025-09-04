@@ -14,7 +14,8 @@ import {
   Video,
   FileText,
   Award,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,6 +77,76 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  const handleCompleteAssignment = async () => {
+    try {
+      await supabase
+        .from('training_assignments')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          completion_score: 100
+        })
+        .eq('id', assignment.id);
+
+      queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      onComplete?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error completing assignment:', error);
+    }
+  };
+
+  // Handle external course assignments
+  if (assignment.training_courses?.is_external && assignment.training_courses?.external_base_url) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <div className="space-y-6">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
+                <ExternalLink className="h-8 w-8 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">{assignment.content_title}</h2>
+                <p className="text-muted-foreground mt-2">
+                  This training is hosted on an external website. Click below to access the course.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              <Button
+                onClick={() => window.open(assignment.training_courses.external_base_url, '_blank')}
+                className="w-full gap-2"
+                size="lg"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open External Training
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => handleCompleteAssignment()}
+                className="w-full"
+              >
+                Mark as Completed
+              </Button>
+            </div>
+            
+            {assignment.training_courses.url_parameters?.requires_certificate && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <Award className="h-4 w-4 inline mr-1" />
+                  This course requires certificate upload for completion verification.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
   const [course, setCourse] = useState<any>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);

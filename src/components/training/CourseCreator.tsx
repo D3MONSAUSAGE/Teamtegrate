@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, X, BookOpen, GraduationCap, Video, FileText, PlayCircle } from 'lucide-react';
+import { Plus, Trash2, Save, X, BookOpen, GraduationCap, Video, FileText, PlayCircle, ExternalLink, Award } from 'lucide-react';
 import { useCreateCourse } from '@/hooks/useTrainingData';
 import { extractYouTubeVideoId, isValidYouTubeInput } from '@/lib/youtube';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Module {
   title: string;
@@ -35,7 +36,11 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
     category: 'general',
     prerequisites: '',
     learning_objectives: '',
-    is_active: true
+    is_active: true,
+    is_external: false,
+    external_url: '',
+    completion_method: 'internal',
+    requires_certificate: false
   });
   
   const [modules, setModules] = useState<Module[]>([]);
@@ -81,10 +86,16 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
       return;
     }
 
+    // For external courses, validate URL
+    if (courseData.is_external && !courseData.external_url) {
+      console.error('Please provide the external training URL');
+      return;
+    }
+
     try {
       await createCourseMutation.mutateAsync({
         course: courseData,
-        modules: modules
+        modules: courseData.is_external ? [] : modules
       });
       
       // Reset form
@@ -96,7 +107,11 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
         category: 'general',
         prerequisites: '',
         learning_objectives: '',
-        is_active: true
+        is_active: true,
+        is_external: false,
+        external_url: '',
+        completion_method: 'internal',
+        requires_certificate: false
       });
       setModules([]);
       onOpenChange(false);
@@ -192,9 +207,14 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
                       <SelectItem value="general">General</SelectItem>
                       <SelectItem value="safety">Safety</SelectItem>
                       <SelectItem value="compliance">Compliance</SelectItem>
+                      <SelectItem value="sexual-harassment">Sexual Harassment Prevention</SelectItem>
+                      <SelectItem value="workplace-safety">Workplace Safety</SelectItem>
+                      <SelectItem value="civil-rights">Civil Rights Compliance</SelectItem>
+                      <SelectItem value="data-privacy">Data Privacy & Security</SelectItem>
                       <SelectItem value="leadership">Leadership</SelectItem>
                       <SelectItem value="technical">Technical</SelectItem>
                       <SelectItem value="soft-skills">Soft Skills</SelectItem>
+                      <SelectItem value="onboarding">Onboarding</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,127 +249,206 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
             </CardContent>
           </Card>
 
-          {/* Course Modules */}
-          <Card>
+          {/* External Course Configuration */}
+          <Card className="border-2 border-dashed border-blue-200">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Course Modules ({modules.length})</CardTitle>
-                <Button onClick={addModule} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Module
-                </Button>
-              </div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ExternalLink className="h-5 w-5 text-blue-600" />
+                External Training Configuration
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {modules.map((module, moduleIndex) => (
-                <Card key={moduleIndex} className="border-l-4 border-l-blue-500">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Module {moduleIndex + 1}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {module.duration_minutes} minutes
-                        </span>
-                        {module.content_type === 'video' && <Video className="h-4 w-4 text-blue-500" />}
-                        {module.content_type === 'mixed' && <PlayCircle className="h-4 w-4 text-purple-500" />}
-                        {(!module.content_type || module.content_type === 'text') && <FileText className="h-4 w-4 text-gray-500" />}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeModule(moduleIndex)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is-external"
+                  checked={courseData.is_external}
+                  onCheckedChange={(checked) => {
+                    setCourseData({ 
+                      ...courseData, 
+                      is_external: checked === true,
+                      completion_method: checked === true ? 'external' : 'internal'
+                    });
+                  }}
+                />
+                <Label 
+                  htmlFor="is-external"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  This is an external training course (hosted on another website)
+                </Label>
+              </div>
+
+              {courseData.is_external && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="space-y-2">
+                    <Label htmlFor="external-url">External Training URL</Label>
+                    <Input
+                      id="external-url"
+                      type="url"
+                      value={courseData.external_url}
+                      onChange={(e) => setCourseData({ ...courseData, external_url: e.target.value })}
+                      placeholder="https://example.com/training-course"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter the full URL where employees will take this training (e.g., California Civil Rights Department training)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="requires-certificate"
+                      checked={courseData.requires_certificate}
+                      onCheckedChange={(checked) => 
+                        setCourseData({ ...courseData, requires_certificate: checked === true })
+                      }
+                    />
+                    <Label 
+                      htmlFor="requires-certificate"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Requires certificate upload for completion
+                    </Label>
+                  </div>
+
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <Award className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-amber-800">
+                      <p className="font-medium mb-1">External Training Setup:</p>
+                      <ul className="text-xs space-y-1">
+                        <li>• Employees will be redirected to the external website</li>
+                        <li>• They'll complete training on the external platform</li>
+                        <li>• {courseData.requires_certificate ? 'They must upload their certificate to mark completion' : 'They can manually mark completion when finished'}</li>
+                      </ul>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Module Title</Label>
-                        <Input
-                          value={module.title}
-                          onChange={(e) => updateModule(moduleIndex, 'title', e.target.value)}
-                          placeholder="Module title"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Duration (minutes)</Label>
-                        <Input
-                          type="number"
-                          value={module.duration_minutes}
-                          onChange={(e) => updateModule(moduleIndex, 'duration_minutes', parseInt(e.target.value) || 30)}
-                          min="5"
-                          step="5"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Module Description</Label>
-                      <Textarea
-                        value={module.description}
-                        onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
-                        placeholder="Brief description of this module"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Content Type</Label>
-                      <Select
-                        value={module.content_type || 'text'}
-                        onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(moduleIndex, 'content_type', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select content type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Text Only</SelectItem>
-                          <SelectItem value="video">Video Only</SelectItem>
-                          <SelectItem value="mixed">Text + Video</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {(module.content_type === 'video' || module.content_type === 'mixed') && (
-                      <div className="space-y-2">
-                        <Label>YouTube Video</Label>
-                        <Input
-                          value={module.youtube_video_id || ''}
-                          onChange={(e) => updateModule(moduleIndex, 'youtube_video_id', e.target.value)}
-                          placeholder="Enter YouTube URL or video ID (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Paste the full YouTube URL or just the video ID. Both formats are supported.
-                        </p>
-                      </div>
-                    )}
-
-                    {(module.content_type === 'text' || module.content_type === 'mixed') && (
-                      <div className="space-y-2">
-                        <Label>Module Content</Label>
-                        <Textarea
-                          value={module.content}
-                          onChange={(e) => updateModule(moduleIndex, 'content', e.target.value)}
-                          placeholder="Detailed content, instructions, or materials for this module"
-                          rows={4}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-
-              {modules.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No modules added yet. Click "Add Module" to get started.</p>
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Course Modules - Only show for internal courses */}
+          {!courseData.is_external && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Course Modules ({modules.length})</CardTitle>
+                  <Button onClick={addModule} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Module
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {modules.map((module, moduleIndex) => (
+                  <Card key={moduleIndex} className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">Module {moduleIndex + 1}</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {module.duration_minutes} minutes
+                          </span>
+                          {module.content_type === 'video' && <Video className="h-4 w-4 text-blue-500" />}
+                          {module.content_type === 'mixed' && <PlayCircle className="h-4 w-4 text-purple-500" />}
+                          {(!module.content_type || module.content_type === 'text') && <FileText className="h-4 w-4 text-gray-500" />}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeModule(moduleIndex)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Module Title</Label>
+                          <Input
+                            value={module.title}
+                            onChange={(e) => updateModule(moduleIndex, 'title', e.target.value)}
+                            placeholder="Module title"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Duration (minutes)</Label>
+                          <Input
+                            type="number"
+                            value={module.duration_minutes}
+                            onChange={(e) => updateModule(moduleIndex, 'duration_minutes', parseInt(e.target.value) || 30)}
+                            min="5"
+                            step="5"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Module Description</Label>
+                        <Textarea
+                          value={module.description}
+                          onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
+                          placeholder="Brief description of this module"
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Content Type</Label>
+                        <Select
+                          value={module.content_type || 'text'}
+                          onValueChange={(value: 'text' | 'video' | 'mixed') => updateModule(moduleIndex, 'content_type', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select content type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Text Only</SelectItem>
+                            <SelectItem value="video">Video Only</SelectItem>
+                            <SelectItem value="mixed">Text + Video</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {(module.content_type === 'video' || module.content_type === 'mixed') && (
+                        <div className="space-y-2">
+                          <Label>YouTube Video</Label>
+                          <Input
+                            value={module.youtube_video_id || ''}
+                            onChange={(e) => updateModule(moduleIndex, 'youtube_video_id', e.target.value)}
+                            placeholder="Enter YouTube URL or video ID (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Paste the full YouTube URL or just the video ID. Both formats are supported.
+                          </p>
+                        </div>
+                      )}
+
+                      {(module.content_type === 'text' || module.content_type === 'mixed') && (
+                        <div className="space-y-2">
+                          <Label>Module Content</Label>
+                          <Textarea
+                            value={module.content}
+                            onChange={(e) => updateModule(moduleIndex, 'content', e.target.value)}
+                            placeholder="Detailed content, instructions, or materials for this module"
+                            rows={4}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {modules.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No modules added yet. Click "Add Module" to get started.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
