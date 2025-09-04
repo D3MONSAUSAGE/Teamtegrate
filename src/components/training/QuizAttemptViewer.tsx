@@ -151,13 +151,13 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     const pageWidth = pdf.internal.pageSize.getWidth();
     let yPosition = 20;
 
-    // Get adjusted scores and overrides
+    // Get adjusted scores and overrides - handle both database function results and manual calculations
     const overrides = attempt.overrides || [];
-    const hasOverrides = overrides.length > 0;
-    const finalScore = hasOverrides ? attempt.adjusted_score : attempt.score;
-    const finalPassed = hasOverrides ? attempt.adjusted_passed : attempt.passed;
+    const hasOverrides = overrides.length > 0 || attempt.has_overrides;
+    const finalScore = attempt.adjusted_score || attempt.score;
+    const finalPassed = attempt.adjusted_passed !== undefined ? attempt.adjusted_passed : attempt.passed;
     const totalAdjustment = overrides.reduce((sum: number, override: any) => 
-      sum + (override.override_score - override.original_score), 0);
+      sum + (override.override_score - override.original_score), 0) || attempt.total_adjustment || 0;
 
     // Header
     pdf.setFontSize(18);
@@ -311,7 +311,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
   const exportAttemptToCSV = (attempt: any) => {
     if (!quiz?.quiz_questions || !attempt.answers) return;
 
-    // Get overrides for this attempt 
+    // Get overrides for this attempt - handle both database function results and manual calculations
     const overrides = attempt.overrides || [];
     const overrideMap = overrides.reduce((acc: any, override: any) => {
       acc[override.question_id] = override;
@@ -351,15 +351,16 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
       };
     });
     
-    // Add summary row
+    // Add summary row with proper override handling
     const totalOriginalPoints = csvData.reduce((sum, row) => sum + row['Original Points'], 0);
     const totalFinalPoints = csvData.reduce((sum, row) => sum + row['Final Points'], 0);
     const totalPossiblePoints = csvData.reduce((sum, row) => sum + row['Points Possible'], 0);
+    const hasOverrides = attempt.has_overrides || (attempt.overrides && attempt.overrides.length > 0);
     
     csvData.push({
       'Question Number': 'SUMMARY' as any,
       'Question Text': `Total Score: ${totalFinalPoints}/${totalPossiblePoints} (${Math.round((totalFinalPoints/totalPossiblePoints)*100)}%)`,
-      'Question Type': attempt.has_overrides ? `Original: ${totalOriginalPoints}/${totalPossiblePoints}` : '',
+      'Question Type': hasOverrides ? `Original: ${totalOriginalPoints}/${totalPossiblePoints}` : '',
       'Your Answer': '',
       'Correct Answer': '',
       'Original Status': '',
@@ -367,7 +368,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
       'Original Points': totalOriginalPoints,
       'Final Points': totalFinalPoints,
       'Points Possible': totalPossiblePoints,
-      'Manual Override': attempt.has_overrides ? 'Yes' : 'No',
+      'Manual Override': hasOverrides ? 'Yes' : 'No',
       'Override Reason': '',
       'Explanation': ''
     });

@@ -186,7 +186,7 @@ export const useEmployeeProgress = () => {
   });
 };
 
-// Quiz Results with User Names Hook (Enhanced with Overrides)
+// Quiz Results with User Names Hook (Enhanced with Overrides using Database Function)
 export const useQuizResultsWithNames = (quizId?: string) => {
   const { user } = useAuth();
   
@@ -195,82 +195,133 @@ export const useQuizResultsWithNames = (quizId?: string) => {
     queryFn: async () => {
       if (!quizId || !user?.organizationId) return [];
       
-      // Get quiz attempts first
-      const { data: attempts, error: attemptsError } = await supabase
-        .from('quiz_attempts')
-        .select('*')
-        .eq('quiz_id', quizId)
-        .eq('organization_id', user.organizationId)
-        .order('started_at', { ascending: false });
-      
-      if (attemptsError) throw attemptsError;
-      
-      if (!attempts || attempts.length === 0) return [];
-      
-      // Get unique user IDs from attempts
-      const userIds = Array.from(new Set(attempts.map(attempt => attempt.user_id)));
-      
-      // Get user information for these IDs
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, name, email, role')
-        .in('id', userIds)
-        .eq('organization_id', user.organizationId);
-      
-      if (usersError) throw usersError;
-      
-      // Get attempt IDs for override lookup
-      const attemptIds = attempts.map(attempt => attempt.id);
-      
-      // Get quiz answer overrides for all attempts
-      const { data: overrides, error: overridesError } = await supabase
-        .from('quiz_answer_overrides')
-        .select('*')
-        .in('quiz_attempt_id', attemptIds)
-        .eq('organization_id', user.organizationId);
-      
-      if (overridesError) throw overridesError;
-      
-      // Group overrides by attempt ID
-      const overridesMap = (overrides || []).reduce((acc, override) => {
-        if (!acc[override.quiz_attempt_id]) {
-          acc[override.quiz_attempt_id] = [];
+      try {
+        // Use the new database function to get attempts with final scores
+        const { data: attemptsWithScores, error: functionError } = await supabase
+          .rpc('get_quiz_attempts_with_final_scores', { quiz_id_param: quizId });
+        
+        if (functionError) {
+          console.error('Database function error, falling back to manual calculation:', functionError);
+          throw functionError;
         }
-        acc[override.quiz_attempt_id].push(override);
-        return acc;
-      }, {} as Record<string, any[]>);
-      
-      // Get quiz data to determine passing score
-      const { data: quizData } = await supabase
-        .from('quizzes')
-        .select('passing_score')
-        .eq('id', quizId)
-        .single();
-      
-      const passingScore = quizData?.passing_score || 70;
-      
-      // Combine attempts with user data and calculate adjusted scores
-      const attemptsWithUsers = attempts.map(attempt => {
-        const attemptOverrides = overridesMap[attempt.id] || [];
-        const adjustedScore = attemptOverrides.reduce((score, override) => {
-          return score + (override.override_score - override.original_score);
-        }, attempt.score);
         
-        const adjustedPassed = (adjustedScore / attempt.max_score * 100) >= passingScore;
+        if (!attemptsWithScores || attemptsWithScores.length === 0) return [];
         
-        return {
+        // Get overrides for all attempts for additional details
+        const attemptIds = attemptsWithScores.map((attempt: any) => attempt.id);
+        const { data: overrides } = await supabase
+          .from('quiz_answer_overrides')
+          .select('*')
+          .in('quiz_attempt_id', attemptIds)
+          .eq('organization_id', user.organizationId);
+        
+        // Group overrides by attempt ID
+        const overridesMap = (overrides || []).reduce((acc, override) => {
+          if (!acc[override.quiz_attempt_id]) {
+            acc[override.quiz_attempt_id] = [];
+          }
+          acc[override.quiz_attempt_id].push(override);
+          return acc;
+        }, {} as Record<string, any[]>);
+        
+        // Format the data to match expected structure
+        return attemptsWithScores.map((attempt: any) => ({
           ...attempt,
-          users: users?.find(u => u.id === attempt.user_id) || null,
-          overrides: attemptOverrides,
-          adjusted_score: Math.max(0, adjustedScore),
-          adjusted_passed: adjustedPassed,
-          has_overrides: attemptOverrides.length > 0
-        };
-      });
-      
-      return attemptsWithUsers;
+          users: {
+            id: attempt.user_id,
+            name: attempt.name,
+            email: attempt.email,
+            role: attempt.role
+          },
+          overrides: overridesMap[attempt.id] || [],
+          // Database function already calculated these
+          adjusted_score: attempt.adjusted_score,
+          adjusted_passed: attempt.adjusted_passed,
+          has_overrides: attempt.has_overrides
+        }));
+        
+      } catch (error) {
+        console.error('Error in useQuizResultsWithNames:', error);
+        // Fallback to manual calculation if database function fails
+        return await fallbackManualCalculation(quizId, user.organizationId);
+      }
     },
     enabled: !!quizId && !!user?.organizationId
+  });
+};
+
+// Fallback function for manual calculation
+const fallbackManualCalculation = async (quizId: string, organizationId: string) => {
+  // Get quiz attempts first
+  const { data: attempts, error: attemptsError } = await supabase
+    .from('quiz_attempts')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .eq('organization_id', organizationId)
+    .order('started_at', { ascending: false });
+  
+  if (attemptsError) throw attemptsError;
+  if (!attempts || attempts.length === 0) return [];
+  
+  // Get unique user IDs from attempts
+  const userIds = Array.from(new Set(attempts.map(attempt => attempt.user_id)));
+  
+  // Get user information for these IDs
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, name, email, role')
+    .in('id', userIds)
+    .eq('organization_id', organizationId);
+  
+  if (usersError) throw usersError;
+  
+  // Get attempt IDs for override lookup
+  const attemptIds = attempts.map(attempt => attempt.id);
+  
+  // Get quiz answer overrides for all attempts
+  const { data: overrides, error: overridesError } = await supabase
+    .from('quiz_answer_overrides')
+    .select('*')
+    .in('quiz_attempt_id', attemptIds)
+    .eq('organization_id', organizationId);
+  
+  if (overridesError) throw overridesError;
+  
+  // Group overrides by attempt ID
+  const overridesMap = (overrides || []).reduce((acc, override) => {
+    if (!acc[override.quiz_attempt_id]) {
+      acc[override.quiz_attempt_id] = [];
+    }
+    acc[override.quiz_attempt_id].push(override);
+    return acc;
+  }, {} as Record<string, any[]>);
+  
+  // Get quiz data to determine passing score
+  const { data: quizData } = await supabase
+    .from('quizzes')
+    .select('passing_score')
+    .eq('id', quizId)
+    .single();
+  
+  const passingScore = quizData?.passing_score || 70;
+  
+  // Combine attempts with user data and calculate adjusted scores
+  return attempts.map(attempt => {
+    const attemptOverrides = overridesMap[attempt.id] || [];
+    const adjustedScore = attemptOverrides.reduce((score, override) => {
+      return score + (override.override_score - override.original_score);
+    }, attempt.score);
+    
+    const adjustedPassed = (adjustedScore / attempt.max_score * 100) >= passingScore;
+    
+    return {
+      ...attempt,
+      users: users?.find(u => u.id === attempt.user_id) || null,
+      overrides: attemptOverrides,
+      adjusted_score: Math.max(0, adjustedScore),
+      adjusted_passed: adjustedPassed,
+      has_overrides: attemptOverrides.length > 0
+    };
   });
 };
 
@@ -492,12 +543,25 @@ export const useSubmitQuizAttempt = () => {
 
       // Update assignment status if this quiz was assigned
       // Get final score calculation to ensure assignment reflects any existing overrides
-      const { data: finalScoreData } = await supabase
-        .rpc('calculate_quiz_attempt_final_score', { attempt_id: data.id });
+      let finalScore = score;
+      let finalPassed = passed;
       
-      const finalScoreResult = finalScoreData as any;
-      const finalScore = finalScoreResult?.final_score || score;
-      const finalPassed = finalScoreResult?.final_passed || passed;
+      try {
+        const { data: finalScoreData, error: scoreError } = await supabase
+          .rpc('calculate_quiz_attempt_final_score', { attempt_id: data.id });
+        
+        if (scoreError) {
+          console.error('Error calculating final score:', scoreError);
+          // Keep original values as fallback
+        } else {
+          const finalScoreResult = finalScoreData as any;
+          finalScore = finalScoreResult?.final_score || score;
+          finalPassed = finalScoreResult?.final_passed || passed;
+        }
+      } catch (error) {
+        console.error('Error in final score calculation:', error);
+        // Keep original values as fallback
+      }
       const completionPercentage = Math.round((finalScore / maxScore) * 100);
       
       await supabase

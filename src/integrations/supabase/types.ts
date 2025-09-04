@@ -5089,7 +5089,9 @@ export type Database = {
         Returns: Json
       }
       get_quiz_attempts_with_final_scores: {
-        Args: { organization_id_param: string; quiz_id_param: string }
+        Args:
+          | { organization_id_param: string; quiz_id_param: string }
+          | { quiz_id_param: string }
         Returns: {
           answers: Json
           attempt_number: number
