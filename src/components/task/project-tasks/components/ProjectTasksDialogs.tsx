@@ -3,6 +3,7 @@ import React from 'react';
 import { Project, Task } from '@/types';
 import EnhancedCreateTaskDialog from '../../EnhancedCreateTaskDialog';
 import EditProjectDialog from '../../../project/EditProjectDialog';
+import { useTask } from '@/contexts/task';
 
 interface ProjectTasksDialogsProps {
   project: Project | null;
@@ -27,6 +28,7 @@ const ProjectTasksDialogs: React.FC<ProjectTasksDialogsProps> = ({
   onTaskDialogComplete,
   onProjectUpdated
 }) => {
+  const { createTask, updateTask } = useTask();
   return (
     <>
       <EnhancedCreateTaskDialog
@@ -35,6 +37,8 @@ const ProjectTasksDialogs: React.FC<ProjectTasksDialogsProps> = ({
         editingTask={editingTask}
         currentProjectId={projectId}
         onTaskComplete={onTaskDialogComplete}
+        createTask={createTask}
+        updateTask={updateTask}
       />
 
       {project && (

@@ -3,6 +3,7 @@ import React from 'react';
 import { useProjectTasksView } from './project-view/useProjectTasksView';
 import ProjectTasksContent from './project-view/ProjectTasksContent';
 import EnhancedCreateTaskDialog from './EnhancedCreateTaskDialog';
+import { useTask } from '@/contexts/task';
 
 interface ProjectTasksViewProps {
   projectId: string | undefined;
@@ -10,6 +11,8 @@ interface ProjectTasksViewProps {
 
 const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
   console.log('ProjectTasksView: Rendering with projectId:', projectId);
+  
+  const { createTask, updateTask } = useTask();
 
   const {
     project,
@@ -96,6 +99,8 @@ const ProjectTasksView: React.FC<ProjectTasksViewProps> = ({ projectId }) => {
         editingTask={editingTask}
         currentProjectId={projectId}
         onTaskComplete={handleTaskDialogComplete}
+        createTask={createTask}
+        updateTask={updateTask}
       />
     </div>
   );
