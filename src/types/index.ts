@@ -5,7 +5,7 @@ export interface User {
   id: string;
   email: string;
   role: UserRole;
-  organizationId: string;
+  organizationId: string | null;
   name?: string;
   timezone?: string;
   createdAt: Date;

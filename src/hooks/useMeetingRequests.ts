@@ -11,9 +11,27 @@ export const useMeetingRequests = () => {
   const [loading, setLoading] = useState(true);
 
 const fetchMeetingRequests = async () => {
-  if (!user) return;
+  if (!user) {
+    console.log('🔄 fetchMeetingRequests: No user, skipping fetch');
+    return;
+  }
+
+  // Validate that user has a valid organizationId
+  if (!user.organizationId || user.organizationId.trim() === '') {
+    console.log('🔄 fetchMeetingRequests: User has no valid organizationId, skipping fetch');
+    return;
+  }
+
+  // Additional UUID validation for organizationId
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(user.organizationId)) {
+    console.log('🔄 fetchMeetingRequests: Invalid organizationId format, skipping fetch');
+    return;
+  }
   
   try {
+    console.log('🔄 fetchMeetingRequests: Starting fetch for user:', user.email, 'org:', user.organizationId);
+    
     // SECURITY FIX: Only fetch meetings where the user is involved
     // This prevents users from seeing meetings they're not part of
     
@@ -97,11 +115,20 @@ const fetchMeetingRequests = async () => {
 
     console.log(`🔒 Security: Fetched ${formattedRequests.length} meetings where user is involved`);
     setMeetingRequests(formattedRequests);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching meeting requests:', error);
+    
+    // Provide more specific error messages based on error type
+    let errorMessage = "Failed to fetch meeting requests";
+    if (error?.code === '22P02') {
+      errorMessage = "Please wait for your profile to fully load before accessing meetings";
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+    
     toast({
       title: "Error",
-      description: "Failed to fetch meeting requests",
+      description: errorMessage,
       variant: "destructive",
     });
   } finally {
@@ -117,7 +144,14 @@ const fetchMeetingRequests = async () => {
     participantIds: string[],
     location?: string
   ) => {
-    if (!user) return null;
+    if (!user || !user.organizationId) {
+      toast({
+        title: "Error",
+        description: "Please wait for your profile to load before creating meetings",
+        variant: "destructive",
+      });
+      return null;
+    }
 
     try {
       const { data: meeting, error: meetingError } = await supabase
@@ -179,7 +213,14 @@ const fetchMeetingRequests = async () => {
   };
 
   const cancelMeeting = async (meetingId: string) => {
-    if (!user) return null;
+    if (!user || !user.organizationId) {
+      toast({
+        title: "Error",
+        description: "Please wait for your profile to load before cancelling meetings",
+        variant: "destructive",
+      });
+      return null;
+    }
 
     try {
       console.log('🔄 Cancelling meeting:', { meetingId });
@@ -240,6 +281,15 @@ const fetchMeetingRequests = async () => {
     participantIds: string[],
     location?: string
   ): Promise<boolean> => {
+    if (!user || !user.organizationId) {
+      toast({
+        title: "Error",
+        description: "Please wait for your profile to load before updating meetings",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
       // Get current meeting to compare changes
       const currentMeeting = meetingRequests?.find(m => m.id === meetingId);
@@ -382,7 +432,12 @@ const fetchMeetingRequests = async () => {
   useEffect(() => {
     fetchMeetingRequests();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates only if user has valid organizationId
+    if (!user || !user.organizationId) {
+      console.log('🔄 Skipping real-time subscription - no valid organizationId');
+      return;
+    }
+
     console.log('🔄 Setting up real-time subscription for meetings');
     const channel = supabase
       .channel('meeting-requests-changes')
@@ -415,7 +470,7 @@ const fetchMeetingRequests = async () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, user?.organizationId]);
 
   return {
     meetingRequests,

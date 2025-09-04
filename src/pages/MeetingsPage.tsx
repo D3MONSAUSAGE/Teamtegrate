@@ -22,6 +22,10 @@ const MeetingsPage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  // Show loading if user doesn't have organizationId yet (profile still loading)
+  const isProfileLoading = user && !user.organizationId;
+  const shouldShowLoading = loading || isProfileLoading;
+
   const filterMeetings = (type: string) => {
     if (!meetingRequests) return [];
 
@@ -130,7 +134,7 @@ const MeetingsPage = () => {
     );
   };
 
-  if (loading) {
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen p-6 bg-gradient-to-br from-background via-muted/20 to-primary/5">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -148,6 +152,11 @@ const MeetingsPage = () => {
             {/* Content skeleton */}
             <div className="h-96 bg-gradient-to-br from-muted/50 to-muted/30 rounded-2xl"></div>
           </div>
+          {isProfileLoading && (
+            <div className="text-center text-muted-foreground">
+              <p>Loading your profile...</p>
+            </div>
+          )}
         </div>
       </div>
     );
