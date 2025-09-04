@@ -1282,6 +1282,7 @@ export type Database = {
           created_at: string
           id: string
           meeting_request_id: string
+          organization_id: string
           responded_at: string | null
           response_status: string
           user_id: string
@@ -1290,6 +1291,7 @@ export type Database = {
           created_at?: string
           id?: string
           meeting_request_id: string
+          organization_id: string
           responded_at?: string | null
           response_status?: string
           user_id: string
@@ -1298,6 +1300,7 @@ export type Database = {
           created_at?: string
           id?: string
           meeting_request_id?: string
+          organization_id?: string
           responded_at?: string | null
           response_status?: string
           user_id?: string
@@ -1308,6 +1311,13 @@ export type Database = {
             columns: ["meeting_request_id"]
             isOneToOne: false
             referencedRelation: "meeting_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
