@@ -99,6 +99,9 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
 
   // Handle external course assignments
   if (assignment.training_courses?.is_external && assignment.training_courses?.external_base_url) {
+    console.log('CourseAssignmentViewer: Rendering external course:', assignment);
+    console.log('CourseAssignmentViewer: External URL:', assignment.training_courses.external_base_url);
+    
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl">

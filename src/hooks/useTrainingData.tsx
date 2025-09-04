@@ -750,7 +750,7 @@ export const useTrainingAssignments = (userId?: string) => {
         .from('training_assignments')
         .select(`
           *,
-          training_courses!inner(
+          training_courses(
             id,
             title,
             description,
@@ -759,13 +759,45 @@ export const useTrainingAssignments = (userId?: string) => {
             url_parameters,
             completion_method,
             category
+          ),
+          quizzes(
+            id,
+            title,
+            description,
+            passing_score,
+            max_attempts,
+            time_limit_minutes
           )
         `)
         .eq('assigned_to', targetUserId)
         .order('assigned_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Process the data to ensure consistent structure
+      const processedData = (data || []).map(assignment => {
+        // For course assignments, use training_courses data
+        if (assignment.assignment_type === 'course' && assignment.training_courses) {
+          return {
+            ...assignment,
+            // Ensure we have the course data available in expected format
+            course_data: assignment.training_courses
+          };
+        }
+        // For quiz assignments, use quizzes data
+        else if (assignment.assignment_type === 'quiz' && assignment.quizzes) {
+          return {
+            ...assignment,
+            // Ensure we have the quiz data available in expected format
+            quiz_data: assignment.quizzes
+          };
+        }
+        // Return assignment as-is if no matching data (shouldn't happen but safety net)
+        return assignment;
+      });
+      
+      console.log('useTrainingAssignments: Processed assignments:', processedData.length, processedData);
+      return processedData;
     },
     enabled: !!targetUserId
   });
