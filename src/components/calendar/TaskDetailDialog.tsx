@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Clock, User, MessageSquare, Edit, Trash2 } from 'lucide-react';
 import { Task, TaskStatus } from '@/types';
 import { format } from 'date-fns';
-import { useTask } from '@/contexts/task';
 import { toast } from '@/components/ui/sonner';
 import TaskTimerDialog from '@/components/task/TaskTimerDialog';
 import { useTaskDetailHelpers } from '@/components/task/hooks/useTaskDetailHelpers';
@@ -19,6 +18,8 @@ interface TaskDetailDialogProps {
   task: Task | null;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
+  onUpdateTaskStatus?: (taskId: string, status: Task['status']) => Promise<void>;
+  onDeleteTask?: (taskId: string) => Promise<void>;
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
@@ -26,9 +27,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   onOpenChange,
   task,
   onEdit,
-  onDelete
+  onDelete,
+  onUpdateTaskStatus,
+  onDeleteTask
 }) => {
-  const { updateTaskStatus, deleteTask } = useTask();
   const [isUpdating, setIsUpdating] = useState(false);
   
   if (!task) return null;
@@ -62,11 +64,11 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   };
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
-    if (isUpdating) return;
+    if (isUpdating || !onUpdateTaskStatus) return;
     
     setIsUpdating(true);
     try {
-      await updateTaskStatus(task.id, newStatus);
+      await onUpdateTaskStatus(task.id, newStatus);
       toast.success('Task status updated successfully');
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -77,13 +79,13 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   };
 
   const handleDelete = async () => {
-    if (isUpdating) return;
+    if (isUpdating || !onDeleteTask) return;
     
     if (!confirm('Are you sure you want to delete this task?')) return;
     
     setIsUpdating(true);
     try {
-      await deleteTask(task.id);
+      await onDeleteTask(task.id);
       toast.success('Task deleted successfully');
       onOpenChange(false);
       onDelete?.(task.id);

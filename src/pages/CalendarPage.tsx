@@ -20,12 +20,15 @@ const CalendarPage = () => {
   
   // Conditionally use task context only when available  
   let updateTask: ((taskId: string, updates: Partial<Task>) => Promise<void>) | undefined;
+  let deleteTask: ((taskId: string) => Promise<void>) | undefined;
   try {
     const taskContext = useTask();
     updateTask = taskContext.updateTask;
+    deleteTask = taskContext.deleteTask;
   } catch (error) {
-    console.warn('TaskProvider not available, disabling task updates');
+    console.warn('TaskProvider not available, disabling task operations');
     updateTask = undefined;
+    deleteTask = undefined;
   }
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -205,6 +208,8 @@ const CalendarPage = () => {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         task={selectedTask}
+        onUpdateTaskStatus={updateTask ? async (taskId, status) => updateTask(taskId, { status }) : undefined}
+        onDeleteTask={deleteTask}
       />
 
       <EnhancedCreateTaskDialog
