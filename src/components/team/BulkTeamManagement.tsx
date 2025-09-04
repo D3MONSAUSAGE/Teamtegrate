@@ -131,7 +131,7 @@ export const BulkTeamManagement: React.FC<BulkTeamManagementProps> = ({
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={member.avatar_url} />
                     <AvatarFallback>
-                      {member.name.split(' ').map(n => n[0]).join('')}
+                      {member.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">

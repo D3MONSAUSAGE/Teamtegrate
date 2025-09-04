@@ -128,7 +128,7 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
             <Avatar className="h-10 w-10">
               <AvatarImage src={member.avatar_url} />
               <AvatarFallback>
-                {member.name.split(' ').map(n => n[0]).join('')}
+                {member.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">

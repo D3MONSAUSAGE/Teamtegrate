@@ -277,7 +277,7 @@ const TeamAnalyticsOverview: React.FC<TeamAnalyticsOverviewProps> = ({ teamId })
                     <Target className="h-4 w-4 text-accent" />
                   </div>
                   <div>
-                    <p className="font-medium">{analytics.performanceMetrics.topPerformer.name}</p>
+                    <p className="font-medium">{analytics.performanceMetrics.topPerformer?.name || 'Unknown'}</p>
                     <p className="text-sm text-muted-foreground">Top Performer</p>
                   </div>
                 </div>
