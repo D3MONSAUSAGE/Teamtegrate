@@ -30,6 +30,9 @@ interface ManagementPanelProps {
   onRetrainingSettings?: () => void;
   onManageAssignments?: () => void;
   onManageCompliance?: () => void;
+  onAssignCompliance?: () => void;
+  onComplianceRetrainingSettings?: () => void;
+  onViewComplianceDashboard?: () => void;
   userRole: string;
   showOnlyOnboarding?: boolean;
 }
@@ -45,6 +48,9 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onRetrainingSettings,
   onManageAssignments,
   onManageCompliance,
+  onAssignCompliance,
+  onComplianceRetrainingSettings,
+  onViewComplianceDashboard,
   userRole,
   showOnlyOnboarding = false
 }) => {
@@ -107,6 +113,14 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       primary: false,
       color: 'from-cyan-500 to-cyan-400'
     }] : []),
+    ...(onAssignCompliance ? [{
+      title: 'Assign Compliance',
+      description: 'Assign compliance training to users',
+      icon: UserPlus,
+      onClick: onAssignCompliance,
+      primary: false,
+      color: 'from-emerald-500 to-emerald-400'
+    }] : []),
     ...(onManageCompliance ? [{
       title: 'Manage Compliance',
       description: 'Force retraining and manage compliance records',
@@ -114,6 +128,22 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onManageCompliance,
       primary: false,
       color: 'from-red-500 to-red-400'
+    }] : []),
+    ...(onComplianceRetrainingSettings ? [{
+      title: 'Compliance Retraining',
+      description: 'Configure automatic compliance retraining',
+      icon: Settings,
+      onClick: onComplianceRetrainingSettings,
+      primary: false,
+      color: 'from-indigo-500 to-indigo-400'
+    }] : []),
+    ...(onViewComplianceDashboard ? [{
+      title: 'Compliance Dashboard',
+      description: 'View compliance assignment analytics',
+      icon: BarChart3,
+      onClick: onViewComplianceDashboard,
+      primary: false,
+      color: 'from-teal-500 to-teal-400'
     }] : []),
     ...(onStartOnboarding ? [{
       title: 'Start Onboarding',
