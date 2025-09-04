@@ -16,8 +16,17 @@ import { useAuth } from '@/contexts/auth/AuthProvider';
 
 const CalendarPage = () => {
   const { tasks, isLoading } = useCalendarTasks();
-  const { updateTask } = useTask();
   const { user } = useAuth();
+  
+  // Conditionally use task context only when available  
+  let updateTask: ((taskId: string, updates: Partial<Task>) => Promise<void>) | undefined;
+  try {
+    const taskContext = useTask();
+    updateTask = taskContext.updateTask;
+  } catch (error) {
+    console.warn('TaskProvider not available, disabling task updates');
+    updateTask = undefined;
+  }
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('month');
