@@ -385,6 +385,16 @@ const fetchMeetingRequests = async () => {
     try {
       console.log('🔄 Responding to meeting:', { participantId, response });
       
+      // Find the meeting and participant details first
+      const meeting = meetingRequests.find(m => 
+        m.participants.some(p => p.id === participantId)
+      );
+      const participant = meeting?.participants.find(p => p.id === participantId);
+      
+      if (!meeting || !participant) {
+        throw new Error('Meeting or participant not found');
+      }
+
       // Optimistic update - immediately update local state
       setMeetingRequests(prev => prev.map(meeting => ({
         ...meeting,
@@ -411,6 +421,43 @@ const fetchMeetingRequests = async () => {
       }
 
       console.log('✅ Meeting response updated successfully');
+
+      // Notify the organizer about the participant's response
+      if (meeting.organizer_id !== user?.id) {
+        const responseTypeMap = {
+          accepted: 'Accepted',
+          declined: 'Declined', 
+          tentative: 'Tentative'
+        };
+
+        const participantName = participant.user_name || participant.user_email || 'Someone';
+        const notificationTitle = `Meeting Response: ${responseTypeMap[response]}`;
+        const notificationContent = `${participantName} ${response} the invitation for "${meeting.title}"`;
+
+        console.log('📧 Sending organizer notification:', {
+          organizer_id: meeting.organizer_id,
+          participant_name: participantName,
+          response_type: response,
+          meeting_title: meeting.title
+        });
+
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: meeting.organizer_id,
+            title: notificationTitle,
+            content: notificationContent,
+            type: `meeting_response_${response}`,
+            organization_id: user?.organizationId || meeting.organization_id,
+          });
+
+        if (notificationError) {
+          console.error('❌ Failed to notify organizer:', notificationError);
+          // Don't throw here - the main response was successful
+        } else {
+          console.log('✅ Organizer notification sent successfully');
+        }
+      }
       
       toast({
         title: "Success",

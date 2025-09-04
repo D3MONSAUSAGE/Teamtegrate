@@ -136,14 +136,14 @@ export const SimpleMeetingDialog: React.FC<SimpleMeetingDialogProps> = ({
         <DialogTrigger asChild>
           {trigger}
         </DialogTrigger>
-      ) : (
+      ) : controlledOpen === undefined ? (
         <DialogTrigger asChild>
           <Button>
             <Calendar className="h-4 w-4 mr-2" />
             Schedule Meeting
           </Button>
         </DialogTrigger>
-      )}
+      ) : null}
       
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
