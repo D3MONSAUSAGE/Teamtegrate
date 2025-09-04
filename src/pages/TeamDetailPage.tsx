@@ -160,7 +160,7 @@ const TeamDetailPage = () => {
           </TabsContent>
 
           <TabsContent value="members" className="space-y-6">
-            <TeamMembersTab teamMembers={teamMembers} isLoading={membersLoading} />
+            <TeamMembersTab team={team} />
           </TabsContent>
 
           <TabsContent value="projects" className="space-y-6">
