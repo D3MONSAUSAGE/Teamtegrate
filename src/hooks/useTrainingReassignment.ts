@@ -157,52 +157,76 @@ export const useSearchAssignments = (searchTerm?: string, filters?: {
 
       console.log('useSearchAssignments: Fetching assignments for org:', user.organizationId);
 
-      let query = supabase
+      // First get assignments
+      let assignmentQuery = supabase
         .from('training_assignments')
-        .select(`
-          *,
-          assigned_to_user:assigned_to (
-            id,
-            name,
-            email,
-            role
-          ),
-          assigned_by_user:assigned_by (
-            name,
-            email
-          )
-        `)
+        .select('*')
         .eq('organization_id', user.organizationId);
 
       // Apply filters
       if (filters?.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status);
+        assignmentQuery = assignmentQuery.eq('status', filters.status);
       }
       
       if (filters?.assignmentType && filters.assignmentType !== 'all') {
-        query = query.eq('assignment_type', filters.assignmentType);
+        assignmentQuery = assignmentQuery.eq('assignment_type', filters.assignmentType);
       }
       
       if (filters?.priority && filters.priority !== 'all') {
-        query = query.eq('priority', filters.priority);
+        assignmentQuery = assignmentQuery.eq('priority', filters.priority);
       }
 
-      // Apply text search
+      // Apply text search on assignment fields only
       if (searchTerm) {
-        query = query.or(`
-          content_title.ilike.%${searchTerm}%,
-          assigned_to_user.name.ilike.%${searchTerm}%,
-          assigned_to_user.email.ilike.%${searchTerm}%
-        `);
+        assignmentQuery = assignmentQuery.ilike('content_title', `%${searchTerm}%`);
       }
 
-      const { data, error } = await query.order('assigned_at', { ascending: false });
+      const { data: assignments, error: assignmentError } = await assignmentQuery
+        .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const result = data || [];
-      console.log('useSearchAssignments: Found assignments:', result.length);
-      return result;
+      if (assignmentError) throw assignmentError;
+
+      if (!assignments || assignments.length === 0) {
+        return [];
+      }
+
+      // Get unique user IDs
+      const userIds = [...new Set([
+        ...assignments.map(a => a.assigned_to),
+        ...assignments.map(a => a.assigned_by)
+      ])].filter(Boolean);
+
+      // Fetch user data
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .in('id', userIds);
+
+      if (usersError) throw usersError;
+
+      // Create user lookup
+      const userLookup = (users || []).reduce((acc, user) => {
+        acc[user.id] = user;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Combine assignment data with user data
+      const result = assignments.map(assignment => ({
+        ...assignment,
+        assigned_to_user: userLookup[assignment.assigned_to] || null,
+        assigned_by_user: userLookup[assignment.assigned_by] || null
+      }));
+
+      // Apply user-based search filter if needed
+      const filteredResult = searchTerm ? 
+        result.filter(assignment => 
+          assignment.content_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          assignment.assigned_to_user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          assignment.assigned_to_user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        ) : result;
+
+      console.log('useSearchAssignments: Found assignments:', filteredResult.length);
+      return filteredResult;
     },
     enabled: !!user && !!user.organizationId && user.organizationId.trim() !== ''
   });

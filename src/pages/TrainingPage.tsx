@@ -26,6 +26,7 @@ import QuizTaker from '@/components/training/QuizTaker';
 import CourseAssignmentViewer from '@/components/training/CourseAssignmentViewer';
 import { useQueryClient } from '@tanstack/react-query';
 import TrainingReassignmentManager from '@/components/training/TrainingReassignmentManager';
+import ComplianceRetrainingManager from '@/components/training/ComplianceRetrainingManager';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
@@ -40,6 +41,7 @@ const TrainingPage = () => {
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
   const [isRetrainingSettingsOpen, setIsRetrainingSettingsOpen] = useState(false);
   const [isReassignmentManagerOpen, setIsReassignmentManagerOpen] = useState(false);
+  const [isComplianceManagerOpen, setIsComplianceManagerOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [isQuizTakerOpen, setIsQuizTakerOpen] = useState(false);
@@ -245,9 +247,10 @@ const TrainingPage = () => {
                       onAssignContent={handleAssignContent}
                       onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
                       onStartOnboarding={handleStartOnboarding}
-                      onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
-                      onManageAssignments={() => setIsReassignmentManagerOpen(true)}
-                      userRole={user.role}
+                       onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
+                       onManageAssignments={() => setIsReassignmentManagerOpen(true)}
+                       onManageCompliance={() => setIsComplianceManagerOpen(true)}
+                       userRole={user.role}
                     />
                  </div>
                )}
@@ -399,6 +402,12 @@ const TrainingPage = () => {
         <TrainingReassignmentManager 
           open={isReassignmentManagerOpen}
           onOpenChange={setIsReassignmentManagerOpen}
+        />
+
+        {/* Compliance Retraining Manager */}
+        <ComplianceRetrainingManager 
+          open={isComplianceManagerOpen}
+          onOpenChange={setIsComplianceManagerOpen}
         />
     </div>
   );

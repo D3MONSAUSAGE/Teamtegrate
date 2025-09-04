@@ -168,13 +168,7 @@ export const useRetrainingNotifications = () => {
     try {
       const { data, error } = await supabase
         .from('training_assignments')
-        .select(`
-          *,
-          training_courses!content_id (
-            title,
-            description
-          )
-        `)
+        .select('*')
         .eq('is_retraining', true)
         .eq('status', 'pending')
         .not('due_date', 'is', null)

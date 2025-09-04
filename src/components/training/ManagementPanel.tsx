@@ -29,6 +29,7 @@ interface ManagementPanelProps {
   onSettings?: () => void;
   onRetrainingSettings?: () => void;
   onManageAssignments?: () => void;
+  onManageCompliance?: () => void;
   userRole: string;
   showOnlyOnboarding?: boolean;
 }
@@ -43,6 +44,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onSettings,
   onRetrainingSettings,
   onManageAssignments,
+  onManageCompliance,
   userRole,
   showOnlyOnboarding = false
 }) => {
@@ -104,6 +106,14 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onManageAssignments,
       primary: false,
       color: 'from-cyan-500 to-cyan-400'
+    }] : []),
+    ...(onManageCompliance ? [{
+      title: 'Manage Compliance',
+      description: 'Force retraining and manage compliance records',
+      icon: Shield,
+      onClick: onManageCompliance,
+      primary: false,
+      color: 'from-red-500 to-red-400'
     }] : []),
     ...(onStartOnboarding ? [{
       title: 'Start Onboarding',
