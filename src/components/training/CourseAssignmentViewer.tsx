@@ -98,6 +98,15 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   };
 
   // Handle external course assignments
+  console.log('CourseAssignmentViewer: Checking if external course:', {
+    assignment_type: assignment.assignment_type,
+    has_training_courses: !!assignment.training_courses,
+    is_external: assignment.training_courses?.is_external,
+    external_url: assignment.training_courses?.external_base_url,
+    assignment_id: assignment.id,
+    content_title: assignment.content_title
+  });
+
   if (assignment.training_courses?.is_external && assignment.training_courses?.external_base_url) {
     console.log('CourseAssignmentViewer: Rendering external course:', assignment);
     console.log('CourseAssignmentViewer: External URL:', assignment.training_courses.external_base_url);

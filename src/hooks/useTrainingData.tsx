@@ -746,11 +746,38 @@ export const useTrainingAssignments = (userId?: string) => {
     queryFn: async () => {
       if (!targetUserId) throw new Error('No user ID available');
       
-      const { data, error } = await supabase
+      console.log('useTrainingAssignments: Fetching assignments for user:', targetUserId);
+      
+      // First get the assignments
+      const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('training_assignments')
-        .select(`
-          *,
-          training_courses(
+        .select('*')
+        .eq('assigned_to', targetUserId)
+        .order('assigned_at', { ascending: false });
+      
+      if (assignmentsError) {
+        console.error('useTrainingAssignments: Database error:', assignmentsError);
+        throw assignmentsError;
+      }
+      
+      if (!assignmentsData || assignmentsData.length === 0) {
+        console.log('useTrainingAssignments: No assignments found for user:', targetUserId);
+        return [];
+      }
+      
+      console.log('useTrainingAssignments: Raw assignments from database:', assignmentsData.length, assignmentsData);
+      
+      // Separate course and quiz assignments
+      const courseAssignments = assignmentsData.filter(a => a.assignment_type === 'course');
+      const quizAssignments = assignmentsData.filter(a => a.assignment_type === 'quiz');
+      
+      // Fetch course data for course assignments
+      let coursesData: any[] = [];
+      if (courseAssignments.length > 0) {
+        const courseIds = courseAssignments.map(a => a.content_id);
+        const { data: courses, error: coursesError } = await supabase
+          .from('training_courses')
+          .select(`
             id,
             title,
             description,
@@ -759,45 +786,112 @@ export const useTrainingAssignments = (userId?: string) => {
             url_parameters,
             completion_method,
             category
-          ),
-          quizzes(
+          `)
+          .in('id', courseIds);
+        
+        if (coursesError) {
+          console.error('useTrainingAssignments: Error fetching courses:', coursesError);
+        } else {
+          coursesData = courses || [];
+          console.log('useTrainingAssignments: Fetched courses data:', coursesData.length, coursesData);
+        }
+      }
+      
+      // Fetch quiz data for quiz assignments
+      let quizzesData: any[] = [];
+      if (quizAssignments.length > 0) {
+        const quizIds = quizAssignments.map(a => a.content_id);
+        const { data: quizzes, error: quizzesError } = await supabase
+          .from('quizzes')
+          .select(`
             id,
             title,
             description,
             passing_score,
             max_attempts,
             time_limit_minutes
-          )
-        `)
-        .eq('assigned_to', targetUserId)
-        .order('assigned_at', { ascending: false });
+          `)
+          .in('id', quizIds);
+        
+        if (quizzesError) {
+          console.error('useTrainingAssignments: Error fetching quizzes:', quizzesError);
+        } else {
+          quizzesData = quizzes || [];
+          console.log('useTrainingAssignments: Fetched quizzes data:', quizzesData.length, quizzesData);
+        }
+      }
       
-      if (error) throw error;
+      // Create maps for efficient lookup
+      const coursesMap = new Map(coursesData.map(course => [course.id, course]));
+      const quizzesMap = new Map(quizzesData.map(quiz => [quiz.id, quiz]));
       
       // Process the data to ensure consistent structure
-      const processedData = (data || []).map(assignment => {
-        // For course assignments, use training_courses data
-        if (assignment.assignment_type === 'course' && assignment.training_courses) {
-          return {
-            ...assignment,
-            // Ensure we have the course data available in expected format
-            course_data: assignment.training_courses
-          };
+      const processedData = assignmentsData.map(assignment => {
+        console.log('useTrainingAssignments: Processing assignment:', assignment.id, assignment.assignment_type, assignment.content_title);
+        
+        // For course assignments, attach training_courses data
+        if (assignment.assignment_type === 'course') {
+          const courseData = coursesMap.get(assignment.content_id);
+          if (courseData) {
+            console.log('useTrainingAssignments: Course assignment with training_courses data:', courseData);
+            return {
+              ...assignment,
+              // Attach course data in the expected structure
+              training_courses: courseData,
+              course_data: courseData
+            };
+          } else {
+            console.warn('useTrainingAssignments: Course assignment missing training_courses data:', assignment.id);
+            return assignment;
+          }
         }
-        // For quiz assignments, use quizzes data
-        else if (assignment.assignment_type === 'quiz' && assignment.quizzes) {
-          return {
-            ...assignment,
-            // Ensure we have the quiz data available in expected format
-            quiz_data: assignment.quizzes
-          };
+        // For quiz assignments, attach quizzes data
+        else if (assignment.assignment_type === 'quiz') {
+          const quizData = quizzesMap.get(assignment.content_id);
+          if (quizData) {
+            console.log('useTrainingAssignments: Quiz assignment with quizzes data:', quizData);
+            return {
+              ...assignment,
+              // Attach quiz data in the expected structure
+              quizzes: quizData,
+              quiz_data: quizData
+            };
+          } else {
+            console.warn('useTrainingAssignments: Quiz assignment missing quizzes data:', assignment.id);
+            return assignment;
+          }
         }
-        // Return assignment as-is if no matching data (shouldn't happen but safety net)
-        return assignment;
+        // Return assignment as-is for unknown types
+        else {
+          console.warn('useTrainingAssignments: Unknown assignment type:', assignment.assignment_type);
+          return assignment;
+        }
       });
       
-      console.log('useTrainingAssignments: Processed assignments:', processedData.length, processedData);
-      return processedData;
+      // Filter and validate processed data
+      const validAssignments = processedData.filter(assignment => {
+        const isValid = assignment && assignment.id && assignment.content_title;
+        if (!isValid) {
+          console.warn('useTrainingAssignments: Invalid assignment filtered out:', assignment);
+        }
+        return isValid;
+      });
+      
+      console.log('useTrainingAssignments: Final processed assignments:', validAssignments.length);
+      console.log('useTrainingAssignments: Assignment breakdown:', {
+        total: validAssignments.length,
+        pending: validAssignments.filter(a => a.status === 'pending').length,
+        in_progress: validAssignments.filter(a => a.status === 'in_progress').length,
+        completed: validAssignments.filter(a => a.status === 'completed').length,
+        courses: validAssignments.filter(a => a.assignment_type === 'course').length,
+        quizzes: validAssignments.filter(a => a.assignment_type === 'quiz').length,
+        external_courses: validAssignments.filter(a => 
+          a.assignment_type === 'course' && 
+          (a as any).training_courses?.is_external
+        ).length
+      });
+      
+      return validAssignments;
     },
     enabled: !!targetUserId
   });

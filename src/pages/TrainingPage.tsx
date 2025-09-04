@@ -56,6 +56,15 @@ const TrainingPage = () => {
   const updateStatus = useUpdateAssignmentStatus();
   const queryClient = useQueryClient();
 
+  console.log('TrainingPage: Current user:', user?.id, user?.email, user?.role);
+  console.log('TrainingPage: Assignments from hook:', assignments.length, assignments);
+  console.log('TrainingPage: Assignment statuses:', assignments.map(a => ({
+    id: a.id,
+    title: a.content_title,
+    status: a.status,
+    type: a.assignment_type
+  })));
+
   const canManageContent = user && ['superadmin', 'admin', 'manager'].includes(user.role);
 
   // Show loading state while auth is loading

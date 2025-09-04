@@ -36,9 +36,25 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({
   onViewAssignment,
   onViewAllAssignments
 }) => {
+  console.log('LearningDashboard: Received assignments:', assignments.length, assignments);
+  console.log('LearningDashboard: Assignment details:', assignments.map(a => ({
+    id: a.id,
+    title: a.content_title,
+    type: a.assignment_type,
+    status: a.status,
+    priority: a.priority,
+    due_date: a.due_date
+  })));
+  
   const activeAssignments = assignments.filter(a => 
     a.status === 'pending' || a.status === 'in_progress'
   );
+  
+  console.log('LearningDashboard: Active assignments filtered:', activeAssignments.length, activeAssignments.map(a => ({
+    id: a.id,
+    title: a.content_title,
+    status: a.status
+  })));
   
   const completedCount = assignments.filter(a => a.status === 'completed').length;
   const overallProgress = assignments.length > 0 
@@ -47,6 +63,18 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({
 
   const priorityAssignment = activeAssignments.find(a => a.priority === 'high') || 
                             activeAssignments[0];
+
+  console.log('LearningDashboard: Progress calculation:', {
+    totalAssignments: assignments.length,
+    completedCount,
+    overallProgress: Math.round(overallProgress),
+    activeCount: activeAssignments.length,
+    priorityAssignment: priorityAssignment ? {
+      id: priorityAssignment.id,
+      title: priorityAssignment.content_title,
+      priority: priorityAssignment.priority
+    } : null
+  });
 
   return (
     <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 border-0 shadow-lg">
