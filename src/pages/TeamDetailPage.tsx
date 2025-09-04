@@ -4,24 +4,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
   Users, 
   FolderOpen, 
   CheckSquare, 
-  Crown,
-  User,
-  Calendar,
+  Settings,
+  BarChart3,
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { format } from 'date-fns';
-import TeamMemberTasksView from '@/components/team/detail/TeamMemberTasksView';
-import TeamProjectsView from '@/components/team/detail/TeamProjectsView';
+import TeamOverviewTab from '@/components/team/detail/tabs/TeamOverviewTab';
+import TeamMembersTab from '@/components/team/detail/tabs/TeamMembersTab';
+import TeamProjectsTab from '@/components/team/detail/tabs/TeamProjectsTab';
+import TeamTasksTab from '@/components/team/detail/tabs/TeamTasksTab';
+import TeamSettingsTab from '@/components/team/detail/tabs/TeamSettingsTab';
 
 const TeamDetailPage = () => {
   const { teamId } = useParams();
@@ -118,110 +118,64 @@ const TeamDetailPage = () => {
             <Users className="h-6 w-6 text-primary" />
             {team.name}
           </h1>
-          <p className="text-muted-foreground">Team Details & Management</p>
+          <p className="text-muted-foreground">Comprehensive Team Management Hub</p>
         </div>
       </div>
 
-      {/* Team Overview Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Team Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {team.description && (
-            <div>
-              <h4 className="font-medium mb-2">Description</h4>
-              <p className="text-muted-foreground">{team.description}</p>
-            </div>
-          )}
+      {/* Enhanced Tabbed Interface */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Overview</span>
+          </TabsTrigger>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Total Members</p>
-              <p className="text-2xl font-bold text-primary">{team.member_count}</p>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Manager</p>
-              <div className="flex items-center gap-1">
-                {team.manager_name ? (
-                  <>
-                    <Crown className="h-3 w-3 text-yellow-500" />
-                    <span className="text-sm">{team.manager_name}</span>
-                  </>
-                ) : (
-                  <span className="text-sm text-muted-foreground">No manager</span>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Status</p>
-              <Badge variant={team.is_active ? "default" : "secondary"}>
-                {team.is_active ? "Active" : "Inactive"}
-              </Badge>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Created</p>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <span className="text-sm">{format(new Date(team.created_at), 'MMM d, yyyy')}</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <TabsTrigger value="members" className="gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Members</span>
+            <span className="ml-1 text-xs bg-primary/20 px-1.5 py-0.5 rounded-full">
+              {teamMembers.length}
+            </span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="projects" className="gap-2">
+            <FolderOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Projects</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="tasks" className="gap-2">
+            <CheckSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">Tasks</span>
+          </TabsTrigger>
+          
+          <TabsTrigger value="settings" className="gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Team Members */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Team Members ({teamMembers.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {membersLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : teamMembers.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No team members found.</p>
-          ) : (
-            <div className="grid gap-3">
-              {teamMembers.map((membership) => (
-                <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{membership.users.name || membership.users.email}</p>
-                      <p className="text-sm text-muted-foreground">{membership.users.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{membership.users.role}</Badge>
-                    <Badge variant={membership.role === 'manager' ? 'default' : 'secondary'}>
-                      {membership.role}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <div className="mt-6">
+          <TabsContent value="overview" className="space-y-6">
+            <TeamOverviewTab team={team} teamMembers={teamMembers} />
+          </TabsContent>
 
-      {/* Team Projects */}
-      <TeamProjectsView teamId={teamId!} />
+          <TabsContent value="members" className="space-y-6">
+            <TeamMembersTab teamMembers={teamMembers} isLoading={membersLoading} />
+          </TabsContent>
 
-      {/* Team Member Tasks */}
-      <TeamMemberTasksView teamId={teamId!} teamMembers={teamMembers} />
+          <TabsContent value="projects" className="space-y-6">
+            <TeamProjectsTab teamId={teamId!} />
+          </TabsContent>
+
+          <TabsContent value="tasks" className="space-y-6">
+            <TeamTasksTab teamId={teamId!} teamMembers={teamMembers} />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <TeamSettingsTab team={team} teamMembers={teamMembers} />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 };
