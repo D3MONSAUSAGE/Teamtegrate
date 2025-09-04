@@ -25,6 +25,7 @@ import { useTrainingCourses, useQuizzes, useTrainingAssignments, useUpdateAssign
 import QuizTaker from '@/components/training/QuizTaker';
 import CourseAssignmentViewer from '@/components/training/CourseAssignmentViewer';
 import { useQueryClient } from '@tanstack/react-query';
+import TrainingReassignmentManager from '@/components/training/TrainingReassignmentManager';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
@@ -38,6 +39,7 @@ const TrainingPage = () => {
   const [isEmployeeProgressOpen, setIsEmployeeProgressOpen] = useState(false);
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
   const [isRetrainingSettingsOpen, setIsRetrainingSettingsOpen] = useState(false);
+  const [isReassignmentManagerOpen, setIsReassignmentManagerOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [isQuizTakerOpen, setIsQuizTakerOpen] = useState(false);
@@ -235,19 +237,20 @@ const TrainingPage = () => {
               )}
 
               {/* Management Panel - First for Managers/Admins */}
-              {canManageContent && (
-                <div className="animate-fade-in">
-                   <ManagementPanel
-                     onCreateCourse={handleCreateCourse}
-                     onCreateQuiz={handleCreateQuiz}
-                     onAssignContent={handleAssignContent}
-                     onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
-                     onStartOnboarding={handleStartOnboarding}
-                     onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
-                     userRole={user.role}
-                   />
-                </div>
-              )}
+               {canManageContent && (
+                 <div className="animate-fade-in">
+                    <ManagementPanel
+                      onCreateCourse={handleCreateCourse}
+                      onCreateQuiz={handleCreateQuiz}
+                      onAssignContent={handleAssignContent}
+                      onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
+                      onStartOnboarding={handleStartOnboarding}
+                      onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
+                      onManageAssignments={() => setIsReassignmentManagerOpen(true)}
+                      userRole={user.role}
+                    />
+                 </div>
+               )}
 
               {/* Your Assigned Training - For Management Users */}
               {canManageContent && assignments.length > 0 && (
@@ -391,6 +394,12 @@ const TrainingPage = () => {
             onComplete={handleCourseComplete}
           />
         )}
+
+        {/* Training Reassignment Manager */}
+        <TrainingReassignmentManager 
+          open={isReassignmentManagerOpen}
+          onOpenChange={setIsReassignmentManagerOpen}
+        />
     </div>
   );
 };

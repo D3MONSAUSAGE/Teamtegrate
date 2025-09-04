@@ -28,6 +28,7 @@ interface ManagementPanelProps {
   onExportData?: () => void;
   onSettings?: () => void;
   onRetrainingSettings?: () => void;
+  onManageAssignments?: () => void;
   userRole: string;
   showOnlyOnboarding?: boolean;
 }
@@ -41,6 +42,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onExportData,
   onSettings,
   onRetrainingSettings,
+  onManageAssignments,
   userRole,
   showOnlyOnboarding = false
 }) => {
@@ -94,6 +96,14 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onRetrainingSettings,
       primary: false,
       color: 'from-orange-500 to-orange-400'
+    }] : []),
+    ...(onManageAssignments ? [{
+      title: 'Manage Assignments',
+      description: 'Reassign training and track status',
+      icon: Users,
+      onClick: onManageAssignments,
+      primary: false,
+      color: 'from-cyan-500 to-cyan-400'
     }] : []),
     ...(onStartOnboarding ? [{
       title: 'Start Onboarding',

@@ -17,10 +17,22 @@ export const useOrganizationUsers = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
-    if (!user) return;
+    // Check if user exists and has valid organizationId
+    if (!user || !user.organizationId || user.organizationId.trim() === '') {
+      console.log('useOrganizationUsers: No user or organizationId available', {
+        hasUser: !!user,
+        organizationId: user?.organizationId
+      });
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
     
     try {
+      setLoading(true);
       setError(null);
+      console.log('useOrganizationUsers: Fetching users for org:', user.organizationId);
+      
       const { data, error } = await supabase
         .from('users')
         .select('id, name, email, role, avatar_url')
@@ -28,6 +40,8 @@ export const useOrganizationUsers = () => {
         .order('name');
 
       if (error) throw error;
+      
+      console.log('useOrganizationUsers: Found users:', data?.length || 0);
       setUsers(data || []);
     } catch (error) {
       console.error('Error fetching organization users:', error);
@@ -54,8 +68,13 @@ export const useOrganizationUsers = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [user]);
+    // Only fetch when user and organizationId are properly loaded
+    if (user && user.organizationId && user.organizationId.trim() !== '') {
+      fetchUsers();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.organizationId, user?.id]);
 
   return { 
     users, 

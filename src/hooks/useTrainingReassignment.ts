@@ -149,7 +149,13 @@ export const useSearchAssignments = (searchTerm?: string, filters?: {
   return useQuery({
     queryKey: ['search-assignments', searchTerm, filters],
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
+      // Check if user exists and has valid organizationId
+      if (!user || !user.organizationId || user.organizationId.trim() === '') {
+        console.log('useSearchAssignments: No valid user or organizationId');
+        return [];
+      }
+
+      console.log('useSearchAssignments: Fetching assignments for org:', user.organizationId);
 
       let query = supabase
         .from('training_assignments')
@@ -193,9 +199,12 @@ export const useSearchAssignments = (searchTerm?: string, filters?: {
       const { data, error } = await query.order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      const result = data || [];
+      console.log('useSearchAssignments: Found assignments:', result.length);
+      return result;
     },
-    enabled: !!user,
+    enabled: !!user && !!user.organizationId && user.organizationId.trim() !== ''
   });
 };
 

@@ -23,13 +23,15 @@ interface TrainingHeaderProps {
   onCreateQuiz: () => void;
   onExportData?: () => void;
   onSettings?: () => void;
+  onManageAssignments?: () => void;
 }
 
 const TrainingHeader: React.FC<TrainingHeaderProps> = ({
   onCreateCourse,
   onCreateQuiz,
   onExportData,
-  onSettings
+  onSettings,
+  onManageAssignments
 }) => {
   const { user } = useAuth();
   const { data: organization } = useOrganization();
@@ -131,6 +133,18 @@ const TrainingHeader: React.FC<TrainingHeaderProps> = ({
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Create Quiz
                   </Button>
+                  
+                  {onManageAssignments && (
+                    <Button 
+                      onClick={onManageAssignments} 
+                      size="lg" 
+                      variant="outline"
+                      className="border-2 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/20"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage Assignments
+                    </Button>
+                  )}
                 </div>
               )}
               
