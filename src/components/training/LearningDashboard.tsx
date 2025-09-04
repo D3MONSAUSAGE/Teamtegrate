@@ -23,11 +23,15 @@ interface Assignment {
   priority: string;
   due_date?: string;
   progress?: number;
+  certificate_url?: string;
+  certificate_status?: string;
+  certificate_uploaded_at?: string;
   training_courses?: {
     id: string;
     title: string;
     is_external?: boolean;
     external_base_url?: string;
+    url_parameters?: any;
     [key: string]: any;
   };
   quizzes?: {

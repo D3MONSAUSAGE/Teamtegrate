@@ -4166,6 +4166,9 @@ export type Database = {
           assigned_by: string
           assigned_to: string
           assignment_type: string
+          certificate_status: string | null
+          certificate_uploaded_at: string | null
+          certificate_url: string | null
           completed_at: string | null
           completion_score: number | null
           content_id: string
@@ -4186,12 +4189,18 @@ export type Database = {
           started_at: string | null
           status: string
           updated_at: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           assigned_at?: string
           assigned_by: string
           assigned_to: string
           assignment_type: string
+          certificate_status?: string | null
+          certificate_uploaded_at?: string | null
+          certificate_url?: string | null
           completed_at?: string | null
           completion_score?: number | null
           content_id: string
@@ -4212,12 +4221,18 @@ export type Database = {
           started_at?: string | null
           status?: string
           updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           assigned_at?: string
           assigned_by?: string
           assigned_to?: string
           assignment_type?: string
+          certificate_status?: string | null
+          certificate_uploaded_at?: string | null
+          certificate_url?: string | null
           completed_at?: string | null
           completion_score?: number | null
           content_id?: string
@@ -4238,6 +4253,9 @@ export type Database = {
           started_at?: string | null
           status?: string
           updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {

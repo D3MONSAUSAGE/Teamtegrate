@@ -15,7 +15,8 @@ import {
   FileText,
   Award,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  Upload
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,7 @@ import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import ModuleViewer from './ModuleViewer';
 import VideoToQuizFlow from './VideoToQuizFlow';
 import QuizTaker from './QuizTaker';
+import CertificateUpload from './CertificateUpload';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuizAttempts } from '@/hooks/useTrainingData';
 
@@ -77,6 +79,28 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // State for certificate upload
+  const [showCertificateUpload, setShowCertificateUpload] = useState(false);
+  const [certificateRequired, setCertificateRequired] = useState(false);
+
+  // Check if certificate is required for external courses
+  useEffect(() => {
+    if (assignment?.training_courses?.is_external) {
+      const required = assignment.training_courses.url_parameters?.requires_certificate || 
+                      assignment.certificate_status === 'pending' || 
+                      assignment.certificate_status === 'uploaded';
+      setCertificateRequired(required);
+    }
+  }, [assignment]);
+
+  const handleCertificateUploadComplete = (certificateUrl: string) => {
+    console.log('Certificate uploaded successfully:', certificateUrl);
+    // Refresh the assignment data to show updated status
+    queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+    setShowCertificateUpload(false);
+    enhancedNotifications.success('Certificate uploaded! Your training completion is pending verification.');
+  };
 
   const handleStartExternalCourse = async () => {
     try {
@@ -139,48 +163,162 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
-          <div className="space-y-6">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
-                <ExternalLink className="h-8 w-8 text-blue-600" />
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ExternalLink className="h-5 w-5" />
+              {assignment.content_title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[calc(90vh-120px)]">
+            <div className="space-y-6">
+              {/* External Course Header */}
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
+                  <ExternalLink className="h-8 w-8 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{assignment.content_title}</h2>
+                  <p className="text-muted-foreground mt-2">
+                    This training is hosted on an external website. Complete the training and upload your certificate below.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold">{assignment.content_title}</h2>
-                <p className="text-muted-foreground mt-2">
-                  This training is hosted on an external website. Click below to access the course.
-                </p>
+
+              {/* Assignment Status Badge */}
+              <div className="flex justify-center">
+                <Badge 
+                  variant={assignment.status === 'completed' ? 'default' : 
+                          assignment.status === 'in_progress' ? 'secondary' : 'outline'}
+                  className="px-4 py-1"
+                >
+                  Status: {assignment.status === 'completed' ? 'Completed' : 
+                          assignment.status === 'in_progress' ? 'In Progress' : 'Pending'}
+                </Badge>
               </div>
+
+              {/* Course Access Button */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ExternalLink className="h-5 w-5" />
+                    Access External Training
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Click the button below to open the external training website in a new tab. 
+                    Complete the training and return here to upload your certificate.
+                  </p>
+                  <Button
+                    onClick={handleStartExternalCourse}
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open External Training
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Certificate Upload Section */}
+              {(certificateRequired || assignment.status === 'in_progress' || assignment.certificate_status) && (
+                <CertificateUpload
+                  assignmentId={assignment.id}
+                  assignmentTitle={assignment.content_title}
+                  currentCertificateUrl={assignment.certificate_url}
+                  onUploadComplete={handleCertificateUploadComplete}
+                  onUploadStart={() => console.log('Certificate upload started')}
+                  disabled={assignment.status === 'completed'}
+                />
+              )}
+
+              {/* Certificate Status */}
+              {assignment.certificate_status && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {assignment.certificate_status === 'uploaded' && (
+                          <>
+                            <Upload className="h-5 w-5 text-blue-600" />
+                            <div>
+                              <p className="font-medium">Certificate Uploaded</p>
+                              <p className="text-sm text-muted-foreground">
+                                Pending verification by administrator
+                              </p>
+                            </div>
+                          </>
+                        )}
+                        {assignment.certificate_status === 'verified' && (
+                          <>
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <div>
+                              <p className="font-medium">Certificate Verified</p>
+                              <p className="text-sm text-muted-foreground">
+                                Training completed successfully
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      {assignment.certificate_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(assignment.certificate_url, '_blank')}
+                        >
+                          View Certificate
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Completion Instructions */}
+              {certificateRequired && assignment.status !== 'completed' && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Award className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-amber-800">
+                      <p className="font-medium mb-1">Certificate Required</p>
+                      <p>
+                        This course requires certificate upload for completion verification. 
+                        Please complete the external training and upload your completion certificate using the form above.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Completion Option (for courses that don't require certificate) */}
+              {!certificateRequired && assignment.status === 'in_progress' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Mark as Completed
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      If you have completed the external training, click below to mark this assignment as completed.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={handleCompleteAssignment}
+                      className="w-full"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark as Completed
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-            
-            <div className="flex flex-col gap-4">
-              <Button
-                onClick={handleStartExternalCourse}
-                className="w-full gap-2"
-                size="lg"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open External Training
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => handleCompleteAssignment()}
-                className="w-full"
-              >
-                Mark as Completed
-              </Button>
-            </div>
-            
-            {assignment.training_courses.url_parameters?.requires_certificate && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-800">
-                  <Award className="h-4 w-4 inline mr-1" />
-                  This course requires certificate upload for completion verification.
-                </p>
-              </div>
-            )}
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     );
