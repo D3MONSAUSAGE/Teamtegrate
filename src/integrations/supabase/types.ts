@@ -5266,6 +5266,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_meeting_organizer: {
+        Args: { meeting_id: string; user_id: string }
+        Returns: boolean
+      }
+      is_meeting_participant: {
+        Args: { meeting_id: string; user_id: string }
+        Returns: boolean
+      }
       is_room_participant: {
         Args: { room_id: string; user_id: string }
         Returns: boolean
