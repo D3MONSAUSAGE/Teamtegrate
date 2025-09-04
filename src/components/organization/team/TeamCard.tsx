@@ -48,11 +48,11 @@ const TeamCard: React.FC<TeamCardProps> = ({
     if ((e.target as Element).closest('[data-dropdown-trigger]')) {
       return;
     }
-    navigate(`/dashboard/organization/teams/${team.id}`);
+    navigate(`/dashboard/team/${team.id}`);
   };
 
   const handleViewDetails = () => {
-    navigate(`/dashboard/organization/teams/${team.id}`);
+    navigate(`/dashboard/team/${team.id}`);
   };
 
   return (

@@ -34,6 +34,7 @@ import TrainingPage from "@/pages/TrainingPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
+import TeamDetailPage from "@/pages/TeamDetailPage";
 import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
 import EmployeeActionsPage from "@/pages/EmployeeActionsPage";
 
@@ -69,7 +70,10 @@ function App() {
                   <Route path="notebook" element={<NotebookPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="team" element={<TeamPage />} />
+                  <Route path="team/:teamId" element={<ProtectedRoute><TeamDetailPage /></ProtectedRoute>} />
                   <Route path="team/manage/:teamId" element={<ProtectedRoute><DedicatedTeamManagement /></ProtectedRoute>} />
+                  {/* Alias route for backward compatibility */}
+                  <Route path="organization/teams/:teamId" element={<ProtectedRoute><TeamDetailPage /></ProtectedRoute>} />
                   <Route path="admin" element={<AdminPage />} />
                   <Route path="organization" element={<OrganizationDashboard />} />
                    <Route path="organization/roles" element={<RoleProtectedRoute requiredRole="manager"><OrganizationRolesPage /></RoleProtectedRoute>} />
