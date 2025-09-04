@@ -25,6 +25,8 @@ interface EnhancedCreateTaskDialogProps {
   editingTask?: Task;
   currentProjectId?: string;
   onTaskComplete?: () => void;
+  createTask?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Task | undefined>;
+  updateTask?: (taskId: string, updates: Partial<Task>) => Promise<void>;
 }
 
 const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
@@ -33,6 +35,8 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   editingTask,
   currentProjectId,
   onTaskComplete,
+  createTask,
+  updateTask
 }) => {
   const { user: currentUser } = useAuth();
   const { projects } = useProjects();
@@ -41,7 +45,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   // For admins and superadmins, the enhanced assignment component will handle user loading
   const { users, isLoading: loadingUsers, refetch: refetchUsers } = useOrganizationTeamMembers();
   
-  const { submitTask } = useTaskSubmission();
+  const { submitTask } = useTaskSubmission({ createTask, updateTask });
 
   const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);

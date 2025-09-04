@@ -21,14 +21,17 @@ const CalendarPage = () => {
   // Conditionally use task context only when available  
   let updateTask: ((taskId: string, updates: Partial<Task>) => Promise<void>) | undefined;
   let deleteTask: ((taskId: string) => Promise<void>) | undefined;
+  let createTask: ((task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Task | undefined>) | undefined;
   try {
     const taskContext = useTask();
     updateTask = taskContext.updateTask;
     deleteTask = taskContext.deleteTask;
+    createTask = taskContext.createTask;
   } catch (error) {
     console.warn('TaskProvider not available, disabling task operations');
     updateTask = undefined;
     deleteTask = undefined;
+    createTask = undefined;
   }
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -217,6 +220,8 @@ const CalendarPage = () => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         onTaskComplete={handleTaskDialogComplete}
+        createTask={createTask}
+        updateTask={updateTask}
       />
 
       <SimpleMeetingDialog 

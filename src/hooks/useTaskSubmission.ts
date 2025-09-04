@@ -1,14 +1,17 @@
 
 import { useState } from 'react';
-import { useTask } from '@/contexts/task';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task, User } from '@/types';
 import { toast } from '@/components/ui/sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
-export const useTaskSubmission = () => {
+interface UseTaskSubmissionProps {
+  createTask?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Task | undefined>;
+  updateTask?: (taskId: string, updates: Partial<Task>) => Promise<void>;
+}
+
+export const useTaskSubmission = ({ createTask, updateTask }: UseTaskSubmissionProps = {}) => {
   const { user } = useAuth();
-  const { createTask, updateTask } = useTask();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -31,6 +34,12 @@ export const useTaskSubmission = () => {
     if (!user?.organizationId) {
       console.error('❌ submitTask: Organization context required');
       toast.error('Organization context required');
+      return false;
+    }
+
+    if (!createTask || !updateTask) {
+      console.error('❌ submitTask: Task functions not available');
+      toast.error('Task operations not available');
       return false;
     }
 
