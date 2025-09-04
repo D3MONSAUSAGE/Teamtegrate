@@ -132,7 +132,7 @@ const fetchMeetingRequests = async () => {
           organization_id: user.organizationId,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (meetingError) throw meetingError;
 
@@ -140,6 +140,7 @@ const fetchMeetingRequests = async () => {
       const participants = participantIds.map(userId => ({
         meeting_request_id: meeting.id,
         user_id: userId,
+        organization_id: user.organizationId,
       }));
 
       const { error: participantsError } = await supabase
@@ -285,6 +286,7 @@ const fetchMeetingRequests = async () => {
           meeting_request_id: meetingId,
           user_id: userId,
           response_status: 'invited' as const,
+          organization_id: user.organizationId,
         }));
 
         const { error: addError } = await supabase

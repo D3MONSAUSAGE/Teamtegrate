@@ -91,7 +91,7 @@ export const useAssignCompliance = () => {
         .select('id')
         .eq('user_id', userId)
         .eq('template_id', templateId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         throw new Error('User already has this compliance training assigned');

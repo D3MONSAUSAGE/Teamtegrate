@@ -137,7 +137,7 @@ export const ComplianceRetrainingSettings: React.FC<ComplianceRetrainingSettings
                     {templates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         <div className="flex flex-col">
-                          <span>{template.name}</span>
+                          <span>{template.title}</span>
                           {template.jurisdiction && (
                             <span className="text-xs text-muted-foreground">
                               {template.jurisdiction}
@@ -152,7 +152,7 @@ export const ComplianceRetrainingSettings: React.FC<ComplianceRetrainingSettings
                 {selectedTemplateData && (
                   <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{selectedTemplateData.name}</h4>
+                      <h4 className="font-medium">{selectedTemplateData.title}</h4>
                       <div className="flex gap-2">
                         {selectedTemplateData.jurisdiction && (
                           <Badge variant="outline">{selectedTemplateData.jurisdiction}</Badge>
@@ -351,7 +351,7 @@ export const ComplianceRetrainingSettings: React.FC<ComplianceRetrainingSettings
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
                         <div className="space-y-1">
-                          <p className="font-medium">{template?.name || 'Unknown Template'}</p>
+                          <p className="font-medium">{template?.title || 'Unknown Template'}</p>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>Interval: {setting.retraining_interval_months}mo</span>
                             <span>Warning: {setting.warning_period_days}d</span>
