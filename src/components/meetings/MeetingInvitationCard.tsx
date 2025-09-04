@@ -74,12 +74,22 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
     );
   };
 
+  const getCardStyling = () => {
+    const isAccepted = currentUserParticipant?.response_status === 'accepted';
+    
+    if (isAccepted) {
+      return "transition-all hover:shadow-md bg-success/10 border-success/30";
+    }
+    
+    return "transition-all hover:shadow-md";
+  };
+
   const startTime = new Date(meeting.start_time);
   const endTime = new Date(meeting.end_time);
 
   return (
     <>
-      <Card className="transition-all hover:shadow-md">
+      <Card className={getCardStyling()}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
