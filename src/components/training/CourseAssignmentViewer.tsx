@@ -78,6 +78,29 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const handleStartExternalCourse = async () => {
+    try {
+      // Mark assignment as in_progress when starting external course
+      await supabase
+        .from('training_assignments')
+        .update({
+          status: 'in_progress',
+          started_at: new Date().toISOString()
+        })
+        .eq('id', assignment.id)
+        .eq('assigned_to', user?.id);
+
+      queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      
+      // Open external course
+      window.open(assignment.training_courses.external_base_url, '_blank');
+    } catch (error) {
+      console.error('Error updating assignment status:', error);
+      // Still open the course even if status update fails
+      window.open(assignment.training_courses.external_base_url, '_blank');
+    }
+  };
+
   const handleCompleteAssignment = async () => {
     try {
       await supabase
@@ -87,13 +110,16 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
           completed_at: new Date().toISOString(),
           completion_score: 100
         })
-        .eq('id', assignment.id);
+        .eq('id', assignment.id)
+        .eq('assigned_to', user?.id);
 
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      enhancedNotifications.success('Training marked as completed!');
       onComplete?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Error completing assignment:', error);
+      enhancedNotifications.error('Failed to mark training as completed');
     }
   };
 
@@ -129,7 +155,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
             
             <div className="flex flex-col gap-4">
               <Button
-                onClick={() => window.open(assignment.training_courses.external_base_url, '_blank')}
+                onClick={handleStartExternalCourse}
                 className="w-full gap-2"
                 size="lg"
               >

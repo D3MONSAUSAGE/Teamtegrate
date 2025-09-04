@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Training data hooks with assignment functionality
 
@@ -786,15 +786,26 @@ export const useTrainingAssignments = (userId?: string) => {
             external_base_url,
             url_parameters,
             completion_method,
-            category
+            difficulty_level,
+            estimated_duration_minutes,
+            thumbnail_url,
+            tags
           `)
           .in('id', courseIds);
         
         if (coursesError) {
           console.error('useTrainingAssignments: Error fetching courses:', coursesError);
+          // Don't throw on course fetch failure - continue with assignments but note the issue
+          enhancedNotifications.error(`Failed to fetch course details: ${coursesError.message}`);
         } else {
           coursesData = courses || [];
-          console.log('useTrainingAssignments: Fetched courses data:', coursesData.length, coursesData);
+          console.log('useTrainingAssignments: Fetched courses data successfully:', coursesData.length, coursesData);
+          console.log('useTrainingAssignments: External courses found:', coursesData.filter(c => c.is_external).map(c => ({
+            id: c.id,
+            title: c.title,
+            is_external: c.is_external,
+            external_base_url: c.external_base_url
+          })));
         }
       }
       
