@@ -58,6 +58,28 @@ const TrainingPage = () => {
 
   console.log('TrainingPage: Current user:', user?.id, user?.email, user?.role);
   console.log('TrainingPage: Assignments from hook:', assignments.length, assignments);
+  console.log('TrainingPage: Assignment breakdown:', {
+    total: assignments.length,
+    pending: assignments.filter(a => a.status === 'pending').length,
+    in_progress: assignments.filter(a => a.status === 'in_progress').length,
+    completed: assignments.filter(a => a.status === 'completed').length,
+    courses: assignments.filter(a => a.assignment_type === 'course').length,
+    quizzes: assignments.filter(a => a.assignment_type === 'quiz').length,
+    external_courses: assignments.filter(a => 
+      a.assignment_type === 'course' && 
+      (a as any).training_courses?.is_external
+    ).length
+  });
+  console.log('TrainingPage: Detailed assignment info:', assignments.map(a => ({
+    id: a.id,
+    title: a.content_title,
+    type: a.assignment_type,
+    status: a.status,
+    priority: a.priority,
+    has_course_data: !!(a as any).training_courses,
+    is_external: a.assignment_type === 'course' ? !!(a as any).training_courses?.is_external : false,
+    external_url: a.assignment_type === 'course' ? (a as any).training_courses?.external_base_url : null
+  })));
   console.log('TrainingPage: Assignment statuses:', assignments.map(a => ({
     id: a.id,
     title: a.content_title,

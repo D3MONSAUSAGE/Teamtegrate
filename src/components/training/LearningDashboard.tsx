@@ -23,6 +23,18 @@ interface Assignment {
   priority: string;
   due_date?: string;
   progress?: number;
+  training_courses?: {
+    id: string;
+    title: string;
+    is_external?: boolean;
+    external_base_url?: string;
+    [key: string]: any;
+  };
+  quizzes?: {
+    id: string;
+    title: string;
+    [key: string]: any;
+  };
 }
 
 interface LearningDashboardProps {
@@ -43,7 +55,11 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({
     type: a.assignment_type,
     status: a.status,
     priority: a.priority,
-    due_date: a.due_date
+    due_date: a.due_date,
+    is_external: a.assignment_type === 'course' ? !!a.training_courses?.is_external : false,
+    external_url: a.assignment_type === 'course' ? a.training_courses?.external_base_url : null,
+    has_course_data: a.assignment_type === 'course' ? !!a.training_courses : false,
+    has_quiz_data: a.assignment_type === 'quiz' ? !!a.quizzes : false
   })));
   
   const activeAssignments = assignments.filter(a => 
@@ -53,7 +69,9 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({
   console.log('LearningDashboard: Active assignments filtered:', activeAssignments.length, activeAssignments.map(a => ({
     id: a.id,
     title: a.content_title,
-    status: a.status
+    status: a.status,
+    type: a.assignment_type,
+    is_external: a.assignment_type === 'course' ? !!a.training_courses?.is_external : false
   })));
   
   const completedCount = assignments.filter(a => a.status === 'completed').length;

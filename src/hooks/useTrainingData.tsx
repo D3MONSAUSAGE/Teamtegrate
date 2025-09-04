@@ -753,6 +753,7 @@ export const useTrainingAssignments = (userId?: string) => {
         .from('training_assignments')
         .select('*')
         .eq('assigned_to', targetUserId)
+        .eq('organization_id', user?.organizationId)
         .order('assigned_at', { ascending: false });
       
       if (assignmentsError) {
