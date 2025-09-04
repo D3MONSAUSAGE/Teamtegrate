@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePersonalTasks } from '@/hooks/usePersonalTasks';
+import { useCalendarTasks } from '@/hooks/useCalendarTasks';
 import { Task } from '@/types';
 import { isSameDay, addMonths, subMonths } from 'date-fns';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
@@ -15,7 +15,7 @@ import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 
 const CalendarPage = () => {
-  const { tasks, isLoading } = usePersonalTasks();
+  const { tasks, isLoading } = useCalendarTasks();
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

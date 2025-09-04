@@ -14,15 +14,49 @@ const fetchMeetingRequests = async () => {
   if (!user) return;
   
   try {
-    const { data: requests, error } = await supabase
+    // SECURITY FIX: Only fetch meetings where the user is involved
+    // This prevents users from seeing meetings they're not part of
+    
+    // First, get meetings where user is the organizer
+    const { data: organizedMeetings, error: organizedError } = await supabase
       .from('meeting_requests')
       .select(`
         *,
         meeting_participants (*)
       `)
+      .eq('organizer_id', user.id)
+      .eq('organization_id', user.organizationId)
       .order('start_time', { ascending: true });
 
-    if (error) throw error;
+    if (organizedError) throw organizedError;
+
+    // Second, get meetings where user is a participant
+    const { data: participantMeetings, error: participantError } = await supabase
+      .from('meeting_requests')
+      .select(`
+        *,
+        meeting_participants!inner (*)
+      `)
+      .eq('meeting_participants.user_id', user.id)
+      .eq('organization_id', user.organizationId)
+      .order('start_time', { ascending: true });
+
+    if (participantError) throw participantError;
+
+    // Combine and deduplicate meetings
+    const allMeetingsMap = new Map();
+    
+    // Add organized meetings
+    (organizedMeetings || []).forEach(meeting => {
+      allMeetingsMap.set(meeting.id, meeting);
+    });
+    
+    // Add participant meetings
+    (participantMeetings || []).forEach(meeting => {
+      allMeetingsMap.set(meeting.id, meeting);
+    });
+
+    const requests = Array.from(allMeetingsMap.values());
 
     // Collect all unique user IDs from participants and organizers
     const participantUserIds: string[] = (requests || []).flatMap((r: any) => (r.meeting_participants || []).map((p: any) => p.user_id));
@@ -61,6 +95,7 @@ const fetchMeetingRequests = async () => {
       } as MeetingRequestWithParticipants;
     });
 
+    console.log(`🔒 Security: Fetched ${formattedRequests.length} meetings where user is involved`);
     setMeetingRequests(formattedRequests);
   } catch (error) {
     console.error('Error fetching meeting requests:', error);

@@ -1,0 +1,267 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/auth/AuthProvider';
+import { Task } from '@/types';
+import { useMemo } from 'react';
+import { requestManager } from '@/utils/requestManager';
+import { useTaskRealtime } from './useTaskRealtime';
+
+/**
+ * Calendar-specific task hook that only shows tasks relevant to the user's personal calendar:
+ * - Tasks created by the user (that are unassigned)
+ * - Tasks assigned ONLY to the user (not shared/team tasks)
+ * 
+ * This is more restrictive than usePersonalTasks to ensure calendar privacy
+ */
+export const useCalendarTasks = () => {
+  const { user } = useAuth();
+
+  // Add real-time subscription
+  useTaskRealtime();
+
+  const { data: tasks = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['calendar-tasks', user?.organizationId, user?.id],
+    queryFn: async (): Promise<Task[]> => {
+      console.log('=== CALENDAR TASKS QUERY EXECUTING ===');
+      console.log('🔒 Security: Fetching CALENDAR-ONLY tasks for user:', user?.id);
+      
+      if (!user?.organizationId || !user?.id) {
+        console.log('useCalendarTasks: Missing user data, cannot fetch tasks');
+        throw new Error('User must be authenticated and belong to an organization');
+      }
+
+      const cacheKey = `calendar-tasks-${user.organizationId}-${user.id}`;
+      
+      return requestManager.dedupe(cacheKey, async () => {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
+
+        try {
+          // SECURITY: Very restrictive query for calendar view
+          // Only fetch tasks where user is the SOLE assignee or creator (and unassigned)
+          
+          // Query 1: Tasks created by user that are unassigned (personal tasks)
+          const unassignedTasksPromise = supabase
+            .from('tasks')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .eq('user_id', user.id)
+            .or('assigned_to_id.is.null,assigned_to_id.eq.')
+            .or('assigned_to_ids.is.null,assigned_to_ids.eq.{}')
+            .or('is_archived.is.null,is_archived.eq.false')
+            .order('created_at', { ascending: false });
+
+          // Query 2: Tasks assigned ONLY to this user (single assignment)
+          const singleAssignedPromise = supabase
+            .from('tasks')
+            .select('*')
+            .eq('organization_id', user.organizationId)
+            .eq('assigned_to_id', user.id)
+            .or('assigned_to_ids.is.null,assigned_to_ids.eq.{},assigned_to_ids.eq.{"' + user.id + '"}')
+            .or('is_archived.is.null,is_archived.eq.false')
+            .order('created_at', { ascending: false });
+
+          // Execute queries in parallel with timeout
+          const [unassignedResult, singleAssignedResult] = await Promise.race([
+            Promise.all([unassignedTasksPromise, singleAssignedPromise]),
+            timeoutPromise
+          ]) as any;
+
+          // Check for errors
+          if (unassignedResult.error) {
+            console.error('useCalendarTasks: Error fetching unassigned tasks:', unassignedResult.error);
+            throw new Error(`Failed to fetch unassigned tasks: ${unassignedResult.error.message}`);
+          }
+          if (singleAssignedResult.error) {
+            console.error('useCalendarTasks: Error fetching single assigned tasks:', singleAssignedResult.error);
+            throw new Error(`Failed to fetch assigned tasks: ${singleAssignedResult.error.message}`);
+          }
+
+          // Combine and deduplicate tasks
+          const allTasksMap = new Map();
+          
+          // Add unassigned tasks created by user
+          (unassignedResult.data || []).forEach(task => {
+            allTasksMap.set(task.id, task);
+          });
+          
+          // Add tasks assigned only to user
+          (singleAssignedResult.data || []).forEach(task => {
+            allTasksMap.set(task.id, task);
+          });
+
+          const combinedTasks = Array.from(allTasksMap.values());
+
+          console.log(`🔒 Calendar Security: Found ${combinedTasks.length} calendar-appropriate tasks`);
+
+          if (combinedTasks.length === 0) {
+            return [];
+          }
+
+          // STRICT client-side filtering for calendar privacy
+          const calendarTasks = combinedTasks.filter(task => {
+            const isCreatedByUser = task.user_id === user.id;
+            const isUnassigned = (!task.assigned_to_id || task.assigned_to_id === '') && 
+                               (!task.assigned_to_ids || task.assigned_to_ids.length === 0);
+            
+            // Only show tasks assigned EXCLUSIVELY to this user (no team/shared tasks)
+            const isAssignedOnlyToUser = 
+              // Single assignment to this user only
+              (task.assigned_to_id === user.id && (!task.assigned_to_ids || task.assigned_to_ids.length <= 1)) ||
+              // Array assignment with only this user
+              (task.assigned_to_ids && task.assigned_to_ids.length === 1 && task.assigned_to_ids[0] === user.id);
+            
+            // CALENDAR RULE: Show only personal tasks or tasks assigned exclusively to user
+            // This ensures no shared/team tasks appear on personal calendar
+            const shouldShowOnCalendar = (isCreatedByUser && isUnassigned) || isAssignedOnlyToUser;
+            
+            if (!shouldShowOnCalendar) {
+              console.log(`🔒 Filtered out task ${task.id}: not calendar-appropriate`);
+            }
+            
+            return shouldShowOnCalendar;
+          });
+
+          // Fetch users for name lookup
+          const usersPromise = supabase
+            .from('users')
+            .select('id, name, email')
+            .eq('organization_id', user.organizationId);
+
+          const { data: usersData, error: usersError } = await Promise.race([
+            usersPromise,
+            timeoutPromise
+          ]) as any;
+
+          if (usersError) {
+            console.error('useCalendarTasks: Error fetching users:', usersError);
+          }
+
+          // Create user lookup map
+          const userLookup = new Map();
+          if (usersData) {
+            usersData.forEach(userData => {
+              userLookup.set(userData.id, userData.name || userData.email);
+            });
+          }
+
+          // Transform tasks to app format
+          const transformedTasks: Task[] = calendarTasks.map(task => {
+            let assignedToId = undefined;
+            let assignedToName = undefined;
+            let assignedToIds = [];
+            let assignedToNames = [];
+
+            if (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.length > 0) {
+              assignedToIds = task.assigned_to_ids
+                .filter(id => id && id.toString().trim() !== '')
+                .map(id => id.toString());
+
+              if (assignedToIds.length > 0) {
+                assignedToNames = assignedToIds.map(id => {
+                  return userLookup.get(id) || 'Unknown User';
+                });
+
+                if (assignedToIds.length === 1) {
+                  assignedToId = assignedToIds[0];
+                  assignedToName = assignedToNames[0];
+                }
+              }
+            } else if (task.assigned_to_id && task.assigned_to_id.toString().trim() !== '') {
+              assignedToId = task.assigned_to_id.toString();
+              assignedToIds = [assignedToId];
+              assignedToName = userLookup.get(assignedToId) || 'Assigned User';
+              assignedToNames = [assignedToName];
+            }
+
+            return {
+              id: task.id || 'unknown',
+              userId: task.user_id || '',
+              projectId: task.project_id,
+              title: task.title || 'Untitled Task',
+              description: task.description || '',
+              deadline: task.deadline ? new Date(task.deadline) : new Date(),
+              scheduledStart: task.scheduled_start ? new Date(task.scheduled_start) : undefined,
+              scheduledEnd: task.scheduled_end ? new Date(task.scheduled_end) : undefined,
+              priority: (task.priority as 'Low' | 'Medium' | 'High') || 'Medium',
+              status: (task.status as 'To Do' | 'In Progress' | 'Completed') || 'To Do',
+              createdAt: task.created_at ? new Date(task.created_at) : new Date(),
+              updatedAt: task.updated_at ? new Date(task.updated_at) : new Date(),
+              completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
+              assignedToId,
+              assignedToName,
+              assignedToIds,
+              assignedToNames,
+              cost: Number(task.cost) || 0,
+              organizationId: task.organization_id,
+              tags: [],
+              comments: []
+            };
+          });
+
+          console.log(`🔒 Calendar Security: Returning ${transformedTasks.length} calendar-safe tasks`);
+          return transformedTasks;
+
+        } catch (error: any) {
+          console.error('useCalendarTasks: Error in query execution:', error);
+          
+          // Handle specific error types
+          if (error.message?.includes('invalid input syntax for type uuid')) {
+            throw new Error('Data validation error. Please refresh the page and try again.');
+          }
+          
+          if (error.message?.includes('set-returning functions are not allowed in WHERE')) {
+            console.warn('useCalendarTasks: RLS function transition in progress, returning empty tasks array');
+            return [];
+          }
+
+          // Network-related errors
+          if (error.message?.includes('Failed to fetch') || 
+              error.message?.includes('Network Error') ||
+              error.message?.includes('timeout')) {
+            throw new Error('Network connection issue. Please check your connection and try again.');
+          }
+          
+          throw new Error(`Failed to fetch calendar tasks: ${error.message}`);
+        }
+      });
+    },
+    enabled: !!user?.organizationId && !!user?.id,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache data
+    retry: (failureCount, error: any) => {
+      if (failureCount >= 3) return false;
+      
+      // Don't retry on auth/permission errors
+      if (error.message.includes('organization') || error.message.includes('permission')) return false;
+      if (error.message.includes('invalid input syntax for type uuid')) return false;
+      if (error.message.includes('set-returning functions are not allowed in WHERE')) return false;
+      
+      // Retry on network errors
+      if (error.message.includes('Network connection issue') || 
+          error.message.includes('timeout') ||
+          error.message.includes('Failed to fetch')) {
+        return true;
+      }
+      
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000),
+  });
+
+  // Memoize the return value to prevent unnecessary re-renders
+  const memoizedResult = useMemo(() => ({
+    tasks,
+    isLoading,
+    error,
+    refetch
+  }), [tasks, isLoading, error, refetch]);
+
+  // Enhanced error logging
+  if (error) {
+    console.error('useCalendarTasks: Calendar tasks query error:', error);
+  }
+
+  return memoizedResult;
+};
