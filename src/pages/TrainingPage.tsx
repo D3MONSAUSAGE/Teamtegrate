@@ -27,6 +27,7 @@ import CourseAssignmentViewer from '@/components/training/CourseAssignmentViewer
 import { useQueryClient } from '@tanstack/react-query';
 import TrainingReassignmentManager from '@/components/training/TrainingReassignmentManager';
 import ComplianceRetrainingManager from '@/components/training/ComplianceRetrainingManager';
+import CertificateReviewDashboard from '@/components/training/CertificateReviewDashboard';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
@@ -42,6 +43,7 @@ const TrainingPage = () => {
   const [isRetrainingSettingsOpen, setIsRetrainingSettingsOpen] = useState(false);
   const [isReassignmentManagerOpen, setIsReassignmentManagerOpen] = useState(false);
   const [isComplianceManagerOpen, setIsComplianceManagerOpen] = useState(false);
+  const [isCertificateReviewOpen, setIsCertificateReviewOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [isQuizTakerOpen, setIsQuizTakerOpen] = useState(false);
@@ -278,10 +280,11 @@ const TrainingPage = () => {
                       onAssignContent={handleAssignContent}
                       onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
                       onStartOnboarding={handleStartOnboarding}
-                       onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
-                       onManageAssignments={() => setIsReassignmentManagerOpen(true)}
-                       onManageCompliance={() => setIsComplianceManagerOpen(true)}
-                       userRole={user.role}
+                        onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
+                        onManageAssignments={() => setIsReassignmentManagerOpen(true)}
+                        onManageCompliance={() => setIsComplianceManagerOpen(true)}
+                        onCertificateReview={() => setIsCertificateReviewOpen(true)}
+                        userRole={user.role}
                     />
                  </div>
                )}
@@ -439,6 +442,12 @@ const TrainingPage = () => {
         <ComplianceRetrainingManager 
           open={isComplianceManagerOpen}
           onOpenChange={setIsComplianceManagerOpen}
+        />
+
+        {/* Certificate Review Dashboard */}
+        <CertificateReviewDashboard 
+          open={isCertificateReviewOpen}
+          onOpenChange={setIsCertificateReviewOpen}
         />
     </div>
   );
