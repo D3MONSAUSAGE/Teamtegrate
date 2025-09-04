@@ -37,10 +37,10 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
             <div 
               className="h-10 w-10 mr-4 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-semibold text-gray-600 dark:text-gray-200 flex-shrink-0"
             >
-              {member.name.substring(0, 1).toUpperCase()}
+              {member.name?.substring(0, 1).toUpperCase() || 'U'}
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold truncate">{member.name}</h3>
+              <h3 className="font-semibold truncate">{member.name || 'Unknown User'}</h3>
               <div className={`flex ${isMobile ? 'flex-col' : 'items-center space-x-2'}`}>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{member.role}</p>
                 <p className={`text-xs text-gray-400 dark:text-gray-500 truncate ${isMobile ? 'mt-1' : ''}`}>{member.email}</p>

@@ -294,7 +294,7 @@ const TeamAnalyticsOverview: React.FC<TeamAnalyticsOverviewProps> = ({ teamId })
                     <Activity className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">{analytics.performanceMetrics.mostActive.name}</p>
+                    <p className="font-medium">{analytics.performanceMetrics.mostActive?.name || 'Unknown'}</p>
                     <p className="text-sm text-muted-foreground">Most Active</p>
                   </div>
                 </div>

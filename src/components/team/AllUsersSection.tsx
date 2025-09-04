@@ -51,14 +51,14 @@ const AllUsersSection: React.FC<AllUsersSectionProps> = ({
                   <Avatar className="h-16 w-16 mb-2">
                     <AvatarImage 
                       src={appUser.avatar_url || undefined} 
-                      alt={`${appUser.name}'s avatar`} 
+                      alt={`${appUser.name || 'User'}'s avatar`} 
                     />
                     <AvatarFallback>
-                      {appUser.name.substring(0, 2).toUpperCase()}
+                      {appUser.name?.substring(0, 2).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-sm">{appUser.name}</p>
+                    <p className="font-medium text-sm">{appUser.name || 'Unknown User'}</p>
                     <p className="text-xs text-muted-foreground">{appUser.role}</p>
                   </div>
                 </div>

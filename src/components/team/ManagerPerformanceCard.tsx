@@ -32,7 +32,7 @@ const ManagerPerformanceCard: React.FC<ManagerPerformanceCardProps> = ({ manager
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold truncate">{manager.name}</h3>
+                <h3 className="font-semibold truncate">{manager.name || 'Unknown Manager'}</h3>
                 <Badge variant="default" className="text-xs">Manager</Badge>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{manager.email}</p>
