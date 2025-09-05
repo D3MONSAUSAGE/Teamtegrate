@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Loader2, GraduationCap, UserPlus } from 'lucide-react';
+import { AlertCircle, Loader2, GraduationCap, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import LearningDashboard from '@/components/training/LearningDashboard';
-import ContentGrid from '@/components/training/ContentGrid';
-import ManagementPanel from '@/components/training/ManagementPanel';
-import TrainingStatsCards from '@/components/training/TrainingStatsCards';
+import MyTrainingTab from '@/components/training/MyTrainingTab';
+import TrainingManagementTab from '@/components/training/TrainingManagementTab';
+// Add back required imports for dialogs and functionality
 import QuizCreator from '@/components/training/QuizCreator';
 import CourseCreator from '@/components/training/CourseCreator';
 import CourseEditor from '@/components/training/CourseEditor';
@@ -16,7 +15,6 @@ import UserAssignment from '@/components/training/UserAssignment';
 import MyAssignments from '@/components/training/MyAssignments';
 import EmployeeProgressDashboard from '@/components/training/EmployeeProgressDashboard';
 import RetrainingSettings from '@/components/training/RetrainingSettings';
-import { OnboardingDashboard } from '@/components/training/OnboardingDashboard';
 import { NewEmployeeWizard } from '@/components/onboarding/wizard/NewEmployeeWizard';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
@@ -229,122 +227,51 @@ const TrainingPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        <Tabs defaultValue="training" className="space-y-6">
+        <Tabs defaultValue="my-training" className="space-y-6">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-            <TabsTrigger value="training" className="flex items-center gap-2">
+            <TabsTrigger value="my-training" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
-              Training
+              My Training
             </TabsTrigger>
-            <TabsTrigger value="onboarding" className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              Onboarding
-            </TabsTrigger>
+            {canManageContent && (
+              <TabsTrigger value="management" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Training Management
+              </TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="training" className="space-y-8">
-            {/* Main Dashboard - Role-Based Layout */}
-            <div className="space-y-8">
-              
-              {/* Learning Dashboard - Always First for Regular Users */}
-              {!canManageContent && (
-                <div className="animate-fade-in">
-                  <LearningDashboard
-                    assignments={assignments}
-                    onViewAssignment={handleViewAssignment}
-                    onViewAllAssignments={() => setIsMyAssignmentsOpen(true)}
-                  />
-                </div>
-              )}
-
-              {/* Onboarding Panel - Available for All Users */}
-              {!canManageContent && (
-                <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
-                   <ManagementPanel
-                     onCreateCourse={() => {}}
-                     onCreateQuiz={() => {}}
-                     onAssignContent={() => {}}
-                     onViewAnalytics={() => {}}
-                     onStartOnboarding={handleStartOnboarding}
-                     userRole={user.role}
-                     showOnlyOnboarding={true}
-                   />
-                </div>
-              )}
-
-              {/* Management Panel - First for Managers/Admins */}
-               {canManageContent && (
-                 <div className="animate-fade-in">
-                    <ManagementPanel
-                      onCreateCourse={handleCreateCourse}
-                      onCreateQuiz={handleCreateQuiz}
-                      onAssignContent={handleAssignContent}
-                      onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
-                      onStartOnboarding={handleStartOnboarding}
-                        onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
-                        onManageAssignments={() => setIsReassignmentManagerOpen(true)}
-                        onManageCompliance={() => setIsComplianceManagerOpen(true)}
-                        onCertificateReview={() => setIsCertificateReviewOpen(true)}
-                        userRole={user.role}
-                    />
-                 </div>
-               )}
-
-              {/* Your Assigned Training - For Management Users */}
-              {canManageContent && assignments.length > 0 && (
-                <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <GraduationCap className="h-5 w-5 text-primary" />
-                      Your Assigned Training
-                    </h3>
-                    <LearningDashboard
-                      assignments={assignments}
-                      onViewAssignment={handleViewAssignment}
-                      onViewAllAssignments={() => setIsMyAssignmentsOpen(true)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Stats - Compact for All Users */}
-              <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                <TrainingStatsCards />
-              </div>
-
-              {/* Content Grid - Improved Layout */}
-              <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
-                <ContentGrid
-                  courses={courses}
-                  quizzes={allQuizzes}
-                  coursesLoading={coursesLoading}
-                  quizzesLoading={quizzesLoading}
-                  canManageContent={canManageContent}
-                  onEditCourse={handleEditCourse}
-                  onEditQuiz={handleEditQuiz}
-                  onViewResults={handleViewResults}
-                />
-              </div>
-
-              {/* My Assignments - For Regular Users Lower Priority */}
-              {!canManageContent && assignments.length > 0 && (
-                <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
-                  <div className="text-center">
-                    <button 
-                      onClick={() => setIsMyAssignmentsOpen(true)}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      View all {assignments.length} assignments →
-                    </button>
-                  </div>
-                </div>
-              )}
-
-            </div>
+          <TabsContent value="my-training" className="space-y-8">
+            <MyTrainingTab
+              assignments={assignments}
+              onViewAssignment={handleViewAssignment}
+              onViewAllAssignments={() => setIsMyAssignmentsOpen(true)}
+            />
           </TabsContent>
 
-          <TabsContent value="onboarding" className="space-y-8">
-            <OnboardingDashboard />
-          </TabsContent>
+          {canManageContent && (
+            <TabsContent value="management" className="space-y-8">
+              <TrainingManagementTab
+                courses={courses}
+                quizzes={allQuizzes}
+                coursesLoading={coursesLoading}
+                quizzesLoading={quizzesLoading}
+                canManageContent={canManageContent}
+                onCreateCourse={handleCreateCourse}
+                onCreateQuiz={handleCreateQuiz}
+                onEditCourse={handleEditCourse}
+                onEditQuiz={handleEditQuiz}
+                onViewResults={handleViewResults}
+                onAssignContent={handleAssignContent}
+                onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
+                onStartOnboarding={handleStartOnboarding}
+                onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
+                onManageAssignments={() => setIsReassignmentManagerOpen(true)}
+                onManageCompliance={() => setIsComplianceManagerOpen(true)}
+                onCertificateReview={() => setIsCertificateReviewOpen(true)}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
