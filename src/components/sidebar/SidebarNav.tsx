@@ -21,6 +21,7 @@ import {
   Clock,
   GraduationCap,
   AlertTriangle,
+  Send,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -54,6 +55,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     }
 
     items.push(
+      { name: 'Requests', href: '/dashboard/requests', icon: Send },
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
       { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
       { name: 'Training', href: '/dashboard/training', icon: GraduationCap },

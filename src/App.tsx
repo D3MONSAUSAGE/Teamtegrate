@@ -32,6 +32,7 @@ import FinancePage from "@/pages/FinancePage";
 import MeetingsPage from "@/pages/MeetingsPage";
 import TrainingPage from "@/pages/TrainingPage";
 import NotificationsPage from "@/pages/NotificationsPage";
+import RequestsPage from "@/pages/RequestsPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
 import TeamDetailPage from "@/pages/TeamDetailPage";
@@ -60,6 +61,7 @@ function App() {
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="projects/:projectId/tasks" element={<ProjectTasksPage />} />
                   <Route path="tasks" element={<TasksPage />} />
+                  <Route path="requests" element={<RequestsPage />} />
                   <Route path="chat" element={<ChatPage />} />
                   <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="calendar" element={<CalendarPage />} />
