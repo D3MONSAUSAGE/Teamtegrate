@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User as UserIcon, Settings } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, MessageCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { getRoleDisplayName } from '@/types';
+import BugReportDialog from '@/components/support/BugReportDialog';
 
 interface UserMenuProps {
   onLogout: () => Promise<void>;
@@ -24,6 +25,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -54,6 +56,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
 
   const handleProfile = () => {
     navigate('/dashboard/profile');
+  };
+
+  const handleBugReport = () => {
+    setIsBugReportOpen(true);
   };
 
   if (!user) return null;
@@ -89,12 +95,21 @@ const UserMenu: React.FC<UserMenuProps> = ({ onLogout, onSettings }) => {
             <Settings className="h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>
+          <DropdownMenuItem className="flex items-center gap-2" onClick={handleBugReport}>
+            <MessageCircle className="h-4 w-4" />
+            <span>Report Bug</span>
+          </DropdownMenuItem>
           <DropdownMenuItem className="flex items-center gap-2 text-red-500" onClick={onLogout}>
             <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <BugReportDialog 
+        open={isBugReportOpen} 
+        onOpenChange={setIsBugReportOpen} 
+      />
     </div>
   );
 };

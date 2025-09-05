@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -11,10 +11,12 @@ import {
   Zap,
   Target,
   Briefcase,
-  Smartphone
+  Smartphone,
+  MessageCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
+import BugReportDialog from '@/components/support/BugReportDialog';
 
 interface QuickActionsPanelProps {
   onCreateTask: () => void;
@@ -25,6 +27,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   onCreateTask,
   userRole
 }) => {
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const handleDownloadApp = () => {
     try {
       // Open download link in new tab
@@ -73,6 +76,13 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
       href: '/dashboard/reports',
       color: 'from-orange-500 to-red-600',
       shortcut: 'Ctrl+R'
+    },
+    {
+      label: 'Report Bug',
+      icon: MessageCircle,
+      action: () => setIsBugReportOpen(true),
+      color: 'from-red-500 to-orange-600',
+      shortcut: 'Ctrl+B'
     }
   ];
 
@@ -150,6 +160,11 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
           </div>
         ))}
       </div>
+
+      <BugReportDialog 
+        open={isBugReportOpen} 
+        onOpenChange={setIsBugReportOpen} 
+      />
     </div>
   );
 };

@@ -250,6 +250,57 @@ export type Database = {
           },
         ]
       }
+      bug_reports: {
+        Row: {
+          actual_behavior: string | null
+          category: string
+          created_at: string
+          description: string
+          expected_behavior: string | null
+          id: string
+          organization_id: string
+          priority: string
+          status: string | null
+          steps_to_reproduce: string | null
+          system_info: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_behavior?: string | null
+          category: string
+          created_at?: string
+          description: string
+          expected_behavior?: string | null
+          id?: string
+          organization_id: string
+          priority?: string
+          status?: string | null
+          steps_to_reproduce?: string | null
+          system_info?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_behavior?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          expected_behavior?: string | null
+          id?: string
+          organization_id?: string
+          priority?: string
+          status?: string | null
+          steps_to_reproduce?: string | null
+          system_info?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_attachments: {
         Row: {
           created_at: string
