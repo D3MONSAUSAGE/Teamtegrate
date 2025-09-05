@@ -56,7 +56,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     items.push(
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
       { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
-      { name: 'Training & Onboarding', href: '/dashboard/training', icon: GraduationCap },
+      { name: 'Training', href: '/dashboard/training', icon: GraduationCap },
       { name: 'Focus', href: '/dashboard/focus', icon: Target },
       { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
       { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },

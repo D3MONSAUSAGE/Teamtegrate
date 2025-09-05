@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Plus, AlertTriangle, CheckCircle, Clock, TrendingUp, UserPlus, Users, Settings } from 'lucide-react';
 import { CreateActionDialog } from './CreateActionDialog';
 import { ActionsList } from './ActionsList';
+import { OnboardingDashboard } from '@/components/training/OnboardingDashboard';
 import { ActionStatsCards } from './ActionStatsCards';
 
 export const EmployeeActionsPage: React.FC = () => {
@@ -38,9 +39,9 @@ export const EmployeeActionsPage: React.FC = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Employee Actions</h1>
+            <h1 className="text-3xl font-bold">HR Management & Onboarding</h1>
             <p className="text-muted-foreground mt-2">
-              Manage warnings and coaching actions for your organization
+              Manage employee actions, warnings, coaching, and onboarding processes
             </p>
           </div>
           {canManageActions && (
@@ -56,7 +57,7 @@ export const EmployeeActionsPage: React.FC = () => {
 
       <div className="mt-8">
         <Tabs defaultValue={canManageActions ? "all" : "my-actions"} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             {canManageActions && (
               <TabsTrigger value="all">
                 All Actions ({stats.total_actions})
@@ -65,6 +66,12 @@ export const EmployeeActionsPage: React.FC = () => {
             <TabsTrigger value="my-actions">
               My Actions ({myActions.length})
             </TabsTrigger>
+            {canManageActions && (
+              <TabsTrigger value="onboarding" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Onboarding
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {canManageActions && (
@@ -104,6 +111,22 @@ export const EmployeeActionsPage: React.FC = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {canManageActions && (
+            <TabsContent value="onboarding" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Employee Onboarding</CardTitle>
+                  <CardDescription>
+                    Manage employee onboarding processes and track progress
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <OnboardingDashboard />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

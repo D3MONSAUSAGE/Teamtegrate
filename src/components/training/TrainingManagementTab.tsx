@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
 import ManagementPanel from './ManagementPanel';
 import ContentGrid from './ContentGrid';
-import { OnboardingDashboard } from './OnboardingDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Settings, 
@@ -83,7 +82,7 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
 
       {/* Management Overview */}
       <Tabs defaultValue="management" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3">
           <TabsTrigger value="management" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Management
@@ -91,10 +90,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
           <TabsTrigger value="content" className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
             Content Library
-          </TabsTrigger>
-          <TabsTrigger value="onboarding" className="flex items-center gap-2">
-            <UserPlus className="h-4 w-4" />
-            Onboarding
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -177,12 +172,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
           </div>
         </TabsContent>
 
-        {/* Onboarding Tab */}
-        <TabsContent value="onboarding" className="space-y-6">
-          <div className="animate-fade-in">
-            <OnboardingDashboard />
-          </div>
-        </TabsContent>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
