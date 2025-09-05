@@ -113,7 +113,6 @@ export const updateTask = async (
     );
     
     setTasks(updatedTasks);
-    toast.success('Task updated successfully');
     
   } catch (error: any) {
     console.error('updateTask: Error updating task:', error);

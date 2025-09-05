@@ -123,7 +123,6 @@ export const createTask = async (
     setTasks(updatedTasks);
 
     console.log('🎉 createTask: Task creation completed successfully');
-    toast.success('Task created successfully');
     
   } catch (error: any) {
     console.error('💥 createTask: Error creating task:', error);
