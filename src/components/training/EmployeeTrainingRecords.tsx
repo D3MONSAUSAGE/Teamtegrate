@@ -34,6 +34,8 @@ import { useUsers } from '@/hooks/useUsers';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import EmployeeCertificateSection from './EmployeeCertificateSection';
+import QuizAttemptViewer from './QuizAttemptViewer';
+import { useQuizAttempts } from '@/hooks/useTrainingData';
 
 interface EmployeeTrainingRecordsProps {
   open: boolean;
@@ -79,8 +81,26 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeRecord | null>(null);
   const [employeeDetailsOpen, setEmployeeDetailsOpen] = useState(false);
   
+  // Quiz viewing state
+  const [selectedQuizAttempt, setSelectedQuizAttempt] = useState<{
+    quizId: string;
+    assignment: any;
+    open: boolean;
+  }>({ quizId: '', assignment: null, open: false });
+  
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { users } = useUsers();
+
+  // Function to view quiz details
+  const viewQuizDetails = (assignment: any) => {
+    // Find the quiz ID from the assignment
+    const quizId = assignment.content_id; // Assuming content_id is the quiz ID for quiz assignments
+    setSelectedQuizAttempt({
+      quizId,
+      assignment,
+      open: true
+    });
+  };
 
   // Get unique teams and departments for filtering
   const teams = useMemo(() => {
@@ -704,9 +724,22 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
                           <div key={assignment.id} className="p-3 rounded border">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium">{assignment.content_title}</h4>
-                              <Badge variant={assignment.status === 'completed' ? 'default' : assignment.status === 'in_progress' ? 'secondary' : 'destructive'}>
-                                {assignment.status}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={assignment.status === 'completed' ? 'default' : assignment.status === 'in_progress' ? 'secondary' : 'destructive'}>
+                                  {assignment.status}
+                                </Badge>
+                                {assignment.assignment_type === 'quiz' && assignment.status === 'completed' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => viewQuizDetails(assignment)}
+                                    className="h-7 text-xs"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    View Details
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                               <div>Type: {assignment.assignment_type}</div>
@@ -752,6 +785,17 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Quiz Attempt Viewer */}
+      <QuizAttemptViewer
+        open={selectedQuizAttempt.open}
+        onOpenChange={(open) => setSelectedQuizAttempt(prev => ({ ...prev, open }))}
+        quizData={{
+          quizId: selectedQuizAttempt.quizId,
+          employeeName: selectedEmployee?.name || 'Unknown Employee',
+          assignment: selectedQuizAttempt.assignment
+        }}
+      />
     </>
   );
 };
