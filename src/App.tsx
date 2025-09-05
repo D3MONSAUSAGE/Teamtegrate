@@ -72,10 +72,10 @@ function App() {
                   <Route path="notebook" element={<NotebookPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="team" element={<TeamPage />} />
-                  <Route path="team/:teamId" element={<ProtectedRoute><TeamDetailPage /></ProtectedRoute>} />
-                  <Route path="team/manage/:teamId" element={<ProtectedRoute><DedicatedTeamManagement /></ProtectedRoute>} />
+                  <Route path="team/:teamId" element={<TeamDetailPage />} />
+                  <Route path="team/manage/:teamId" element={<DedicatedTeamManagement />} />
                   {/* Alias route for backward compatibility */}
-                  <Route path="organization/teams/:teamId" element={<ProtectedRoute><TeamDetailPage /></ProtectedRoute>} />
+                  <Route path="organization/teams/:teamId" element={<TeamDetailPage />} />
                   <Route path="admin" element={<AdminPage />} />
                   <Route path="organization" element={<OrganizationDashboard />} />
                    <Route path="organization/roles" element={<RoleProtectedRoute requiredRole="manager"><OrganizationRolesPage /></RoleProtectedRoute>} />
@@ -84,7 +84,7 @@ function App() {
                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
                   <Route path="finance" element={<FinancePage />} />
                   <Route path="meetings" element={<MeetingsPage />} />
-                  <Route path="training" element={<ProtectedRoute><TrainingPage /></ProtectedRoute>} />
+                  <Route path="training" element={<TrainingPage />} />
                 </Route>
                 
                 {/* Fallback for unmatched routes */}
