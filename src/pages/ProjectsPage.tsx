@@ -13,6 +13,7 @@ import ProjectsErrorBoundary from '@/components/ErrorBoundary/ProjectsErrorBound
 import ProjectsSkeletonGrid from '@/components/projects/ProjectsSkeletonGrid';
 import ProjectsStatusIndicator from '@/components/projects/ProjectsStatusIndicator';
 import ConnectionStatus from '@/components/dashboard/ConnectionStatus';
+import { useTask } from '@/contexts/task';
 import { Project } from '@/types';
 
 const ProjectsPage = () => {
@@ -22,6 +23,9 @@ const ProjectsPage = () => {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const navigate = useNavigate();
+
+  // Get task functions from context
+  const { createTask, updateTask } = useTask();
 
   // Use resilient projects hook for better error handling and caching
   const {
@@ -187,6 +191,8 @@ const ProjectsPage = () => {
           onOpenChange={setIsCreateTaskOpen}
           currentProjectId={selectedProjectId}
           onTaskComplete={handleTaskCreated}
+          createTask={createTask}
+          updateTask={updateTask}
         />
       </div>
     </ProjectsErrorBoundary>

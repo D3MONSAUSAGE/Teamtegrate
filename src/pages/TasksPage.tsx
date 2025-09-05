@@ -29,7 +29,7 @@ const TasksPage = () => {
   const { tasks, isLoading, error, refetch } = usePersonalTasks();
   
   // Use TaskContext for mutations (update, delete operations)
-  const { updateTaskStatus } = useTask();
+  const { updateTaskStatus, createTask, updateTask } = useTask();
   
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortBy, setSortBy] = useState('deadline');
@@ -115,6 +115,8 @@ const TasksPage = () => {
         onOpenChange={setIsCreateTaskOpen}
         editingTask={editingTask}
         onTaskComplete={handleTaskDialogComplete}
+        createTask={createTask}
+        updateTask={updateTask}
       />
       
       <TaskCommentsDialog

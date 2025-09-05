@@ -42,7 +42,7 @@ const DashboardPage = () => {
   const { projects, isLoading: projectsLoading, refreshProjects, error: projectsError } = useProjects();
   
   // Get task context for status updates
-  const { updateTaskStatus } = useTask();
+  const { updateTaskStatus, createTask, updateTask } = useTask();
   
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -424,6 +424,8 @@ const DashboardPage = () => {
             editingTask={editingTask}
             currentProjectId={selectedProject?.id}
             onTaskComplete={handleTaskDialogComplete}
+            createTask={createTask}
+            updateTask={updateTask}
           />
         </div>
 
