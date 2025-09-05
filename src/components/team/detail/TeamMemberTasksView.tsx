@@ -51,7 +51,9 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
     queryFn: async () => {
       if (!teamId || !user?.organizationId || teamMembers.length === 0) return [];
       
-      const memberIds = teamMembers.map(m => m.user_id);
+      const memberIds = teamMembers
+        .map(m => m.user_id || m.id)
+        .filter(Boolean);
       
       console.log('TeamMemberTasksView: Fetching tasks for team members with STRICT RLS:', {
         teamId,
@@ -130,26 +132,31 @@ const TeamMemberTasksView: React.FC<TeamMemberTasksViewProps> = ({ teamId, teamM
         ) : (
           <div className="space-y-4">
             {teamMembers.map((membership) => {
-              const memberTasks = memberTasksData[membership.user_id] || [];
-              const isExpanded = expandedMembers.has(membership.user_id);
+              const memberId = membership.user_id || membership.id;
+              if (!memberId) return null;
+              
+              const memberTasks = memberTasksData[memberId] || [];
+              const isExpanded = expandedMembers.has(memberId);
               const completedTasks = memberTasks.filter(t => t.status === 'Completed').length;
               const inProgressTasks = memberTasks.filter(t => t.status === 'In Progress').length;
               const todoTasks = memberTasks.filter(t => t.status === 'To Do').length;
 
               return (
-                <Collapsible key={membership.user_id}>
+                <Collapsible key={memberId}>
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
                       className="w-full justify-between p-4 h-auto border rounded-lg hover:bg-muted/50"
-                      onClick={() => toggleMemberExpansion(membership.user_id)}
+                      onClick={() => toggleMemberExpansion(memberId)}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                           <User className="h-4 w-4 text-primary" />
                         </div>
                         <div className="text-left">
-                          <p className="font-medium">{membership.users.name || membership.users.email}</p>
+                          <p className="font-medium">
+                            {membership.users?.name || membership.users?.email || membership.name || membership.email || 'Unknown User'}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {memberTasks.length} accessible tasks
                           </p>
