@@ -9,13 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, UserMinus, Crown, User, Users, ArrowUpDown } from 'lucide-react';
+import { MoreHorizontal, UserPlus, UserMinus, Crown, User, Users, ArrowUpDown, Shield } from 'lucide-react';
 import { useTeamContext } from '@/hooks/useTeamContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 import { useTeamMemberOperations } from '@/hooks/organization/team/useTeamMemberOperations';
 import { TeamTransferDialog } from './TeamTransferDialog';
 import { BulkTeamManagement } from './BulkTeamManagement';
+import UserJobRolesCell from '@/components/organization/user-management/UserJobRolesCell';
 
 
 export const TeamMembershipManager: React.FC = () => {
@@ -41,7 +42,7 @@ export const TeamMembershipManager: React.FC = () => {
     }
   };
 
-  const handleRoleChange = async (memberId: string, newRole: 'manager' | 'member') => {
+  const handleRoleChange = async (memberId: string, newRole: 'manager' | 'member' | 'admin') => {
     if (!selectedTeam) return;
     try {
       await updateTeamMemberRole(selectedTeam.id, memberId, newRole);
@@ -130,11 +131,19 @@ export const TeamMembershipManager: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{member.name}</p>
-                    <Badge variant={member.role === 'manager' ? 'default' : 'secondary'}>
+                    <Badge variant={
+                      member.role === 'manager' ? 'default' : 
+                      member.role === 'admin' ? 'destructive' : 'secondary'
+                    }>
                       {member.role === 'manager' ? (
                         <>
                           <Crown className="h-3 w-3 mr-1" />
                           Manager
+                        </>
+                      ) : member.role === 'admin' ? (
+                        <>
+                          <Shield className="h-3 w-3 mr-1" />
+                          Admin
                         </>
                       ) : (
                         <>
@@ -146,9 +155,13 @@ export const TeamMembershipManager: React.FC = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">{member.email}</p>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span>System: <Badge variant="outline" className="text-xs">{member.systemRole}</Badge></span>
                     <span>Joined {new Date(member.joined_at).toLocaleDateString()}</span>
                     <span>{member.totalTasks} tasks</span>
                     <span>{member.completionRate}% completion</span>
+                  </div>
+                  <div className="mt-1">
+                    <UserJobRolesCell userId={member.id} />
                   </div>
                 </div>
               </div>
@@ -162,9 +175,25 @@ export const TeamMembershipManager: React.FC = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem 
-                      onClick={() => handleRoleChange(member.id, member.role === 'manager' ? 'member' : 'manager')}
+                      onClick={() => handleRoleChange(member.id, 'manager')}
+                      disabled={member.role === 'manager'}
                     >
-                      {member.role === 'manager' ? 'Make Member' : 'Make Manager'}
+                      <Crown className="h-4 w-4 mr-2" />
+                      Make Manager
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleRoleChange(member.id, 'admin')}
+                      disabled={member.role === 'admin'}
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Make Admin
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleRoleChange(member.id, 'member')}
+                      disabled={member.role === 'member'}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Make Member
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setTransferMember(member)}>
                       <Users className="h-4 w-4 mr-2" />

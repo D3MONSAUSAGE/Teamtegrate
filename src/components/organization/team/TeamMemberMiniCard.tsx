@@ -9,7 +9,7 @@ interface TeamMemberMiniCardProps {
     id: string;
     name: string;
     email: string;
-    role: 'manager' | 'member';
+    role: 'manager' | 'member' | 'admin';
     avatar_url?: string;
   };
   className?: string;
@@ -29,6 +29,8 @@ const TeamMemberMiniCard: React.FC<TeamMemberMiniCardProps> = ({ member, classNa
     switch (role) {
       case 'manager':
         return 'default';
+      case 'admin':
+        return 'destructive';
       default:
         return 'secondary';
     }
@@ -38,6 +40,8 @@ const TeamMemberMiniCard: React.FC<TeamMemberMiniCardProps> = ({ member, classNa
     switch (role) {
       case 'manager':
         return 'Manager';
+      case 'admin':
+        return 'Admin';
       default:
         return 'Member';
     }

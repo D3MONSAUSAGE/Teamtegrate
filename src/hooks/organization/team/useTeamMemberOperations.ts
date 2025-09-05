@@ -12,7 +12,7 @@ export const useTeamMemberOperations = () => {
   };
 
   // Add team member with optional team leader role
-  const addTeamMember = async (teamId: string, userId: string, role: 'manager' | 'member' = 'member', systemRoleOverride?: string) => {
+  const addTeamMember = async (teamId: string, userId: string, role: 'manager' | 'member' | 'admin' = 'member', systemRoleOverride?: string) => {
     try {
       const membershipData: any = {
         team_id: teamId,
@@ -41,7 +41,7 @@ export const useTeamMemberOperations = () => {
   };
 
   // Bulk add team members with different roles
-  const bulkAddTeamMembers = async (teamId: string, members: Array<{userId: string, role: 'manager' | 'member', systemRoleOverride?: string}>) => {
+  const bulkAddTeamMembers = async (teamId: string, members: Array<{userId: string, role: 'manager' | 'member' | 'admin', systemRoleOverride?: string}>) => {
     try {
       const memberships = members.map(member => ({
         team_id: teamId,
@@ -86,7 +86,7 @@ export const useTeamMemberOperations = () => {
   };
 
   // Update team member role
-  const updateTeamMemberRole = async (teamId: string, userId: string, newRole: 'manager' | 'member') => {
+  const updateTeamMemberRole = async (teamId: string, userId: string, newRole: 'manager' | 'member' | 'admin') => {
     try {
       const { error } = await supabase
         .from('team_memberships')
@@ -106,7 +106,7 @@ export const useTeamMemberOperations = () => {
   };
 
   // Transfer team member to another team
-  const transferTeamMember = async (fromTeamId: string, toTeamId: string, userId: string, newRole: 'manager' | 'member' = 'member') => {
+  const transferTeamMember = async (fromTeamId: string, toTeamId: string, userId: string, newRole: 'manager' | 'member' | 'admin' = 'member') => {
     try {
       // Upsert into destination team first to avoid duplicate key conflicts
       const { error: upsertError } = await supabase
@@ -146,7 +146,7 @@ export const useTeamMemberOperations = () => {
   };
 
   // Bulk transfer multiple team members
-  const bulkTransferMembers = async (fromTeamId: string, toTeamId: string, userIds: string[], newRole: 'manager' | 'member' = 'member') => {
+  const bulkTransferMembers = async (fromTeamId: string, toTeamId: string, userIds: string[], newRole: 'manager' | 'member' | 'admin' = 'member') => {
     try {
       // Upsert memberships in destination team first
       const memberships = userIds.map(userId => ({

@@ -6,12 +6,13 @@ export interface TeamMemberWithDetails {
   id: string;
   team_id: string;
   user_id: string;
-  role: 'manager' | 'member';
+  role: 'manager' | 'member' | 'admin';
   joined_at: string;
   user: {
     id: string;
     name: string;
     email: string;
+    role: string;
     avatar_url?: string;
   };
   team: {
@@ -24,7 +25,8 @@ export interface TeamMemberPerformanceData {
   id: string;
   name: string;
   email: string;
-  role: 'manager' | 'member';
+  role: 'manager' | 'member' | 'admin';
+  systemRole: string; // System role from users table
   avatar_url?: string;
   team_id: string;
   team_name: string;
@@ -63,6 +65,7 @@ export const useRealTeamMembers = (teamId?: string) => {
             id,
             name,
             email,
+            role,
             avatar_url
           ),
           team:teams!team_memberships_team_id_fkey (
@@ -82,7 +85,7 @@ export const useRealTeamMembers = (teamId?: string) => {
       if (error) throw error;
       return (data || []).map(item => ({
         ...item,
-        role: item.role as 'manager' | 'member'
+        role: item.role as 'manager' | 'member' | 'admin'
       }));
     },
     enabled: !!user?.organizationId,
@@ -155,6 +158,7 @@ export const useRealTeamMembers = (teamId?: string) => {
       name: member.user?.name || 'Unknown User',
       email: member.user?.email || 'unknown@example.com',
       role: member.role,
+      systemRole: member.user?.role || 'user',
       avatar_url: member.user?.avatar_url,
       team_id: member.team_id,
       team_name: member.team?.name || 'Unknown Team',

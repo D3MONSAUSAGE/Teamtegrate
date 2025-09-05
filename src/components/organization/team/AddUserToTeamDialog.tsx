@@ -58,7 +58,7 @@ const AddUserToTeamDialog: React.FC<AddUserToTeamDialogProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [defaultRole, setDefaultRole] = useState<'manager' | 'member'>('member');
+  const [defaultRole, setDefaultRole] = useState<'manager' | 'member' | 'admin'>('member');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -174,13 +174,14 @@ const AddUserToTeamDialog: React.FC<AddUserToTeamDialogProps> = ({
                   className="pl-10"
                 />
               </div>
-              <Select value={defaultRole} onValueChange={(value: 'manager' | 'member') => setDefaultRole(value)}>
+              <Select value={defaultRole} onValueChange={(value: 'manager' | 'member' | 'admin') => setDefaultRole(value)}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="member">Member</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
