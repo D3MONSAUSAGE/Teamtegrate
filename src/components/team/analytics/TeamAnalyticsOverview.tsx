@@ -60,6 +60,36 @@ const TeamAnalyticsOverview: React.FC<TeamAnalyticsOverviewProps> = ({ teamId })
     );
   }
 
+  // Show empty state if no tasks are found for the team
+  if (analytics.totalTasks === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="max-w-md mx-auto">
+          <div className="p-4 rounded-full bg-muted/20 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <Target className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No Team Tasks Yet</h3>
+          <p className="text-muted-foreground mb-6">
+            This team doesn't have any tasks assigned yet. Tasks can be linked to teams by assigning them to team members or by setting the task's team field.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Create Task
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Assign Existing Tasks
+            </Button>
+          </div>
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+            <strong>Tip:</strong> Tasks are considered "team tasks" when they're assigned to team members or explicitly tagged with this team.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const completionRate = analytics.totalTasks > 0 
     ? Math.round((analytics.completedTasks / analytics.totalTasks) * 100)
     : 0;
@@ -282,7 +312,7 @@ const TeamAnalyticsOverview: React.FC<TeamAnalyticsOverviewProps> = ({ teamId })
                   </div>
                 </div>
                 <Badge className="bg-accent text-accent-foreground">
-                  {analytics.performanceMetrics.topPerformer.completionRate}%
+                  {analytics.performanceMetrics.topPerformer?.completionRate || 0}%
                 </Badge>
               </div>
             )}
@@ -299,7 +329,7 @@ const TeamAnalyticsOverview: React.FC<TeamAnalyticsOverviewProps> = ({ teamId })
                   </div>
                 </div>
                 <Badge variant="outline" className="border-primary text-primary">
-                  {analytics.performanceMetrics.mostActive.totalTasks} tasks
+                  {analytics.performanceMetrics.mostActive?.totalTasks || 0} tasks
                 </Badge>
               </div>
             )}
@@ -312,20 +342,26 @@ const TeamAnalyticsOverview: React.FC<TeamAnalyticsOverviewProps> = ({ teamId })
             <CardTitle>Workload Balance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {analytics.workloadDistribution.slice(0, 5).map((member) => (
-              <div key={member.memberId} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium truncate">{member.memberName}</span>
-                  <span className="text-sm text-muted-foreground shrink-0">
-                    {member.taskCount} ({member.workloadPercentage}%)
-                  </span>
+            {analytics.workloadDistribution.length > 0 ? (
+              analytics.workloadDistribution.slice(0, 5).map((member) => (
+                <div key={member.memberId} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium truncate">{member.memberName || 'Unknown User'}</span>
+                    <span className="text-sm text-muted-foreground shrink-0">
+                      {member.taskCount} ({member.workloadPercentage}%)
+                    </span>
+                  </div>
+                  <Progress 
+                    value={member.workloadPercentage} 
+                    className="h-2"
+                  />
                 </div>
-                <Progress 
-                  value={member.workloadPercentage} 
-                  className="h-2"
-                />
+              ))
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">No workload data available</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
       </div>

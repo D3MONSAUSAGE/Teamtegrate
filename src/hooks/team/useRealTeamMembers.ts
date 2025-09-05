@@ -91,22 +91,17 @@ export const useRealTeamMembers = (teamId?: string) => {
     enabled: !!user?.organizationId,
   });
 
-  // Fetch tasks for performance calculation
+  // Fetch tasks for performance calculation - get all org tasks, not filtered by team_id
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ['team-tasks', teamId, user?.organizationId],
+    queryKey: ['organization-tasks', user?.organizationId],
     queryFn: async () => {
       if (!user?.organizationId) return [];
 
-      let query = supabase
+      const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('organization_id', user.organizationId);
 
-      if (teamId) {
-        query = query.eq('team_id', teamId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },

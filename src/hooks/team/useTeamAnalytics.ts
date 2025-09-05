@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRealTeamMembers } from './useRealTeamMembers';
+import { useEffect } from 'react';
 
 export interface TeamAnalytics {
   teamId: string;
@@ -36,9 +37,9 @@ export const useTeamAnalytics = (teamId?: string) => {
 
   // Fetch team analytics data
   const { data: analyticsData, isLoading: analyticsLoading, error } = useQuery({
-    queryKey: ['team-analytics', teamId, user?.organizationId],
+    queryKey: ['team-analytics', teamId, user?.organizationId, teamMembers.map(m => m.id).join(',')],
     queryFn: async (): Promise<TeamAnalytics | null> => {
-      if (!teamId || !user?.organizationId) return null;
+      if (!teamId || !user?.organizationId || teamMembers.length === 0) return null;
 
       // Fetch team details
       const { data: team } = await supabase
@@ -49,14 +50,31 @@ export const useTeamAnalytics = (teamId?: string) => {
 
       if (!team) return null;
 
-      // Fetch team tasks
-      const { data: tasks } = await supabase
+      // Fetch all organization tasks (not filtered by team_id)
+      const { data: allTasks } = await supabase
         .from('tasks')
         .select('*')
-        .eq('team_id', teamId)
         .eq('organization_id', user.organizationId);
 
-      const teamTasks = tasks || [];
+      const organizationTasks = allTasks || [];
+      
+      // Get team member IDs
+      const memberIds = teamMembers.map(member => member.id);
+      
+      // Derive team tasks from member assignments AND team_id matches
+      const teamTasks = organizationTasks.filter(task => {
+        return (
+          // Task is explicitly assigned to this team
+          task.team_id === teamId ||
+          // Task is assigned to a team member via user_id
+          memberIds.includes(task.user_id) ||
+          // Task is assigned to a team member via assigned_to_id
+          memberIds.includes(task.assigned_to_id) ||
+          // Task is assigned to team members via assigned_to_ids array
+          (Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.some(id => memberIds.includes(id)))
+        );
+      });
+
       const totalTasks = teamTasks.length;
       const completedTasks = teamTasks.filter(t => t.status === 'Completed').length;
       const inProgressTasks = teamTasks.filter(t => t.status === 'In Progress').length;
@@ -66,7 +84,7 @@ export const useTeamAnalytics = (teamId?: string) => {
         return deadline < new Date();
       }).length;
 
-      // Calculate average completion rate
+      // Calculate average completion rate from team members' individual rates
       const averageCompletionRate = teamMembers.length > 0
         ? teamMembers.reduce((sum, member) => sum + member.completionRate, 0) / teamMembers.length
         : 0;
@@ -96,7 +114,7 @@ export const useTeamAnalytics = (teamId?: string) => {
         };
       });
 
-      // Calculate workload distribution
+      // Calculate workload distribution based on team members' task counts
       const workloadDistribution = teamMembers.map(member => {
         const workloadPercentage = totalTasks > 0 
           ? Math.round((member.totalTasks / totalTasks) * 100) 
@@ -104,7 +122,7 @@ export const useTeamAnalytics = (teamId?: string) => {
 
         return {
           memberId: member.id,
-          memberName: member.name,
+          memberName: member.name || 'Unknown User',
           taskCount: member.totalTasks,
           workloadPercentage
         };
@@ -148,19 +166,48 @@ export const useTeamAnalytics = (teamId?: string) => {
         workloadDistribution,
         performanceMetrics: {
           topPerformer: topPerformer ? {
-            name: topPerformer.name,
+            name: topPerformer.name || 'Unknown User',
             completionRate: topPerformer.completionRate
           } : null,
           mostActive: mostActive ? {
-            name: mostActive.name,
+            name: mostActive.name || 'Unknown User',
             totalTasks: mostActive.totalTasks
           } : null,
           teamVelocity
         }
       };
     },
-    enabled: !!teamId && !!user?.organizationId && !membersLoading,
+    enabled: !!teamId && !!user?.organizationId && !membersLoading && teamMembers.length > 0,
   });
+
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription to tasks to keep analytics fresh
+  useEffect(() => {
+    if (!user?.organizationId || !teamId) return;
+
+    const channel = supabase
+      .channel('team-analytics-tasks')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: `organization_id=eq.${user.organizationId}`
+        },
+        () => {
+          // Invalidate analytics queries when tasks change
+          queryClient.invalidateQueries({ queryKey: ['team-analytics', teamId] });
+          queryClient.invalidateQueries({ queryKey: ['organization-tasks'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.organizationId, teamId, queryClient]);
 
   return {
     analytics: analyticsData,
