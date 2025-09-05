@@ -720,7 +720,14 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
                   <ScrollArea className="h-64">
                     <div className="space-y-3">
                       {selectedEmployee.assignments.length > 0 ? (
-                        selectedEmployee.assignments.map((assignment) => (
+                        selectedEmployee.assignments.map((assignment) => {
+                          // Debug logging
+                          console.log('Assignment data:', assignment);
+                          console.log('Assignment type:', assignment.assignment_type);
+                          console.log('Assignment status:', assignment.status);
+                          console.log('Is quiz and completed?', assignment.assignment_type === 'quiz' && assignment.status === 'completed');
+                          
+                          return (
                           <div key={assignment.id} className="p-3 rounded border">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium">{assignment.content_title}</h4>
@@ -763,8 +770,9 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
                                 </div>
                               </div>
                             )}
-                          </div>
-                        ))
+                           </div>
+                          );
+                        })
                       ) : (
                         <div className="text-center py-8 text-muted-foreground">
                           No training assignments found
