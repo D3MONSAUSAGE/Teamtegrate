@@ -10,7 +10,7 @@ import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog
 import { format } from 'date-fns';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
-import PersonalProductivityCenter from '@/components/dashboard/PersonalProductivityCenter';
+import OverdueTasksSection from '@/components/dashboard/OverdueTasksSection';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -352,16 +352,17 @@ const DashboardPage = () => {
                 </div>
               </ModernSectionCard>
 
-              {/* Personal Productivity Center */}
+              {/* Overdue Tasks Section */}
               <ModernSectionCard
-                title="Personal Productivity Center"
-                subtitle="Your priority focus and progress insights"
-                icon={Target}
+                title="Overdue Tasks"
+                subtitle="Tasks that need immediate attention"
+                icon={AlertTriangle}
                 noPadding
               >
-                <div className="p-6">
-                  <PersonalProductivityCenter 
-                    tasks={tasks}
+                <div className="p-1">
+                  <OverdueTasksSection 
+                    tasks={overdueTasks}
+                    onCreateTask={() => handleCreateTask()}
                     onEditTask={handleEditTask}
                     onStatusChange={onStatusChange}
                   />

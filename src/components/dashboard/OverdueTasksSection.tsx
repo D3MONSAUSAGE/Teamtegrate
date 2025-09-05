@@ -10,12 +10,14 @@ interface OverdueTasksSectionProps {
   tasks: Task[];
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
+  onStatusChange?: (taskId: string, status: string) => Promise<void>;
 }
 
 const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
   tasks,
   onCreateTask,
-  onEditTask
+  onEditTask,
+  onStatusChange
 }) => {
   const hasOverdueTasks = tasks.length > 0;
   
@@ -90,6 +92,7 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
                 key={task.id}
                 task={task}
                 onEdit={onEditTask}
+                onStatusChange={onStatusChange}
                 onClick={() => onEditTask(task)}
               />
             ))}
