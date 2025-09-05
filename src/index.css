@@ -5,23 +5,14 @@
 @tailwind utilities;
 
 :root {
-  /* Executive Brand Colors */
+  /* Brand colors */
   --primary: 217 91% 60%;
   --primary-darker: 217 91% 50%;
-  --primary-glow: 217 91% 65%;
-  --primary-muted: 217 50% 85%;
   --secondary: 210 40% 95%;
   --accent: 142 76% 36%;
   --accent-foreground: 355 100% 95%;
-  --accent-glow: 142 76% 45%;
 
-  /* Executive Gradients */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-  --gradient-executive: linear-gradient(135deg, hsl(var(--primary)), hsl(217 70% 45%), hsl(142 60% 40%));
-  --gradient-surface: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted) / 0.3));
-  --gradient-glass: linear-gradient(135deg, hsl(var(--background) / 0.95), hsl(var(--background) / 0.85));
-
-  /* Professional Base Colors */
+  /* Base colors */
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
   --card: 0 0% 100%;
@@ -33,17 +24,6 @@
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
   --ring: 217 91% 60%;
-
-  /* Executive Surfaces */
-  --surface-primary: 0 0% 99%;
-  --surface-secondary: 240 4.8% 97.9%;
-  --surface-glass: 0 0% 100% / 0.95;
-  --surface-elevated: 0 0% 100%;
-
-  /* Professional Shadows */
-  --shadow-executive: 0 10px 30px -10px hsl(var(--primary) / 0.15);
-  --shadow-glass: 0 8px 32px -8px hsl(var(--foreground) / 0.12);
-  --shadow-subtle: 0 2px 8px -2px hsl(var(--foreground) / 0.06);
 
   /* Sidebar colors */
   --sidebar-background: 0 0% 98%;
@@ -68,12 +48,11 @@
 }
 
 .dark {
-  /* Executive Dark Theme */
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
-  --card: 240 8% 6%;
+  --card: 240 10% 3.9%;
   --card-foreground: 0 0% 98%;
-  --popover: 240 8% 6%;
+  --popover: 240 10% 3.9%;
   --popover-foreground: 0 0% 98%;
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
@@ -82,29 +61,15 @@
   --ring: 217 91% 60%;
   --primary: 217 91% 60%;
   --primary-darker: 217 91% 50%;
-  --primary-glow: 217 91% 70%;
-  --primary-muted: 217 50% 25%;
   --secondary: 240 3.7% 15.9%;
   --accent: 142 76% 36%;
   --accent-foreground: 355 100% 95%;
-  --accent-glow: 142 76% 45%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
   --success: 142 76% 36%;
   --success-foreground: 355 100% 95%;
   --warning: 38 92% 50%;
   --warning-foreground: 48 96% 89%;
-
-  /* Dark Executive Surfaces */
-  --surface-primary: 240 8% 5%;
-  --surface-secondary: 240 6% 8%;
-  --surface-glass: 240 8% 6% / 0.95;
-  --surface-elevated: 240 8% 8%;
-
-  /* Dark Professional Shadows */
-  --shadow-executive: 0 10px 30px -10px hsl(0 0% 0% / 0.3);
-  --shadow-glass: 0 8px 32px -8px hsl(0 0% 0% / 0.4);
-  --shadow-subtle: 0 2px 8px -2px hsl(0 0% 0% / 0.2);
 
   /* Dark mode sidebar colors */
   --sidebar-background: 240 5.9% 10%;
@@ -345,63 +310,4 @@
 
 .progress-ring-animated {
   animation: progress-draw 1s ease-out;
-}
-
-/* Executive Glass Effects */
-.glass-card {
-  background: var(--gradient-glass);
-  backdrop-filter: blur(20px);
-  border: 1px solid hsl(var(--border) / 0.2);
-  box-shadow: var(--shadow-glass);
-}
-
-.executive-card {
-  background: hsl(var(--surface-elevated));
-  border: 1px solid hsl(var(--border) / 0.5);
-  box-shadow: var(--shadow-executive);
-}
-
-.surface-primary {
-  background: hsl(var(--surface-primary));
-}
-
-.surface-secondary {
-  background: hsl(var(--surface-secondary));
-}
-
-/* Advanced Typography */
-.text-gradient-primary {
-  background: var(--gradient-primary);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
-.text-gradient-executive {
-  background: var(--gradient-executive);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
-/* Professional Micro-interactions */
-.hover-lift {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-executive);
-}
-
-.interactive-scale {
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.interactive-scale:hover {
-  transform: scale(1.02);
-}
-
-.interactive-scale:active {
-  transform: scale(0.98);
 }
