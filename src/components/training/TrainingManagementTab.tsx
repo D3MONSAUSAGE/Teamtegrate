@@ -44,7 +44,6 @@ interface TrainingManagementTabProps {
   onViewResults: (quiz: Quiz) => void;
   onAssignContent: () => void;
   onViewAnalytics: () => void;
-  onStartOnboarding: () => void;
   onRetrainingSettings?: () => void;
   onCertificateReview?: () => void;
 }
@@ -62,7 +61,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
   onViewResults,
   onAssignContent,
   onViewAnalytics,
-  onStartOnboarding,
   onRetrainingSettings,
   onCertificateReview
 }) => {
@@ -108,7 +106,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
               onCreateQuiz={onCreateQuiz}
               onAssignContent={onAssignContent}
               onViewAnalytics={onViewAnalytics}
-              onStartOnboarding={onStartOnboarding}
               onRetrainingSettings={onRetrainingSettings}
               onCertificateReview={onCertificateReview}
               userRole={user?.role || 'user'}

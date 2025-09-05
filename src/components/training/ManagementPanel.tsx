@@ -14,29 +14,23 @@ import {
   TrendingUp,
   BookOpen,
   PenTool,
-  Shield,
-  MapPin,
   FileCheck
 } from 'lucide-react';
-import ComplianceTrainingTemplateManager from './ComplianceTrainingTemplateManager';
 
 interface ManagementPanelProps {
   onCreateCourse: () => void;
   onCreateQuiz: () => void;
   onAssignContent: () => void;
   onViewAnalytics: () => void;
-  onStartOnboarding?: () => void;
   onExportData?: () => void;
   onSettings?: () => void;
   onRetrainingSettings?: () => void;
   onManageAssignments?: () => void;
-  onManageCompliance?: () => void;
   onAssignCompliance?: () => void;
   onComplianceRetrainingSettings?: () => void;
   onViewComplianceDashboard?: () => void;
   onCertificateReview?: () => void;
   userRole: string;
-  showOnlyOnboarding?: boolean;
 }
 
 const ManagementPanel: React.FC<ManagementPanelProps> = ({
@@ -44,20 +38,16 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
   onCreateQuiz,
   onAssignContent,
   onViewAnalytics,
-  onStartOnboarding,
   onExportData,
   onSettings,
   onRetrainingSettings,
   onManageAssignments,
-  onManageCompliance,
   onAssignCompliance,
   onComplianceRetrainingSettings,
   onViewComplianceDashboard,
   onCertificateReview,
-  userRole,
-  showOnlyOnboarding = false
+  userRole
 }) => {
-  const [showComplianceManager, setShowComplianceManager] = useState(false);
   
   const allQuickActions = [
     {
@@ -75,14 +65,6 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       onClick: onCreateQuiz,
       primary: false,
       color: 'from-accent to-accent/80'
-    },
-    {
-      title: 'Compliance Setup',
-      description: 'Configure external compliance training',
-      icon: Shield,
-      onClick: () => setShowComplianceManager(true),
-      primary: false,
-      color: 'from-amber-500 to-amber-400'
     },
     {
       title: 'Assign Training',
@@ -124,14 +106,6 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       primary: false,
       color: 'from-emerald-500 to-emerald-400'
     }] : []),
-    ...(onManageCompliance ? [{
-      title: 'Manage Compliance',
-      description: 'Force retraining and manage compliance records',
-      icon: Shield,
-      onClick: onManageCompliance,
-      primary: false,
-      color: 'from-red-500 to-red-400'
-    }] : []),
     ...(onComplianceRetrainingSettings ? [{
       title: 'Compliance Retraining',
       description: 'Configure automatic compliance retraining',
@@ -156,19 +130,9 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
       primary: false,
       color: 'from-violet-500 to-violet-400'
     }] : []),
-    ...(onStartOnboarding ? [{
-      title: 'Start Onboarding',
-      description: 'Complete your setup step-by-step',
-      icon: MapPin,
-      onClick: onStartOnboarding,
-      primary: true,
-      color: 'from-emerald-500 to-emerald-400'
-    }] : [])
   ];
 
-  const quickActions = showOnlyOnboarding 
-    ? allQuickActions.filter(action => action.title === 'Start Onboarding')
-    : allQuickActions;
+  const quickActions = allQuickActions;
 
   return (
     <>
@@ -177,13 +141,9 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h3 className="text-xl font-semibold">
-                {showOnlyOnboarding ? 'Welcome to Your Journey' : 'Management Center'}
-              </h3>
+              <h3 className="text-xl font-semibold">Management Center</h3>
               <div className="flex items-center gap-2">
-                <p className="text-sm text-muted-foreground">
-                  {showOnlyOnboarding ? 'Get started with your onboarding' : 'Training administration'}
-                </p>
+                <p className="text-sm text-muted-foreground">Training administration</p>
                 <Badge variant="secondary" className="text-xs">
                   {userRole}
                 </Badge>
@@ -241,15 +201,6 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
         </div>
       </Card>
 
-      {/* Compliance Training Template Manager Dialog */}
-      <Dialog open={showComplianceManager} onOpenChange={setShowComplianceManager}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Compliance Training Setup</DialogTitle>
-          </DialogHeader>
-          <ComplianceTrainingTemplateManager />
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

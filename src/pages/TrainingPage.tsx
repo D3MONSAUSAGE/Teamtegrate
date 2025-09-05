@@ -260,7 +260,6 @@ const TrainingPage = () => {
                 onViewResults={handleViewResults}
                 onAssignContent={handleAssignContent}
                 onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
-                onStartOnboarding={handleStartOnboarding}
                 onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
                 onCertificateReview={() => setIsCertificateReviewOpen(true)}
               />
