@@ -10,7 +10,7 @@ import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog
 import { format } from 'date-fns';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
 import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
-import OverdueTasksSection from '@/components/dashboard/OverdueTasksSection';
+import PersonalProductivityCenter from '@/components/dashboard/PersonalProductivityCenter';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -352,35 +352,19 @@ const DashboardPage = () => {
                 </div>
               </ModernSectionCard>
 
-              {/* Overdue Tasks Section */}
+              {/* Personal Productivity Center */}
               <ModernSectionCard
-                title="Overdue Tasks"
-                subtitle="Tasks that need immediate attention"
-                icon={AlertTriangle}
+                title="Personal Productivity Center"
+                subtitle="Your priority focus and progress insights"
+                icon={Target}
                 noPadding
               >
-                <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {overdueTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <OverdueTasksSection 
-                      tasks={overdueTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
-                  )}
+                <div className="p-6">
+                  <PersonalProductivityCenter 
+                    tasks={tasks}
+                    onEditTask={handleEditTask}
+                    onStatusChange={onStatusChange}
+                  />
                 </div>
               </ModernSectionCard>
             </div>
