@@ -33,6 +33,7 @@ import { useEmployeeProgress } from '@/hooks/useTrainingData';
 import { useUsers } from '@/hooks/useUsers';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import EmployeeCertificateSection from './EmployeeCertificateSection';
 
 interface EmployeeTrainingRecordsProps {
   open: boolean;
@@ -740,6 +741,13 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
                   </ScrollArea>
                 </CardContent>
               </Card>
+
+              {/* Certificates Section */}
+              <EmployeeCertificateSection 
+                employeeName={selectedEmployee.name}
+                employeeEmail={selectedEmployee.email}
+                assignments={selectedEmployee.assignments}
+              />
             </div>
           </DialogContent>
         </Dialog>

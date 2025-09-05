@@ -158,10 +158,18 @@ export const useEmployeeProgress = () => {
             `)
             .eq('user_id', employee.id);
           
-          // Get training assignments for this employee
+          // Get training assignments for this employee with certificate data
           const { data: assignments } = await supabase
             .from('training_assignments')
-            .select('*')
+            .select(`
+              *,
+              certificate_url,
+              certificate_status,
+              certificate_uploaded_at,
+              verified_at,
+              verified_by,
+              verification_notes
+            `)
             .eq('assigned_to', employee.id)
             .order('assigned_at', { ascending: false });
           
