@@ -117,7 +117,7 @@ export const useQuizAttempts = (quizId?: string, userId?: string) => {
   });
 };
 
-// Employee Progress Hook
+// Enhanced Employee Progress Hook with Team Information
 export const useEmployeeProgress = () => {
   const { user } = useAuth();
   
@@ -126,21 +126,44 @@ export const useEmployeeProgress = () => {
     queryFn: async () => {
       if (!user?.organizationId) return [];
       
-      // Get all users in the organization
+      // Get all users in the organization with team information
       const { data: users, error: usersError } = await supabase
         .from('users')
-        .select('id, name, email, role')
+        .select(`
+          id, 
+          name, 
+          email, 
+          role, 
+          department, 
+          job_title,
+          hire_date
+        `)
         .eq('organization_id', user.organizationId);
       
       if (usersError) throw usersError;
       
       const employeeProgress = await Promise.all(
         (users || []).map(async (employee) => {
+          // Get team memberships for this employee
+          const { data: teamMemberships } = await supabase
+            .from('team_memberships')
+            .select(`
+              team_id,
+              role,
+              teams (
+                id,
+                name,
+                description
+              )
+            `)
+            .eq('user_id', employee.id);
+          
           // Get training assignments for this employee
           const { data: assignments } = await supabase
             .from('training_assignments')
             .select('*')
-            .eq('assigned_to', employee.id);
+            .eq('assigned_to', employee.id)
+            .order('assigned_at', { ascending: false });
           
           // Get quiz attempts for this employee
           const { data: quizAttempts } = await supabase
@@ -149,8 +172,17 @@ export const useEmployeeProgress = () => {
             .eq('user_id', employee.id)
             .eq('organization_id', user.organizationId);
           
+          // Get training progress for this employee
+          const { data: trainingProgress } = await supabase
+            .from('user_training_progress')
+            .select('*')
+            .eq('user_id', employee.id)
+            .eq('organization_id', user.organizationId);
+          
           const totalAssignments = assignments?.length || 0;
           const completedAssignments = assignments?.filter(a => a.status === 'completed').length || 0;
+          const inProgressAssignments = assignments?.filter(a => a.status === 'in_progress').length || 0;
+          const pendingAssignments = assignments?.filter(a => a.status === 'pending').length || 0;
           const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
           
           // Calculate average quiz score
@@ -159,9 +191,15 @@ export const useEmployeeProgress = () => {
             ? Math.round(passedAttempts.reduce((sum, attempt) => sum + (attempt.score / attempt.max_score * 100), 0) / passedAttempts.length)
             : null;
           
-          // Get last activity date
-          const lastActivity = assignments?.length > 0 
-            ? new Date(Math.max(...assignments.map(a => new Date(a.assigned_at || 0).getTime())))
+          // Get last activity date from multiple sources
+          const activityDates = [
+            ...(assignments?.map(a => new Date(a.updated_at || a.assigned_at || 0)) || []),
+            ...(quizAttempts?.map(a => new Date(a.completed_at || a.started_at || 0)) || []),
+            ...(trainingProgress?.map(p => new Date(p.last_accessed_at || 0)) || [])
+          ].filter(date => date.getTime() > 0);
+          
+          const lastActivity = activityDates.length > 0 
+            ? new Date(Math.max(...activityDates.map(d => d.getTime())))
             : null;
           
           return {
@@ -169,20 +207,35 @@ export const useEmployeeProgress = () => {
             name: employee.name,
             email: employee.email,
             role: employee.role,
+            department: employee.department || 'Unassigned',
+            jobTitle: employee.job_title || '',
+            hireDate: employee.hire_date,
+            teams: teamMemberships?.map(tm => ({
+              id: tm.team_id,
+              name: (tm.teams as any)?.name || 'Unknown Team',
+              role: tm.role
+            })) || [],
             totalAssignments,
             completedAssignments,
+            inProgressAssignments,
+            pendingAssignments,
             completionRate,
             averageQuizScore,
             coursesCompleted: assignments?.filter(a => a.assignment_type === 'course' && a.status === 'completed').length || 0,
             quizzesCompleted: assignments?.filter(a => a.assignment_type === 'quiz' && a.status === 'completed').length || 0,
-            lastActivity
+            certificatesUploaded: assignments?.filter(a => a.certificate_status === 'uploaded' || a.certificate_status === 'verified').length || 0,
+            certificatesVerified: assignments?.filter(a => a.certificate_status === 'verified').length || 0,
+            lastActivity,
+            assignments: assignments || []
           };
         })
       );
       
       return employeeProgress;
     },
-    enabled: !!user?.organizationId
+    enabled: !!user?.organizationId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10 // 10 minutes (formerly cacheTime)
   });
 };
 
