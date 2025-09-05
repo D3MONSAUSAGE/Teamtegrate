@@ -1,6 +1,9 @@
 import React from 'react';
 import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { EnhancedMeetingDashboard } from '@/components/meetings/EnhancedMeetingDashboard';
+import { EnhancedMeetingCard } from '@/components/meetings/EnhancedMeetingCard';
+import { SmartConflictDetector } from '@/components/meetings/SmartConflictDetector';
+import { MeetingHealthDashboard } from '@/components/meetings/MeetingHealthDashboard';
 import { MeetingRequestWithParticipants } from '@/types/meeting';
 
 const exampleMeeting: MeetingRequestWithParticipants = {
@@ -70,6 +73,33 @@ const FreshMeetingsPage = () => {
         </div>
         
         <SimpleMeetingDialog />
+      </div>
+
+      {/* Enhanced Meeting Cards Demo */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <EnhancedMeetingCard
+          meeting={exampleMeeting}
+          analytics={{
+            effectiveness_score: 85,
+            engagement_score: 78,
+            completion_rate: 92.5,
+            follow_through_rate: 67.3,
+            participant_satisfaction_avg: 4.2,
+            roi_score: 88,
+            total_participants: 4,
+            active_participants: 4
+          }}
+          onEdit={(meeting) => console.log('Edit meeting:', meeting.id)}
+          onDuplicate={(meeting) => console.log('Duplicate meeting:', meeting.id)}
+          onJoinCall={(meeting) => console.log('Join call for:', meeting.title)}
+          onQuickNote={(id) => console.log('Quick note for meeting:', id)}
+          onAddParticipants={(id) => console.log('Add participants to:', id)}
+        />
+        
+        <SmartConflictDetector 
+          meeting={exampleMeeting}
+          onConflictsDetected={(conflicts) => console.log('Conflicts detected:', conflicts)}
+        />
       </div>
 
       <EnhancedMeetingDashboard

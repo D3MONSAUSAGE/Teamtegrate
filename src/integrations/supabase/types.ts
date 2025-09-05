@@ -1328,6 +1328,207 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_action_items: {
+        Row: {
+          assigned_to_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          meeting_request_id: string
+          organization_id: string
+          priority: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          meeting_request_id: string
+          organization_id: string
+          priority?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          meeting_request_id?: string
+          organization_id?: string
+          priority?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meeting_analytics: {
+        Row: {
+          action_items_completed: number | null
+          action_items_created: number | null
+          active_participants: number | null
+          actual_vs_planned_ratio: number | null
+          completion_rate: number | null
+          cost_estimate: number | null
+          created_at: string
+          effectiveness_score: number | null
+          engagement_score: number | null
+          follow_through_rate: number | null
+          goals_achieved: number | null
+          goals_set: number | null
+          id: string
+          meeting_duration_minutes: number | null
+          meeting_request_id: string
+          organization_id: string
+          participant_satisfaction_avg: number | null
+          roi_score: number | null
+          time_efficiency_score: number | null
+          total_participants: number | null
+          updated_at: string
+        }
+        Insert: {
+          action_items_completed?: number | null
+          action_items_created?: number | null
+          active_participants?: number | null
+          actual_vs_planned_ratio?: number | null
+          completion_rate?: number | null
+          cost_estimate?: number | null
+          created_at?: string
+          effectiveness_score?: number | null
+          engagement_score?: number | null
+          follow_through_rate?: number | null
+          goals_achieved?: number | null
+          goals_set?: number | null
+          id?: string
+          meeting_duration_minutes?: number | null
+          meeting_request_id: string
+          organization_id: string
+          participant_satisfaction_avg?: number | null
+          roi_score?: number | null
+          time_efficiency_score?: number | null
+          total_participants?: number | null
+          updated_at?: string
+        }
+        Update: {
+          action_items_completed?: number | null
+          action_items_created?: number | null
+          active_participants?: number | null
+          actual_vs_planned_ratio?: number | null
+          completion_rate?: number | null
+          cost_estimate?: number | null
+          created_at?: string
+          effectiveness_score?: number | null
+          engagement_score?: number | null
+          follow_through_rate?: number | null
+          goals_achieved?: number | null
+          goals_set?: number | null
+          id?: string
+          meeting_duration_minutes?: number | null
+          meeting_request_id?: string
+          organization_id?: string
+          participant_satisfaction_avg?: number | null
+          roi_score?: number | null
+          time_efficiency_score?: number | null
+          total_participants?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meeting_conflicts: {
+        Row: {
+          conflict_type: string
+          created_at: string
+          description: string
+          id: string
+          is_resolved: boolean | null
+          meeting_request_id: string
+          organization_id: string
+          resolved_at: string | null
+          severity: string | null
+          suggested_resolution: string | null
+        }
+        Insert: {
+          conflict_type: string
+          created_at?: string
+          description: string
+          id?: string
+          is_resolved?: boolean | null
+          meeting_request_id: string
+          organization_id: string
+          resolved_at?: string | null
+          severity?: string | null
+          suggested_resolution?: string | null
+        }
+        Update: {
+          conflict_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_resolved?: boolean | null
+          meeting_request_id?: string
+          organization_id?: string
+          resolved_at?: string | null
+          severity?: string | null
+          suggested_resolution?: string | null
+        }
+        Relationships: []
+      }
+      meeting_participant_feedback: {
+        Row: {
+          comments: string | null
+          created_at: string
+          effectiveness_rating: number | null
+          engagement_level: string | null
+          id: string
+          meeting_request_id: string
+          organization_id: string
+          satisfaction_rating: number | null
+          time_well_used: boolean | null
+          user_id: string
+          would_attend_again: boolean | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          effectiveness_rating?: number | null
+          engagement_level?: string | null
+          id?: string
+          meeting_request_id: string
+          organization_id: string
+          satisfaction_rating?: number | null
+          time_well_used?: boolean | null
+          user_id: string
+          would_attend_again?: boolean | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          effectiveness_rating?: number | null
+          engagement_level?: string | null
+          id?: string
+          meeting_request_id?: string
+          organization_id?: string
+          satisfaction_rating?: number | null
+          time_well_used?: boolean | null
+          user_id?: string
+          would_attend_again?: boolean | null
+        }
+        Relationships: []
+      }
       meeting_participants: {
         Row: {
           created_at: string
@@ -1411,6 +1612,60 @@ export type Database = {
           start_time?: string
           status?: string
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meeting_templates: {
+        Row: {
+          agenda_structure: Json | null
+          created_at: string
+          created_by: string
+          default_duration_minutes: number | null
+          default_participants: Json | null
+          description: string | null
+          estimated_effectiveness_score: number | null
+          id: string
+          is_active: boolean | null
+          is_recurring: boolean | null
+          meeting_type: string | null
+          name: string
+          organization_id: string
+          recurrence_pattern: Json | null
+          updated_at: string
+        }
+        Insert: {
+          agenda_structure?: Json | null
+          created_at?: string
+          created_by: string
+          default_duration_minutes?: number | null
+          default_participants?: Json | null
+          description?: string | null
+          estimated_effectiveness_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          meeting_type?: string | null
+          name: string
+          organization_id: string
+          recurrence_pattern?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          agenda_structure?: Json | null
+          created_at?: string
+          created_by?: string
+          default_duration_minutes?: number | null
+          default_participants?: Json | null
+          description?: string | null
+          estimated_effectiveness_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          meeting_type?: string | null
+          name?: string
+          organization_id?: string
+          recurrence_pattern?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -5068,6 +5323,10 @@ export type Database = {
       auto_close_stale_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      calculate_meeting_effectiveness: {
+        Args: { meeting_id: string }
+        Returns: number
       }
       calculate_quiz_attempt_final_score: {
         Args: { attempt_id: string }
