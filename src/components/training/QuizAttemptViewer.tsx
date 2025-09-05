@@ -792,14 +792,77 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                   </div>
                 </div>
               </ScrollArea>
-            ) : (
-              <div className="text-center py-12">
-                <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-lg font-medium text-muted-foreground">Select an attempt to view details</p>
-                <p className="text-sm text-muted-foreground">
-                  Click on an attempt from the list to see question-by-question breakdown.
-                </p>
-              </div>
+            ) : (<>
+              {!selectedAttempt ? (
+                <div className="text-center py-12">
+                  <MousePointer className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">Select an attempt to view details</p>
+                  <p className="text-sm text-muted-foreground">Click on an attempt from the list to see the breakdown.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        Attempt #{selectedAttempt.attempt_number} Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <span className="text-sm text-muted-foreground">Final Score:</span>
+                        <p className="text-2xl font-bold">{Math.round((selectedAttempt.score / selectedAttempt.max_score) * 100)}%</p>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground">Points:</span>
+                        <p className="text-2xl font-bold">{selectedAttempt.score}/{selectedAttempt.max_score}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground">Status:</span>
+                        <p className={`text-2xl font-bold ${selectedAttempt.passed ? 'text-green-600' : 'text-red-600'}`}>{selectedAttempt.passed ? 'PASSED' : 'FAILED'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm text-muted-foreground">Date:</span>
+                        <p className="text-lg font-bold">{format(new Date(selectedAttempt.started_at), 'MMM d')}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-yellow-700 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-yellow-800">Quiz questions not available</p>
+                        <p className="text-sm text-yellow-700">We couldn't load the question set for this quiz. Showing attempt summary instead. If this persists, ensure the quiz has questions configured for ID {quizData?.quizId}.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedAttempt.answers?.length ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-purple-600" />
+                          Raw Answers
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {selectedAttempt.answers.map((a: any, idx: number) => (
+                            <div key={a.question_id || idx} className="p-2 rounded border text-sm flex items-center justify-between">
+                              <span className="text-muted-foreground">Question ID: <span className="font-mono">{a.question_id}</span></span>
+                              <span className="font-medium">{a.answer || 'No answer provided'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
+
+                  {(() => { console.warn('QuizAttemptViewer: Missing quiz questions for quizId', quizData?.quizId, { selectedAttempt }); return null; })()}
+                </div>
+              )}
+            </>
             )}
           </TabsContent>
         </Tabs>
