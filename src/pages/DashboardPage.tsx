@@ -9,8 +9,8 @@ import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import { format } from 'date-fns';
 import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
-import UpcomingTasksSection from '@/components/dashboard/UpcomingTasksSection';
-import OverdueTasksSection from '@/components/dashboard/OverdueTasksSection';
+import UpcomingTasksStandalone from '@/components/dashboard/UpcomingTasksStandalone';
+import OverdueTasksStandalone from '@/components/dashboard/OverdueTasksStandalone';
 import RecentProjects from '@/components/dashboard/RecentProjects';
 import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -321,53 +321,21 @@ const DashboardPage = () => {
                 </div>
               </ModernSectionCard>
               
-              <ModernSectionCard
-                title="Upcoming Work"
-                subtitle="Tasks coming up this week"
-                icon={Calendar}
-                noPadding
-              >
-                <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {upcomingTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <UpcomingTasksSection 
-                      tasks={upcomingTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
-                  )}
-                </div>
-              </ModernSectionCard>
+              {/* Upcoming Tasks */}
+              <UpcomingTasksStandalone 
+                tasks={upcomingTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+                onStatusChange={onStatusChange}
+              />
 
               {/* Overdue Tasks Section */}
-              <ModernSectionCard
-                title="Overdue Tasks"
-                subtitle="Tasks that need immediate attention"
-                icon={AlertTriangle}
-                noPadding
-              >
-                <div className="p-1">
-                  <OverdueTasksSection 
-                    tasks={overdueTasks}
-                    onCreateTask={() => handleCreateTask()}
-                    onEditTask={handleEditTask}
-                    onStatusChange={onStatusChange}
-                  />
-                </div>
-              </ModernSectionCard>
+              <OverdueTasksStandalone 
+                tasks={overdueTasks}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+                onStatusChange={onStatusChange}
+              />
             </div>
           )}
           
