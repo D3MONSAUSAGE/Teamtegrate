@@ -3378,6 +3378,239 @@ export type Database = {
           },
         ]
       }
+      request_approvals: {
+        Row: {
+          approval_level: number
+          approved_at: string | null
+          approver_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          request_id: string
+          status: string | null
+        }
+        Insert: {
+          approval_level?: number
+          approved_at?: string | null
+          approver_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          request_id: string
+          status?: string | null
+        }
+        Update: {
+          approval_level?: number
+          approved_at?: string | null
+          approver_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          request_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_approvals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          organization_id: string
+          request_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          organization_id: string
+          request_id: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          organization_id?: string
+          request_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_attachments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          organization_id: string
+          request_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          organization_id: string
+          request_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          organization_id?: string
+          request_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_comments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_types: {
+        Row: {
+          approval_roles: string[] | null
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          form_schema: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          requires_approval: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          approval_roles?: string[] | null
+          category: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          form_schema?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          requires_approval?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          approval_roles?: string[] | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          form_schema?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          requires_approval?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          form_data: Json | null
+          id: string
+          organization_id: string
+          priority: string | null
+          request_type_id: string
+          requested_by: string
+          status: string | null
+          submitted_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          form_data?: Json | null
+          id?: string
+          organization_id: string
+          priority?: string | null
+          request_type_id: string
+          requested_by: string
+          status?: string | null
+          submitted_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          form_data?: Json | null
+          id?: string
+          organization_id?: string
+          priority?: string | null
+          request_type_id?: string
+          requested_by?: string
+          status?: string | null
+          submitted_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requests_request_type_id_fkey"
+            columns: ["request_type_id"]
+            isOneToOne: false
+            referencedRelation: "request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           action_id: string
