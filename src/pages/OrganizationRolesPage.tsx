@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { RoleManager } from '@/components/organization/RoleManager';
+import { EnhancedRoleManager } from '@/components/organization/EnhancedRoleManager';
 
 const OrganizationRolesPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -26,13 +26,7 @@ const OrganizationRolesPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Role Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage job roles and assignments for your organization.
-        </p>
-      </div>
-      <RoleManager />
+      <EnhancedRoleManager />
     </div>
   );
 };

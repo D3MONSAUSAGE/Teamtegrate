@@ -1,11 +1,11 @@
 
 import React from 'react';
-import TeamOverviewDashboard from '@/components/team/overview/TeamOverviewDashboard';
+import EnhancedTeamOverviewDashboard from '@/components/team/overview/EnhancedTeamOverviewDashboard';
 
 const TeamPage = () => {
   return (
     <div className="p-3 sm:p-6">
-      <TeamOverviewDashboard />
+      <EnhancedTeamOverviewDashboard />
     </div>
   );
 };
