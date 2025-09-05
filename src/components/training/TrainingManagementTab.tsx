@@ -46,8 +46,6 @@ interface TrainingManagementTabProps {
   onViewAnalytics: () => void;
   onStartOnboarding: () => void;
   onRetrainingSettings?: () => void;
-  onManageAssignments?: () => void;
-  onManageCompliance?: () => void;
   onCertificateReview?: () => void;
 }
 
@@ -66,8 +64,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
   onViewAnalytics,
   onStartOnboarding,
   onRetrainingSettings,
-  onManageAssignments,
-  onManageCompliance,
   onCertificateReview
 }) => {
   const { user } = useAuth();
@@ -114,8 +110,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
               onViewAnalytics={onViewAnalytics}
               onStartOnboarding={onStartOnboarding}
               onRetrainingSettings={onRetrainingSettings}
-              onManageAssignments={onManageAssignments}
-              onManageCompliance={onManageCompliance}
               onCertificateReview={onCertificateReview}
               userRole={user?.role || 'user'}
             />

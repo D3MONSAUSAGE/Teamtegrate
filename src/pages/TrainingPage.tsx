@@ -23,8 +23,6 @@ import { useTrainingCourses, useQuizzes, useTrainingAssignments, useUpdateAssign
 import QuizTaker from '@/components/training/QuizTaker';
 import CourseAssignmentViewer from '@/components/training/CourseAssignmentViewer';
 import { useQueryClient } from '@tanstack/react-query';
-import TrainingReassignmentManager from '@/components/training/TrainingReassignmentManager';
-import ComplianceRetrainingManager from '@/components/training/ComplianceRetrainingManager';
 import CertificateReviewDashboard from '@/components/training/CertificateReviewDashboard';
 
 const TrainingPage = () => {
@@ -39,8 +37,6 @@ const TrainingPage = () => {
   const [isEmployeeProgressOpen, setIsEmployeeProgressOpen] = useState(false);
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
   const [isRetrainingSettingsOpen, setIsRetrainingSettingsOpen] = useState(false);
-  const [isReassignmentManagerOpen, setIsReassignmentManagerOpen] = useState(false);
-  const [isComplianceManagerOpen, setIsComplianceManagerOpen] = useState(false);
   const [isCertificateReviewOpen, setIsCertificateReviewOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
@@ -266,8 +262,6 @@ const TrainingPage = () => {
                 onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
                 onStartOnboarding={handleStartOnboarding}
                 onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
-                onManageAssignments={() => setIsReassignmentManagerOpen(true)}
-                onManageCompliance={() => setIsComplianceManagerOpen(true)}
                 onCertificateReview={() => setIsCertificateReviewOpen(true)}
               />
             </TabsContent>
@@ -359,17 +353,6 @@ const TrainingPage = () => {
           />
         )}
 
-        {/* Training Reassignment Manager */}
-        <TrainingReassignmentManager 
-          open={isReassignmentManagerOpen}
-          onOpenChange={setIsReassignmentManagerOpen}
-        />
-
-        {/* Compliance Retraining Manager */}
-        <ComplianceRetrainingManager 
-          open={isComplianceManagerOpen}
-          onOpenChange={setIsComplianceManagerOpen}
-        />
 
         {/* Certificate Review Dashboard */}
         <CertificateReviewDashboard 
