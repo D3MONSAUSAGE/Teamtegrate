@@ -158,56 +158,116 @@ const CertificateUpload: React.FC<CertificateUploadProps> = ({
     }
   }, [assignmentId, handleFileSelect]);
 
-  // Upload certificate
+  // Upload certificate with improved error handling and reliability
   const uploadCertificate = useCallback(async () => {
     if (!selectedFile) {
       toast.error('Please select a file first');
       return;
     }
 
+    let uploadedFilePath: string | null = null;
+
     try {
       setIsUploading(true);
-      setUploadProgress(0);
+      setUploadProgress(10);
       onUploadStart?.();
 
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        throw new Error('Not authenticated');
+        throw new Error('Authentication required - please log in again');
       }
+
+      setUploadProgress(20);
 
       // Generate file path: user_id/assignment_id/timestamp_filename
       const fileExtension = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}_certificate.${fileExtension}`;
       const filePath = `${user.id}/${assignmentId}/${fileName}`;
+      uploadedFilePath = filePath;
 
-      console.log('Uploading certificate:', {
+      console.log('🔄 Starting certificate upload:', {
+        assignmentId,
         filePath,
         fileSize: selectedFile.size,
-        fileType: selectedFile.type
+        fileType: selectedFile.type,
+        userId: user.id
       });
 
-      // Upload file to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('training-certificates')
-        .upload(filePath, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      setUploadProgress(30);
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+      // Verify assignment ownership before upload
+      const { data: assignment, error: assignmentError } = await supabase
+        .from('training_assignments')
+        .select('id, assigned_to, status')
+        .eq('id', assignmentId)
+        .eq('assigned_to', user.id)
+        .single();
+
+      if (assignmentError) {
+        console.error('❌ Assignment verification failed:', assignmentError);
+        throw new Error('Assignment not found or access denied');
       }
 
-      setUploadProgress(50);
+      if (!assignment) {
+        throw new Error('You are not assigned to this training');
+      }
+
+      setUploadProgress(40);
+
+      // Upload file to storage with retry logic
+      let uploadAttempt = 0;
+      let uploadData, uploadError;
+      
+      do {
+        uploadAttempt++;
+        console.log(`🔄 Upload attempt ${uploadAttempt}...`);
+        
+        const { data, error } = await supabase.storage
+          .from('training-certificates')
+          .upload(filePath, selectedFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
+        uploadData = data;
+        uploadError = error;
+        
+        if (uploadError && uploadAttempt < 3) {
+          console.warn(`⚠️ Upload attempt ${uploadAttempt} failed, retrying...`, uploadError.message);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+        }
+      } while (uploadError && uploadAttempt < 3);
+
+      if (uploadError) {
+        console.error('❌ Upload failed after 3 attempts:', uploadError);
+        
+        // Provide specific error messages based on error type
+        if (uploadError.message?.includes('row-level security policy')) {
+          throw new Error('Upload permission denied - please ensure you are assigned to this training');
+        } else if (uploadError.message?.includes('payload too large')) {
+          throw new Error('File too large - maximum size is 50MB');
+        } else if (uploadError.message?.includes('duplicate')) {
+          throw new Error('A certificate with this name already exists - please try again');
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+      }
+
+      console.log('✅ File uploaded successfully:', uploadData);
+      setUploadProgress(70);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('training-certificates')
         .getPublicUrl(filePath);
 
-      setUploadProgress(75);
+      if (!publicUrl) {
+        throw new Error('Failed to generate certificate URL');
+      }
+
+      console.log('📄 Generated public URL:', publicUrl);
+      setUploadProgress(85);
 
       // Update assignment with certificate URL and status
       const { error: updateError } = await supabase
@@ -222,12 +282,16 @@ const CertificateUpload: React.FC<CertificateUploadProps> = ({
         .eq('assigned_to', user.id);
 
       if (updateError) {
-        console.error('Assignment update error:', updateError);
-        throw updateError;
+        console.error('❌ Assignment update error:', updateError);
+        throw new Error(`Failed to update assignment: ${updateError.message}`);
       }
 
       setUploadProgress(100);
-      toast.success('Certificate uploaded successfully!');
+      
+      console.log('🎉 Certificate upload completed successfully!');
+      toast.success('Certificate uploaded and verified successfully!', {
+        description: 'Your certificate is now pending review by administrators.'
+      });
       
       // Clear form
       setSelectedFile(null);
@@ -237,8 +301,25 @@ const CertificateUpload: React.FC<CertificateUploadProps> = ({
       onUploadComplete(publicUrl);
 
     } catch (error) {
-      console.error('Certificate upload error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to upload certificate');
+      console.error('❌ Certificate upload error:', error);
+      
+      // If upload succeeded but database update failed, clean up the uploaded file
+      if (uploadedFilePath && error instanceof Error && error.message.includes('Failed to update assignment')) {
+        console.log('🧹 Cleaning up uploaded file due to database error...');
+        try {
+          await supabase.storage
+            .from('training-certificates')
+            .remove([uploadedFilePath]);
+          console.log('✅ Cleanup completed');
+        } catch (cleanupError) {
+          console.error('⚠️ Failed to cleanup uploaded file:', cleanupError);
+        }
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload certificate';
+      toast.error('Certificate Upload Failed', {
+        description: errorMessage
+      });
     } finally {
       setIsUploading(false);
       setUploadProgress(0);

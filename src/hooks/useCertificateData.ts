@@ -77,35 +77,79 @@ export const useVerifyCertificate = () => {
       status: 'verified' | 'rejected'; 
       notes?: string 
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Authentication required');
+
+      // Verify the assignment exists and user has permission
+      const { data: assignment, error: checkError } = await supabase
+        .from('training_assignments')
+        .select('id, assigned_to, content_title, organization_id, certificate_status')
+        .eq('id', assignmentId)
+        .single();
+
+      if (checkError || !assignment) {
+        throw new Error('Assignment not found or access denied');
+      }
+
+      if (assignment.certificate_status !== 'uploaded') {
+        throw new Error('Certificate must be uploaded before verification');
+      }
+
+      // Update the certificate status
       const { data, error } = await supabase
         .from('training_assignments')
         .update({
           certificate_status: status,
           verified_at: new Date().toISOString(),
-          verified_by: (await supabase.auth.getUser()).data.user?.id,
-          verification_notes: notes
+          verified_by: user.id,
+          verification_notes: notes?.trim() || null
         })
         .eq('id', assignmentId)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Certificate verification error:', error);
+        throw new Error(`Failed to ${status === 'verified' ? 'approve' : 'reject'} certificate: ${error.message}`);
+      }
+
+      // Send notification to user about status change
+      try {
+        await supabase.functions.invoke('send-certificate-notification', {
+          body: {
+            assignmentId,
+            userId: assignment.assigned_to,
+            type: 'status_change',
+            status,
+            courseTitle: assignment.content_title,
+            notes: notes?.trim()
+          }
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send certificate notification:', notificationError);
+        // Don't fail the whole operation if notification fails
+      }
+
       return data;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['certificate-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       
+      const statusText = variables.status === 'verified' ? 'approved' : 'rejected';
       enhancedNotifications.success(
-        `Certificate ${variables.status === 'verified' ? 'approved' : 'rejected'} successfully`,
+        `Certificate ${statusText} successfully`,
         {
-          description: `Certificate for "${data.content_title}" has been ${variables.status}`
+          description: `The user will be notified of the ${statusText} status.`
         }
       );
     },
     onError: (error) => {
-      enhancedNotifications.error('Failed to update certificate status', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      console.error('Certificate verification error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update certificate status';
+      enhancedNotifications.error('Certificate Verification Failed', {
+        description: errorMessage
       });
     }
   });
