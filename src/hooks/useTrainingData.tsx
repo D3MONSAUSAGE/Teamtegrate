@@ -96,6 +96,42 @@ export const useQuizzes = (moduleId?: string) => {
   });
 };
 
+// Single Quiz Hook - Dedicated hook for fetching individual quiz with questions
+export const useQuiz = (quizId?: string) => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['quiz', quizId, user?.organizationId],
+    queryFn: async () => {
+      if (!quizId || !user?.organizationId) return null;
+      
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select(`
+          *,
+          quiz_questions(*)
+        `)
+        .eq('id', quizId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching quiz:', error);
+        throw error;
+      }
+      
+      console.log('🔍 Fetched quiz with questions:', {
+        quizId,
+        title: data?.title,
+        questionsCount: data?.quiz_questions?.length || 0,
+        questions: data?.quiz_questions?.map(q => ({ id: q.id, question_text: q.question_text?.substring(0, 50) + '...' }))
+      });
+      
+      return data;
+    },
+    enabled: !!quizId && !!user?.organizationId
+  });
+};
+
 // Quiz Attempts Hook
 export const useQuizAttempts = (quizId?: string, userId?: string) => {
   return useQuery({

@@ -22,7 +22,7 @@ import {
   Shield,
   Edit3
 } from 'lucide-react';
-import { useQuizAttempts, useQuizzes } from '@/hooks/useTrainingData';
+import { useQuizAttempts, useQuiz } from '@/hooks/useTrainingData';
 import { useQuizOverrides, useDeleteQuizOverride } from '@/hooks/useQuizOverrides';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -61,8 +61,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     quizData?.assignment?.assigned_to
   );
   
-  const { data: quizzes = [] } = useQuizzes();
-  const quiz = quizzes.find(q => q.id === quizData?.quizId);
+  const { data: quiz, isLoading: quizLoading } = useQuiz(quizData?.quizId);
   
   // Fetch overrides for the selected attempt
   const { data: overrides = [] } = useQuizOverrides(selectedAttempt?.id);
@@ -575,7 +574,14 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4">
-            {selectedAttempt && quiz?.quiz_questions ? (
+            {quizLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Loading quiz questions...</p>
+                </div>
+              </div>
+            ) : selectedAttempt && quiz?.quiz_questions && quiz.quiz_questions.length > 0 ? (
               <ScrollArea className="h-[600px]">
                 <div className="space-y-6">
                   {/* Attempt Summary */}
@@ -833,7 +839,16 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                       <AlertCircle className="h-5 w-5 text-yellow-700 mt-0.5" />
                       <div>
                         <p className="font-medium text-yellow-800">Quiz questions not available</p>
-                        <p className="text-sm text-yellow-700">We couldn't load the question set for this quiz. Showing attempt summary instead. If this persists, ensure the quiz has questions configured for ID {quizData?.quizId}.</p>
+                        <p className="text-sm text-yellow-700">
+                          {!quiz ? 'Quiz not found in database.' : 
+                           !quiz.quiz_questions ? 'Quiz exists but has no questions configured.' :
+                           quiz.quiz_questions.length === 0 ? 'Quiz has no questions.' :
+                           'Unknown issue loading questions.'}
+                        </p>
+                        <p className="text-sm text-yellow-600 mt-1">Quiz ID: {quizData?.quizId}</p>
+                        {quiz && (
+                          <p className="text-sm text-yellow-600">Quiz Title: {quiz.title}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -859,7 +874,22 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                     </Card>
                   ) : null}
 
-                  {(() => { console.warn('QuizAttemptViewer: Missing quiz questions for quizId', quizData?.quizId, { selectedAttempt }); return null; })()}
+                  {(() => { 
+                    console.warn('QuizAttemptViewer: Quiz questions debug info:', {
+                      quizId: quizData?.quizId, 
+                      quiz: quiz ? { 
+                        id: quiz.id, 
+                        title: quiz.title, 
+                        questionsCount: quiz.quiz_questions?.length,
+                        hasQuestions: !!quiz.quiz_questions
+                      } : null,
+                      selectedAttempt: selectedAttempt ? {
+                        id: selectedAttempt.id,
+                        attemptNumber: selectedAttempt.attempt_number
+                      } : null
+                    }); 
+                    return null; 
+                  })()}
                 </div>
               )}
             </>
