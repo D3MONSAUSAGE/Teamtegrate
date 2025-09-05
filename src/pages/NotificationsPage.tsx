@@ -64,10 +64,16 @@ const NotificationsPage = () => {
     switch (notification.type) {
       case 'correction_request':
       case 'meeting_invitation':
+      case 'bug_report':
         return 'high';
       case 'task_assignment':
       case 'project_team_addition':
+      case 'schedule_assignment':
+      case 'reminder':
         return 'medium';
+      case 'chat_message':
+      case 'chat_invitation':
+      case 'info':
       default:
         return 'low';
     }
@@ -82,10 +88,14 @@ const NotificationsPage = () => {
       case 'project_team_addition':
       case 'correction_request':
       case 'meeting_invitation':
+      case 'schedule_assignment':
+      case 'reminder':
         return 'work';
       case 'chat_message':
       case 'chat_invitation':
         return 'personal';
+      case 'bug_report':
+      case 'info':
       default:
         return 'system';
     }
@@ -113,6 +123,7 @@ const NotificationsPage = () => {
       case 'chat_invitation':
         return 'bg-primary/10 text-primary border-primary/20';
       case 'task_assignment':
+      case 'reminder':
         return 'bg-accent/10 text-accent border-accent/20';
       case 'project_team_addition':
         return 'bg-secondary/50 text-secondary-foreground border-secondary/30';
@@ -120,6 +131,12 @@ const NotificationsPage = () => {
         return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'meeting_invitation':
         return 'bg-warning/10 text-warning border-warning/20';
+      case 'bug_report':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'schedule_assignment':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'info':
+        return 'bg-gray-100 text-gray-700 border-gray-200';
       default:
         return 'bg-muted text-muted-foreground border-border';
     }
@@ -161,6 +178,14 @@ const NotificationsPage = () => {
         return 'Correction';
       case 'meeting_invitation':
         return 'Meeting';
+      case 'bug_report':
+        return 'Bug Report';
+      case 'reminder':
+        return 'Reminder';
+      case 'schedule_assignment':
+        return 'Schedule';
+      case 'info':
+        return 'Info';
       default:
         return 'Notification';
     }
@@ -307,6 +332,7 @@ const NotificationsPage = () => {
         navigate('/dashboard/chat');
         break;
       case 'task_assignment':
+      case 'reminder':
         navigate('/dashboard/tasks');
         break;
       case 'project_team_addition':
@@ -317,6 +343,15 @@ const NotificationsPage = () => {
         break;
       case 'meeting_invitation':
         navigate('/dashboard/meetings');
+        break;
+      case 'bug_report':
+        navigate('/dashboard/settings');
+        break;
+      case 'schedule_assignment':
+        navigate('/dashboard/schedule');
+        break;
+      case 'info':
+        navigate('/dashboard');
         break;
       default:
         break;
@@ -477,10 +512,15 @@ const NotificationsPage = () => {
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="chat_message">Messages</SelectItem>
+                <SelectItem value="chat_invitation">Chat Invites</SelectItem>
                 <SelectItem value="task_assignment">Tasks</SelectItem>
+                <SelectItem value="reminder">Reminders</SelectItem>
                 <SelectItem value="correction_request">Corrections</SelectItem>
                 <SelectItem value="meeting_invitation">Meetings</SelectItem>
                 <SelectItem value="project_team_addition">Projects</SelectItem>
+                <SelectItem value="bug_report">Bug Reports</SelectItem>
+                <SelectItem value="schedule_assignment">Schedule</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
               </SelectContent>
             </Select>
             

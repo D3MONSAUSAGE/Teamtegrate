@@ -63,6 +63,72 @@ const NotificationContent: React.FC<NotificationContentProps> = ({
             Go to Chat
           </Button>
         );
+      case 'bug_report':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/settings')}
+          >
+            View Bug Reports
+          </Button>
+        );
+      case 'correction_request':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/time')}
+          >
+            View Time Entries
+          </Button>
+        );
+      case 'meeting_invitation':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/meetings')}
+          >
+            View Meeting
+          </Button>
+        );
+      case 'reminder':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/tasks')}
+          >
+            View Tasks
+          </Button>
+        );
+      case 'schedule_assignment':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard/schedule')}
+          >
+            View Schedule
+          </Button>
+        );
+      case 'info':
+        return (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-1 h-7 text-xs text-primary"
+            onClick={() => navigate('/dashboard')}
+          >
+            View Dashboard
+          </Button>
+        );
       default:
         return null;
     }
