@@ -264,7 +264,6 @@ const DashboardPage = () => {
             >
               <div className="p-6">
                 <QuickActionsPanel
-                  onCreateTask={() => handleCreateTask()}
                   userRole={user?.role || 'user'}
                 />
               </div>

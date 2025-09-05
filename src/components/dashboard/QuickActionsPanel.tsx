@@ -19,12 +19,10 @@ import { toast } from '@/components/ui/use-toast';
 import BugReportDialog from '@/components/support/BugReportDialog';
 
 interface QuickActionsPanelProps {
-  onCreateTask: () => void;
   userRole: string;
 }
 
 const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
-  onCreateTask,
   userRole
 }) => {
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
@@ -49,13 +47,6 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   };
 
   const quickActions = [
-    {
-      label: 'New Task',
-      icon: Plus,
-      action: onCreateTask,
-      color: 'from-primary to-blue-600',
-      shortcut: 'Ctrl+N'
-    },
     {
       label: 'Calendar',
       icon: Calendar,
