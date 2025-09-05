@@ -33,11 +33,11 @@ export default {
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))'
+          foreground: 'hsl(var(--foreground))'
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
+          foreground: 'hsl(var(--foreground))'
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
@@ -76,6 +76,16 @@ export default {
         success: {
           DEFAULT: 'hsl(var(--success))',
           foreground: 'hsl(var(--success-foreground))'
+        },
+        meeting: {
+          confirmed: 'hsl(142 76% 36%)',        // Green for confirmed
+          'confirmed-foreground': 'hsl(0 0% 100%)', 
+          tentative: 'hsl(38 92% 50%)',         // Orange for tentative  
+          'tentative-foreground': 'hsl(0 0% 100%)',
+          declined: 'hsl(0 84% 60%)',           // Red for declined
+          'declined-foreground': 'hsl(0 0% 100%)',
+          pending: 'hsl(240 5% 64%)',           // Gray for pending
+          'pending-foreground': 'hsl(0 0% 100%)'
         },
         priority: {
           low: '#34d399',      // emerald-400

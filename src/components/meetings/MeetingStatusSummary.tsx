@@ -34,25 +34,25 @@ export const MeetingStatusSummary: React.FC<MeetingStatusSummaryProps> = ({
       count: confirmed,
       icon: Check,
       label: 'Confirmed',
-      color: 'bg-success/10 text-success-foreground border-success/20 hover:bg-success/20'
+      color: 'bg-meeting-confirmed text-meeting-confirmed-foreground border-meeting-confirmed/30 hover:bg-meeting-confirmed/90'
     },
     tentative: {
       count: tentative,
       icon: UserCheck,
       label: 'Tentative',
-      color: 'bg-warning/10 text-warning-foreground border-warning/20 hover:bg-warning/20'
+      color: 'bg-meeting-tentative text-meeting-tentative-foreground border-meeting-tentative/30 hover:bg-meeting-tentative/90'
     },
     declined: {
       count: declined,
       icon: X,
       label: 'Declined',
-      color: 'bg-destructive/10 text-destructive-foreground border-destructive/20 hover:bg-destructive/20'
+      color: 'bg-meeting-declined text-meeting-declined-foreground border-meeting-declined/30 hover:bg-meeting-declined/90'
     },
     invited: {
       count: pending,
       icon: Clock,
       label: 'Pending',
-      color: 'bg-muted/10 text-muted-foreground border-muted/20 hover:bg-muted/20'
+      color: 'bg-meeting-pending text-meeting-pending-foreground border-meeting-pending/30 hover:bg-meeting-pending/90'
     }
   };
 
