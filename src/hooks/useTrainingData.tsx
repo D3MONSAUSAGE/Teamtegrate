@@ -105,6 +105,8 @@ export const useQuiz = (quizId?: string) => {
     queryFn: async () => {
       if (!quizId || !user?.organizationId) return null;
       
+      console.log('🔍 useQuiz: Fetching quiz data for:', quizId);
+      
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
@@ -115,20 +117,27 @@ export const useQuiz = (quizId?: string) => {
         .single();
       
       if (error) {
-        console.error('Error fetching quiz:', error);
+        console.error('❌ useQuiz: Error fetching quiz:', error);
         throw error;
       }
       
-      console.log('🔍 Fetched quiz with questions:', {
+      console.log('✅ useQuiz: Successfully fetched quiz:', {
         quizId,
         title: data?.title,
         questionsCount: data?.quiz_questions?.length || 0,
-        questions: data?.quiz_questions?.map(q => ({ id: q.id, question_text: q.question_text?.substring(0, 50) + '...' }))
+        hasQuestions: !!data?.quiz_questions?.length,
+        questionsPreview: data?.quiz_questions?.slice(0, 3).map(q => ({ 
+          id: q.id, 
+          type: q.question_type,
+          text: q.question_text?.substring(0, 50) + '...' 
+        }))
       });
       
       return data;
     },
-    enabled: !!quizId && !!user?.organizationId
+    enabled: !!quizId && !!user?.organizationId,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
 
