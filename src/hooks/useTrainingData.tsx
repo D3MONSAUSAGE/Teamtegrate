@@ -1089,8 +1089,27 @@ export const useCreateTrainingAssignment = () => {
     }) => {
       if (!user?.id || !user?.organizationId) throw new Error('User not authenticated');
       
-      // Create assignment records for each user
-      const assignments = assignedUsers.map(userId => ({
+      // Check for existing active assignments to prevent duplicates
+      const { data: existingAssignments } = await supabase
+        .from('training_assignments')
+        .select('assigned_to')
+        .eq('content_id', contentId)
+        .eq('assignment_type', assignmentType)
+        .eq('organization_id', user.organizationId)
+        .neq('status', 'completed')
+        .in('assigned_to', assignedUsers);
+
+      // Filter out users who already have active assignments
+      const usersWithActiveAssignments = existingAssignments?.map(a => a.assigned_to) || [];
+      const validUsers = assignedUsers.filter(userId => !usersWithActiveAssignments.includes(userId));
+      const skippedUsers = assignedUsers.filter(userId => usersWithActiveAssignments.includes(userId));
+
+      if (validUsers.length === 0) {
+        throw new Error('All selected users already have active assignments for this content');
+      }
+
+      // Create assignment records for valid users only
+      const assignments = validUsers.map(userId => ({
         organization_id: user.organizationId,
         assigned_by: user.id,
         assigned_to: userId,
@@ -1109,8 +1128,8 @@ export const useCreateTrainingAssignment = () => {
 
       if (error) throw error;
 
-      // Create notifications for assigned users
-      const notifications = assignedUsers.map(userId => ({
+      // Create notifications for successfully assigned users
+      const notifications = validUsers.map(userId => ({
         user_id: userId,
         organization_id: user.organizationId,
         type: 'training_assignment',
@@ -1131,16 +1150,25 @@ export const useCreateTrainingAssignment = () => {
         console.warn('Failed to create notifications:', notificationError);
       }
 
-      return data;
+      return { data, skippedUsers, validUsers };
     },
-    onSuccess: (data) => {
+    onSuccess: ({ data, skippedUsers, validUsers }) => {
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      enhancedNotifications.success(`Successfully assigned to ${data.length} user${data.length !== 1 ? 's' : ''}`);
+      
+      let message = `Successfully assigned to ${validUsers.length} user${validUsers.length !== 1 ? 's' : ''}`;
+      if (skippedUsers.length > 0) {
+        message += ` (${skippedUsers.length} skipped - already assigned)`;
+      }
+      enhancedNotifications.success(message);
     },
     onError: (error: any) => {
       console.error('Error creating training assignment:', error);
-      enhancedNotifications.error('Failed to create assignment');
+      if (error.message.includes('already have active assignments')) {
+        enhancedNotifications.error('All selected users already have active assignments for this content');
+      } else {
+        enhancedNotifications.error('Failed to create assignment');
+      }
     }
   });
 };
