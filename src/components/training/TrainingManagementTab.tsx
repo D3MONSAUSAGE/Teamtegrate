@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
 import ManagementPanel from './ManagementPanel';
 import ContentGrid from './ContentGrid';
-import EmployeeTrainingRecords from './EmployeeTrainingRecords';
+import EmbeddedEmployeeRecords from './EmbeddedEmployeeRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Settings, 
@@ -65,7 +65,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
   onCertificateReview
 }) => {
   const { user } = useAuth();
-  const [employeeRecordsOpen, setEmployeeRecordsOpen] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -173,28 +172,7 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
         {/* Employee Records Tab */}
         <TabsContent value="records" className="space-y-6">
           <div className="animate-fade-in">
-            <Card className="p-6">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 flex items-center justify-center mx-auto">
-                  <UserCheck className="h-8 w-8 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Employee Training Records</h3>
-                  <p className="text-muted-foreground">
-                    Search and filter employees to view their training assignments, progress, and completion status
-                  </p>
-                </div>
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => setEmployeeRecordsOpen(true)}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center gap-2"
-                  >
-                    <UserCheck className="h-4 w-4" />
-                    Open Employee Records
-                  </button>
-                </div>
-              </div>
-            </Card>
+            <EmbeddedEmployeeRecords />
           </div>
         </TabsContent>
 
@@ -227,12 +205,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Employee Training Records Dialog */}
-      <EmployeeTrainingRecords 
-        open={employeeRecordsOpen} 
-        onOpenChange={setEmployeeRecordsOpen} 
-      />
     </div>
   );
 };
