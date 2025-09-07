@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { RequestType } from '@/types/requests';
-import { useRequests } from '@/hooks/useRequests';
+import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import RequestTypeCard from './RequestTypeCard';
 import DynamicFormFields from './DynamicFormFields';
 import FileUpload from './FileUpload';
@@ -28,7 +28,7 @@ interface FormData {
 }
 
 export default function RequestWizard({ requestTypes, onSuccess, onCancel }: RequestWizardProps) {
-  const { createRequest } = useRequests();
+  const { createRequestWithAutoAssignment, loading: requestsLoading } = useEnhancedRequests();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedRequestType, setSelectedRequestType] = useState<RequestType | null>(null);
   const [formData, setFormData] = useState<Partial<FormData>>({
@@ -119,7 +119,7 @@ export default function RequestWizard({ requestTypes, onSuccess, onCancel }: Req
     
     setIsSubmitting(true);
     try {
-      await createRequest({
+      await createRequestWithAutoAssignment({
         request_type_id: selectedRequestType.id,
         title: data.title,
         description: data.description,
@@ -437,7 +437,7 @@ export default function RequestWizard({ requestTypes, onSuccess, onCancel }: Req
         {currentStep === steps.length - 1 ? (
           <Button
             onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting || !selectedRequestType}
+            disabled={isSubmitting || !selectedRequestType || requestsLoading}
             className="gap-2"
           >
             {isSubmitting ? (

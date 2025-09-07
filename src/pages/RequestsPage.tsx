@@ -14,7 +14,7 @@ import EnhancedRequestDetails from '@/components/requests/EnhancedRequestDetails
 import { format } from 'date-fns';
 
 export default function RequestsPage() {
-  const { requests, requestTypes, loading } = useEnhancedRequests();
+  const { requests, requestTypes, loading, fetchRequests } = useEnhancedRequests();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -65,7 +65,10 @@ export default function RequestsPage() {
             </DialogHeader>
             <RequestForm 
               requestTypes={requestTypes}
-              onSuccess={() => setShowNewRequestDialog(false)}
+              onSuccess={() => {
+                setShowNewRequestDialog(false);
+                fetchRequests(); // Ensure the list is refreshed
+              }}
             />
           </DialogContent>
         </Dialog>
