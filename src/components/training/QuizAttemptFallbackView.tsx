@@ -26,6 +26,7 @@ interface QuizAttemptFallbackViewProps {
   handleOverrideClick: (question: any, userAnswer: any) => void;
   handleRemoveOverride: (overrideId: string) => Promise<void>;
   deleteOverrideMutation: any;
+  isOrphanedAttempt?: boolean;
 }
 
 const QuizAttemptFallbackView: React.FC<QuizAttemptFallbackViewProps> = ({
@@ -38,7 +39,8 @@ const QuizAttemptFallbackView: React.FC<QuizAttemptFallbackViewProps> = ({
   isAdmin,
   handleOverrideClick,
   handleRemoveOverride,
-  deleteOverrideMutation
+  deleteOverrideMutation,
+  isOrphanedAttempt = false
 }) => {
   const [manualQuestions, setManualQuestions] = useState<any[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
@@ -160,31 +162,54 @@ const QuizAttemptFallbackView: React.FC<QuizAttemptFallbackViewProps> = ({
         </CardContent>
       </Card>
 
-      {/* Debug Information */}
-      <Card className="border-blue-200 bg-blue-50">
+      {/* Status Information */}
+      <Card className={`border-2 ${isOrphanedAttempt ? 'border-red-200 bg-red-50' : 'border-orange-200 bg-orange-50'}`}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-blue-600" />
-            Data Loading Status
+            <AlertCircle className={`h-4 w-4 ${isOrphanedAttempt ? 'text-red-600' : 'text-orange-600'}`} />
+            {isOrphanedAttempt ? 'Orphaned Quiz Attempt' : 'Data Loading Status'}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p><strong>Quiz Hook:</strong> {quiz ? '✅ Success' : '❌ Failed'}</p>
-              <p><strong>Quiz ID:</strong> <code className="text-xs bg-white px-1 rounded">{quizData?.quizId}</code></p>
-              <p><strong>Quiz Title:</strong> {quiz?.title || 'N/A'}</p>
+        <CardContent className="space-y-3">
+          {isOrphanedAttempt ? (
+            <div className="p-3 bg-red-100 border border-red-300 rounded">
+              <p className="font-medium text-red-800 mb-2">⚠️ Quiz No Longer Available</p>
+              <p className="text-sm text-red-700 mb-2">
+                This quiz attempt references a quiz that has been deleted from the system. 
+                The original quiz data is no longer available, but we can still show your answers and results.
+              </p>
+              <div className="text-xs text-red-600 space-y-1">
+                <p><strong>Quiz ID:</strong> <code className="bg-red-200 px-1 rounded">{quizData?.quizId}</code></p>
+                <p><strong>Answers Available:</strong> {selectedAttempt?.answers?.length || 0}</p>
+                <p><strong>Score:</strong> {selectedAttempt?.score || 0}/{selectedAttempt?.max_score || 0}</p>
+              </div>
+              {isAdmin && (
+                <div className="mt-3 p-2 bg-red-200 border border-red-400 rounded text-xs">
+                  <p className="font-medium text-red-800">Admin Note:</p>
+                  <p className="text-red-700">This is an orphaned quiz attempt. Consider implementing data cleanup procedures to prevent future occurrences.</p>
+                </div>
+              )}
             </div>
-            <div>
-              <p><strong>Hook Questions:</strong> {quiz?.quiz_questions?.length || 0}</p>
-              <p><strong>Direct Questions:</strong> {manualQuestions.length}</p>
-              <p><strong>Loading:</strong> {loadingQuestions ? '⏳ Yes' : '✅ No'}</p>
-            </div>
-          </div>
-          {quizError && (
-            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700">
-              <strong>Error:</strong> {quizError.message}
-            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p><strong>Quiz Hook:</strong> {quiz ? '✅ Success' : '❌ Failed'}</p>
+                  <p><strong>Quiz ID:</strong> <code className="text-xs bg-white px-1 rounded">{quizData?.quizId}</code></p>
+                  <p><strong>Quiz Title:</strong> {quiz?.title || 'N/A'}</p>
+                </div>
+                <div>
+                  <p><strong>Hook Questions:</strong> {quiz?.quiz_questions?.length || 0}</p>
+                  <p><strong>Direct Questions:</strong> {manualQuestions.length}</p>
+                  <p><strong>Loading:</strong> {loadingQuestions ? '⏳ Yes' : '✅ No'}</p>
+                </div>
+              </div>
+              {quizError && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700">
+                  <strong>Error:</strong> {quizError.message}
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -347,56 +372,159 @@ const QuizAttemptFallbackView: React.FC<QuizAttemptFallbackViewProps> = ({
       ) : (
         <>
           {/* Error/No Questions State */}
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className={`p-4 border rounded-lg ${
+            isOrphanedAttempt 
+              ? 'bg-red-50 border-red-200' 
+              : 'bg-yellow-50 border-yellow-200'
+          }`}>
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-700 mt-0.5" />
+              <AlertCircle className={`h-5 w-5 mt-0.5 ${
+                isOrphanedAttempt ? 'text-red-700' : 'text-yellow-700'
+              }`} />
               <div>
-                <p className="font-medium text-yellow-800">
-                  {loadingQuestions ? 'Loading questions...' : 'Quiz questions not available'}
+                <p className={`font-medium ${
+                  isOrphanedAttempt ? 'text-red-800' : 'text-yellow-800'
+                }`}>
+                  {isOrphanedAttempt 
+                    ? 'Quiz Deleted - Questions Unavailable' 
+                    : loadingQuestions 
+                      ? 'Loading questions...' 
+                      : 'Quiz questions not available'
+                  }
                 </p>
-                <p className="text-sm text-yellow-700">
-                  {loadingQuestions ? 'Attempting to load quiz questions directly from database.' :
-                   !quiz ? 'Quiz not found in database.' : 
-                   !quiz.quiz_questions && manualQuestions.length === 0 ? 'Quiz exists but has no questions configured.' :
-                   quiz.quiz_questions?.length === 0 && manualQuestions.length === 0 ? 'Quiz has no questions.' :
-                   'Unknown issue loading questions.'}
+                <p className={`text-sm ${
+                  isOrphanedAttempt ? 'text-red-700' : 'text-yellow-700'
+                }`}>
+                  {isOrphanedAttempt
+                    ? 'The original quiz has been removed from the system. We can only display your raw answers and score.'
+                    : loadingQuestions 
+                      ? 'Attempting to load quiz questions directly from database.'
+                      : !quiz 
+                        ? 'Quiz not found in database.' 
+                        : !quiz.quiz_questions && manualQuestions.length === 0 
+                          ? 'Quiz exists but has no questions configured.' 
+                          : quiz.quiz_questions?.length === 0 && manualQuestions.length === 0 
+                            ? 'Quiz has no questions.' 
+                            : 'Unknown issue loading questions.'
+                  }
                 </p>
-                <div className="mt-2 space-y-1 text-xs text-yellow-600">
-                  <p>Quiz ID: <code className="bg-yellow-100 px-1 rounded">{quizData?.quizId}</code></p>
+                <div className={`mt-2 space-y-1 text-xs ${
+                  isOrphanedAttempt ? 'text-red-600' : 'text-yellow-600'
+                }`}>
+                  <p>Quiz ID: <code className={`px-1 rounded ${
+                    isOrphanedAttempt ? 'bg-red-100' : 'bg-yellow-100'
+                  }`}>{quizData?.quizId}</code></p>
                   {quiz && <p>Quiz Title: {quiz.title}</p>}
                   {quizError && <p>Error: {quizError.message}</p>}
+                  {isOrphanedAttempt && (
+                    <p className="mt-2 font-medium">This is an orphaned quiz attempt requiring cleanup.</p>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Raw Answers Fallback */}
+          {/* Enhanced Raw Answers Display */}
           {selectedAttempt.answers?.length > 0 && (
-            <Card>
+            <Card className={isOrphanedAttempt ? 'border-red-200' : 'border-gray-200'}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-purple-600" />
-                  Raw Answers ({selectedAttempt.answers.length} answers)
+                  <FileText className={`h-5 w-5 ${isOrphanedAttempt ? 'text-red-600' : 'text-purple-600'}`} />
+                  {isOrphanedAttempt 
+                    ? `Orphaned Quiz Answers (${selectedAttempt.answers.length} answers)` 
+                    : `Raw Answers (${selectedAttempt.answers.length} answers)`
+                  }
                 </CardTitle>
+                {isOrphanedAttempt && (
+                  <p className="text-sm text-red-600 mt-1">
+                    These answers are from a deleted quiz. Question details are no longer available.
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {selectedAttempt.answers.map((answer: any, idx: number) => (
-                    <div key={answer.question_id || idx} className="p-3 rounded border bg-gray-50">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground mb-1">
-                            Question ID: <code className="bg-white px-1 rounded text-xs">{answer.question_id}</code>
-                          </p>
-                          <p className="font-medium text-gray-900">{answer.answer || 'No answer provided'}</p>
+                    <Card key={answer.question_id || idx} className={`border ${
+                      isOrphanedAttempt ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="outline" className="text-xs">
+                                Question #{idx + 1}
+                              </Badge>
+                              {isOrphanedAttempt && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Orphaned
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Question ID: <code className={`px-1 rounded text-xs ${
+                                isOrphanedAttempt ? 'bg-red-100' : 'bg-white'
+                              }`}>{answer.question_id}</code>
+                            </p>
+                            <div className="space-y-2">
+                              <div>
+                                <p className="text-sm font-medium text-gray-600 mb-1">Your Answer:</p>
+                                <p className={`font-medium p-2 rounded border ${
+                                  isOrphanedAttempt 
+                                    ? 'bg-red-100 border-red-200 text-red-800' 
+                                    : 'bg-white border-gray-200 text-gray-900'
+                                }`}>
+                                  {answer.answer || 'No answer provided'}
+                                </p>
+                              </div>
+                              {answer.submitted_at && (
+                                <p className="text-xs text-muted-foreground">
+                                  Submitted: {format(new Date(answer.submitted_at), 'PPp')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          Answer #{idx + 1}
-                        </Badge>
-                      </div>
-                    </div>
+                        {/* Override information for orphaned answers */}
+                        {isOrphanedAttempt && overrides.find(o => o.question_id === answer.question_id) && (
+                          <div className="mt-3 p-2 bg-orange-100 border border-orange-200 rounded">
+                            <p className="text-xs font-medium text-orange-800">Manual Override Applied</p>
+                            <p className="text-xs text-orange-700">
+                              Score adjusted by administrator (original quiz unavailable for details)
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
+                
+                {/* Summary for orphaned attempts */}
+                {isOrphanedAttempt && (
+                  <Card className="mt-4 border-orange-200 bg-orange-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <p className="font-medium text-orange-800">Orphaned Attempt Summary</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-orange-700"><strong>Total Answers:</strong> {selectedAttempt.answers.length}</p>
+                          <p className="text-orange-700"><strong>Score:</strong> {selectedAttempt.score}/{selectedAttempt.max_score}</p>
+                        </div>
+                        <div>
+                          <p className="text-orange-700"><strong>Status:</strong> {selectedAttempt.passed ? 'PASSED' : 'FAILED'}</p>
+                          <p className="text-orange-700"><strong>Overrides:</strong> {overrides.length}</p>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <div className="mt-3 p-2 bg-orange-200 border border-orange-300 rounded text-xs">
+                          <p className="font-medium text-orange-800">Cleanup Recommendation:</p>
+                          <p className="text-orange-700">Consider implementing data integrity measures to prevent future orphaned attempts.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </CardContent>
             </Card>
           )}

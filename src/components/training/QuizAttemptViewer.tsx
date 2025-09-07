@@ -78,14 +78,19 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     }
   }, [attempts, selectedAttempt]);
 
-  // Enhanced debug logging with more details
+  // Enhanced debug logging and orphaned quiz detection
   useEffect(() => {
     if (quizData?.quizId) {
+      const isOrphanedAttempt = attempts.length > 0 && !quiz && !quizLoading;
+      const hasAnswersButNoQuiz = selectedAttempt?.answers?.length > 0 && !quiz?.quiz_questions?.length;
+      
       console.log('🔍 QuizAttemptViewer: Comprehensive data status:', {
         quizId: quizData.quizId,
         employeeName: quizData.employeeName,
         assignmentId: quizData.assignment?.id,
         attemptsCount: attempts.length,
+        isOrphanedAttempt,
+        hasAnswersButNoQuiz,
         attemptsData: attempts.map(a => ({
           id: a.id,
           attempt_number: a.attempt_number,
@@ -114,7 +119,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
         } : null
       });
     }
-  }, [quizData, attempts.length, quiz, quizLoading, quizError]);
+  }, [quizData, attempts.length, quiz, quizLoading, quizError, selectedAttempt]);
 
   // Get the final score for a question (considering overrides)
   const getQuestionScore = (question: any, userAnswer: any) => {
