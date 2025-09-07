@@ -24,7 +24,8 @@ export const useCertificateAssignments = () => {
   return useQuery({
     queryKey: ['certificate-assignments'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get the training assignments
+      const { data: assignments, error: assignmentsError } = await supabase
         .from('training_assignments')
         .select(`
           id,
@@ -37,27 +38,44 @@ export const useCertificateAssignments = () => {
           verified_by,
           verification_notes,
           due_date,
-          priority,
-          users!training_assignments_assigned_to_fkey (
-            name,
-            email
-          )
+          priority
         `)
         .eq('assignment_type', 'course')
         .neq('certificate_status', 'not_required');
 
-      if (error) {
-        console.error('Error fetching certificate assignments:', error);
-        throw error;
+      if (assignmentsError) {
+        console.error('Error fetching certificate assignments:', assignmentsError);
+        throw assignmentsError;
       }
 
+      if (!assignments || assignments.length === 0) {
+        return [];
+      }
+
+      // Get user IDs to fetch user details
+      const userIds = assignments.map(a => a.assigned_to).filter(Boolean);
+      
+      // Fetch user details
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.error('Error fetching user details:', usersError);
+        // Don't throw error, just continue without user details
+      }
+
+      // Create user lookup map
+      const userMap = new Map();
+      users?.forEach(user => {
+        userMap.set(user.id, { name: user.name, email: user.email });
+      });
+
       // Transform the data to match our interface
-      return data?.map(assignment => ({
+      return assignments.map(assignment => ({
         ...assignment,
-        assigned_to_user: assignment.users ? {
-          name: (assignment.users as any).name,
-          email: (assignment.users as any).email
-        } : undefined
+        assigned_to_user: userMap.get(assignment.assigned_to) || undefined
       })) as CertificateAssignment[];
     },
     refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
