@@ -556,7 +556,7 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
                           }`}>
                             {attempt.passed ? (
                               <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
+                ) : (
                               <XCircle className="h-4 w-4 text-red-600" />
                             )}
                           </div>
