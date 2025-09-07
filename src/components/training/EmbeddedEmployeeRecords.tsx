@@ -33,7 +33,7 @@ import { useEmployeeProgress } from '@/hooks/useTrainingData';
 import { useUsers } from '@/hooks/useUsers';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import EmployeeCertificateSection from './EmployeeCertificateSection';
+import EmbeddedCertificateReview from './EmbeddedCertificateReview';
 import QuizAttemptViewer from './QuizAttemptViewer';
 import { useQuizAttempts } from '@/hooks/useTrainingData';
 
@@ -758,12 +758,7 @@ const EmbeddedEmployeeRecords: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Certificates Section */}
-              <EmployeeCertificateSection 
-                employeeName={selectedEmployee.name}
-                employeeEmail={selectedEmployee.email}
-                assignments={selectedEmployee.assignments.filter(a => a.assignment_type === 'certificate')}
-              />
+              {/* Employee details have been selected, certificate review is now available in the Certificates tab */}
             </div>
           </DialogContent>
         </Dialog>
