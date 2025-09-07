@@ -202,315 +202,444 @@ const PastTimeEntriesManager: React.FC = () => {
   }, [targetUserId, dayStart, dayEnd, weekStart, weekEnd, displayMode, refresh]);
 
   return (
-    <section className="space-y-4">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-3">
+    <div className="space-y-6">
+      {/* Primary Header - View Mode Selection */}
+      <div className="bg-gradient-to-r from-background via-background to-accent/5 border border-border/50 rounded-xl p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-foreground">Time Management</h1>
+            <p className="text-muted-foreground text-sm">
+              {viewMode === 'entries' 
+                ? 'View and manage time entries for your team' 
+                : 'Track your time correction requests'
+              }
+            </p>
+          </div>
+          
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === 'entries' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setViewMode('entries')}
+              className="min-w-[120px]"
             >
+              <Clock className="h-4 w-4 mr-2" />
               Time Entries
             </Button>
             <Button
               variant={viewMode === 'requests' ? 'default' : 'outline'}
-              size="sm"
+              size="default"
               onClick={() => setViewMode('requests')}
+              className="min-w-[120px]"
             >
-              <FileText className="h-4 w-4 mr-1" />
+              <FileText className="h-4 w-4 mr-2" />
               My Requests
             </Button>
           </div>
         </div>
-        
-        {viewMode === 'entries' && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={displayMode === 'daily' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setDisplayMode('daily')}
-                >
-                  <CalendarViewIcon className="h-4 w-4 mr-1" />
-                  Daily View
-                </Button>
-                <Button
-                  variant={displayMode === 'weekly' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setDisplayMode('weekly')}
-                >
-                  <Clock className="h-4 w-4 mr-1" />
-                  Weekly View
-                </Button>
-              </div>
-              {displayMode === 'daily' ? (
-                <DatePicker date={date} setDate={setDate} />
-              ) : (
-                <WeekPicker selectedWeek={date} onWeekChange={setDate} />
-              )}
-              {canManageOthers && (
-                <div className="flex items-center gap-3">
-                  {isAdminOrSuperAdmin && (
-                    <Select value={selectedTeamId ?? 'all'} onValueChange={(v) => setSelectedTeamId(v === 'all' ? null : v)}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="All Teams" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Teams</SelectItem>
-                        {teams.map(team => (
-                          <SelectItem key={team.id} value={team.id}>
-                            {team.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <Select value={targetUserId ?? undefined} onValueChange={(v) => setTargetUserId(v)}>
-                    <SelectTrigger className="w-[260px]">
-                      <SelectValue placeholder={isManager ? "Select team member" : "Select employee"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users.map(u => (
-                        <SelectItem key={u.id} value={u.id}>
-                          <div className="flex flex-col">
-                            <span>{u.name || u.email}</span>
-                            <span className="text-xs text-muted-foreground capitalize">{u.role}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {displayMode === 'daily' && (selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setCorrectionFormOpen(true)}
-                  className="mr-2"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Request Correction ({selectedEntries.size + selectedEmptyDays.size})
-                </Button>
-              )}
-              {canManageOthers && (
-                <Button variant="secondary" onClick={onAdd}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Entry
-                </Button>
-              )}
-            </div>
-          </>
-        )}
-      </header>
+      </div>
 
-      {viewMode === 'entries' ? (
-        <Card className="p-4">
-          {displayMode === 'daily' ? (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold">Entries for {format(date, 'PPP')}</h2>
-                <div className="flex items-center gap-2">
-                  {entries.length > 0 && (
-                    <div className="flex items-center gap-2 mr-4">
-                      <Checkbox
-                        checked={selectedEntries.size === entries.length && entries.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                      <span className="text-sm text-muted-foreground">Select All</span>
-                    </div>
+      {viewMode === 'entries' && (
+        <>
+          {/* Filter Controls Section */}
+          <Card className="p-6 border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
+            <div className="space-y-6">
+              {/* View Mode and Date Selection */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    View Options
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={displayMode === 'daily' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDisplayMode('daily')}
+                      className="min-w-[100px]"
+                    >
+                      <CalendarViewIcon className="h-4 w-4 mr-2" />
+                      Daily
+                    </Button>
+                    <Button
+                      variant={displayMode === 'weekly' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDisplayMode('weekly')}
+                      className="min-w-[100px]"
+                    >
+                      <Clock className="h-4 w-4 mr-2" />
+                      Weekly
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Date Range
+                  </h3>
+                  {displayMode === 'daily' ? (
+                    <DatePicker date={date} setDate={setDate} />
+                  ) : (
+                    <WeekPicker selectedWeek={date} onWeekChange={setDate} />
                   )}
-                  {isLoading && <span className="text-sm text-muted-foreground">Loading…</span>}
                 </div>
               </div>
-              <Separator className="my-2" />
 
-              {entries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No entries for this day.</p>
-              ) : (
-                <div className="space-y-2">
-                  {entries.map((e) => (
-                    <div key={e.id} className="flex items-center justify-between p-3 rounded-md border">
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={selectedEntries.has(e.id)}
-                          onCheckedChange={(checked) => handleSelectEntry(e.id, !!checked)}
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {formatTime(e.clock_in)} — {formatTime(e.clock_out)}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            Duration: {minutesToHM(e.duration_minutes)} {e.notes ? `• ${e.notes}` : ''}
-                          </span>
-                        </div>
+              {/* Team and User Selection */}
+              {canManageOthers && (
+                <div className="pt-4 border-t border-border/50">
+                  <div className="flex flex-col lg:flex-row gap-4">
+                    {isAdminOrSuperAdmin && (
+                      <div className="space-y-3 flex-1">
+                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                          Team Filter
+                        </h3>
+                        <Select value={selectedTeamId ?? 'all'} onValueChange={(v) => setSelectedTeamId(v === 'all' ? null : v)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="All Teams" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover/95 backdrop-blur-sm border-border/50">
+                            <SelectItem value="all">
+                              <span className="font-medium">All Teams</span>
+                            </SelectItem>
+                            {teams.map(team => (
+                              <SelectItem key={team.id} value={team.id}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      {canManageOthers && (
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
-                            <Pencil className="h-4 w-4 mr-1" /> Edit
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
-                            <Trash2 className="h-4 w-4 mr-1" /> Delete
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">
-                  Week of {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
-                </h2>
-                <div className="flex items-center gap-2">
-                  {(entries.length > 0 || weekDays.some(day => getDayEntries(day).length === 0)) && (
-                    <div className="flex items-center gap-2 mr-4">
-                      <Checkbox
-                        checked={
-                          displayMode === 'weekly' 
-                            ? selectedEntries.size === entries.length && 
-                              selectedEmptyDays.size === weekDays.filter(day => getDayEntries(day).length === 0).length &&
-                              (entries.length > 0 || weekDays.some(day => getDayEntries(day).length === 0))
-                            : selectedEntries.size === entries.length && entries.length > 0
-                        }
-                        onCheckedChange={handleSelectAll}
-                      />
-                      <span className="text-sm text-muted-foreground">Select All</span>
-                    </div>
-                  )}
-                  {isLoading && <span className="text-sm text-muted-foreground">Loading…</span>}
-                </div>
-              </div>
-              <Separator className="my-4" />
-
-              {/* Weekly view bulk actions */}
-              {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
-                <div className="mb-4 p-3 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">
-                        {selectedEntries.size + selectedEmptyDays.size} item{selectedEntries.size + selectedEmptyDays.size !== 1 ? 's' : ''} selected
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({selectedEntries.size} entries, {selectedEmptyDays.size} empty days)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedEntries(new Set());
-                          setSelectedEmptyDays(new Set());
-                        }}
-                      >
-                        Clear Selection
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={() => setCorrectionFormOpen(true)}
-                      >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Request Correction
-                      </Button>
+                    )}
+                    
+                    <div className="space-y-3 flex-1">
+                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                        {isManager ? 'Team Member' : 'Employee'}
+                      </h3>
+                      <Select value={targetUserId ?? undefined} onValueChange={(v) => setTargetUserId(v)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={isManager ? "Select team member" : "Select employee"} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover/95 backdrop-blur-sm border-border/50">
+                          {users.map(u => (
+                            <SelectItem key={u.id} value={u.id}>
+                              <div className="flex flex-col py-1">
+                                <span className="font-medium">{u.name || u.email}</span>
+                                <span className="text-xs text-muted-foreground capitalize">{u.role}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="space-y-4">
-                {weekDays.map((day, index) => {
-                  const dayEntries = getDayEntries(day);
-                  const dayName = format(day, 'EEEE');
-                  const dayDate = format(day, 'MMM d');
-                  
-                  return (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-3">
+                  {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCorrectionFormOpen(true)}
+                      className="shadow-sm"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Request Correction ({selectedEntries.size + selectedEmptyDays.size})
+                    </Button>
+                  )}
+                </div>
+                
+                {canManageOthers && (
+                  <Button variant="default" onClick={onAdd} className="shadow-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Content Area */}
+          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
+            <div className="p-6">
+              {displayMode === 'daily' ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-semibold text-foreground">
+                        {format(date, 'EEEE, MMMM d, yyyy')}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Daily time entries
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {entries.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-base">{dayName}</h3>
-                          <span className="text-sm text-muted-foreground">{dayDate}</span>
+                          <Checkbox
+                            checked={selectedEntries.size === entries.length && entries.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                          <span className="text-sm text-muted-foreground">Select All</span>
                         </div>
-                        {dayEntries.length > 0 && (
-                          <span className="text-sm text-muted-foreground">
-                            {dayEntries.length} {dayEntries.length === 1 ? 'entry' : 'entries'}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {dayEntries.length === 0 ? (
-                        <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-md">
-                          <div className="flex items-center gap-3">
-                            <Checkbox
-                              checked={selectedEmptyDays.has(format(day, 'yyyy-MM-dd'))}
-                              onCheckedChange={(checked) => handleSelectEmptyDay(format(day, 'yyyy-MM-dd'), !!checked)}
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              No entries for this day
-                            </span>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => handleSelectEmptyDay(format(day, 'yyyy-MM-dd'), !selectedEmptyDays.has(format(day, 'yyyy-MM-dd')))}
-                            className="text-xs"
-                          >
-                            Request Correction
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {dayEntries.map((e) => (
-                            <div key={e.id} className="flex items-center justify-between p-3 rounded-md border bg-background">
-                              <div className="flex items-center gap-3">
-                                <Checkbox
-                                  checked={selectedEntries.has(e.id)}
-                                  onCheckedChange={(checked) => handleSelectEntry(e.id, !!checked)}
-                                />
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {formatTime(e.clock_in)} — {formatTime(e.clock_out)}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground">
-                                    Duration: {minutesToHM(e.duration_minutes)} {e.notes ? `• ${e.notes}` : ''}
-                                  </span>
-                                </div>
-                              </div>
-                              {canManageOthers && (
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
-                                    <Pencil className="h-4 w-4 mr-1" /> Edit
-                                  </Button>
-                                  <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
-                                    <Trash2 className="h-4 w-4 mr-1" /> Delete
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                      )}
+                      {isLoading && (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                          <span className="text-sm text-muted-foreground">Loading…</span>
                         </div>
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+
+                  <Separator className="bg-border/50" />
+
+                  {entries.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <div className="mx-auto w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                        <Clock className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        No time entries found for this date
+                      </p>
+                      {canManageOthers && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={onAdd}
+                          className="mt-4"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add First Entry
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {entries.map((e) => (
+                        <div key={e.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent/10 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <Checkbox
+                              checked={selectedEntries.has(e.id)}
+                              onCheckedChange={(checked) => handleSelectEntry(e.id, !!checked)}
+                            />
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-3">
+                                <span className="font-semibold text-foreground">
+                                  {formatTime(e.clock_in)} — {formatTime(e.clock_out)}
+                                </span>
+                                <div className="h-1 w-1 bg-muted-foreground rounded-full" />
+                                <span className="font-medium text-primary">
+                                  {minutesToHM(e.duration_minutes)}
+                                </span>
+                              </div>
+                              {e.notes && (
+                                <p className="text-sm text-muted-foreground">
+                                  {e.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {canManageOthers && (
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-semibold text-foreground">
+                        Week of {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Weekly time entries
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {(entries.length > 0 || weekDays.some(day => getDayEntries(day).length === 0)) && (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={
+                              displayMode === 'weekly' 
+                                ? selectedEntries.size === entries.length && 
+                                  selectedEmptyDays.size === weekDays.filter(day => getDayEntries(day).length === 0).length &&
+                                  (entries.length > 0 || weekDays.some(day => getDayEntries(day).length === 0))
+                                : selectedEntries.size === entries.length && entries.length > 0
+                            }
+                            onCheckedChange={handleSelectAll}
+                          />
+                          <span className="text-sm text-muted-foreground">Select All</span>
+                        </div>
+                      )}
+                      {isLoading && (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                          <span className="text-sm text-muted-foreground">Loading…</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator className="bg-border/50" />
+
+                  {/* Weekly view bulk actions */}
+                  {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
+                    <div className="p-4 bg-accent/20 rounded-lg border-2 border-dashed border-accent/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {selectedEntries.size + selectedEmptyDays.size} item{selectedEntries.size + selectedEmptyDays.size !== 1 ? 's' : ''} selected
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({selectedEntries.size} entries, {selectedEmptyDays.size} empty days)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedEntries(new Set());
+                              setSelectedEmptyDays(new Set());
+                            }}
+                          >
+                            Clear Selection
+                          </Button>
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={() => setCorrectionFormOpen(true)}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Request Correction
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {weekDays.map((day, index) => {
+                      const dayEntries = getDayEntries(day);
+                      const dayName = format(day, 'EEEE');
+                      const dayDate = format(day, 'MMM d');
+                      
+                      return (
+                        <div key={index} className="border border-border/50 rounded-lg p-5 bg-background/50">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-semibold text-base">{dayName}</h3>
+                              <span className="text-sm text-muted-foreground">{dayDate}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {dayEntries.length === 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={selectedEmptyDays.has(format(day, 'yyyy-MM-dd'))}
+                                    onCheckedChange={(checked) => 
+                                      handleSelectEmptyDay(format(day, 'yyyy-MM-dd'), !!checked)
+                                    }
+                                  />
+                                  <span className="text-xs text-muted-foreground">Select empty day</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  {dayEntries.length} entr{dayEntries.length !== 1 ? 'ies' : 'y'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {dayEntries.length === 0 ? (
+                            <div className="py-8 text-center">
+                              <div className="mx-auto w-12 h-12 bg-muted/30 rounded-full flex items-center justify-center mb-3">
+                                <Clock className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                              <p className="text-sm text-muted-foreground">No entries for this day</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {dayEntries.map(e => (
+                                <div key={e.id} className="flex items-center justify-between p-3 rounded-md border border-border/30 bg-card/30">
+                                  <div className="flex items-center gap-3">
+                                    <Checkbox
+                                      checked={selectedEntries.has(e.id)}
+                                      onCheckedChange={(checked) => handleSelectEntry(e.id, !!checked)}
+                                    />
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-medium text-foreground">
+                                          {formatTime(e.clock_in)} — {formatTime(e.clock_out)}
+                                        </span>
+                                        <div className="h-1 w-1 bg-muted-foreground rounded-full" />
+                                        <span className="font-medium text-primary">
+                                          {minutesToHM(e.duration_minutes)}
+                                        </span>
+                                      </div>
+                                      {e.notes && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {e.notes}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {canManageOthers && (
+                                    <div className="flex items-center gap-2">
+                                      <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
+                                        <Pencil className="h-3 w-3 mr-1" />
+                                        Edit
+                                      </Button>
+                                      <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
+                                        <Trash2 className="h-3 w-3 mr-1" />
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        </>
+      )}
+
+      {viewMode === 'requests' && (
+        <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
+          <div className="p-6">
+            <div className="py-12 text-center">
+              <div className="mx-auto w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
-            </>
-          )}
-        </Card>
-      ) : (
-        <Card className="p-6 text-center">
-          <p className="text-muted-foreground mb-2">Your correction requests are now managed in the main Requests page.</p>
-          <p className="text-sm text-muted-foreground">Visit the Requests section to view and manage all your submitted correction requests.</p>
+              <p className="text-sm text-muted-foreground">
+                Time correction requests will be displayed here
+              </p>
+            </div>
+          </div>
         </Card>
       )}
 
+      {/* Dialogs */}
       <EditTimeEntryDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -526,7 +655,7 @@ const PastTimeEntriesManager: React.FC = () => {
         selectedEmptyDays={Array.from(selectedEmptyDays)}
         onSubmit={() => setCorrectionFormOpen(false)}
       />
-    </section>
+    </div>
   );
 };
 
