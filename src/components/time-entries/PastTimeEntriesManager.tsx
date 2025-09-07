@@ -11,7 +11,6 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import EditTimeEntryDialog from './EditTimeEntryDialog';
 import { EnhancedTimeEntryCorrectionForm } from './EnhancedTimeEntryCorrectionForm';
-import { MyCorrectionRequestsView } from './MyCorrectionRequestsView';
 import { useTimeEntriesAdmin } from '@/hooks/useTimeEntriesAdmin';
 import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
 
@@ -261,7 +260,10 @@ const PastTimeEntriesManager: React.FC = () => {
           )}
         </Card>
       ) : (
-        <MyCorrectionRequestsView />
+        <Card className="p-6 text-center">
+          <p className="text-muted-foreground mb-2">Your correction requests are now managed in the main Requests page.</p>
+          <p className="text-sm text-muted-foreground">Visit the Requests section to view and manage all your submitted correction requests.</p>
+        </Card>
       )}
 
       <EditTimeEntryDialog

@@ -6,15 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useRequests } from '@/hooks/useRequests';
+import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { Request, PRIORITY_COLORS, STATUS_COLORS, REQUEST_CATEGORIES } from '@/types/requests';
 import RequestForm from '@/components/requests/RequestForm';
-import RequestDetails from '@/components/requests/RequestDetails';
+import EnhancedRequestDetails from '@/components/requests/EnhancedRequestDetails';
 import { format } from 'date-fns';
 
 export default function RequestsPage() {
-  const { requests, requestTypes, loading } = useRequests();
+  const { requests, requestTypes, loading } = useEnhancedRequests();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -217,7 +217,7 @@ export default function RequestsPage() {
       {selectedRequest && (
         <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <RequestDetails request={selectedRequest} />
+            <EnhancedRequestDetails request={selectedRequest} onClose={() => setSelectedRequest(null)} />
           </DialogContent>
         </Dialog>
       )}

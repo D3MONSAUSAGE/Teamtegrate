@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 // Components
 import { SimplifiedTimeTracking } from '@/components/dashboard/SimplifiedTimeTracking';
 import PastTimeEntriesManager from '@/components/time-entries/PastTimeEntriesManager';
-import { TimeCorrectionManager } from '@/components/time-entries/TimeCorrectionManager';
 import ScheduleEmployeeDashboard from '@/components/schedule/ScheduleEmployeeDashboard';
 
 const TimeTrackingPage = () => {
@@ -41,15 +40,13 @@ const TimeTrackingPage = () => {
         <TabsContent value="time-entries" className="space-y-6">
           {canManageTeams && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Time Entries Management</h3>
+              <h3 className="text-lg font-semibold mb-4">Time Entries & Correction Requests</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Manage time entries and review correction requests. Team members can request corrections that will be routed through the proper approval chain.
+              </p>
               <PastTimeEntriesManager />
             </div>
           )}
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Correction Requests</h3>
-            <TimeCorrectionManager />
-          </div>
         </TabsContent>
       </Tabs>
     </div>
