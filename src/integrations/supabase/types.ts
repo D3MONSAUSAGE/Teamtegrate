@@ -5571,6 +5571,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_role_update: {
+        Args: { new_role: string; target_user_id: string }
+        Returns: Json
+      }
       audit_organization_data: {
         Args: Record<PropertyKey, never>
         Returns: {
