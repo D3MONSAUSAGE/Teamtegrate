@@ -548,56 +548,63 @@ const EmbeddedEmployeeRecords: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="certificates" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Certificate Status</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <div className="p-4 rounded-lg bg-yellow-50">
-                    <FileText className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-yellow-600">{stats.totalCertificatesUploaded}</p>
-                    <p className="text-sm text-muted-foreground">Total Uploaded</p>
+            {/* Quick Stats Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-yellow-100">
+                    <FileText className="h-4 w-4 text-yellow-600" />
                   </div>
-                  <div className="p-4 rounded-lg bg-green-50">
-                    <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-green-600">{stats.totalCertificatesVerified}</p>
-                    <p className="text-sm text-muted-foreground">Verified</p>
+                  <div>
+                    <p className="text-lg font-bold">{stats.totalCertificatesUploaded}</p>
+                    <p className="text-xs text-muted-foreground">Total Uploaded</p>
                   </div>
-                </CardContent>
+                </div>
+              </Card>
+              
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-100">
+                    <UserCheck className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{stats.totalCertificatesVerified}</p>
+                    <p className="text-xs text-muted-foreground">Verified</p>
+                  </div>
+                </div>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Recent Certificate Uploads</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {filteredEmployees
-                      .filter(emp => emp.certificatesUploaded > 0)
-                      .slice(0, 5)
-                      .map((employee) => (
-                        <div key={employee.id} className="flex items-center justify-between p-3 rounded border">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-blue-100">
-                              <Award className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{employee.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {employee.certificatesUploaded} uploaded, {employee.certificatesVerified} verified
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant={employee.certificatesVerified > 0 ? "default" : "secondary"}>
-                            {employee.certificatesVerified > 0 ? "Verified" : "Pending"}
-                          </Badge>
-                        </div>
-                      ))}
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-100">
+                    <Clock className="h-4 w-4 text-orange-600" />
                   </div>
-                </CardContent>
+                  <div>
+                    <p className="text-lg font-bold">{stats.totalCertificatesUploaded - stats.totalCertificatesVerified}</p>
+                    <p className="text-xs text-muted-foreground">Pending Review</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100">
+                    <BarChart3 className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">
+                      {stats.totalCertificatesUploaded > 0 
+                        ? Math.round((stats.totalCertificatesVerified / stats.totalCertificatesUploaded) * 100)
+                        : 0}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">Verification Rate</p>
+                  </div>
+                </div>
               </Card>
             </div>
+
+            {/* Certificate Review Interface */}
+            <EmbeddedCertificateReview />
           </TabsContent>
         </Tabs>
       </div>
