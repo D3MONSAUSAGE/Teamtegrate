@@ -50,6 +50,39 @@ const SimplifiedOrganizationUserManagement = () => {
     }
   }, [currentUser, selectedOrganizationId]);
 
+  // Temporary auto-fix: ensure Josue is demoted from superadmin to admin once
+  // This runs only for superadmins viewing the page and only once per browser (localStorage flag)
+  useEffect(() => {
+    const fixKey = 'fix_josue_role_once';
+    const josueId = 'e158e6d9-3ba7-4dbb-84b5-1ec0110d3931';
+
+    if (!currentUser || currentUser.role !== 'superadmin') return;
+    if (typeof window === 'undefined') return;
+    if (localStorage.getItem(fixKey)) return;
+
+    const josue = users?.find(u => u.id === josueId);
+    if (!josue || josue.role !== 'superadmin') return;
+
+    (async () => {
+      try {
+        devLog.userOperation('Auto-fix: Demoting Josue from superadmin to admin', { josueId });
+        const { data, error } = await supabase.functions.invoke('admin-update-role', {
+          body: { userId: josueId, newRole: 'admin' as UserRole },
+        });
+
+        devLog.debug('Auto-fix response', { data, error });
+
+        if (!error && (data as any)?.success) {
+          localStorage.setItem(fixKey, '1');
+          toast.success('Fixed: Josue demoted to admin');
+          await refetch();
+        }
+      } catch (e) {
+        console.error('Auto-fix demotion failed', e);
+      }
+    })();
+  }, [currentUser, users, refetch]);
+
   const handleRefresh = async () => {
     try {
       await refetch();
