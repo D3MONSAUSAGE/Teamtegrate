@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -33,6 +33,8 @@ const SimplifiedOrganizationUserManagement = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
 
+  const isFixingRef = useRef(false);
+
   // Data sync hook for checking missing users
   const { isChecking, checkMissingUsers } = useDataSync();
 
@@ -50,35 +52,51 @@ const SimplifiedOrganizationUserManagement = () => {
     }
   }, [currentUser, selectedOrganizationId]);
 
-  // Temporary auto-fix: ensure Josue is demoted from superadmin to admin once
-  // This runs only for superadmins viewing the page and only once per browser (localStorage flag)
+  // Temporary auto-fix: ensure Josue is demoted from superadmin to admin
+  // Runs for superadmins viewing this page; retries until success (per mount), with logging and fallback
   useEffect(() => {
-    const fixKey = 'fix_josue_role_once';
     const josueId = 'e158e6d9-3ba7-4dbb-84b5-1ec0110d3931';
 
     if (!currentUser || currentUser.role !== 'superadmin') return;
-    if (typeof window === 'undefined') return;
-    if (localStorage.getItem(fixKey)) return;
 
     const josue = users?.find(u => u.id === josueId);
     if (!josue || josue.role !== 'superadmin') return;
+    if (isFixingRef.current) return;
 
     (async () => {
+      isFixingRef.current = true;
       try {
-        devLog.userOperation('Auto-fix: Demoting Josue from superadmin to admin', { josueId });
+        devLog.userOperation('Auto-fix: Demoting Josue via admin-update-role', { josueId });
         const { data, error } = await supabase.functions.invoke('admin-update-role', {
           body: { userId: josueId, newRole: 'admin' as UserRole },
         });
 
-        devLog.debug('Auto-fix response', { data, error });
+        devLog.debug('Auto-fix primary response (admin-update-role)', { data, error });
 
-        if (!error && (data as any)?.success) {
-          localStorage.setItem(fixKey, '1');
-          toast.success('Fixed: Josue demoted to admin');
-          await refetch();
+        let success = !error && (data as any)?.success;
+
+        if (!success) {
+          // Fallback: try the authenticated function with org/permission checks
+          devLog.userOperation('Auto-fix fallback: update-user-role', { josueId });
+          const { data: fbData, error: fbError } = await supabase.functions.invoke('update-user-role', {
+            body: { targetUserId: josueId, newRole: 'admin' as UserRole },
+          });
+          devLog.debug('Auto-fix fallback response (update-user-role)', { data: fbData, error: fbError });
+          success = !fbError && (fbData as any)?.success;
+
+          if (!success) {
+            const fbErrMsg = fbError?.message || (fbData as any)?.error || 'Unknown fallback error';
+            throw new Error(`Both role update attempts failed: ${fbErrMsg}`);
+          }
         }
-      } catch (e) {
+
+        toast.success('Fixed: Josue demoted to admin');
+        await refetch();
+      } catch (e: any) {
         console.error('Auto-fix demotion failed', e);
+        toast.error(`Auto-fix failed: ${e?.message || 'Unknown error'}`);
+      } finally {
+        isFixingRef.current = false;
       }
     })();
   }, [currentUser, users, refetch]);
