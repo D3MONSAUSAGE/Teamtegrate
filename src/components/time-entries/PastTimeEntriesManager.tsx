@@ -269,9 +269,11 @@ const PastTimeEntriesManager: React.FC = () => {
                   Request Correction ({selectedEntries.size + selectedEmptyDays.size})
                 </Button>
               )}
-              <Button variant="secondary" onClick={onAdd}>
-                <Plus className="h-4 w-4 mr-2" /> Add Entry
-              </Button>
+              {canManageOthers && (
+                <Button variant="secondary" onClick={onAdd}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Entry
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -318,14 +320,16 @@ const PastTimeEntriesManager: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
-                          <Pencil className="h-4 w-4 mr-1" /> Edit
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
-                          <Trash2 className="h-4 w-4 mr-1" /> Delete
-                        </Button>
-                      </div>
+                      {canManageOthers && (
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
+                            <Pencil className="h-4 w-4 mr-1" /> Edit
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -452,14 +456,16 @@ const PastTimeEntriesManager: React.FC = () => {
                                   </span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
-                                  <Pencil className="h-4 w-4 mr-1" /> Edit
-                                </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
-                                  <Trash2 className="h-4 w-4 mr-1" /> Delete
-                                </Button>
-                              </div>
+                              {canManageOthers && (
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => onEdit(e.id)}>
+                                    <Pencil className="h-4 w-4 mr-1" /> Edit
+                                  </Button>
+                                  <Button size="sm" variant="destructive" onClick={() => handleDelete(e.id)}>
+                                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
