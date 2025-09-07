@@ -95,19 +95,24 @@ export const useVerifyCertificate = () => {
         throw new Error('Certificate must be uploaded before verification');
       }
 
-      // Update the certificate status
+      // Update the certificate status (and mark assignment completed if verified)
+      const updateData: any = {
+        certificate_status: status,
+        verified_at: new Date().toISOString(),
+        verified_by: user.id,
+        verification_notes: notes?.trim() || null
+      };
+      if (status === 'verified') {
+        updateData.status = 'completed';
+        updateData.completed_at = new Date().toISOString();
+        updateData.completion_score = 100;
+      }
       const { data, error } = await supabase
         .from('training_assignments')
-        .update({
-          certificate_status: status,
-          verified_at: new Date().toISOString(),
-          verified_by: user.id,
-          verification_notes: notes?.trim() || null
-        })
+        .update(updateData)
         .eq('id', assignmentId)
         .select()
         .single();
-
       if (error) {
         console.error('Certificate verification error:', error);
         throw new Error(`Failed to ${status === 'verified' ? 'approve' : 'reject'} certificate: ${error.message}`);
