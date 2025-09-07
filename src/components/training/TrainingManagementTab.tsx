@@ -78,7 +78,7 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
 
       {/* Management Overview */}
       <Tabs defaultValue="management" className="space-y-6">
-        <TabsList className="grid w-full max-w-4xl grid-cols-4">
+        <TabsList className="grid w-full max-w-4xl grid-cols-3">
           <TabsTrigger value="management" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Management
@@ -90,10 +90,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
           <TabsTrigger value="records" className="flex items-center gap-2">
             <UserCheck className="h-4 w-4" />
             Employee Records
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -176,34 +172,6 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
           </div>
         </TabsContent>
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="animate-fade-in">
-            <Card className="p-6">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto">
-                  <BarChart3 className="h-8 w-8 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Advanced Analytics</h3>
-                  <p className="text-muted-foreground">
-                    Detailed analytics dashboard is available through the management panel
-                  </p>
-                </div>
-                <div className="flex justify-center">
-                  {onViewAnalytics && (
-                    <button
-                      onClick={onViewAnalytics}
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                    >
-                      Open Analytics Dashboard
-                    </button>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );
