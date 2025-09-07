@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import EditTimeEntryDialog from './EditTimeEntryDialog';
-import { TimeEntryCorrectionRequestForm } from './TimeEntryCorrectionRequestForm';
+import { EnhancedTimeEntryCorrectionForm } from './EnhancedTimeEntryCorrectionForm';
 import { MyCorrectionRequestsView } from './MyCorrectionRequestsView';
 import { useTimeEntriesAdmin } from '@/hooks/useTimeEntriesAdmin';
 import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
@@ -272,11 +272,11 @@ const PastTimeEntriesManager: React.FC = () => {
         onSave={handleSave}
       />
 
-      <TimeEntryCorrectionRequestForm
+      <EnhancedTimeEntryCorrectionForm
         open={correctionFormOpen}
         onOpenChange={setCorrectionFormOpen}
         selectedEntries={selectedEntriesArray}
-        onSubmit={handleCorrectionSubmit}
+        onSubmit={() => setCorrectionFormOpen(false)}
       />
     </section>
   );

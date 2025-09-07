@@ -36,6 +36,12 @@ export const useRealtimeNotifications = () => {
         case 'task_status_change':
         case 'schedule_assignment':
         case 'schedule_update':
+        case 'training_assignment':
+        case 'training_assignment_manager':
+        case 'training_completed':
+        case 'request_submitted':
+        case 'request_approved':
+        case 'request_rejected':
           await playAppSound('status-change', soundSettings.volume);
           break;
         case 'meeting_response_accepted':

@@ -1128,26 +1128,60 @@ export const useCreateTrainingAssignment = () => {
 
       if (error) throw error;
 
-      // Create notifications for successfully assigned users
-      const notifications = validUsers.map(userId => ({
-        user_id: userId,
-        organization_id: user.organizationId,
-        type: 'training_assignment',
-        title: `New ${assignmentType} assigned`,
-        content: `You have been assigned: ${contentTitle}${dueDate ? ` (Due: ${new Date(dueDate).toLocaleDateString()})` : ''}`,
-        metadata: {
-          assignment_type: assignmentType,
-          content_id: contentId,
-          assigned_by: user.id
+      // Get manager information for each user and create enhanced notifications
+      const userManagerData = await Promise.all(
+        validUsers.map(async (userId) => {
+          const { data: managerData } = await supabase.rpc('get_user_team_manager', { target_user_id: userId });
+          return { userId, managerId: managerData };
+        })
+      );
+
+      // Create notifications for assigned users and their managers
+      const allNotifications = [];
+      
+      // User notifications
+      userManagerData.forEach(({ userId, managerId }) => {
+        // Notification to the user
+        allNotifications.push({
+          user_id: userId,
+          organization_id: user.organizationId,
+          type: 'training_assignment',
+          title: `New ${assignmentType} assigned`,
+          content: `You have been assigned: ${contentTitle}${dueDate ? ` (Due: ${new Date(dueDate).toLocaleDateString()})` : ''}`,
+          metadata: {
+            assignment_type: assignmentType,
+            content_id: contentId,
+            assigned_by: user.id
+          }
+        });
+
+        // Notification to the manager (if exists)
+        if (managerId) {
+          allNotifications.push({
+            user_id: managerId,
+            organization_id: user.organizationId,
+            type: 'training_assignment_manager',
+            title: 'Team Member Training Assignment',
+            content: `Training "${contentTitle}" has been assigned to your team member${dueDate ? ` (Due: ${new Date(dueDate).toLocaleDateString()})` : ''}`,
+            metadata: {
+              assignment_type: assignmentType,
+              content_id: contentId,
+              assigned_by: user.id,
+              assigned_user_id: userId
+            }
+          });
         }
-      }));
+      });
 
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert(notifications);
+      // Send all notifications
+      if (allNotifications.length > 0) {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert(allNotifications);
 
-      if (notificationError) {
-        console.warn('Failed to create notifications:', notificationError);
+        if (notificationError) {
+          console.warn('Failed to create notifications:', notificationError);
+        }
       }
 
       return { data, skippedUsers, validUsers };
@@ -1449,15 +1483,21 @@ export const useUpdateAssignmentStatus = () => {
     mutationFn: async ({ 
       assignmentId, 
       status, 
-      startedAt 
+      startedAt,
+      completionScore
     }: {
       assignmentId: string;
       status: 'in_progress' | 'completed';
       startedAt?: string;
+      completionScore?: number;
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const updateData: any = { status };
+      const updateData: any = { 
+        status,
+        ...(status === 'completed' && { completed_at: new Date().toISOString() }),
+        ...(completionScore && { completion_score: completionScore })
+      };
       if (status === 'in_progress' && startedAt) {
         updateData.started_at = startedAt;
       }
@@ -1471,10 +1511,63 @@ export const useUpdateAssignmentStatus = () => {
         .single();
 
       if (error) throw error;
+
+      // If training is completed, notify manager and admins
+      if (status === 'completed') {
+        try {
+          // Get manager information
+          const { data: managerId } = await supabase.rpc('get_user_team_manager', { 
+            target_user_id: user.id 
+          });
+
+          const recipients = [];
+          
+          if (managerId) {
+            recipients.push(managerId);
+          }
+
+          // Also notify admins
+          const { data: adminUsers } = await supabase
+            .from('users')
+            .select('id')
+            .eq('organization_id', user.organizationId)
+            .in('role', ['admin', 'superadmin']);
+
+          if (adminUsers) {
+            recipients.push(...adminUsers.map(u => u.id));
+          }
+
+          // Remove duplicates and current user
+          const uniqueRecipients = [...new Set(recipients)].filter(id => id !== user.id);
+
+          if (uniqueRecipients.length > 0) {
+            const { error: notificationError } = await supabase.rpc('send_notification_to_multiple', {
+              recipient_ids: uniqueRecipients,
+              notification_title: 'Training Completed',
+              notification_content: `${user.name || 'Team member'} has completed training: "${data.content_title}"${completionScore ? ` (Score: ${completionScore}%)` : ''}`,
+              notification_type: 'training_completed',
+              org_id: user.organizationId,
+              metadata_json: {
+                assignment_id: assignmentId,
+                completed_by: user.id,
+                completion_score: completionScore
+              }
+            });
+
+            if (notificationError) {
+              console.warn('Failed to send completion notifications:', notificationError);
+            }
+          }
+        } catch (notificationError) {
+          console.warn('Error sending training completion notifications:', notificationError);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: any) => {
       console.error('Error updating assignment status:', error);

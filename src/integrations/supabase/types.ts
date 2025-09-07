@@ -5823,6 +5823,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_team_manager: {
+        Args: { target_user_id: string }
+        Returns: string
+      }
       get_user_teams: {
         Args: { user_id_param: string }
         Returns: {
@@ -5888,6 +5892,19 @@ export type Database = {
       send_daily_emails_and_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      send_notification_to_multiple: {
+        Args: {
+          metadata_json?: Json
+          notification_content: string
+          notification_title: string
+          notification_type: string
+          org_id: string
+          recipient_ids: string[]
+          related_event_id?: string
+          related_task_id?: string
+        }
+        Returns: number
       }
       send_reminders: {
         Args: Record<PropertyKey, never>
