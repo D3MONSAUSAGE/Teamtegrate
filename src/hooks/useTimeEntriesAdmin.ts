@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTeamQueries } from './organization/team/useTeamQueries';
+import { useRealTeamMembers } from './team/useRealTeamMembers';
 
 export interface TimeEntryRow {
   id: string;
@@ -24,10 +26,21 @@ export const useTimeEntriesAdmin = () => {
   const [role, setRole] = useState<string | null>(null);
   const [users, setUsers] = useState<OrgUser[]>([]);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [entries, setEntries] = useState<TimeEntryRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentUserTeamId, setCurrentUserTeamId] = useState<string | null>(null);
 
   const canManageOthers = useMemo(() => ['manager', 'admin', 'superadmin'].includes(role || ''), [role]);
+  const isManager = useMemo(() => role === 'manager', [role]);
+  const isAdminOrSuperAdmin = useMemo(() => ['admin', 'superadmin'].includes(role || ''), [role]);
+
+  // Get teams data
+  const { teams, isLoading: teamsLoading } = useTeamQueries();
+  
+  // Get team members for the selected team (or current user's team for managers)
+  const teamIdForMembers = isManager ? currentUserTeamId : selectedTeamId;
+  const { teamMembers, isLoading: teamMembersLoading } = useRealTeamMembers(teamIdForMembers || undefined);
 
   useEffect(() => {
     (async () => {
@@ -37,26 +50,24 @@ export const useTimeEntriesAdmin = () => {
       setTargetUserId(uid);
 
       if (uid) {
-        // Get role quickly
+        // Get role and user details including team info
         const { data: roleData } = await supabase.rpc('get_current_user_role');
         if (roleData) setRole(roleData as string);
 
-        // Get current user's org and then users in org
+        // Get current user's org and team info
         const { data: me } = await supabase
           .from('users')
-          .select('organization_id')
+          .select('organization_id, team_id')
           .eq('id', uid)
           .maybeSingle();
         const orgId = (me as any)?.organization_id || null;
+        const userTeamId = (me as any)?.team_id || null;
         setCurrentOrgId(orgId);
+        setCurrentUserTeamId(userTeamId);
 
-        if (orgId) {
-          const { data: orgUsers, error } = await supabase
-            .from('users')
-            .select('id, name, email, role')
-            .eq('organization_id', orgId)
-            .order('name', { ascending: true });
-          if (!error && orgUsers) setUsers(orgUsers as OrgUser[]);
+        // For managers, set their team as selected by default
+        if (roleData === 'manager' && userTeamId) {
+          setSelectedTeamId(userTeamId);
         }
       }
     })();
@@ -126,16 +137,62 @@ export const useTimeEntriesAdmin = () => {
     }
   }, []);
 
+  // Filter users based on role and team selection
+  const filteredUsers = useMemo(() => {
+    if (isManager && currentUserTeamId) {
+      // Managers can only see their team members
+      return teamMembers.map(tm => ({
+        id: tm.id,
+        name: tm.name,
+        email: tm.email,
+        role: tm.role,
+      }));
+    } else if (isAdminOrSuperAdmin) {
+      if (selectedTeamId) {
+        // Admins with team selected: show team members
+        return teamMembers.map(tm => ({
+          id: tm.id,
+          name: tm.name,
+          email: tm.email,
+          role: tm.role,
+        }));
+      } else {
+        // Admins with no team selected: show all organization users
+        return users;
+      }
+    }
+    return users;
+  }, [isManager, isAdminOrSuperAdmin, currentUserTeamId, selectedTeamId, teamMembers, users]);
+
+  // Load all organization users for admins (when no team filter)
+  useEffect(() => {
+    if (currentOrgId && isAdminOrSuperAdmin && !selectedTeamId) {
+      (async () => {
+        const { data: orgUsers, error } = await supabase
+          .from('users')
+          .select('id, name, email, role')
+          .eq('organization_id', currentOrgId)
+          .order('name', { ascending: true });
+        if (!error && orgUsers) setUsers(orgUsers as OrgUser[]);
+      })();
+    }
+  }, [currentOrgId, isAdminOrSuperAdmin, selectedTeamId]);
+
   return {
     currentUserId,
     currentOrgId,
     role,
     canManageOthers,
-    users,
+    isManager,
+    isAdminOrSuperAdmin,
+    users: filteredUsers,
     targetUserId,
     setTargetUserId,
+    selectedTeamId,
+    setSelectedTeamId,
+    teams,
     entries,
-    isLoading,
+    isLoading: isLoading || teamsLoading || teamMembersLoading,
     refresh,
     createEntry,
     updateEntry,

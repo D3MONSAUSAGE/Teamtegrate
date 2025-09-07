@@ -73,9 +73,14 @@ const PastTimeEntriesManager: React.FC = () => {
   const { 
     currentUserId,
     canManageOthers,
+    isManager,
+    isAdminOrSuperAdmin,
     users,
     targetUserId,
     setTargetUserId,
+    selectedTeamId,
+    setSelectedTeamId,
+    teams,
     entries,
     isLoading,
     refresh,
@@ -246,16 +251,38 @@ const PastTimeEntriesManager: React.FC = () => {
                 <WeekPicker selectedWeek={date} onWeekChange={setDate} />
               )}
               {canManageOthers && (
-                <Select value={targetUserId ?? undefined} onValueChange={(v) => setTargetUserId(v)}>
-                  <SelectTrigger className="w-[260px]">
-                    <SelectValue placeholder="Select employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map(u => (
-                      <SelectItem key={u.id} value={u.id}>{u.name || u.email}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-3">
+                  {isAdminOrSuperAdmin && (
+                    <Select value={selectedTeamId ?? 'all'} onValueChange={(v) => setSelectedTeamId(v === 'all' ? null : v)}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="All Teams" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Teams</SelectItem>
+                        {teams.map(team => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Select value={targetUserId ?? undefined} onValueChange={(v) => setTargetUserId(v)}>
+                    <SelectTrigger className="w-[260px]">
+                      <SelectValue placeholder={isManager ? "Select team member" : "Select employee"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          <div className="flex flex-col">
+                            <span>{u.name || u.email}</span>
+                            <span className="text-xs text-muted-foreground capitalize">{u.role}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
             <div className="flex items-center gap-2">
