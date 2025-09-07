@@ -23,6 +23,7 @@ import {
   Plus, 
   Trash2, 
   Crown,
+  Shield,
   User,
   Search,
   Loader2,
@@ -39,7 +40,7 @@ import AddTeamMemberDialog from './AddTeamMemberDialog';
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'manager' | 'member';
+  role: 'manager' | 'admin' | 'member';
   joined_at: string;
   user_name: string;
   user_email: string;
@@ -96,7 +97,7 @@ const ManageTeamMembersDialog: React.FC<ManageTeamMembersDialogProps> = ({
         const formattedMembers = (data || []).map(membership => ({
           id: membership.id,
           user_id: membership.user_id,
-          role: membership.role as 'manager' | 'member',
+          role: membership.role as 'manager' | 'admin' | 'member',
           joined_at: membership.joined_at,
           user_name: (membership.users as any)?.name || 'Unknown',
           user_email: (membership.users as any)?.email || 'Unknown',
@@ -227,6 +228,8 @@ const ManageTeamMembersDialog: React.FC<ManageTeamMembersDialogProps> = ({
                       <div className="p-2 rounded-full bg-muted">
                         {member.role === 'manager' ? (
                           <Crown className="h-4 w-4 text-yellow-500" />
+                        ) : member.role === 'admin' ? (
+                          <Shield className="h-4 w-4 text-orange-500" />
                         ) : (
                           <User className="h-4 w-4 text-blue-500" />
                         )}
@@ -234,7 +237,7 @@ const ManageTeamMembersDialog: React.FC<ManageTeamMembersDialogProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{member.user_name}</span>
-                          <Badge variant={member.role === 'manager' ? 'default' : 'secondary'}>
+                          <Badge variant={member.role === 'manager' ? 'default' : member.role === 'admin' ? 'destructive' : 'secondary'}>
                             {member.role}
                           </Badge>
                         </div>
@@ -265,6 +268,7 @@ const ManageTeamMembersDialog: React.FC<ManageTeamMembersDialogProps> = ({
               <p className="text-sm text-muted-foreground">
                 Total members: {teamMembers.length} | 
                 Managers: {teamMembers.filter(m => m.role === 'manager').length} | 
+                Admins: {teamMembers.filter(m => m.role === 'admin').length} | 
                 Members: {teamMembers.filter(m => m.role === 'member').length}
               </p>
             </div>

@@ -57,7 +57,7 @@ const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
   const { addTeamMember } = useTeamManagement();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-  const [memberRole, setMemberRole] = useState<'manager' | 'member'>('member');
+  const [memberRole, setMemberRole] = useState<'manager' | 'admin' | 'member'>('member');
   const [isAdding, setIsAdding] = useState(false);
 
   // Fetch available users with improved query and debugging
@@ -188,12 +188,13 @@ const AddTeamMemberDialog: React.FC<AddTeamMemberDialogProps> = ({
           {/* Role Selection */}
           <div className="space-y-2">
             <Label htmlFor="role">Member Role</Label>
-            <Select value={memberRole} onValueChange={(value) => setMemberRole(value as 'manager' | 'member')}>
+            <Select value={memberRole} onValueChange={(value) => setMemberRole(value as 'manager' | 'admin' | 'member')}>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="member">Member</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="manager">Manager</SelectItem>
               </SelectContent>
             </Select>

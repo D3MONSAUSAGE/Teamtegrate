@@ -11,7 +11,10 @@ import {
   Trash2, 
   UserCog, 
   ArrowRightLeft,
-  Loader2 
+  Loader2,
+  Crown,
+  Shield,
+  User
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -75,7 +78,7 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
     }
   };
 
-  const handleRoleChange = async (memberId: string, newRole: 'manager' | 'member') => {
+  const handleRoleChange = async (memberId: string, newRole: 'manager' | 'admin' | 'member') => {
     try {
       await updateTeamMemberRole(team.id, memberId, newRole);
       toast.success('Role updated successfully');
@@ -164,12 +167,17 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{member.name || 'Unknown'}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{member.name || 'Unknown'}</span>
+                            {member.role === 'manager' && <Crown className="h-3 w-3 text-yellow-500" />}
+                            {member.role === 'admin' && <Shield className="h-3 w-3 text-orange-500" />}
+                            {member.role === 'member' && <User className="h-3 w-3 text-blue-500" />}
+                          </div>
                           <div className="text-sm text-muted-foreground">
                             {member.email || 'No email'}
                           </div>
                         </div>
-                        <Badge variant={member.role === 'manager' ? 'default' : 'secondary'}>
+                        <Badge variant={member.role === 'manager' ? 'default' : member.role === 'admin' ? 'destructive' : 'secondary'}>
                           {member.role}
                         </Badge>
                       </div>
@@ -185,18 +193,30 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-background border shadow-lg z-[10000]">
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              console.log('Role change clicked');
-                              handleRoleChange(
-                                member.id, 
-                                member.role === 'manager' ? 'member' : 'manager'
-                              );
-                            }}
-                          >
-                            <UserCog className="h-4 w-4 mr-2" />
-                            {member.role === 'manager' ? 'Make Member' : 'Make Manager'}
-                          </DropdownMenuItem>
+                          {member.role !== 'manager' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleRoleChange(member.id, 'manager')}
+                            >
+                              <Crown className="h-4 w-4 mr-2" />
+                              Make Manager
+                            </DropdownMenuItem>
+                          )}
+                          {member.role !== 'admin' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleRoleChange(member.id, 'admin')}
+                            >
+                              <Shield className="h-4 w-4 mr-2" />
+                              Make Admin
+                            </DropdownMenuItem>
+                          )}
+                          {member.role !== 'member' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleRoleChange(member.id, 'member')}
+                            >
+                              <User className="h-4 w-4 mr-2" />
+                              Make Member
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem 
                             onClick={(e) => {
                               console.log('Transfer clicked, event:', e);
