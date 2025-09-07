@@ -16,6 +16,7 @@ interface EnhancedTimeEntryCorrectionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedEntries: TimeEntryRow[];
+  selectedEmptyDays?: string[]; // Array of date strings in 'yyyy-MM-dd' format
   onSubmit?: () => void;
 }
 
@@ -23,6 +24,7 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
   open,
   onOpenChange,
   selectedEntries,
+  selectedEmptyDays = [],
   onSubmit
 }) => {
   const { createRequestWithAutoAssignment, requestTypes } = useEnhancedRequests();
@@ -49,10 +51,20 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
     setLoading(true);
     try {
       const selectedEntry = selectedEntries[0]; // Use first selected entry for reference
+      const hasEmptyDays = selectedEmptyDays.length > 0;
+      const hasEntries = selectedEntries.length > 0;
+      
+      // Determine title based on what's selected
+      let title = `Time Entry Correction for ${format(selectedDate, 'MMM d, yyyy')}`;
+      if (hasEmptyDays && !hasEntries) {
+        title = `Missing Time Entry Request for ${format(selectedDate, 'MMM d, yyyy')}`;
+      } else if (hasEmptyDays && hasEntries) {
+        title = `Time Entry Correction & Missing Days for ${format(selectedDate, 'MMM d, yyyy')}`;
+      }
       
       await createRequestWithAutoAssignment({
         request_type_id: correctionRequestType.id,
-        title: `Time Entry Correction for ${format(selectedDate, 'MMM d, yyyy')}`,
+        title,
         description: `Correction request for time entry on ${format(selectedDate, 'PPPP')}`,
         form_data: {
           original_date: format(selectedDate, 'yyyy-MM-dd'),
@@ -62,7 +74,12 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
             id: entry.id,
             date: entry.clock_in,
             original_duration: entry.duration_minutes
-          }))
+          })),
+          missing_days: selectedEmptyDays.map(dayStr => ({
+            date: dayStr,
+            reason: 'No time entry recorded'
+          })),
+          correction_type: hasEmptyDays && !hasEntries ? 'missing_entry' : hasEmptyDays ? 'mixed' : 'correction'
         },
         priority: 'medium'
       });
@@ -87,20 +104,32 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
     }
   };
 
-  // Pre-fill form data if there's a selected entry
+  // Pre-fill form data if there's a selected entry or empty day
   React.useEffect(() => {
-    if (selectedEntries.length > 0 && open) {
-      const entry = selectedEntries[0];
-      const entryDate = new Date(entry.clock_in);
-      
-      setSelectedDate(entryDate);
-      setFormData(prev => ({
-        ...prev,
-        original_clock_in: format(entryDate, 'HH:mm'),
-        original_clock_out: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : ''
-      }));
+    if (open) {
+      if (selectedEntries.length > 0) {
+        const entry = selectedEntries[0];
+        const entryDate = new Date(entry.clock_in);
+        
+        setSelectedDate(entryDate);
+        setFormData(prev => ({
+          ...prev,
+          original_clock_in: format(entryDate, 'HH:mm'),
+          original_clock_out: entry.clock_out ? format(new Date(entry.clock_out), 'HH:mm') : ''
+        }));
+      } else if (selectedEmptyDays.length > 0) {
+        // Pre-fill with first selected empty day
+        const emptyDate = new Date(selectedEmptyDays[0]);
+        setSelectedDate(emptyDate);
+        setFormData(prev => ({
+          ...prev,
+          original_clock_in: '',
+          original_clock_out: '',
+          reason: prev.reason || 'Missing time entry - forgot to clock in/out'
+        }));
+      }
     }
-  }, [selectedEntries, open]);
+  }, [selectedEntries, selectedEmptyDays, open]);
 
   if (!correctionRequestType) {
     return (
@@ -119,7 +148,14 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Request Time Entry Correction</DialogTitle>
+          <DialogTitle>
+            {selectedEmptyDays.length > 0 && selectedEntries.length === 0 
+              ? 'Request Missing Time Entry' 
+              : selectedEmptyDays.length > 0 && selectedEntries.length > 0
+              ? 'Request Time Entry Correction & Missing Days'
+              : 'Request Time Entry Correction'
+            }
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,13 +189,16 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
           {/* Original Times */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="original_clock_in">Original Clock In *</Label>
+              <Label htmlFor="original_clock_in">
+                Original Clock In {selectedEmptyDays.length > 0 && selectedEntries.length === 0 ? '(if any)' : '*'}
+              </Label>
               <Input
                 id="original_clock_in"
                 type="time"
                 value={formData.original_clock_in}
                 onChange={(e) => setFormData(prev => ({ ...prev, original_clock_in: e.target.value }))}
-                required
+                required={selectedEntries.length > 0}
+                placeholder={selectedEmptyDays.length > 0 && selectedEntries.length === 0 ? "No clock in recorded" : ""}
               />
             </div>
             <div className="space-y-2">
@@ -169,6 +208,7 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
                 type="time"
                 value={formData.original_clock_out}
                 onChange={(e) => setFormData(prev => ({ ...prev, original_clock_out: e.target.value }))}
+                placeholder={selectedEmptyDays.length > 0 && selectedEntries.length === 0 ? "No clock out recorded" : ""}
               />
             </div>
           </div>
@@ -226,6 +266,14 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
             <p className="text-sm text-muted-foreground">
               <strong>Note:</strong> This request will be sent to your team manager and administrators for approval. 
               You will receive a notification once it has been reviewed.
+              {selectedEmptyDays.length > 0 && (
+                <>
+                  <br /><br />
+                  <strong>Missing Days:</strong> {selectedEmptyDays.length > 0 && (
+                    <>You're requesting corrections for {selectedEmptyDays.length} day(s) with no recorded time entries.</>
+                  )}
+                </>
+              )}
             </p>
           </div>
 

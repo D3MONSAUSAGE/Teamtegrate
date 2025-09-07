@@ -65,6 +65,7 @@ const PastTimeEntriesManager: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
+  const [selectedEmptyDays, setSelectedEmptyDays] = useState<Set<string>>(new Set());
   const [correctionFormOpen, setCorrectionFormOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'entries' | 'requests'>('entries');
   const [displayMode, setDisplayMode] = useState<'daily' | 'weekly'>('daily');
@@ -133,17 +134,44 @@ const PastTimeEntriesManager: React.FC = () => {
     });
   };
 
+  const handleSelectEmptyDay = (dayString: string, checked: boolean) => {
+    setSelectedEmptyDays(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(dayString);
+      } else {
+        newSet.delete(dayString);
+      }
+      return newSet;
+    });
+  };
+
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedEntries(new Set(entries.map(e => e.id)));
+    if (displayMode === 'weekly') {
+      if (checked) {
+        // Select all entries
+        setSelectedEntries(new Set(entries.map(e => e.id)));
+        // Select all empty days (days with no entries)
+        const emptyDays = weekDays.filter(day => getDayEntries(day).length === 0)
+          .map(day => format(day, 'yyyy-MM-dd'));
+        setSelectedEmptyDays(new Set(emptyDays));
+      } else {
+        setSelectedEntries(new Set());
+        setSelectedEmptyDays(new Set());
+      }
     } else {
-      setSelectedEntries(new Set());
+      if (checked) {
+        setSelectedEntries(new Set(entries.map(e => e.id)));
+      } else {
+        setSelectedEntries(new Set());
+      }
     }
   };
 
   const handleCorrectionSubmit = async (correctionData: any) => {
     await createCorrectionRequest(correctionData);
     setSelectedEntries(new Set());
+    setSelectedEmptyDays(new Set());
   };
 
   const selectedEntriesArray = entries.filter(e => selectedEntries.has(e.id));
@@ -231,14 +259,14 @@ const PastTimeEntriesManager: React.FC = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {selectedEntries.size > 0 && (
+              {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
                 <Button 
                   variant="outline" 
                   onClick={() => setCorrectionFormOpen(true)}
                   className="mr-2"
                 >
                   <FileText className="h-4 w-4 mr-2" />
-                  Request Correction ({selectedEntries.size})
+                  Request Correction ({selectedEntries.size + selectedEmptyDays.size})
                 </Button>
               )}
               <Button variant="secondary" onClick={onAdd}>
@@ -310,10 +338,16 @@ const PastTimeEntriesManager: React.FC = () => {
                   Week of {format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
                 </h2>
                 <div className="flex items-center gap-2">
-                  {entries.length > 0 && (
+                  {(entries.length > 0 || weekDays.some(day => getDayEntries(day).length === 0)) && (
                     <div className="flex items-center gap-2 mr-4">
                       <Checkbox
-                        checked={selectedEntries.size === entries.length && entries.length > 0}
+                        checked={
+                          displayMode === 'weekly' 
+                            ? selectedEntries.size === entries.length && 
+                              selectedEmptyDays.size === weekDays.filter(day => getDayEntries(day).length === 0).length &&
+                              (entries.length > 0 || weekDays.some(day => getDayEntries(day).length === 0))
+                            : selectedEntries.size === entries.length && entries.length > 0
+                        }
                         onCheckedChange={handleSelectAll}
                       />
                       <span className="text-sm text-muted-foreground">Select All</span>
@@ -345,8 +379,24 @@ const PastTimeEntriesManager: React.FC = () => {
                       </div>
                       
                       {dayEntries.length === 0 ? (
-                        <div className="text-sm text-muted-foreground py-2 px-3 bg-muted/30 rounded-md">
-                          No entries for this day
+                        <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-md">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedEmptyDays.has(format(day, 'yyyy-MM-dd'))}
+                              onCheckedChange={(checked) => handleSelectEmptyDay(format(day, 'yyyy-MM-dd'), !!checked)}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              No entries for this day
+                            </span>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleSelectEmptyDay(format(day, 'yyyy-MM-dd'), !selectedEmptyDays.has(format(day, 'yyyy-MM-dd')))}
+                            className="text-xs"
+                          >
+                            Request Correction
+                          </Button>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -404,6 +454,7 @@ const PastTimeEntriesManager: React.FC = () => {
         open={correctionFormOpen}
         onOpenChange={setCorrectionFormOpen}
         selectedEntries={selectedEntriesArray}
+        selectedEmptyDays={Array.from(selectedEmptyDays)}
         onSubmit={() => setCorrectionFormOpen(false)}
       />
     </section>
