@@ -59,6 +59,7 @@ import { useTeamMemberOperations } from '@/hooks/organization/team/useTeamMember
 import AddUserToTeamDialog from '@/components/organization/team/AddUserToTeamDialog';
 import { BulkTeamManagement } from '@/components/team/BulkTeamManagement';
 import { TeamTransferDialog } from '@/components/team/TeamTransferDialog';
+import { getTeamRoleIcon, getTeamRoleBadgeVariant, getTeamRoleHierarchy, type TeamRole } from '@/components/team/utils/teamRoleUtils';
 
 interface TeamMembersTabProps {
   team: {
@@ -70,7 +71,7 @@ interface TeamMembersTabProps {
 
 type SortField = 'name' | 'email' | 'role' | 'joined_at' | 'completionRate' | 'totalTasks';
 type SortOrder = 'asc' | 'desc';
-type FilterRole = 'all' | 'manager' | 'member';
+type FilterRole = 'all' | 'manager' | 'admin' | 'member';
 type FilterStatus = 'all' | 'active' | 'inactive';
 
 const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
@@ -127,8 +128,8 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
           bValue = b.email || '';
           break;
         case 'role':
-          aValue = a.role === 'manager' ? 1 : 0;
-          bValue = b.role === 'manager' ? 1 : 0;
+          aValue = getTeamRoleHierarchy(a.role as TeamRole);
+          bValue = getTeamRoleHierarchy(b.role as TeamRole);
           break;
         case 'joined_at':
           aValue = new Date(a.joined_at).getTime();
@@ -188,7 +189,7 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
     }
   };
 
-  const handleRoleChange = async (memberId: string, newRole: 'manager' | 'member') => {
+  const handleRoleChange = async (memberId: string, newRole: 'manager' | 'admin' | 'member') => {
     try {
       await updateTeamMemberRole(team.id, memberId, newRole);
       refetch();
@@ -213,7 +214,7 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
     }
   };
 
-  const handleBulkRoleChange = async (newRole: 'manager' | 'member') => {
+  const handleBulkRoleChange = async (newRole: 'manager' | 'admin' | 'member') => {
     try {
       await Promise.all(
         Array.from(selectedMembers).map(memberId => 
@@ -286,6 +287,7 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="manager">Managers</SelectItem>
+                <SelectItem value="admin">Admins</SelectItem>
                 <SelectItem value="member">Members</SelectItem>
               </SelectContent>
             </Select>
@@ -313,6 +315,10 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
               <Button variant="outline" size="sm" onClick={() => handleBulkRoleChange('manager')}>
                 <Crown className="h-3 w-3 mr-1" />
                 Make Manager
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleBulkRoleChange('admin')}>
+                <Shield className="h-3 w-3 mr-1" />
+                Make Admin
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleBulkRoleChange('member')}>
                 <UserCheck className="h-3 w-3 mr-1" />
@@ -355,6 +361,18 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
           </div>
         </div>
         
+        <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-blue-600">
+                {teamMembers.filter(m => m.role === 'admin').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Admins</p>
+            </div>
+            <Shield className="h-8 w-8 text-blue-500/60" />
+          </div>
+        </div>
+        
         <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -367,15 +385,15 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
           </div>
         </div>
         
-        <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg">
+        <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-purple-600">
                 {Math.round(teamMembers.reduce((sum, m) => sum + (m.completionRate || 0), 0) / Math.max(teamMembers.length, 1))}%
               </p>
               <p className="text-sm text-muted-foreground">Avg Completion</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-blue-500/60" />
+            <TrendingUp className="h-8 w-8 text-purple-500/60" />
           </div>
         </div>
         
@@ -459,9 +477,7 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium truncate">{member.name || 'Unknown User'}</h4>
-                    {member.role === 'manager' && (
-                      <Crown className="h-4 w-4 text-yellow-500" />
-                    )}
+                    {getTeamRoleIcon(member.role as TeamRole)}
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Mail className="h-3 w-3" />
@@ -471,7 +487,7 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
               </div>
               
               <div className="w-24 text-center">
-                <Badge variant={member.role === 'manager' ? 'default' : 'secondary'}>
+                <Badge variant={getTeamRoleBadgeVariant(member.role as TeamRole)}>
                   {member.role}
                 </Badge>
               </div>
@@ -514,11 +530,46 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
                       <DropdownMenuItem>View Profile</DropdownMenuItem>
                       <DropdownMenuItem>Send Message</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => handleRoleChange(member.id, member.role === 'manager' ? 'member' : 'manager')}
-                      >
-                        {member.role === 'manager' ? 'Remove Manager Role' : 'Make Manager'}
-                      </DropdownMenuItem>
+                      
+                      {/* Role cycling based on current role */}
+                      {member.role === 'member' && (
+                        <>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, 'admin')}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            Make Admin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, 'manager')}>
+                            <Crown className="h-4 w-4 mr-2" />
+                            Make Manager
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      
+                      {member.role === 'admin' && (
+                        <>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, 'member')}>
+                            <User className="h-4 w-4 mr-2" />
+                            Make Member
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, 'manager')}>
+                            <Crown className="h-4 w-4 mr-2" />
+                            Make Manager
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      
+                      {member.role === 'manager' && (
+                        <>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, 'admin')}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            Make Admin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, 'member')}>
+                            <User className="h-4 w-4 mr-2" />
+                            Make Member
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuItem onClick={() => setTransferMember(member)}>
                         Transfer to Another Team
                       </DropdownMenuItem>
