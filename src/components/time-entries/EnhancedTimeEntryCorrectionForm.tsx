@@ -27,7 +27,7 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
   selectedEmptyDays = [],
   onSubmit
 }) => {
-  const { createRequestWithAutoAssignment, requestTypes } = useEnhancedRequests();
+  const { createRequestWithAutoAssignment, requestTypes, submitRequest } = useEnhancedRequests();
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [formData, setFormData] = useState({
@@ -62,7 +62,7 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
         title = `Time Entry Correction & Missing Days for ${format(selectedDate, 'MMM d, yyyy')}`;
       }
       
-      await createRequestWithAutoAssignment({
+      const created = await createRequestWithAutoAssignment({
         request_type_id: correctionRequestType.id,
         title,
         description: `Correction request for time entry on ${format(selectedDate, 'PPPP')}`,
@@ -83,6 +83,9 @@ export const EnhancedTimeEntryCorrectionForm: React.FC<EnhancedTimeEntryCorrecti
         },
         priority: 'medium'
       });
+
+      // Auto-submit so approvers are notified immediately
+      await submitRequest(created.id);
 
       // Reset form
       setFormData({

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit3, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { TimeEntryCorrectionRequestForm } from '@/components/time-entries/TimeEntryCorrectionRequestForm';
-import { useTimeEntryCorrectionRequests, type CreateCorrectionRequest } from '@/hooks/useTimeEntryCorrectionRequests';
+import { EnhancedTimeEntryCorrectionForm } from '@/components/time-entries/EnhancedTimeEntryCorrectionForm';
+import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
 import { TimeEntryRow } from '@/hooks/useTimeEntriesAdmin';
 
 interface TimeEntryActionButtonsProps {
@@ -19,7 +19,7 @@ interface TimeEntryActionButtonsProps {
 
 const TimeEntryActionButtons: React.FC<TimeEntryActionButtonsProps> = ({ entry }) => {
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
-  const { createCorrectionRequest, requests, corrections } = useTimeEntryCorrectionRequests();
+  const { requests, corrections } = useTimeEntryCorrectionRequests();
 
   // Only show for completed entries with required fields
   if (!entry.clock_out || !entry.id || !entry.user_id) {
@@ -88,11 +88,6 @@ const TimeEntryActionButtons: React.FC<TimeEntryActionButtonsProps> = ({ entry }
   const canRequest = !existingRequest || existingRequest.status === 'rejected';
   const isApproved = existingRequest?.status === 'approved';
 
-  const handleCorrectionSubmit = async (correctionData: CreateCorrectionRequest) => {
-    await createCorrectionRequest(correctionData);
-    setShowCorrectionForm(false);
-  };
-
   // Convert entry to TimeEntryRow format expected by the form
   const timeEntryRow: TimeEntryRow = {
     id: entry.id,
@@ -125,11 +120,10 @@ const TimeEntryActionButtons: React.FC<TimeEntryActionButtonsProps> = ({ entry }
         </TooltipContent>
       </Tooltip>
 
-      <TimeEntryCorrectionRequestForm
+      <EnhancedTimeEntryCorrectionForm
         open={showCorrectionForm}
         onOpenChange={setShowCorrectionForm}
         selectedEntries={[timeEntryRow]}
-        onSubmit={handleCorrectionSubmit}
       />
     </>
   );
