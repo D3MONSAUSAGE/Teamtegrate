@@ -356,7 +356,10 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
           *,
           training_modules(
             *,
-            quizzes(*, quiz_questions(*))
+            quizzes(
+              *,
+              quiz_questions(*)
+            )
           )
         `)
         .eq('id', assignment.content_id)
@@ -555,6 +558,13 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   };
 
   const handleQuizStart = (quiz: any) => {
+    // Validate quiz has questions before proceeding
+    if (!quiz.quiz_questions || quiz.quiz_questions.length === 0) {
+      console.error('❌ Quiz has no questions available:', quiz.id);
+      enhancedNotifications.error('This quiz has no questions available. Please contact your administrator.');
+      return;
+    }
+    
     const questions = (quiz.quiz_questions || []).map((q: any) => ({
       ...q,
       questionText: q.question_text,

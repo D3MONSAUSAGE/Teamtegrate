@@ -96,7 +96,7 @@ export const useQuizzes = (moduleId?: string) => {
   });
 };
 
-// Single Quiz Hook - Enhanced to handle organization-based access
+// Single Quiz Hook - Enhanced with direct question fetching fallback
 export const useQuiz = (quizId?: string) => {
   const { user } = useAuth();
   
@@ -108,73 +108,88 @@ export const useQuiz = (quizId?: string) => {
       console.log('🔍 useQuiz: Fetching quiz data for:', { quizId, orgId: user.organizationId });
       
       try {
-        // Try direct quiz fetch first
-        const { data, error } = await supabase
+        // Try direct quiz fetch first (without questions embed to avoid PostgREST issues)
+        const { data: quiz, error: quizError } = await supabase
           .from('quizzes')
           .select(`
             *,
-            quiz_questions(
-              *
+            training_modules!inner(
+              training_courses!inner(
+                organization_id
+              )
             )
           `)
           .eq('id', quizId)
+          .eq('training_modules.training_courses.organization_id', user.organizationId)
           .single();
         
-        if (error) {
-          console.warn('⚠️ useQuiz: Direct fetch failed, trying with module join:', error.message);
+        if (quizError) {
+          console.warn('⚠️ useQuiz: Organization-filtered fetch failed:', quizError.message);
           
-          // Fallback: Try with organization filter through training modules
-          const { data: quizWithOrg, error: orgError } = await supabase
+          // Fallback: Try direct quiz fetch without org filter
+          const { data: directQuiz, error: directError } = await supabase
             .from('quizzes')
-            .select(`
-              *,
-              quiz_questions(*),
-              training_modules!inner(
-                training_courses!inner(
-                  organization_id
-                )
-              )
-            `)
+            .select('*')
             .eq('id', quizId)
-            .eq('training_modules.training_courses.organization_id', user.organizationId)
             .single();
           
-          if (orgError) {
-            console.error('❌ useQuiz: Organization-filtered fetch also failed:', orgError);
-            throw orgError;
+          if (directError) {
+            console.error('❌ useQuiz: All quiz fetch attempts failed:', directError);
+            throw directError;
           }
           
-          console.log('✅ useQuiz: Successfully fetched via org filter:', {
+          console.log('⚠️ useQuiz: Using direct fetch (no org validation):', {
             quizId,
-            title: quizWithOrg?.title,
-            questionsCount: quizWithOrg?.quiz_questions?.length || 0,
-            hasQuestions: !!quizWithOrg?.quiz_questions?.length
+            title: directQuiz?.title
           });
           
-          return quizWithOrg;
+          // Fetch questions separately for the direct quiz
+          const { data: questions } = await supabase
+            .from('quiz_questions')
+            .select('*')
+            .eq('quiz_id', quizId)
+            .order('question_order', { ascending: true });
+          
+          return {
+            ...directQuiz,
+            quiz_questions: questions || []
+          };
         }
         
-        console.log('✅ useQuiz: Successfully fetched quiz:', {
+        // Fetch questions separately for better reliability
+        const { data: questions } = await supabase
+          .from('quiz_questions')
+          .select('*')
+          .eq('quiz_id', quizId)
+          .order('question_order', { ascending: true });
+        
+        const result = {
+          ...quiz,
+          quiz_questions: questions || []
+        };
+        
+        console.log('✅ useQuiz: Successfully fetched quiz with separate questions:', {
           quizId,
-          title: data?.title,
-          questionsCount: data?.quiz_questions?.length || 0,
-          hasQuestions: !!data?.quiz_questions?.length,
-          questionsPreview: data?.quiz_questions?.slice(0, 3).map(q => ({ 
+          title: result?.title,
+          questionsCount: result?.quiz_questions?.length || 0,
+          hasQuestions: !!result?.quiz_questions?.length,
+          questionsPreview: result?.quiz_questions?.slice(0, 3).map(q => ({ 
             id: q.id, 
             type: q.question_type,
             text: q.question_text?.substring(0, 50) + '...' 
           }))
         });
         
-        return data;
+        return result;
       } catch (error) {
         console.error('❌ useQuiz: All fetch attempts failed:', error);
         throw error;
       }
     },
     enabled: !!quizId && !!user?.organizationId,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    staleTime: 1000 * 60 * 2, // Cache for 2 minutes
   });
 };
 

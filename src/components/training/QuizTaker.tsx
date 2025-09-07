@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertTriangle, Edit, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -8,7 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useSubmitQuizAttempt } from '@/hooks/useTrainingData';
+import { useQuizQuestions } from '@/hooks/useQuizQuestions';
 import { evaluateShortAnswer } from '@/utils/quiz/evaluateShortAnswer';
+import QuizDiagnostics from './QuizDiagnostics';
 
 interface QuizQuestion {
   id: string;
@@ -61,13 +63,35 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
   const [startTime] = useState(Date.now());
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<QuizResults | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const submitAttempt = useSubmitQuizAttempt();
+
+  // Enhanced safety checks with diagnostic tools
+  const { data: directQuestions, isLoading: questionsLoading, refetch: refetchQuestions } = useQuizQuestions(quiz.id);
+  
+  const availableQuestions = quiz.questions?.length > 0 ? quiz.questions : (directQuestions || []).map(q => ({
+    id: q.id,
+    questionText: q.question_text,
+    questionType: q.question_type as 'multiple_choice' | 'true_false' | 'short_answer',
+    options: q.options,
+    correctAnswer: q.correct_answer,
+    points: q.points,
+    explanation: q.explanation
+  }));
+  
+  const hasQuestions = availableQuestions.length > 0;
+  
+  // Use the available questions for the quiz
+  const effectiveQuiz = {
+    ...quiz,
+    questions: availableQuestions
+  };
 
   // Initialize answers with empty strings for all questions
   useEffect(() => {
-    if (quiz.questions && quiz.questions.length > 0) {
+    if (effectiveQuiz.questions && effectiveQuiz.questions.length > 0) {
       const initialAnswers: Record<string, string> = {};
-      quiz.questions.forEach(question => {
+      effectiveQuiz.questions.forEach(question => {
         if (question?.id) {
           initialAnswers[question.id] = '';
         }
@@ -75,51 +99,88 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
       setAnswers(initialAnswers);
       console.log('🎯 QuizTaker: Initialized answers for all questions:', initialAnswers);
     }
-  }, [quiz.questions]);
+  }, [effectiveQuiz.questions]);
 
-  // Safety checks for quiz data
-  if (!quiz.questions || quiz.questions.length === 0) {
+  if (questionsLoading) {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Quiz Not Ready
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            Loading Quiz Questions...
           </CardTitle>
-          <CardDescription>
-            This quiz has no questions available. It may have been created but not properly configured.
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-            <p className="text-sm text-amber-800">
-              <strong>What happened?</strong> This quiz was created but doesn't contain any questions yet. 
-              An administrator needs to add questions before students can take this quiz.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button onClick={onExit} variant="outline">
-              Return to Course
-            </Button>
-            <Button 
-              onClick={() => {
-                // In a real app, this would open the quiz editor
-                console.log('Would open quiz editor for quiz:', quiz.id);
-                onExit();
-              }}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Quiz (Admin)
-            </Button>
+        <CardContent>
+          <div className="flex justify-center p-8">
+            <div className="text-center space-y-2">
+              <p className="text-muted-foreground">Fetching quiz questions...</p>
+              <Progress value={75} className="w-48" />
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
-
-  const currentQ = quiz.questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
+  
+  if (!hasQuestions) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Quiz Questions Not Available
+            </CardTitle>
+            <CardDescription>
+              {quiz.questions?.length === 0 && !directQuestions?.length 
+                ? "This quiz has no questions configured."
+                : "Unable to load quiz questions. This may be a temporary issue."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-sm text-amber-800">
+                <strong>What's happening?</strong> {quiz.questions?.length === 0 && !directQuestions?.length 
+                  ? "This quiz was created but doesn't contain any questions yet. An administrator needs to add questions before students can take this quiz."
+                  : "The quiz questions couldn't be loaded. This might be due to a temporary network issue or data synchronization problem."}
+              </p>
+            </div>
+            
+            <div className="flex gap-3 flex-wrap">
+              <Button onClick={onExit} variant="outline">
+                Return to Course
+              </Button>
+              <Button 
+                onClick={() => refetchQuestions()}
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Retry Loading
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setShowDiagnostics(!showDiagnostics)}
+                className="gap-2"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Show Diagnostics
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {showDiagnostics && (
+          <QuizDiagnostics 
+            quizId={quiz.id} 
+            onReload={() => refetchQuestions()} 
+          />
+        )}
+      </div>
+    );
+  }
+  
+  const currentQ = effectiveQuiz.questions[currentQuestion];
+  const progress = ((currentQuestion + 1) / effectiveQuiz.questions.length) * 100;
 
   // Additional safety check for current question
   if (!currentQ) {
@@ -166,7 +227,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
   };
 
   const nextQuestion = () => {
-    if (currentQuestion < quiz.questions.length - 1) {
+    if (currentQuestion < effectiveQuiz.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -179,9 +240,9 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
 
   const calculateResults = (): QuizResults => {
     let score = 0;
-    const maxScore = quiz.questions.reduce((sum, q) => sum + (q?.points || 0), 0);
+    const maxScore = effectiveQuiz.questions.reduce((sum, q) => sum + (q?.points || 0), 0);
 
-    quiz.questions.forEach(question => {
+    effectiveQuiz.questions.forEach(question => {
       if (!question) return;
       const userAnswer = answers[question.id] ?? '';
 
@@ -210,7 +271,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
       }
     });
 
-    const passed = maxScore > 0 ? (score / maxScore) * 100 >= quiz.passingScore : false;
+    const passed = maxScore > 0 ? (score / maxScore) * 100 >= effectiveQuiz.passingScore : false;
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
     return {
@@ -230,14 +291,14 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
     try {
       // Ensure all questions have entries (even empty ones)
       const completeAnswers: Record<string, string> = {};
-      quiz.questions.forEach(question => {
+      effectiveQuiz.questions.forEach(question => {
         if (question?.id) {
           completeAnswers[question.id] = answers[question.id] || '';
         }
       });
       
       // Transform answers to array format for database
-      const transformedAnswers = quiz.questions.map(question => ({
+      const transformedAnswers = effectiveQuiz.questions.map(question => ({
         question_id: question.id,
         answer: completeAnswers[question.id] || ''
       }));
@@ -245,7 +306,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
       console.log('📤 QuizTaker: Submitting complete answers:', transformedAnswers);
       
       await submitAttempt.mutateAsync({
-        quizId: quiz.id,
+        quizId: effectiveQuiz.id,
         answers: transformedAnswers,
         score: quizResults.score,
         maxScore: quizResults.maxScore,
@@ -322,7 +383,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
   };
 
   if (showResults && results) {
-    const remainingAttempts = quiz.maxAttempts - currentAttempts;
+    const remainingAttempts = effectiveQuiz.maxAttempts - currentAttempts;
     const canRetake = remainingAttempts > 0;
 
     return (
@@ -360,7 +421,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
                 {Math.round((results.score / results.maxScore) * 100)}%
               </div>
               <div className="text-sm text-muted-foreground">
-                Percentage (Need {quiz.passingScore}% to pass)
+                Percentage (Need {effectiveQuiz.passingScore}% to pass)
               </div>
             </div>
           </div>
@@ -407,8 +468,8 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle>{quiz.title}</CardTitle>
-              <CardDescription>{quiz.description}</CardDescription>
+              <CardTitle>{effectiveQuiz.title}</CardTitle>
+              <CardDescription>{effectiveQuiz.description}</CardDescription>
             </div>
             {timeRemaining !== null && (
               <div className="flex items-center gap-2 text-sm">
@@ -421,7 +482,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Question {currentQuestion + 1} of {quiz.questions.length}</span>
+              <span>Question {currentQuestion + 1} of {effectiveQuiz.questions.length}</span>
               <div className="flex items-center gap-2">
                 <span>{Math.round(progress)}% complete</span>
                 {answers[currentQ.id] && answers[currentQ.id].trim() !== '' ? (
@@ -471,7 +532,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({
             Exit Quiz
           </Button>
           
-          {currentQuestion === quiz.questions.length - 1 ? (
+          {currentQuestion === effectiveQuiz.questions.length - 1 ? (
             <Button 
               onClick={handleSubmit} 
               disabled={submitAttempt.isPending}
