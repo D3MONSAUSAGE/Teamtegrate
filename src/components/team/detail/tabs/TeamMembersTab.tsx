@@ -60,6 +60,8 @@ import AddUserToTeamDialog from '@/components/organization/team/AddUserToTeamDia
 import { BulkTeamManagement } from '@/components/team/BulkTeamManagement';
 import { TeamTransferDialog } from '@/components/team/TeamTransferDialog';
 import { getTeamRoleIcon, getTeamRoleBadgeVariant, getTeamRoleHierarchy, type TeamRole } from '@/components/team/utils/teamRoleUtils';
+import RoleDisplay from '@/components/organization/user-management/RoleDisplay';
+import UserJobRolesCell from '@/components/organization/user-management/UserJobRolesCell';
 
 interface TeamMembersTabProps {
   team: {
@@ -104,7 +106,8 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
     let filtered = teamMembers.filter(member => {
       const matchesSearch = 
         member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.systemRole?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesRole = filterRole === 'all' || member.role === filterRole;
       
@@ -232,11 +235,13 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
   // Export functionality
   const handleExport = useCallback(() => {
     const csvContent = [
-      ['Name', 'Email', 'Role', 'Joined', 'Total Tasks', 'Completion Rate', 'Overdue Tasks'].join(','),
+      ['Name', 'Email', 'Team Role', 'System Role', 'Job Roles', 'Joined', 'Total Tasks', 'Completion Rate', 'Overdue Tasks'].join(','),
       ...filteredMembers.map(member => [
         `"${member.name}"`,
         `"${member.email}"`,
         member.role,
+        member.systemRole || 'N/A',
+        'Multiple', // Job roles are complex, just indicate multiple for CSV
         format(new Date(member.joined_at), 'yyyy-MM-dd'),
         member.totalTasks,
         `${member.completionRate}%`,
@@ -271,7 +276,7 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search members by name, email, or role..."
+              placeholder="Search members by name, email, team role, or system role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -425,19 +430,25 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
             Member
             {sortField === 'name' && <ArrowUpDown className="h-3 w-3" />}
           </div>
-          <div className="w-24 text-center cursor-pointer" onClick={() => handleSort('role')}>
-            Role
+          <div className="w-32 text-center cursor-pointer" onClick={() => handleSort('role')}>
+            Team Role
             {sortField === 'role' && <ArrowUpDown className="h-3 w-3" />}
           </div>
-          <div className="w-32 text-center cursor-pointer" onClick={() => handleSort('completionRate')}>
+          <div className="w-32 text-center">
+            System Role
+          </div>
+          <div className="w-40 text-center">
+            Job Roles
+          </div>
+          <div className="w-28 text-center cursor-pointer" onClick={() => handleSort('completionRate')}>
             Performance
             {sortField === 'completionRate' && <ArrowUpDown className="h-3 w-3" />}
           </div>
-          <div className="w-24 text-center cursor-pointer" onClick={() => handleSort('totalTasks')}>
+          <div className="w-20 text-center cursor-pointer" onClick={() => handleSort('totalTasks')}>
             Tasks
             {sortField === 'totalTasks' && <ArrowUpDown className="h-3 w-3" />}
           </div>
-          <div className="w-28 text-center cursor-pointer" onClick={() => handleSort('joined_at')}>
+          <div className="w-24 text-center cursor-pointer" onClick={() => handleSort('joined_at')}>
             Joined
             {sortField === 'joined_at' && <ArrowUpDown className="h-3 w-3" />}
           </div>
@@ -486,10 +497,24 @@ const TeamMembersTab: React.FC<TeamMembersTabProps> = ({ team }) => {
                 </div>
               </div>
               
-              <div className="w-24 text-center">
-                <Badge variant={getTeamRoleBadgeVariant(member.role as TeamRole)}>
+              <div className="w-32 text-center">
+                <Badge 
+                  variant={getTeamRoleBadgeVariant(member.role as TeamRole)}
+                  className="gap-1"
+                >
+                  {getTeamRoleIcon(member.role as TeamRole)}
                   {member.role}
                 </Badge>
+              </div>
+              
+              <div className="w-32 flex justify-center">
+                {member.systemRole && (
+                  <RoleDisplay role={member.systemRole as any} />
+                )}
+              </div>
+              
+              <div className="w-40 flex justify-center">
+                <UserJobRolesCell userId={member.id} />
               </div>
               
               <div className="w-32 text-center">
