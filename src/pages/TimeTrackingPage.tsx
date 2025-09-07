@@ -36,17 +36,20 @@ const TimeTrackingPage = () => {
           <ScheduleEmployeeDashboard />
         </TabsContent>
 
-        {/* Time Entries Tab - Management tools */}
+        {/* Time Entries Tab - Historical entries and corrections */}
         <TabsContent value="time-entries" className="space-y-6">
-          {canManageTeams && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Time Entries & Correction Requests</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Manage time entries and review correction requests. Team members can request corrections that will be routed through the proper approval chain.
-              </p>
-              <PastTimeEntriesManager />
-            </div>
-          )}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">
+              {canManageTeams ? 'Time Entries & Correction Requests' : 'My Time Entries'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {canManageTeams 
+                ? 'Manage time entries and review correction requests. Team members can request corrections that will be routed through the proper approval chain.'
+                : 'View your historical time entries and submit correction requests. Requests will be routed to your manager for approval.'
+              }
+            </p>
+            <PastTimeEntriesManager />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
