@@ -19,11 +19,13 @@ import { NewEmployeeWizard } from '@/components/onboarding/wizard/NewEmployeeWiz
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useMyOnboarding } from '@/hooks/onboarding/useOnboardingInstances';
 import { useDemoOnboarding } from '@/hooks/onboarding/useDemoOnboarding';
-import { useTrainingCourses, useQuizzes, useTrainingAssignments, useUpdateAssignmentStatus, useQuizAttempts } from '@/hooks/useTrainingData';
+import { useTrainingCourses, useQuizzes, useTrainingAssignments, useUpdateAssignmentStatus } from '@/hooks/useTrainingData';
 import QuizTaker from '@/components/training/QuizTaker';
+import QuizTakerWrapper from '@/components/training/QuizTakerWrapper';
 import CourseAssignmentViewer from '@/components/training/CourseAssignmentViewer';
 import { useQueryClient } from '@tanstack/react-query';
 import CertificateReviewDashboard from '@/components/training/CertificateReviewDashboard';
+import TrainingErrorBoundary from '@/components/training/TrainingErrorBoundary';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
@@ -221,9 +223,10 @@ const TrainingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        <Tabs defaultValue="my-training" className="space-y-6">
+    <TrainingErrorBoundary>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          <Tabs defaultValue="my-training" className="space-y-6">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
             <TabsTrigger value="my-training" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
@@ -330,7 +333,7 @@ const TrainingPage = () => {
         {selectedQuiz && (
           <Dialog open={isQuizTakerOpen} onOpenChange={setIsQuizTakerOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-              <QuizTaker
+              <QuizTakerWrapper
                 quiz={selectedQuiz}
                 onComplete={handleQuizComplete}
                 onExit={handleQuizExit}
@@ -354,12 +357,13 @@ const TrainingPage = () => {
 
 
         {/* Certificate Review Dashboard */}
-        <CertificateReviewDashboard 
-          open={isCertificateReviewOpen}
-          onOpenChange={setIsCertificateReviewOpen}
-        />
-    </div>
-  );
-};
+         <CertificateReviewDashboard 
+           open={isCertificateReviewOpen}
+           onOpenChange={setIsCertificateReviewOpen}
+         />
+       </div>
+     </TrainingErrorBoundary>
+   );
+ };
 
 export default TrainingPage;
