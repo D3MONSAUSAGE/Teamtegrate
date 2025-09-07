@@ -259,7 +259,7 @@ const PastTimeEntriesManager: React.FC = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
+              {displayMode === 'daily' && (selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
                 <Button 
                   variant="outline" 
                   onClick={() => setCorrectionFormOpen(true)}
@@ -357,6 +357,42 @@ const PastTimeEntriesManager: React.FC = () => {
                 </div>
               </div>
               <Separator className="my-4" />
+
+              {/* Weekly view bulk actions */}
+              {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
+                <div className="mb-4 p-3 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        {selectedEntries.size + selectedEmptyDays.size} item{selectedEntries.size + selectedEmptyDays.size !== 1 ? 's' : ''} selected
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({selectedEntries.size} entries, {selectedEmptyDays.size} empty days)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedEntries(new Set());
+                          setSelectedEmptyDays(new Set());
+                        }}
+                      >
+                        Clear Selection
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => setCorrectionFormOpen(true)}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Request Correction
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {weekDays.map((day, index) => {
