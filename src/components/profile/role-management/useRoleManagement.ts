@@ -74,9 +74,9 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
       });
 
       // Call the edge function to update the role
-      const { data, error } = await supabase.functions.invoke('update-user-role', {
+      const { data, error } = await supabase.functions.invoke('admin-update-role', {
         body: {
-          targetUserId: targetUser.id,
+          userId: targetUser.id,
           newRole: newRole
         }
       });

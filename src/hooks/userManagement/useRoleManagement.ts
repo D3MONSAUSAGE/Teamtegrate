@@ -82,11 +82,11 @@ export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
       // Proceed with normal role change
       const oldUser = users?.find(u => u.id === userId);
 
-      // Use Edge Function to perform the role update with proper backend validation
-      const { data, error } = await supabase.functions.invoke('update-user-role', {
+      // Use Edge Function to perform the role update with service role privileges
+      const { data, error } = await supabase.functions.invoke('admin-update-role', {
         body: {
-          targetUserId: userId,
-          newRole: newRole
+          userId,
+          newRole
         }
       });
 

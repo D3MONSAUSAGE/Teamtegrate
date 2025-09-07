@@ -160,9 +160,9 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
 
     setIsChangingOrgRole(true);
     try {
-      const { data, error } = await supabase.functions.invoke('update-user-role', {
+      const { data, error } = await supabase.functions.invoke('admin-update-role', {
         body: {
-          targetUserId: orgRoleChangeData.userId,
+          userId: orgRoleChangeData.userId,
           newRole: orgRoleChangeData.newRole
         }
       });

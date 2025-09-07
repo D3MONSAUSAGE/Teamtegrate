@@ -72,9 +72,9 @@ const SimplifiedOrganizationUserManagement = () => {
     try {
       devLog.userOperation('Role change initiated', { userId, newRole });
 
-      const { data, error } = await supabase.functions.invoke('update-user-role', {
+      const { data, error } = await supabase.functions.invoke('admin-update-role', {
         body: {
-          targetUserId: userId,
+          userId: userId,
           newRole: newRole
         }
       });
