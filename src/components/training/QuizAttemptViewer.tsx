@@ -78,21 +78,40 @@ const QuizAttemptViewer: React.FC<QuizAttemptViewerProps> = ({
     }
   }, [attempts, selectedAttempt]);
 
-  // Enhanced debug logging
+  // Enhanced debug logging with more details
   useEffect(() => {
     if (quizData?.quizId) {
-      console.log('🔍 QuizAttemptViewer: Loading data for quiz:', {
+      console.log('🔍 QuizAttemptViewer: Comprehensive data status:', {
         quizId: quizData.quizId,
         employeeName: quizData.employeeName,
+        assignmentId: quizData.assignment?.id,
         attemptsCount: attempts.length,
+        attemptsData: attempts.map(a => ({
+          id: a.id,
+          attempt_number: a.attempt_number,
+          answersCount: Array.isArray(a.answers) ? a.answers.length : 0,
+          score: a.score,
+          maxScore: a.max_score
+        })),
         quizLoading,
         quiz: quiz ? {
           id: quiz.id,
           title: quiz.title,
-          questionsCount: quiz.quiz_questions?.length || 0,
-          hasQuestions: !!quiz.quiz_questions?.length
+          questionsCount: Array.isArray(quiz.quiz_questions) ? quiz.quiz_questions.length : 0,
+          hasQuestions: Array.isArray(quiz.quiz_questions) && quiz.quiz_questions.length > 0,
+          moduleId: quiz.module_id,
+          questionsPreview: Array.isArray(quiz.quiz_questions) ? quiz.quiz_questions.slice(0, 2).map((q: any) => ({
+            id: q.id,
+            type: q.question_type,
+            hasText: !!q.question_text,
+            hasOptions: !!q.options,
+            hasCorrectAnswer: !!q.correct_answer
+          })) : []
         } : null,
-        quizError: quizError?.message || null
+        quizError: quizError ? {
+          message: quizError.message,
+          name: quizError.name
+        } : null
       });
     }
   }, [quizData, attempts.length, quiz, quizLoading, quizError]);

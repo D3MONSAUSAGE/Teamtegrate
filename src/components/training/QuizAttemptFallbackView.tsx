@@ -43,7 +43,7 @@ const QuizAttemptFallbackView: React.FC<QuizAttemptFallbackViewProps> = ({
   const [manualQuestions, setManualQuestions] = useState<any[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
 
-  // Try to fetch questions directly when the hook fails
+  // Enhanced direct question fetching with multiple strategies
   useEffect(() => {
     const fetchQuestionsDirectly = async () => {
       if (!quizData?.quizId || quiz?.quiz_questions?.length > 0) return;
@@ -52,20 +52,50 @@ const QuizAttemptFallbackView: React.FC<QuizAttemptFallbackViewProps> = ({
       try {
         console.log('📋 Attempting direct quiz_questions fetch for quiz:', quizData.quizId);
         
-        const { data: questions, error } = await supabase
+        // Strategy 1: Direct quiz_questions fetch
+        let { data: questions, error } = await supabase
           .from('quiz_questions')
           .select('*')
           .eq('quiz_id', quizData.quizId)
           .order('question_order', { ascending: true });
 
-        if (error) {
-          console.error('❌ Error fetching questions directly:', error);
+        if (error || !questions?.length) {
+          console.warn('⚠️ Direct questions fetch failed/empty, trying alternative approach:', error?.message);
+          
+          // Strategy 2: Fetch via quiz table with questions
+          const { data: quizWithQuestions, error: quizError } = await supabase
+            .from('quizzes')
+            .select(`
+              id,
+              title,
+              quiz_questions(*)
+            `)
+            .eq('id', quizData.quizId)
+            .single();
+          
+          if (quizError) {
+            console.error('❌ Alternative quiz fetch also failed:', quizError);
+          } else {
+            console.log('✅ Got questions via quiz table:', quizWithQuestions?.quiz_questions?.length || 0);
+            questions = quizWithQuestions?.quiz_questions || [];
+          }
+        }
+        
+        if (questions?.length) {
+          console.log('✅ Successfully fetched questions:', {
+            count: questions.length,
+            firstQuestionPreview: questions[0] ? {
+              id: questions[0].id,
+              type: questions[0].question_type,
+              text: questions[0].question_text?.substring(0, 50) + '...'
+            } : null
+          });
+          setManualQuestions(questions);
         } else {
-          console.log('✅ Successfully fetched questions directly:', questions?.length || 0);
-          setManualQuestions(questions || []);
+          console.warn('⚠️ No questions found for quiz:', quizData.quizId);
         }
       } catch (error) {
-        console.error('❌ Exception fetching questions directly:', error);
+        console.error('❌ Exception in fetchQuestionsDirectly:', error);
       } finally {
         setLoadingQuestions(false);
       }

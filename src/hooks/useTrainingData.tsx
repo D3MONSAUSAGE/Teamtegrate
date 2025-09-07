@@ -96,7 +96,7 @@ export const useQuizzes = (moduleId?: string) => {
   });
 };
 
-// Single Quiz Hook - Dedicated hook for fetching individual quiz with questions
+// Single Quiz Hook - Enhanced to handle organization-based access
 export const useQuiz = (quizId?: string) => {
   const { user } = useAuth();
   
@@ -105,38 +105,75 @@ export const useQuiz = (quizId?: string) => {
     queryFn: async () => {
       if (!quizId || !user?.organizationId) return null;
       
-      console.log('🔍 useQuiz: Fetching quiz data for:', quizId);
+      console.log('🔍 useQuiz: Fetching quiz data for:', { quizId, orgId: user.organizationId });
       
-      const { data, error } = await supabase
-        .from('quizzes')
-        .select(`
-          *,
-          quiz_questions(*)
-        `)
-        .eq('id', quizId)
-        .single();
-      
-      if (error) {
-        console.error('❌ useQuiz: Error fetching quiz:', error);
+      try {
+        // Try direct quiz fetch first
+        const { data, error } = await supabase
+          .from('quizzes')
+          .select(`
+            *,
+            quiz_questions(
+              *
+            )
+          `)
+          .eq('id', quizId)
+          .single();
+        
+        if (error) {
+          console.warn('⚠️ useQuiz: Direct fetch failed, trying with module join:', error.message);
+          
+          // Fallback: Try with organization filter through training modules
+          const { data: quizWithOrg, error: orgError } = await supabase
+            .from('quizzes')
+            .select(`
+              *,
+              quiz_questions(*),
+              training_modules!inner(
+                training_courses!inner(
+                  organization_id
+                )
+              )
+            `)
+            .eq('id', quizId)
+            .eq('training_modules.training_courses.organization_id', user.organizationId)
+            .single();
+          
+          if (orgError) {
+            console.error('❌ useQuiz: Organization-filtered fetch also failed:', orgError);
+            throw orgError;
+          }
+          
+          console.log('✅ useQuiz: Successfully fetched via org filter:', {
+            quizId,
+            title: quizWithOrg?.title,
+            questionsCount: quizWithOrg?.quiz_questions?.length || 0,
+            hasQuestions: !!quizWithOrg?.quiz_questions?.length
+          });
+          
+          return quizWithOrg;
+        }
+        
+        console.log('✅ useQuiz: Successfully fetched quiz:', {
+          quizId,
+          title: data?.title,
+          questionsCount: data?.quiz_questions?.length || 0,
+          hasQuestions: !!data?.quiz_questions?.length,
+          questionsPreview: data?.quiz_questions?.slice(0, 3).map(q => ({ 
+            id: q.id, 
+            type: q.question_type,
+            text: q.question_text?.substring(0, 50) + '...' 
+          }))
+        });
+        
+        return data;
+      } catch (error) {
+        console.error('❌ useQuiz: All fetch attempts failed:', error);
         throw error;
       }
-      
-      console.log('✅ useQuiz: Successfully fetched quiz:', {
-        quizId,
-        title: data?.title,
-        questionsCount: data?.quiz_questions?.length || 0,
-        hasQuestions: !!data?.quiz_questions?.length,
-        questionsPreview: data?.quiz_questions?.slice(0, 3).map(q => ({ 
-          id: q.id, 
-          type: q.question_type,
-          text: q.question_text?.substring(0, 50) + '...' 
-        }))
-      });
-      
-      return data;
     },
     enabled: !!quizId && !!user?.organizationId,
-    retry: 3,
+    retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
