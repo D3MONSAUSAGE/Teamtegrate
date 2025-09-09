@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Request } from '@/types/requests';
 import { PRIORITY_COLORS, STATUS_COLORS } from '@/types/requests';
 import { cn } from '@/lib/utils';
+import RequestActivityFeed from '@/components/requests/RequestActivityFeed';
 
 interface EnhancedRequestDetailsProps {
   request: Request;
@@ -209,6 +210,9 @@ export default function EnhancedRequestDetails({ request, onClose }: EnhancedReq
 
       {/* Approval Actions */}
       {renderApprovalActions()}
+
+      {/* Activity */}
+      <RequestActivityFeed requestId={request.id} />
 
       {/* Status Information */}
       {request.status !== 'draft' && request.status !== 'submitted' && (

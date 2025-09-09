@@ -198,6 +198,36 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_snapshots: {
+        Row: {
+          created_at: string
+          generated_at: string
+          id: string
+          metrics_data: Json
+          organization_id: string
+          snapshot_type: string
+          time_period: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          metrics_data?: Json
+          organization_id: string
+          snapshot_type: string
+          time_period: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          metrics_data?: Json
+          organization_id?: string
+          snapshot_type?: string
+          time_period?: string
+        }
+        Relationships: []
+      }
       archive_settings: {
         Row: {
           auto_archive_enabled: boolean | null
@@ -570,6 +600,54 @@ export type Database = {
           },
         ]
       }
+      compliance_audit_logs: {
+        Row: {
+          action: string
+          changes: Json
+          compliance_flags: string[] | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: unknown
+          organization_id: string
+          retention_until: string | null
+          session_id: string | null
+          user_agent: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changes?: Json
+          compliance_flags?: string[] | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address: unknown
+          organization_id: string
+          retention_until?: string | null
+          session_id?: string | null
+          user_agent: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changes?: Json
+          compliance_flags?: string[] | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: unknown
+          organization_id?: string
+          retention_until?: string | null
+          session_id?: string | null
+          user_agent?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       compliance_training_records: {
         Row: {
           certificate_url: string | null
@@ -723,6 +801,45 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           work_date?: string
+        }
+        Relationships: []
+      }
+      digital_signatures: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          organization_id: string
+          request_id: string
+          signature_data: Json
+          signature_method: string
+          signed_at: string
+          signer_id: string
+          user_agent: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: unknown
+          organization_id: string
+          request_id: string
+          signature_data: Json
+          signature_method?: string
+          signed_at?: string
+          signer_id: string
+          user_agent: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          organization_id?: string
+          request_id?: string
+          signature_data?: Json
+          signature_method?: string
+          signed_at?: string
+          signer_id?: string
+          user_agent?: string
         }
         Relationships: []
       }
@@ -3437,6 +3554,39 @@ export type Database = {
           },
         ]
       }
+      request_activity_feed: {
+        Row: {
+          activity_data: Json
+          activity_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          organization_id: string
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json
+          activity_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json
+          activity_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       request_analytics: {
         Row: {
           approver_id: string | null
@@ -3799,6 +3949,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      request_cost_tracking: {
+        Row: {
+          actual_cost: number | null
+          budget_code: string | null
+          cost_category: string
+          cost_center: string | null
+          cost_currency: string | null
+          created_at: string
+          estimated_cost: number | null
+          id: string
+          organization_id: string
+          request_id: string
+          tracking_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          budget_code?: string | null
+          cost_category: string
+          cost_center?: string | null
+          cost_currency?: string | null
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          organization_id: string
+          request_id: string
+          tracking_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          budget_code?: string | null
+          cost_category?: string
+          cost_center?: string | null
+          cost_currency?: string | null
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          organization_id?: string
+          request_id?: string
+          tracking_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       request_delegations: {
         Row: {
@@ -5952,6 +6147,219 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webhook_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          endpoint_id: string
+          event_type: string
+          id: string
+          organization_id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          retry_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          endpoint_id: string
+          event_type: string
+          id?: string
+          organization_id: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          retry_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          endpoint_id?: string
+          event_type?: string
+          id?: string
+          organization_id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          retry_count?: number | null
+        }
+        Relationships: []
+      }
+      webhook_endpoints: {
+        Row: {
+          created_at: string
+          events: string[]
+          headers: Json | null
+          id: string
+          is_active: boolean | null
+          last_failure_at: string | null
+          last_success_at: string | null
+          name: string
+          organization_id: string
+          retry_config: Json | null
+          secret: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          events?: string[]
+          headers?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          name: string
+          organization_id: string
+          retry_config?: Json | null
+          secret: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          events?: string[]
+          headers?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          name?: string
+          organization_id?: string
+          retry_config?: Json | null
+          secret?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      workflow_actions: {
+        Row: {
+          action_config: Json
+          action_type: string
+          created_at: string
+          execution_order: number
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          retry_config: Json | null
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          created_at?: string
+          execution_order?: number
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          retry_config?: Json | null
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          created_at?: string
+          execution_order?: number
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          retry_config?: Json | null
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: []
+      }
+      workflow_conditions: {
+        Row: {
+          condition_order: number
+          condition_type: string
+          created_at: string
+          field_path: string
+          id: string
+          is_active: boolean | null
+          logic_operator: string | null
+          operator: string
+          organization_id: string
+          updated_at: string
+          value_data: Json
+          workflow_id: string
+        }
+        Insert: {
+          condition_order?: number
+          condition_type: string
+          created_at?: string
+          field_path: string
+          id?: string
+          is_active?: boolean | null
+          logic_operator?: string | null
+          operator: string
+          organization_id: string
+          updated_at?: string
+          value_data: Json
+          workflow_id: string
+        }
+        Update: {
+          condition_order?: number
+          condition_type?: string
+          created_at?: string
+          field_path?: string
+          id?: string
+          is_active?: boolean | null
+          logic_operator?: string | null
+          operator?: string
+          organization_id?: string
+          updated_at?: string
+          value_data?: Json
+          workflow_id?: string
+        }
+        Relationships: []
+      }
+      workflow_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_details: Json | null
+          execution_data: Json | null
+          id: string
+          organization_id: string
+          request_id: string
+          started_at: string
+          status: string
+          trigger_event: string
+          workflow_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          execution_data?: Json | null
+          id?: string
+          organization_id: string
+          request_id: string
+          started_at?: string
+          status?: string
+          trigger_event: string
+          workflow_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          execution_data?: Json | null
+          id?: string
+          organization_id?: string
+          request_id?: string
+          started_at?: string
+          status?: string
+          trigger_event?: string
+          workflow_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

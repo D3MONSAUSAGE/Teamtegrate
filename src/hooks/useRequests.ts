@@ -295,22 +295,36 @@ export function useRequestDetails(requestId: string) {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { data: orgRow, error: orgErr } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', user.user.id)
+        .single();
+      if (orgErr) throw orgErr;
+      const orgId = orgRow?.organization_id as string | undefined;
+
+      const { error: commentErr } = await supabase
         .from('request_comments')
         .insert({
           request_id: requestId,
           user_id: user.user.id,
           content,
           is_internal: isInternal,
-          organization_id: (await supabase
-            .from('users')
-            .select('organization_id')
-            .eq('id', user.user.id)
-            .single()
-          ).data?.organization_id
+          organization_id: orgId
         });
 
-      if (error) throw error;
+      if (commentErr) throw commentErr;
+
+      // Log activity
+      if (orgId) {
+        await supabase.from('request_activity_feed').insert({
+          organization_id: orgId,
+          request_id: requestId,
+          user_id: user.user.id,
+          activity_type: 'comment_added',
+          activity_data: { preview: content.slice(0, 200) }
+        });
+      }
 
       await fetchRequestDetails();
       enhancedNotifications.success('Comment added successfully');
@@ -320,11 +334,36 @@ export function useRequestDetails(requestId: string) {
       throw err;
     }
   };
-
   useEffect(() => {
     if (requestId) {
       fetchRequestDetails();
     }
+  }, [requestId]);
+
+  // Realtime updates for request comments
+  useEffect(() => {
+    if (!requestId) return;
+
+    const channel = supabase
+      .channel(`request-comments-${requestId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'request_comments',
+          filter: `request_id=eq.${requestId}`,
+        },
+        () => {
+          // Refresh comments on any change
+          fetchRequestDetails();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [requestId]);
 
   return {
