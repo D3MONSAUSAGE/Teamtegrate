@@ -71,11 +71,11 @@ const AppLayout = memo(() => {
   const defaultSidebarOpen = false;
 
   return (
-    <TooltipProvider>
-      <UnifiedDataProvider>
-        <TaskProvider>
-          <TeamProvider>
-            <SidebarProvider defaultOpen={defaultSidebarOpen}>
+    <SidebarProvider defaultOpen={defaultSidebarOpen}>
+      <TooltipProvider>
+        <UnifiedDataProvider>
+          <TaskProvider>
+            <TeamProvider>
               <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 <Sidebar />
                 <MainContent>
@@ -86,11 +86,11 @@ const AppLayout = memo(() => {
                   <Outlet />
                 </MainContent>
               </div>
-            </SidebarProvider>
-          </TeamProvider>
-        </TaskProvider>
-      </UnifiedDataProvider>
-    </TooltipProvider>
+            </TeamProvider>
+          </TaskProvider>
+        </UnifiedDataProvider>
+      </TooltipProvider>
+    </SidebarProvider>
   );
 });
 
