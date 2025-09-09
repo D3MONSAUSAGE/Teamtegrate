@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Play } from 'lucide-react';
 import YouTubePlayer from './YouTubePlayer';
+import { extractYouTubeVideoId } from '@/lib/youtube';
 
 interface VideoPlayerProps {
   youtubeVideoId: string;
@@ -16,12 +17,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onProgress,
   onComplete 
 }) => {
-  if (!youtubeVideoId) {
+  // Extract video ID from URL or use as-is if it's already a video ID
+  const extractedVideoId = extractYouTubeVideoId(youtubeVideoId);
+  
+  if (!youtubeVideoId || !extractedVideoId) {
     return (
       <Card className="w-full aspect-video flex items-center justify-center bg-muted">
         <div className="text-center">
           <Play className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-muted-foreground">No video available</p>
+          <p className="text-muted-foreground">Invalid or missing video</p>
         </div>
       </Card>
     );
@@ -29,7 +33,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   return (
     <YouTubePlayer
-      videoId={youtubeVideoId}
+      videoId={extractedVideoId}
       title={title}
       onProgress={onProgress}
       onComplete={onComplete}
