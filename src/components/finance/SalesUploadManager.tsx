@@ -168,7 +168,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         
         if (existingCheck.exists) {
           // Parse the PDF first to show comparison
-          const parseResult = await parseBrinkPOSReport(files[0], teamId, salesDate);
+          const parseResult = await parseBrinkPOSReport(files[0], teamId!, salesDate);
           if (parseResult.success && parseResult.data) {
             setExistingData(existingCheck.data);
             setPendingUpload(parseResult.data);
@@ -190,8 +190,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         });
       }, 300);
       
-      // Parse the PDF
-      const parseResult = await parseBrinkPOSReport(files[0], teamId, salesDate);
+      // Parse the PDF with team ID
+      const parseResult = await parseBrinkPOSReport(files[0], teamId!, salesDate);
       
       clearInterval(progressInterval);
       setUploadProgress(90);

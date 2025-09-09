@@ -15,8 +15,8 @@ export interface ParsedPDFData {
   extractedDate?: Date;
 }
 
-// Mock PDF parser - in production, you'd use a library like pdf-parse or pdf2pic
-export const parseBrinkPOSReport = async (file: File, location: string, date: Date): Promise<ParsedPDFData> => {
+// Parse Brink POS Report with proper team integration
+export const parseBrinkPOSReport = async (file: File, teamId: string, date: Date): Promise<ParsedPDFData> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdfText = await parseRealPDFContent(arrayBuffer);
@@ -70,7 +70,8 @@ export const parseBrinkPOSReport = async (file: File, location: string, date: Da
     const salesData: SalesData = {
       id: uuidv4(),
       date: salesDate.toISOString().split('T')[0],
-      location,
+      location: teamId, // Store team ID as location for backward compatibility
+      team_id: teamId, // Proper team ID for new filtering logic
       grossSales,
       netSales,
       orderCount,
