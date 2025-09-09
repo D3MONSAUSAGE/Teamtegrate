@@ -21,6 +21,7 @@ import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import AccessControlManager from '@/components/organization/access-control/AccessControlManager';
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
+import RequestTypeManager from '@/components/organization/requests/RequestTypeManager';
 
 interface UserToEdit {
   id: string;
@@ -167,7 +168,7 @@ const OrganizationDashboard = () => {
           {/* Tabbed Interface */}
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6 lg:w-fit lg:grid-cols-6 bg-muted/60 backdrop-blur-sm border">
+              <TabsList className="grid w-full grid-cols-7 lg:w-fit lg:grid-cols-7 bg-muted/60 backdrop-blur-sm border">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Activity className="h-4 w-4" />
                   <span className="hidden sm:inline">Overview</span>
@@ -187,6 +188,10 @@ const OrganizationDashboard = () => {
                 <TabsTrigger value="access" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Access</span>
+                </TabsTrigger>
+                <TabsTrigger value="requests" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:inline">Requests</span>
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
@@ -260,6 +265,18 @@ const OrganizationDashboard = () => {
                   gradient="from-indigo-500/10 via-blue-500/10 to-cyan-500/10"
                 >
                   <AccessControlManager />
+                </ModernSectionCard>
+              </TabsContent>
+
+              {/* Requests Management Tab */}
+              <TabsContent value="requests" className="space-y-6">
+                <ModernSectionCard
+                  title="Request Types"
+                  subtitle="Configure which request options exist and who can use them"
+                  icon={Shield}
+                  gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
+                >
+                  <RequestTypeManager />
                 </ModernSectionCard>
               </TabsContent>
 
