@@ -276,6 +276,7 @@ const OrganizationDashboard = () => {
                   icon={Shield}
                   gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
                 >
+                  {/* Request Type Management Component */}
                   <RequestTypeManager />
                 </ModernSectionCard>
               </TabsContent>
