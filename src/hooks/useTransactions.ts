@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction, TransactionCategory, TransactionSummary } from '@/types/transactions';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useTransactions = (selectedWeek: Date, selectedLocation?: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -10,6 +11,7 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Calculate week date range
   const weekStart = format(startOfWeek(selectedWeek), 'yyyy-MM-dd');
@@ -17,10 +19,16 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('transaction_categories')
         .select('*')
         .order('name');
+
+      if (user?.organizationId) {
+        query = query.eq('organization_id', user.organizationId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -52,9 +60,15 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
     ];
 
     try {
+      if (!user?.organizationId) {
+        throw new Error('Missing organization context');
+      }
+
+      const withOrg = defaultCategories.map(c => ({ ...c, organization_id: user.organizationId }));
+
       const { data, error } = await supabase
         .from('transaction_categories')
-        .insert(defaultCategories as any)
+        .insert(withOrg as any)
         .select();
 
       if (error) throw error;
@@ -78,8 +92,13 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
         .lte('date', weekEnd)
         .order('date', { ascending: false });
 
+      if (user?.organizationId) {
+        query = query.eq('organization_id', user.organizationId);
+      }
+
       if (selectedLocation && selectedLocation !== 'all') {
-        query = query.eq('location', selectedLocation);
+        const isUuid = /^[0-9a-fA-F-]{36}$/.test(selectedLocation);
+        query = isUuid ? query.eq('team_id', selectedLocation) : query.eq('location', selectedLocation);
       }
 
       const { data, error } = await query;
@@ -96,9 +115,20 @@ export const useTransactions = (selectedWeek: Date, selectedLocation?: string) =
 
   const addTransaction = async (transaction: any) => {
     try {
+      const basePayload: any = {
+        ...transaction,
+        user_id: user?.id,
+        organization_id: user?.organizationId,
+      };
+      if (selectedLocation && selectedLocation !== 'all') {
+        const isUuid = /^[0-9a-fA-F-]{36}$/.test(selectedLocation);
+        if (isUuid) basePayload.team_id = selectedLocation;
+        else basePayload.location = selectedLocation;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert(transaction as any)
+        .insert(basePayload)
         .select(`
           *,
           category:transaction_categories(*)

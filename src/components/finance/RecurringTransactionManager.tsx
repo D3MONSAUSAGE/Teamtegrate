@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { RecurringTransaction, TransactionCategory } from '@/types/transactions';
 import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
@@ -39,6 +40,7 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
   const [editingTransaction, setEditingTransaction] = useState<RecurringTransaction | null>(null);
   
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense' | 'fixed_cost',
@@ -66,7 +68,8 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
           *,
           category:transaction_categories(*)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .eq('organization_id', user?.organizationId || '');
 
       if (error) throw error;
       setRecurringTransactions((data as any[]) || []);
@@ -119,7 +122,9 @@ const RecurringTransactionManager: React.FC<RecurringTransactionManagerProps> = 
         end_date: hasEndDate && formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
         next_generation_date: format(nextGenDate, 'yyyy-MM-dd'),
         vendor_name: formData.vendor_name || null,
-        team_id: formData.team_id === 'none' ? null : formData.team_id || null
+        team_id: formData.team_id === 'none' ? null : formData.team_id || null,
+        user_id: user?.id,
+        organization_id: user?.organizationId
       };
 
       if (editingTransaction) {

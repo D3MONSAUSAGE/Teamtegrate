@@ -80,6 +80,10 @@ class SalesDataService {
       if (filters.location && filters.location !== 'all') {
         query = query.eq('location', filters.location);
       }
+
+      if (filters.team_id) {
+        query = query.eq('team_id', filters.team_id);
+      }
       
       if (filters.date_from) {
         query = query.gte('date', filters.date_from);
@@ -102,6 +106,7 @@ class SalesDataService {
           id: item.id,
           date: item.date,
           location: item.location,
+          team_id: item.team_id,
           grossSales: Number(item.gross_sales),
           netSales: Number(item.net_sales),
           orderCount: item.order_count,
@@ -190,6 +195,7 @@ class SalesDataService {
         organization_id: user.organization_id,
         date: salesData.date,
         location: salesData.location,
+        team_id: (salesData as any).team_id || null,
         gross_sales: salesData.grossSales,
         net_sales: salesData.netSales,
         order_count: salesData.orderCount,
