@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Play, AlertCircle } from 'lucide-react';
-import { parseVideoInput, VideoSource } from '@/lib/youtube';
+import { parseVideoInput, VideoSource, hasKnownEmbeddingIssues } from '@/lib/youtube';
 import YouTubePlayer from './YouTubePlayer';
 import GoogleDrivePlayer from './GoogleDrivePlayer';
 
@@ -95,10 +95,12 @@ const UniversalVideoPlayer: React.FC<UniversalVideoPlayerProps> = ({
     if (!videoInfo) {
       return (
         <Card className="w-full aspect-video flex items-center justify-center bg-muted">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 mx-auto mb-2 text-destructive" />
-            <p className="text-destructive mb-2">Invalid Video</p>
-            <p className="text-sm text-muted-foreground">Unable to recognize video format</p>
+          <div className="text-center space-y-2">
+            <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
+            <p className="text-sm font-medium text-destructive">Invalid Video</p>
+            <p className="text-xs text-muted-foreground max-w-sm">
+              Please provide a valid YouTube, Google Drive, or direct video link.
+            </p>
           </div>
         </Card>
       );
@@ -112,6 +114,11 @@ const UniversalVideoPlayer: React.FC<UniversalVideoPlayerProps> = ({
   // Render appropriate player based on source
   switch (source) {
     case 'youtube':
+      // Check for known embedding issues with YouTube videos
+      if (hasKnownEmbeddingIssues(videoId)) {
+        console.warn('YouTube video may have embedding issues:', videoId);
+      }
+      
       return (
         <YouTubePlayer
           videoId={videoId}

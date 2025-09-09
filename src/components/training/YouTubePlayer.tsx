@@ -62,28 +62,41 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const handleError = useCallback((event: YouTubeEvent) => {
     const errorCode = event.data;
     let errorMessage = 'Failed to load video';
+    let userFriendlyMessage = '';
     
     // YouTube error codes: https://developers.google.com/youtube/iframe_api_reference#Events
     switch (errorCode) {
       case 2:
         errorMessage = 'Invalid video ID';
+        userFriendlyMessage = 'The video ID format is invalid. Please check the YouTube URL.';
         break;
       case 5:
         errorMessage = 'HTML5 player error';
+        userFriendlyMessage = 'Video player error. Try refreshing the page.';
         break;
       case 100:
         errorMessage = 'Video not found or private';
+        userFriendlyMessage = 'Video not found. It may be private, deleted, or have restricted access.';
         break;
       case 101:
       case 150:
         errorMessage = 'Video embedding disabled';
+        userFriendlyMessage = 'This video cannot be embedded. The owner has disabled embedding for this video.';
         break;
       default:
         errorMessage = `Video error (code: ${errorCode})`;
+        userFriendlyMessage = 'Unable to load video. Please try a different video or contact support.';
     }
     
     console.error('YouTube player error:', { errorCode, videoId, errorMessage });
-    setError(errorMessage);
+    
+    // Special handling for videos with dash-starting IDs
+    if (videoId.startsWith('-')) {
+      console.error('Video ID starts with dash, this often causes embedding issues:', videoId);
+      userFriendlyMessage += ' Note: This video ID starts with a dash, which may cause embedding restrictions.';
+    }
+    
+    setError(userFriendlyMessage || errorMessage);
     setIsLoading(false);
   }, [videoId]);
 
@@ -182,9 +195,29 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   if (error) {
     return (
       <Card className="w-full aspect-video flex items-center justify-center bg-muted">
-        <div className="text-center">
+        <div className="text-center space-y-4 p-6">
           <Play className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-muted-foreground">{error}</p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">Video Unavailable</p>
+            <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+          </div>
+          {videoId.startsWith('-') && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-xs text-yellow-800">
+                💡 Tip: Try re-uploading your video to YouTube to get a different video ID, or make the video public instead of unlisted.
+              </p>
+            </div>
+          )}
+          <div className="mt-4">
+            <a 
+              href={`https://www.youtube.com/watch?v=${videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline"
+            >
+              Watch on YouTube instead →
+            </a>
+          </div>
         </div>
       </Card>
     );
