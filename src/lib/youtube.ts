@@ -21,22 +21,11 @@ export interface VideoInfo {
 export function extractYouTubeVideoId(input: string): string | null {
   if (!input) return null;
   
-  console.log('Extracting YouTube video ID from:', input);
-  
   // Remove whitespace
   const cleanInput = input.trim();
   
-  // Enhanced validation for video IDs
-  // YouTube video IDs are typically 11 characters: letters, numbers, hyphens, underscores
-  // Special handling for IDs that start with dash (problematic but valid)
+  // If it's already just a video ID (11 characters, alphanumeric and underscore/dash)
   if (/^[a-zA-Z0-9_-]{11}$/.test(cleanInput)) {
-    console.log('Direct video ID detected:', cleanInput);
-    
-    // Warn about potentially problematic video IDs
-    if (cleanInput.startsWith('-')) {
-      console.warn('Video ID starts with dash, this may cause embedding issues:', cleanInput);
-    }
-    
     return cleanInput;
   }
   
@@ -50,12 +39,10 @@ export function extractYouTubeVideoId(input: string): string | null {
   for (const pattern of patterns) {
     const match = cleanInput.match(pattern);
     if (match && match[1]) {
-      console.log('Video ID extracted:', match[1]);
       return match[1];
     }
   }
   
-  console.log('No video ID found for input:', input);
   return null;
 }
 
@@ -185,15 +172,7 @@ export function parseVideoInput(input: string): VideoInfo | null {
  * Validate if a string is a valid YouTube video ID or URL
  */
 export function isValidYouTubeInput(input: string): boolean {
-  const videoId = extractYouTubeVideoId(input);
-  if (!videoId) return false;
-  
-  // Additional validation for problematic video IDs
-  if (videoId.startsWith('-')) {
-    console.warn('YouTube video ID starts with dash - may have embedding restrictions:', videoId);
-  }
-  
-  return true;
+  return extractYouTubeVideoId(input) !== null;
 }
 
 /**
@@ -201,12 +180,4 @@ export function isValidYouTubeInput(input: string): boolean {
  */
 export function isValidVideoInput(input: string): boolean {
   return detectVideoSource(input) !== null;
-}
-
-/**
- * Check if a video ID might have embedding issues
- */
-export function hasKnownEmbeddingIssues(videoId: string): boolean {
-  // Video IDs starting with dash often have embedding restrictions
-  return videoId.startsWith('-');
 }

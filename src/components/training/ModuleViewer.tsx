@@ -20,7 +20,7 @@ import {
   Eye,
   File
 } from 'lucide-react';
-import UniversalVideoPlayer from './UniversalVideoPlayer';
+import VideoPlayer from './VideoPlayer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
@@ -31,8 +31,7 @@ interface Module {
   description: string;
   content?: string;
   content_type: 'text' | 'video' | 'mixed' | 'file' | 'text_file' | 'video_file' | 'mixed_file';
-  video_url?: string;
-  video_source?: 'youtube' | 'google_drive' | 'direct_link';
+  youtube_video_id?: string;
   module_order: number;
   duration_minutes?: number;
   file_path?: string;
@@ -222,7 +221,7 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
 
   if (!module) return null;
 
-  const hasVideo = (module.content_type === 'video' || module.content_type === 'mixed') && module.video_url;
+  const hasVideo = module.content_type === 'video' || module.content_type === 'mixed';
   const hasText = module.content_type === 'text' || module.content_type === 'mixed';
   const canTakeQuiz = !hasVideo || isVideoCompleted;
 
@@ -259,7 +258,7 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
             )}
 
             {/* Video Content */}
-            {hasVideo && (
+            {hasVideo && module.youtube_video_id && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -285,9 +284,8 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
                   )}
                 </CardHeader>
                 <CardContent>
-                  <UniversalVideoPlayer
-                    videoUrl={module.video_url}
-                    videoSource={module.video_source}
+                  <VideoPlayer
+                    youtubeVideoId={module.youtube_video_id}
                     title={module.title}
                     onProgress={handleVideoProgress}
                     onComplete={handleVideoComplete}

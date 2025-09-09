@@ -16,7 +16,7 @@ import {
   Unlock,
   RotateCcw
 } from 'lucide-react';
-import UniversalVideoPlayer from './UniversalVideoPlayer';
+import VideoPlayer from './VideoPlayer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
@@ -27,8 +27,7 @@ interface Module {
   description?: string;
   content?: string;
   content_type: 'text' | 'video' | 'mixed';
-  video_url?: string;
-  video_source?: 'youtube' | 'google_drive' | 'direct_link';
+  youtube_video_id?: string;
   duration_minutes?: number;
 }
 
@@ -354,10 +353,9 @@ const VideoToQuizFlow: React.FC<VideoToQuizFlowProps> = ({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {module.video_url && (
-          <UniversalVideoPlayer
-            videoUrl={module.video_url}
-            videoSource={module.video_source}
+        {module.youtube_video_id && (
+          <VideoPlayer
+            youtubeVideoId={module.youtube_video_id}
             title={module.title}
             onProgress={handleVideoProgress}
             onComplete={handleVideoComplete}

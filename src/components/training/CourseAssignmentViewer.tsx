@@ -42,8 +42,7 @@ interface CourseModule {
   content?: string;
   text_content?: string;
   content_type: string;
-  video_url?: string;
-  video_source?: 'youtube' | 'google_drive' | 'direct_link';
+  youtube_video_id?: string;
   duration_minutes?: number;
   module_order: number;
   quizzes?: Quiz[];
@@ -798,12 +797,12 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
       </Dialog>
 
       {/* Module Viewer Dialog */}
-      {viewMode === 'module' && selectedModule && !selectedModule.video_url && (
+      {viewMode === 'module' && selectedModule && !selectedModule.youtube_video_id && (
         renderModuleView()
       )}
 
       {/* Video Flow for video modules */}
-      {viewMode === 'module' && selectedModule?.video_url && (
+      {viewMode === 'module' && selectedModule?.youtube_video_id && (
         <Dialog open={true} onOpenChange={() => setViewMode('overview')}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
