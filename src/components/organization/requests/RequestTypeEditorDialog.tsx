@@ -149,141 +149,181 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{initial ? 'Edit Request Type' : 'New Request Type'}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Equipment Request" />
-            </div>
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <select id="category" className="w-full rounded-md border bg-background px-3 py-2" value={category}
-                onChange={(e) => setCategory(e.target.value as keyof typeof REQUEST_CATEGORIES)}>
-                {Object.keys(REQUEST_CATEGORIES).map((key) => (
-                  <option key={key} value={key}>{REQUEST_CATEGORIES[key as keyof typeof REQUEST_CATEGORIES]}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-            <div className="flex items-center justify-between border rounded-md p-3">
-              <div>
-                <Label>Requires Approval</Label>
-                <p className="text-sm text-muted-foreground">If enabled, approvals will be required.</p>
-              </div>
-              <Switch checked={requiresApproval} onCheckedChange={setRequiresApproval} />
-            </div>
-            <div className="flex items-center justify-between border rounded-md p-3">
-              <div>
-                <Label>Active</Label>
-                <p className="text-sm text-muted-foreground">Inactive types are hidden from users.</p>
-              </div>
-              <Switch checked={isActive} onCheckedChange={setIsActive} />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="approval_roles">Approval Roles (comma-separated)</Label>
-            <Input id="approval_roles" value={approvalRolesText} onChange={(e) => setApprovalRolesText(e.target.value)} placeholder="manager,admin" />
-          </div>
-
-          <Separator className="my-4" />
-          
-          <JobRoleSelector
-            selectedRoles={defaultJobRoles}
-            onSelectionChange={setDefaultJobRoles}
-            expertiseTags={expertiseTags}
-            onExpertiseChange={setExpertiseTags}
-            geographicScope={geographicScope}
-            onGeographicScopeChange={setGeographicScope}
-            workloadBalancing={workloadBalancing}
-            onWorkloadBalancingChange={setWorkloadBalancing}
-          />
-          
-          <Separator className="my-4" />
-          
-          <UserAssignmentSelector
-            selectedUserIds={selectedUserIds}
-            onSelectionChange={setSelectedUserIds}
-            assignmentStrategy={assignmentStrategy}
-            onStrategyChange={setAssignmentStrategy}
-          />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Permission Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Creator Role Restrictions</Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Select which roles can create requests of this type. Leave empty to allow all roles.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {ALL_ROLES.map(role => (
-                    <Badge
-                      key={role}
-                      variant={creatorRoles.includes(role) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        if (creatorRoles.includes(role)) {
-                          setCreatorRoles(prev => prev.filter(r => r !== role));
-                        } else {
-                          setCreatorRoles(prev => [...prev, role]);
-                        }
-                      }}
-                    >
-                      {role}
-                    </Badge>
-                  ))}
+        <div className="flex-1 overflow-y-auto px-1">
+          <div className="grid gap-6 py-4">
+            {/* Basic Information Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Equipment Request" />
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <select id="category" className="w-full rounded-md border bg-background px-3 py-2" value={category}
+                      onChange={(e) => setCategory(e.target.value as keyof typeof REQUEST_CATEGORIES)}>
+                      {Object.keys(REQUEST_CATEGORIES).map((key) => (
+                        <option key={key} value={key}>{REQUEST_CATEGORIES[key as keyof typeof REQUEST_CATEGORIES]}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <Label>Viewer Role Restrictions</Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Select which roles can view requests of this type. Leave empty to follow default access rules.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {ALL_ROLES.map(role => (
-                    <Badge
-                      key={role}
-                      variant={viewerRoles.includes(role) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        if (viewerRoles.includes(role)) {
-                          setViewerRoles(prev => prev.filter(r => r !== role));
-                        } else {
-                          setViewerRoles(prev => [...prev, role]);
-                        }
-                      }}
-                    >
-                      {role}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <div>
-            <Label htmlFor="form_schema">Form Schema (JSON)</Label>
-            <Textarea id="form_schema" value={formSchemaText} onChange={(e) => setFormSchemaText(e.target.value)} rows={10} className="font-mono" />
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between border rounded-md p-3">
+                    <div>
+                      <Label>Requires Approval</Label>
+                      <p className="text-sm text-muted-foreground">If enabled, approvals will be required.</p>
+                    </div>
+                    <Switch checked={requiresApproval} onCheckedChange={setRequiresApproval} />
+                  </div>
+                  <div className="flex items-center justify-between border rounded-md p-3">
+                    <div>
+                      <Label>Active</Label>
+                      <p className="text-sm text-muted-foreground">Inactive types are hidden from users.</p>
+                    </div>
+                    <Switch checked={isActive} onCheckedChange={setIsActive} />
+                  </div>
+                </div>
+
+                {requiresApproval && (
+                  <div>
+                    <Label htmlFor="approval_roles">Approval Roles (comma-separated)</Label>
+                    <Input id="approval_roles" value={approvalRolesText} onChange={(e) => setApprovalRolesText(e.target.value)} placeholder="manager,admin" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Assignment Configuration Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Assignment Configuration</CardTitle>
+                <p className="text-sm text-muted-foreground">Configure how requests of this type are assigned to users</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h4 className="font-medium mb-3">Job Role-Based Assignment</h4>
+                  <JobRoleSelector
+                    selectedRoles={defaultJobRoles}
+                    onSelectionChange={setDefaultJobRoles}
+                    expertiseTags={expertiseTags}
+                    onExpertiseChange={setExpertiseTags}
+                    geographicScope={geographicScope}
+                    onGeographicScopeChange={setGeographicScope}
+                    workloadBalancing={workloadBalancing}
+                    onWorkloadBalancingChange={setWorkloadBalancing}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className="font-medium mb-3">User-Specific Assignment</h4>
+                  <UserAssignmentSelector
+                    selectedUserIds={selectedUserIds}
+                    onSelectionChange={setSelectedUserIds}
+                    assignmentStrategy={assignmentStrategy}
+                    onStrategyChange={setAssignmentStrategy}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Permission Configuration Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Permission Configuration</CardTitle>
+                <p className="text-sm text-muted-foreground">Control who can create and view requests of this type</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Creator Role Restrictions</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Select which roles can create requests of this type. Leave empty to allow all roles.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_ROLES.map(role => (
+                      <Badge
+                        key={role}
+                        variant={creatorRoles.includes(role) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (creatorRoles.includes(role)) {
+                            setCreatorRoles(prev => prev.filter(r => r !== role));
+                          } else {
+                            setCreatorRoles(prev => [...prev, role]);
+                          }
+                        }}
+                      >
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Viewer Role Restrictions</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Select which roles can view requests of this type. Leave empty to follow default access rules.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_ROLES.map(role => (
+                      <Badge
+                        key={role}
+                        variant={viewerRoles.includes(role) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (viewerRoles.includes(role)) {
+                            setViewerRoles(prev => prev.filter(r => r !== role));
+                          } else {
+                            setViewerRoles(prev => [...prev, role]);
+                          }
+                        }}
+                      >
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Form Schema Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Form Schema</CardTitle>
+                <p className="text-sm text-muted-foreground">Define the custom form fields for this request type</p>
+              </CardHeader>
+              <CardContent>
+                <Label htmlFor="form_schema">Form Schema (JSON)</Label>
+                <Textarea 
+                  id="form_schema" 
+                  value={formSchemaText} 
+                  onChange={(e) => setFormSchemaText(e.target.value)} 
+                  rows={10} 
+                  className="font-mono mt-2" 
+                />
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
         </DialogFooter>
