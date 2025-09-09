@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole } from '@/types';
+import { useJobRoleAssignment } from './useJobRoleAssignment';
 
 interface AssignmentRule {
   id: string;
@@ -30,6 +31,7 @@ interface ApprovalWorkflow {
 
 export const useAdvancedAssignment = () => {
   const { user } = useAuth();
+  const { trackAssignment } = useJobRoleAssignment();
 
   const evaluateAssignmentRules = async (
     requestTypeId: string,
@@ -61,7 +63,12 @@ export const useAdvancedAssignment = () => {
       for (const rule of rules) {
         const candidates = await evaluateRule(rule, users, requestData);
         if (candidates.length > 0) {
-          eligibleUsers = applyAssignmentStrategy(candidates, rule.assignment_strategy);
+          eligibleUsers = await applyAssignmentStrategy(
+            rule.assignment_strategy,
+            candidates,
+            rule.conditions,
+            { request_type: { ...requestData }, ...requestData }
+          );
           break; // Use first matching rule
         }
       }
@@ -133,32 +140,94 @@ export const useAdvancedAssignment = () => {
     return candidates.filter(u => u.organizationId === user!.organizationId);
   };
 
-  const applyAssignmentStrategy = (candidates: User[], strategy: string): User[] => {
+  // Smart assignment strategy application with job role integration  
+  const applyAssignmentStrategy = async (strategy: string, users: User[], conditions: any, requestData?: any): Promise<User[]> => {
+    const { findOptimalAssignees } = useJobRoleAssignment();
+    
     switch (strategy) {
-      case 'first_available':
-        return candidates.slice(0, 1);
-
-      case 'load_balanced':
-        // Simple load balancing - could be enhanced with actual workload data
-        const randomIndex = Math.floor(Math.random() * candidates.length);
-        return [candidates[randomIndex]];
-
+      case 'job_role_based':
+        if (conditions.job_role_filter?.has_job_role && requestData?.request_type?.default_job_roles) {
+          try {
+            const assignees = await findOptimalAssignees(
+              requestData,
+              requestData.request_type.default_job_roles,
+              {
+                considerWorkload: requestData.request_type.workload_balancing_enabled,
+                expertiseRequired: requestData.request_type.expertise_tags || [],
+                geographicPreference: requestData.request_type.geographic_scope === 'local_preferred',
+                maxAssignees: 1
+              }
+            );
+            // Convert to User type
+            return assignees.map((a: any) => ({
+              id: a.id,
+              email: a.email,
+              role: 'user' as UserRole, // Default role, should be enhanced with actual user data
+              organizationId: user?.organizationId || '',
+              name: a.name,
+              createdAt: new Date(),
+              timezone: 'UTC'
+            }));
+          } catch (error) {
+            console.error('Job role assignment failed, falling back to role-based:', error);
+          }
+        }
+        return users.slice(0, 1);
+      
+      case 'round_robin':
+        return users.sort((a, b) => a.id.localeCompare(b.id)).slice(0, 1);
+      
+      case 'least_loaded':
+        // Enhanced with actual workload data
+        try {
+          const assignees = await findOptimalAssignees(requestData || {}, [], {
+            considerWorkload: true,
+            maxAssignees: 1
+          });
+          return assignees.map((a: any) => ({
+            id: a.id,
+            email: a.email,
+            role: 'user' as UserRole,
+            organizationId: user?.organizationId || '',
+            name: a.name,
+            createdAt: new Date(),
+            timezone: 'UTC'
+          }));
+        } catch (error) {
+          return users.slice(0, 1);
+        }
+      
       case 'expertise_based':
-        // For now, prioritize by role hierarchy
-        const priorityOrder: Record<UserRole, number> = {
-          'superadmin': 4,
-          'admin': 3,
-          'manager': 2,
-          'team_leader': 1.5,
-          'user': 1
-        };
-        
-        return candidates
-          .sort((a, b) => (priorityOrder[b.role] || 0) - (priorityOrder[a.role] || 0))
-          .slice(0, 1);
-
+        if (conditions.expertise_required?.length > 0) {
+          try {
+            const assignees = await findOptimalAssignees(
+              requestData || {},
+              [],
+              {
+                expertiseRequired: conditions.expertise_required,
+                maxAssignees: 1
+              }
+            );
+            return assignees.map((a: any) => ({
+              id: a.id,
+              email: a.email,
+              role: 'user' as UserRole,
+              organizationId: user?.organizationId || '',
+              name: a.name,
+              createdAt: new Date(),
+              timezone: 'UTC'
+            }));
+          } catch (error) {
+            return users.slice(0, 1);
+          }
+        }
+        return users.slice(0, 1);
+      
+      case 'random':
+        return [users[Math.floor(Math.random() * users.length)]];
+      
       default:
-        return candidates;
+        return users.slice(0, 1);
     }
   };
 
@@ -223,6 +292,17 @@ export const useAdvancedAssignment = () => {
         });
 
       if (error) throw error;
+      
+      // Track assignment analytics
+      if (requestId && originalApproverId) {
+        await trackAssignment(
+          requestId,
+          originalApproverId,
+          undefined,
+          undefined
+        );
+      }
+
       return true;
     } catch (error) {
       console.error('Error creating delegation:', error);

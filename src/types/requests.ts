@@ -15,6 +15,10 @@ export interface RequestType {
   creator_role_restrictions?: string[];
   viewer_role_restrictions?: string[];
   permission_metadata?: Record<string, any>;
+  default_job_roles?: string[];
+  expertise_tags?: string[];
+  geographic_scope?: string;
+  workload_balancing_enabled?: boolean;
 }
 
 export interface FormField {

@@ -250,6 +250,39 @@ export type Database = {
           },
         ]
       }
+      assignment_rule_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_global: boolean | null
+          name: string
+          organization_id: string | null
+          rule_config: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_global?: boolean | null
+          name: string
+          organization_id?: string | null
+          rule_config: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_global?: boolean | null
+          name?: string
+          organization_id?: string | null
+          rule_config?: Json
+        }
+        Relationships: []
+      }
       bug_reports: {
         Row: {
           actual_behavior: string | null
@@ -3499,6 +3532,45 @@ export type Database = {
           },
         ]
       }
+      request_assignment_analytics: {
+        Row: {
+          approver_id: string
+          assignment_rule_id: string | null
+          assignment_score: number | null
+          assignment_time: string
+          created_at: string
+          id: string
+          job_role_id: string | null
+          organization_id: string
+          request_id: string
+          response_time_hours: number | null
+        }
+        Insert: {
+          approver_id: string
+          assignment_rule_id?: string | null
+          assignment_score?: number | null
+          assignment_time?: string
+          created_at?: string
+          id?: string
+          job_role_id?: string | null
+          organization_id: string
+          request_id: string
+          response_time_hours?: number | null
+        }
+        Update: {
+          approver_id?: string
+          assignment_rule_id?: string | null
+          assignment_score?: number | null
+          assignment_time?: string
+          created_at?: string
+          id?: string
+          job_role_id?: string | null
+          organization_id?: string
+          request_id?: string
+          response_time_hours?: number | null
+        }
+        Relationships: []
+      }
       request_assignment_rules: {
         Row: {
           assignment_strategy: string
@@ -3675,8 +3747,11 @@ export type Database = {
           created_at: string
           created_by: string
           creator_role_restrictions: string[] | null
+          default_job_roles: string[] | null
           description: string | null
+          expertise_tags: string[] | null
           form_schema: Json | null
+          geographic_scope: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -3686,6 +3761,7 @@ export type Database = {
           requires_approval: boolean | null
           updated_at: string
           viewer_role_restrictions: string[] | null
+          workload_balancing_enabled: boolean | null
         }
         Insert: {
           approval_roles?: string[] | null
@@ -3693,8 +3769,11 @@ export type Database = {
           created_at?: string
           created_by: string
           creator_role_restrictions?: string[] | null
+          default_job_roles?: string[] | null
           description?: string | null
+          expertise_tags?: string[] | null
           form_schema?: Json | null
+          geographic_scope?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -3704,6 +3783,7 @@ export type Database = {
           requires_approval?: boolean | null
           updated_at?: string
           viewer_role_restrictions?: string[] | null
+          workload_balancing_enabled?: boolean | null
         }
         Update: {
           approval_roles?: string[] | null
@@ -3711,8 +3791,11 @@ export type Database = {
           created_at?: string
           created_by?: string
           creator_role_restrictions?: string[] | null
+          default_job_roles?: string[] | null
           description?: string | null
+          expertise_tags?: string[] | null
           form_schema?: Json | null
+          geographic_scope?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
@@ -3722,6 +3805,7 @@ export type Database = {
           requires_approval?: boolean | null
           updated_at?: string
           viewer_role_restrictions?: string[] | null
+          workload_balancing_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -5587,9 +5671,11 @@ export type Database = {
           email: string
           emergency_contact_needed: boolean | null
           employee_id: string | null
+          expertise_tags: string[] | null
           hire_date: string | null
           id: string
           job_title: string | null
+          location: string | null
           manager_id: string | null
           name: string
           organization_id: string
@@ -5598,6 +5684,7 @@ export type Database = {
           push_token: string | null
           role: string
           timezone: string | null
+          workload_preference: string | null
         }
         Insert: {
           address?: string | null
@@ -5609,9 +5696,11 @@ export type Database = {
           email: string
           emergency_contact_needed?: boolean | null
           employee_id?: string | null
+          expertise_tags?: string[] | null
           hire_date?: string | null
           id: string
           job_title?: string | null
+          location?: string | null
           manager_id?: string | null
           name: string
           organization_id: string
@@ -5620,6 +5709,7 @@ export type Database = {
           push_token?: string | null
           role: string
           timezone?: string | null
+          workload_preference?: string | null
         }
         Update: {
           address?: string | null
@@ -5631,9 +5721,11 @@ export type Database = {
           email?: string
           emergency_contact_needed?: boolean | null
           employee_id?: string | null
+          expertise_tags?: string[] | null
           hire_date?: string | null
           id?: string
           job_title?: string | null
+          location?: string | null
           manager_id?: string | null
           name?: string
           organization_id?: string
@@ -5642,6 +5734,7 @@ export type Database = {
           push_token?: string | null
           role?: string
           timezone?: string | null
+          workload_preference?: string | null
         }
         Relationships: [
           {
@@ -5655,6 +5748,15 @@ export type Database = {
       }
     }
     Views: {
+      approver_workloads: {
+        Row: {
+          active_requests: number | null
+          approver_id: string | null
+          avg_pending_hours: number | null
+          pending_count: number | null
+        }
+        Relationships: []
+      }
       organization_user_hierarchy: {
         Row: {
           assigned_tasks_count: number | null

@@ -15,6 +15,7 @@ import { REQUEST_CATEGORIES } from '@/types/requests';
 import { toast } from '@/components/ui/sonner';
 import { addOrgIdToInsert } from '@/utils/organizationHelpers';
 import { ALL_ROLES } from '@/hooks/access-control/useAccessControlData';
+import JobRoleSelector from './JobRoleSelector';
 
 interface Props {
   open: boolean;
@@ -34,6 +35,10 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   const [isActive, setIsActive] = useState(true);
   const [creatorRoles, setCreatorRoles] = useState<string[]>([]);
   const [viewerRoles, setViewerRoles] = useState<string[]>([]);
+  const [defaultJobRoles, setDefaultJobRoles] = useState<string[]>([]);
+  const [expertiseTags, setExpertiseTags] = useState<string[]>([]);
+  const [geographicScope, setGeographicScope] = useState('any');
+  const [workloadBalancing, setWorkloadBalancing] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -47,6 +52,10 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setIsActive(!!initial.is_active);
       setCreatorRoles((initial as any).creator_role_restrictions || []);
       setViewerRoles((initial as any).viewer_role_restrictions || []);
+      setDefaultJobRoles((initial as any).default_job_roles || []);
+      setExpertiseTags((initial as any).expertise_tags || []);
+      setGeographicScope((initial as any).geographic_scope || 'any');
+      setWorkloadBalancing((initial as any).workload_balancing_enabled ?? true);
     } else {
       setName('');
       setCategory('custom');
@@ -57,6 +66,10 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setIsActive(true);
       setCreatorRoles([]);
       setViewerRoles([]);
+      setDefaultJobRoles([]);
+      setExpertiseTags([]);
+      setGeographicScope('any');
+      setWorkloadBalancing(true);
     }
   }, [initial, open]);
 
@@ -92,6 +105,10 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       required_permissions: [{ module_id: 'requests', action_id: 'create' }],
       creator_role_restrictions: creatorRoles.length > 0 ? creatorRoles : null,
       viewer_role_restrictions: viewerRoles.length > 0 ? viewerRoles : null,
+      default_job_roles: defaultJobRoles.length > 0 ? defaultJobRoles : null,
+      expertise_tags: expertiseTags.length > 0 ? expertiseTags : null,
+      geographic_scope: geographicScope,
+      workload_balancing_enabled: workloadBalancing,
       permission_metadata: {}
     } as Partial<RequestType> & { created_by: string };
 
@@ -173,6 +190,17 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
           </div>
 
           <Separator className="my-4" />
+          
+          <JobRoleSelector
+            selectedRoles={defaultJobRoles}
+            onSelectionChange={setDefaultJobRoles}
+            expertiseTags={expertiseTags}
+            onExpertiseChange={setExpertiseTags}
+            geographicScope={geographicScope}
+            onGeographicScopeChange={setGeographicScope}
+            workloadBalancing={workloadBalancing}
+            onWorkloadBalancingChange={setWorkloadBalancing}
+          />
           
           <Card>
             <CardHeader>
