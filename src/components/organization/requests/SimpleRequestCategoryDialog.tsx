@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import JobRoleSelector from './JobRoleSelector';
+import UserAssignmentSelector from './UserAssignmentSelector';
 
 interface SimpleRequestType {
   id: string;
@@ -22,6 +25,12 @@ interface SimpleRequestType {
   requires_approval: boolean;
   approval_roles: string[];
   is_active: boolean;
+  default_job_roles?: string[];
+  expertise_tags?: string[];
+  geographic_scope?: string;
+  workload_balancing_enabled?: boolean;
+  assigned_user_ids?: string[];
+  assignment_strategy?: string;
 }
 
 interface SimpleRequestCategoryDialogProps {
@@ -37,6 +46,12 @@ const categorySchema = z.object({
   requires_approval: z.boolean(),
   approval_roles: z.array(z.string()).min(0),
   is_active: z.boolean(),
+  default_job_roles: z.array(z.string()).optional(),
+  expertise_tags: z.array(z.string()).optional(),
+  geographic_scope: z.string().optional(),
+  workload_balancing_enabled: z.boolean().optional(),
+  assigned_user_ids: z.array(z.string()).optional(),
+  assignment_strategy: z.string().optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -55,6 +70,7 @@ export default function SimpleRequestCategoryDialog({
 }: SimpleRequestCategoryDialogProps) {
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const [showAssignmentOptions, setShowAssignmentOptions] = React.useState(false);
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
@@ -64,6 +80,12 @@ export default function SimpleRequestCategoryDialog({
       requires_approval: category?.requires_approval || false,
       approval_roles: category?.approval_roles || ['manager'],
       is_active: category?.is_active ?? true,
+      default_job_roles: category?.default_job_roles || [],
+      expertise_tags: category?.expertise_tags || [],
+      geographic_scope: category?.geographic_scope || 'any',
+      workload_balancing_enabled: category?.workload_balancing_enabled ?? true,
+      assigned_user_ids: category?.assigned_user_ids || [],
+      assignment_strategy: category?.assignment_strategy || 'first_available',
     },
   });
 
@@ -76,6 +98,12 @@ export default function SimpleRequestCategoryDialog({
         requires_approval: category?.requires_approval || false,
         approval_roles: category?.approval_roles || ['manager'],
         is_active: category?.is_active ?? true,
+        default_job_roles: category?.default_job_roles || [],
+        expertise_tags: category?.expertise_tags || [],
+        geographic_scope: category?.geographic_scope || 'any',
+        workload_balancing_enabled: category?.workload_balancing_enabled ?? true,
+        assigned_user_ids: category?.assigned_user_ids || [],
+        assignment_strategy: category?.assignment_strategy || 'first_available',
       });
     }
   }, [category, open, form]);
@@ -98,6 +126,10 @@ export default function SimpleRequestCategoryDialog({
         is_active: data.is_active,
         form_schema: [], // Empty form schema for simplified approach
         created_by: user.id,
+        default_job_roles: data.default_job_roles || [],
+        expertise_tags: data.expertise_tags || [],
+        geographic_scope: data.geographic_scope || 'any',
+        workload_balancing_enabled: data.workload_balancing_enabled ?? true,
       };
 
       if (category?.id) {
@@ -223,6 +255,36 @@ export default function SimpleRequestCategoryDialog({
               )}
             </CardContent>
           </Card>
+
+          {/* Assignment Configuration */}
+          <Collapsible open={showAssignmentOptions} onOpenChange={setShowAssignmentOptions}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                <span>Assignment Configuration</span>
+                {showAssignmentOptions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <JobRoleSelector
+                selectedRoles={form.watch('default_job_roles') || []}
+                onSelectionChange={(roleIds) => form.setValue('default_job_roles', roleIds)}
+                expertiseTags={form.watch('expertise_tags') || []}
+                onExpertiseChange={(tags) => form.setValue('expertise_tags', tags)}
+                geographicScope={form.watch('geographic_scope') || 'any'}
+                onGeographicScopeChange={(scope) => form.setValue('geographic_scope', scope)}
+                workloadBalancing={form.watch('workload_balancing_enabled') ?? true}
+                onWorkloadBalancingChange={(enabled) => form.setValue('workload_balancing_enabled', enabled)}
+                showAdvanced={true}
+              />
+              
+              <UserAssignmentSelector
+                selectedUserIds={form.watch('assigned_user_ids') || []}
+                onSelectionChange={(userIds) => form.setValue('assigned_user_ids', userIds)}
+                assignmentStrategy={form.watch('assignment_strategy') || 'first_available'}
+                onStrategyChange={(strategy) => form.setValue('assignment_strategy', strategy)}
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
