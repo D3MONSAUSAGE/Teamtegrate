@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, GripVertical, Video, FileText, PlayCircle, File } from "lucide-react";
 import { useUpdateCourse, useDeleteCourse } from "@/hooks/useTrainingData";
 import { enhancedNotifications } from "@/utils/enhancedNotifications";
-import { extractYouTubeVideoId, isValidYouTubeInput } from "@/lib/youtube";
+import { extractYouTubeVideoId, isValidVideoInput, parseVideoInput } from "@/lib/youtube";
 import ModuleFileUploader from './ModuleFileUploader';
 
 interface Module {
@@ -28,7 +28,8 @@ interface Module {
   module_order: number;
   content?: string;
   content_type?: 'text' | 'video' | 'mixed' | 'file' | 'text_file' | 'video_file' | 'mixed_file';
-  youtube_video_id?: string;
+  video_url?: string;
+  video_source?: 'youtube' | 'google_drive' | 'direct_link';
   file_path?: string;
   file_name?: string;
   file_size?: number;
@@ -71,7 +72,7 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
         
         // Intelligently infer content_type if missing
         let contentType = mod.content_type;
-        const hasVideo = mod.youtube_video_id && mod.youtube_video_id.trim() !== '';
+        const hasVideo = mod.video_url && mod.video_url.trim() !== '';
         const hasText = mod.text_content && mod.text_content.trim() !== '';
         const hasFile = mod.file_path && mod.file_path.trim() !== '';
         
@@ -95,7 +96,8 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
         }
         
         // For existing modules with video URLs, preserve the full URL in the input
-        const videoValue = mod.youtube_video_id || '';
+        const videoValue = mod.video_url || '';
+        const videoSource = mod.video_source || 'youtube';
         
         const moduleData = {
           id: mod.id,
@@ -104,7 +106,8 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
           module_order: mod.module_order || index + 1,
           content: mod.text_content || '',
           content_type: contentType as 'text' | 'video' | 'mixed' | 'file' | 'text_file' | 'video_file' | 'mixed_file',
-          youtube_video_id: videoValue,
+          video_url: videoValue,
+          video_source: videoSource as 'youtube' | 'google_drive' | 'direct_link',
           file_path: mod.file_path || '',
           file_name: mod.file_name || '',
           file_size: mod.file_size || 0
@@ -160,7 +163,8 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
       module_order: modules.length + 1,
       content: '',
       content_type: 'text',
-      youtube_video_id: '',
+      video_url: '',
+      video_source: 'youtube',
       file_path: '',
       file_name: '',
       file_size: 0
@@ -171,10 +175,19 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
   const updateModule = (index: number, field: keyof Module, value: string | number) => {
     const updatedModules = [...modules];
     
-    // Normalize YouTube video inputs to store just the video ID
-    if (field === 'youtube_video_id' && typeof value === 'string') {
-      const videoId = extractYouTubeVideoId(value);
-      updatedModules[index] = { ...updatedModules[index], [field]: videoId || value };
+    // Handle video URL inputs - detect source and validate
+    if (field === 'video_url' && typeof value === 'string') {
+      const videoInfo = parseVideoInput(value);
+      if (videoInfo) {
+        updatedModules[index] = { 
+          ...updatedModules[index], 
+          video_url: value,
+          video_source: videoInfo.source
+        };
+      } else {
+        // Invalid video input, just store the value for user to fix
+        updatedModules[index] = { ...updatedModules[index], [field]: value };
+      }
     } else {
       updatedModules[index] = { ...updatedModules[index], [field]: value };
     }
@@ -359,16 +372,21 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
                       
                       {(module.content_type === 'video' || module.content_type === 'mixed' || module.content_type === 'video_file' || module.content_type === 'mixed_file') && (
                         <div className="space-y-1">
-                          <Label>YouTube Video ID</Label>
+                          <Label>Video URL</Label>
                            <Input
-                             value={module.youtube_video_id || ''}
-                             onChange={(e) => updateModule(index, 'youtube_video_id', e.target.value)}
-                             placeholder="Enter YouTube URL or video ID (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+                             value={module.video_url || ''}
+                             onChange={(e) => updateModule(index, 'video_url', e.target.value)}
+                             placeholder="Enter video URL (YouTube, Google Drive, or direct link)"
                            />
                            <p className="text-xs text-muted-foreground">
-                             Paste the full YouTube URL or just the video ID. Both formats are supported.
+                             Supports YouTube, Google Drive videos, and direct video links.
                            </p>
-                        </div>
+                           {module.video_source && (
+                             <p className="text-xs text-primary">
+                               Detected source: {module.video_source.replace('_', ' ')}
+                             </p>
+                           )}
+                         </div>
                       )}
                       
                       {(module.content_type === 'file' || module.content_type === 'text_file' || module.content_type === 'video_file' || module.content_type === 'mixed_file') && (

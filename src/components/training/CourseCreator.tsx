@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Save, X, BookOpen, GraduationCap, Video, FileText, PlayCircle, ExternalLink, Award } from 'lucide-react';
 import { useCreateCourse } from '@/hooks/useTrainingData';
-import { extractYouTubeVideoId, isValidYouTubeInput } from '@/lib/youtube';
+import { extractYouTubeVideoId, isValidVideoInput } from '@/lib/youtube';
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Module {
@@ -19,7 +19,8 @@ interface Module {
   duration_minutes: number;
   module_order: number;
   content_type: 'text' | 'video' | 'mixed';
-  youtube_video_id?: string;
+  video_url?: string;
+  video_source?: 'youtube' | 'google_drive' | 'direct_link';
 }
 
 interface CourseCreatorProps {
@@ -54,17 +55,19 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
       duration_minutes: 30,
       module_order: modules.length + 1,
       content_type: 'text',
-      youtube_video_id: ''
+      video_url: '',
+      video_source: 'youtube'
     }]);
   };
 
   const updateModule = (index: number, field: keyof Module, value: any) => {
     const updated = [...modules];
     
-    // Normalize YouTube video inputs to store just the video ID
-    if (field === 'youtube_video_id' && typeof value === 'string') {
-      const videoId = extractYouTubeVideoId(value);
-      updated[index] = { ...updated[index], [field]: videoId || value };
+    // Handle video URL inputs - validate and update
+    if (field === 'video_url' && typeof value === 'string') {
+      if (isValidVideoInput(value) || value === '') {
+        updated[index] = { ...updated[index], [field]: value };
+      }
     } else {
       updated[index] = { ...updated[index], [field]: value };
     }
@@ -415,9 +418,9 @@ const CourseCreator: React.FC<CourseCreatorProps> = ({ open, onOpenChange }) => 
                         <div className="space-y-2">
                           <Label>YouTube Video</Label>
                           <Input
-                            value={module.youtube_video_id || ''}
-                            onChange={(e) => updateModule(moduleIndex, 'youtube_video_id', e.target.value)}
-                            placeholder="Enter YouTube URL or video ID (e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+                            value={module.video_url || ''}
+                            onChange={(e) => updateModule(moduleIndex, 'video_url', e.target.value)}
+                            placeholder="Enter video URL (YouTube, Google Drive, or direct link)"
                           />
                           <p className="text-xs text-muted-foreground">
                             Paste the full YouTube URL or just the video ID. Both formats are supported.

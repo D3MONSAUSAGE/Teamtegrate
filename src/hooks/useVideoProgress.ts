@@ -61,7 +61,8 @@ export const useAllVideoProgress = (userId?: string) => {
             id,
             title,
             content_type,
-            youtube_video_id,
+            video_url,
+            video_source,
             training_courses!inner(
               organization_id
             )
@@ -216,7 +217,8 @@ export const useVideoEngagementAnalytics = (startDate?: Date, endDate?: Date) =>
             id,
             title,
             content_type,
-            youtube_video_id,
+            video_url,
+            video_source,
             training_courses!inner(
               id,
               title,

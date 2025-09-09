@@ -24,9 +24,10 @@ export const useTrainingCourses = () => {
             description,
             module_order,
             content_type,
-            text_content,
-            youtube_video_id,
-            file_path,
+          text_content,
+          video_url,
+          video_source,
+          file_path,
             file_name,
             file_size,
             quizzes(
@@ -1267,7 +1268,8 @@ export const useUpdateCourse = () => {
             course_id: courseId,
             content_type: contentType,
             text_content: (contentType === 'text' || contentType === 'mixed') ? (module.content ?? null) : null,
-            youtube_video_id: (contentType === 'video' || contentType === 'mixed') ? (module.youtube_video_id ?? null) : null,
+            video_url: (contentType === 'video' || contentType === 'mixed') ? (module.video_url ?? null) : null,
+            video_source: (contentType === 'video' || contentType === 'mixed') ? (module.video_source ?? 'youtube') : null,
             updated_at: new Date().toISOString()
           };
 

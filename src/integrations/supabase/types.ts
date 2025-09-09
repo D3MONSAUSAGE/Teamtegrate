@@ -5597,7 +5597,8 @@ export type Database = {
           text_content: string | null
           title: string
           updated_at: string
-          youtube_video_id: string | null
+          video_source: string | null
+          video_url: string | null
         }
         Insert: {
           content_type: string
@@ -5612,7 +5613,8 @@ export type Database = {
           text_content?: string | null
           title: string
           updated_at?: string
-          youtube_video_id?: string | null
+          video_source?: string | null
+          video_url?: string | null
         }
         Update: {
           content_type?: string
@@ -5627,7 +5629,8 @@ export type Database = {
           text_content?: string | null
           title?: string
           updated_at?: string
-          youtube_video_id?: string | null
+          video_source?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
