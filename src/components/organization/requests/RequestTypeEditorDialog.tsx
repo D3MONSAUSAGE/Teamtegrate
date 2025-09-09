@@ -149,13 +149,13 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-2">
           <DialogTitle>{initial ? 'Edit Request Type' : 'New Request Type'}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-1">
-          <div className="grid gap-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="grid gap-6 pb-4">
             {/* Basic Information Section */}
             <Card>
               <CardHeader>
@@ -323,7 +323,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 mt-4">
+        <DialogFooter className="flex-shrink-0 px-6 pb-6 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
         </DialogFooter>
