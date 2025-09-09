@@ -171,14 +171,15 @@ export default function SimpleRequestCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
           <DialogTitle>
             {category ? 'Edit Request Category' : 'Create Request Category'}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" id="category-form">
           {/* Basic Information */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -286,31 +287,33 @@ export default function SimpleRequestCategoryDialog({
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  Saving...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  {category ? 'Update Category' : 'Create Category'}
-                </div>
-              )}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* Actions */}
+        <div className="flex-shrink-0 flex justify-end gap-2 px-6 py-4 border-t bg-background">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="category-form" disabled={loading}>
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                Saving...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4" />
+                {category ? 'Update Category' : 'Create Category'}
+              </div>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
