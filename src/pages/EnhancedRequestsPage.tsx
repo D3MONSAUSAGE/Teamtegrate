@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { toast } from '@/components/ui/sonner';
 import { Plus, LayoutDashboard, List, Settings } from 'lucide-react';
+import { SmartAssignmentService } from '@/services/smartAssignmentService';
 
 export default function EnhancedRequestsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -56,9 +57,55 @@ export default function EnhancedRequestsPage() {
   };
 
   const handleAssignRequest = async (request: Request) => {
-    // This would open an assignment dialog or modal
-    // For now, just a placeholder
-    toast.info("Assignment feature coming soon!");
+    if (!user?.organizationId) {
+      toast.error("Unable to assign request: No organization found");
+      return;
+    }
+
+    console.log('Starting assignment for request:', request.id, request.request_type);
+    
+    try {
+      // Get the request type object
+      const requestType = request.request_type || requestTypes.find(rt => rt.id === request.request_type_id);
+      
+      if (!requestType) {
+        toast.error("Request type not found");
+        console.error('Request type not found for:', request.request_type_id);
+        return;
+      }
+
+      const result = await SmartAssignmentService.assignRequest(
+        request.id,
+        requestType,
+        request.form_data || {},
+        user.organizationId
+      );
+
+      if (result.assignedUsers && result.assignedUsers.length > 0) {
+        const assignedUser = result.assignedUsers[0];
+        toast.success(`Request assigned to ${assignedUser.name || assignedUser.email}`);
+        console.log('Assignment successful:', result);
+        
+        // Update the request to show assignment
+        await supabase
+          .from('requests')
+          .update({ 
+            assigned_to: assignedUser.id,
+            assigned_at: new Date().toISOString()
+          })
+          .eq('id', request.id);
+          
+      } else if (result.message) {
+        toast.info(result.message);
+        console.log('Assignment result:', result.message);
+      } else {
+        toast.error(result.error || 'No suitable users found for assignment');
+        console.error('Assignment failed:', result.error || 'No users found');
+      }
+    } catch (error) {
+      console.error('Error during assignment:', error);
+      toast.error('An error occurred while assigning the request');
+    }
   };
 
   const handleStatusChange = async (request: Request, status: string) => {

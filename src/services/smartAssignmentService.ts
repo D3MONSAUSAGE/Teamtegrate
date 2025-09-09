@@ -12,9 +12,12 @@ export interface AssignmentConfig {
 }
 
 export interface AssignmentResult {
+  success: boolean;
   assignedUsers: User[];
   assignmentMethod: string;
   ruleName?: string;
+  message?: string;
+  error?: string;
 }
 
 export class SmartAssignmentService {
@@ -46,7 +49,12 @@ export class SmartAssignmentService {
       return await this.hierarchyBasedAssignment(requestId, requestType.name, organizationId);
     } catch (error) {
       console.error('Error in smart assignment:', error);
-      return { assignedUsers: [], assignmentMethod: 'failed' };
+      return { 
+        success: false, 
+        assignedUsers: [], 
+        assignmentMethod: 'failed',
+        error: error instanceof Error ? error.message : 'Assignment failed'
+      };
     }
   }
 
@@ -95,6 +103,7 @@ export class SmartAssignmentService {
     }
 
     return {
+      success: true,
       assignedUsers,
       assignmentMethod: config.assignmentStrategy,
       ruleName: 'Smart Assignment'
@@ -171,9 +180,11 @@ export class SmartAssignmentService {
     }
 
     return {
+      success: assignedUsers.length > 0,
       assignedUsers,
       assignmentMethod: 'hierarchy',
-      ruleName: 'Hierarchy-based Assignment'
+      ruleName: 'Hierarchy-based Assignment',
+      message: assignedUsers.length === 0 ? 'No suitable managers found for assignment' : undefined
     };
   }
 
