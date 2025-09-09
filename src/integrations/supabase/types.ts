@@ -4118,6 +4118,7 @@ export type Database = {
       request_types: {
         Row: {
           approval_roles: string[] | null
+          assignment_strategy: string | null
           category: string
           created_at: string
           created_by: string
@@ -4134,12 +4135,14 @@ export type Database = {
           permission_metadata: Json | null
           required_permissions: Json | null
           requires_approval: boolean | null
+          selected_user_ids: string[] | null
           updated_at: string
           viewer_role_restrictions: string[] | null
           workload_balancing_enabled: boolean | null
         }
         Insert: {
           approval_roles?: string[] | null
+          assignment_strategy?: string | null
           category: string
           created_at?: string
           created_by: string
@@ -4156,12 +4159,14 @@ export type Database = {
           permission_metadata?: Json | null
           required_permissions?: Json | null
           requires_approval?: boolean | null
+          selected_user_ids?: string[] | null
           updated_at?: string
           viewer_role_restrictions?: string[] | null
           workload_balancing_enabled?: boolean | null
         }
         Update: {
           approval_roles?: string[] | null
+          assignment_strategy?: string | null
           category?: string
           created_at?: string
           created_by?: string
@@ -4178,6 +4183,7 @@ export type Database = {
           permission_metadata?: Json | null
           required_permissions?: Json | null
           requires_approval?: boolean | null
+          selected_user_ids?: string[] | null
           updated_at?: string
           viewer_role_restrictions?: string[] | null
           workload_balancing_enabled?: boolean | null

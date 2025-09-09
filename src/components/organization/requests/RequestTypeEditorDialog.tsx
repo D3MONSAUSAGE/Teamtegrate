@@ -16,6 +16,7 @@ import { toast } from '@/components/ui/sonner';
 import { addOrgIdToInsert } from '@/utils/organizationHelpers';
 import { ALL_ROLES } from '@/hooks/access-control/useAccessControlData';
 import JobRoleSelector from './JobRoleSelector';
+import UserAssignmentSelector from './UserAssignmentSelector';
 
 interface Props {
   open: boolean;
@@ -39,6 +40,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   const [expertiseTags, setExpertiseTags] = useState<string[]>([]);
   const [geographicScope, setGeographicScope] = useState('any');
   const [workloadBalancing, setWorkloadBalancing] = useState(true);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [assignmentStrategy, setAssignmentStrategy] = useState('first_available');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -56,6 +59,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setExpertiseTags((initial as any).expertise_tags || []);
       setGeographicScope((initial as any).geographic_scope || 'any');
       setWorkloadBalancing((initial as any).workload_balancing_enabled ?? true);
+      setSelectedUserIds((initial as any).selected_user_ids || []);
+      setAssignmentStrategy((initial as any).assignment_strategy || 'first_available');
     } else {
       setName('');
       setCategory('custom');
@@ -70,6 +75,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setExpertiseTags([]);
       setGeographicScope('any');
       setWorkloadBalancing(true);
+      setSelectedUserIds([]);
+      setAssignmentStrategy('first_available');
     }
   }, [initial, open]);
 
@@ -109,6 +116,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       expertise_tags: expertiseTags.length > 0 ? expertiseTags : null,
       geographic_scope: geographicScope,
       workload_balancing_enabled: workloadBalancing,
+      selected_user_ids: selectedUserIds.length > 0 ? selectedUserIds : null,
+      assignment_strategy: assignmentStrategy,
       permission_metadata: {}
     } as Partial<RequestType> & { created_by: string };
 
@@ -200,6 +209,15 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
             onGeographicScopeChange={setGeographicScope}
             workloadBalancing={workloadBalancing}
             onWorkloadBalancingChange={setWorkloadBalancing}
+          />
+          
+          <Separator className="my-4" />
+          
+          <UserAssignmentSelector
+            selectedUserIds={selectedUserIds}
+            onSelectionChange={setSelectedUserIds}
+            assignmentStrategy={assignmentStrategy}
+            onStrategyChange={setAssignmentStrategy}
           />
           
           <Card>
