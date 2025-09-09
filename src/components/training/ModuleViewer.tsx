@@ -31,7 +31,9 @@ interface Module {
   description: string;
   content?: string;
   content_type: 'text' | 'video' | 'mixed' | 'file' | 'text_file' | 'video_file' | 'mixed_file';
-  youtube_video_id?: string;
+  youtube_video_id?: string; // For backward compatibility
+  video_url?: string;
+  video_source?: 'youtube' | 'google_drive' | 'direct_link';
   module_order: number;
   duration_minutes?: number;
   file_path?: string;
@@ -258,7 +260,7 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
             )}
 
             {/* Video Content */}
-            {hasVideo && module.youtube_video_id && (
+            {hasVideo && (module.video_url || module.youtube_video_id) && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -285,7 +287,8 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
                 </CardHeader>
                 <CardContent>
                   <VideoPlayer
-                    youtubeVideoId={module.youtube_video_id}
+                    videoUrl={module.video_url || module.youtube_video_id}
+                    videoSource={module.video_source}
                     title={module.title}
                     onProgress={handleVideoProgress}
                     onComplete={handleVideoComplete}
