@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedNotifications } from './useEnhancedNotifications';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { useRequestsRealtime } from './useRequestsRealtime';
 import type { Request, RequestType } from '@/types/requests';
 
 /**
@@ -16,15 +17,37 @@ export function useEnhancedRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refreshData = useCallback(() => {
+    fetchRequests();
+    fetchRequestTypes();
+  }, []);
+
+  // Set up real-time subscriptions
+  useRequestsRealtime({ onRequestChange: refreshData });
+
   const fetchRequestTypes = async () => {
+    if (!user?.organizationId) {
+      console.warn('No organization ID available for fetching request types');
+      return;
+    }
+    
     try {
+      console.log('Fetching request types for organization:', user.organizationId);
+      
+      // Fetch both organization-specific and global request types
       const { data, error } = await supabase
         .from('request_types')
         .select('*')
         .eq('is_active', true)
+        .in('organization_id', [user.organizationId, '00000000-0000-0000-0000-000000000000'])
         .order('category, name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching request types:', error);
+        throw error;
+      }
+      
+      console.log('Fetched request types:', data?.length || 0);
       setRequestTypes((data || []).map(item => ({
         ...item,
         form_schema: Array.isArray(item.form_schema) ? item.form_schema as any[] : [],
@@ -40,18 +63,35 @@ export function useEnhancedRequests() {
   };
 
   const fetchRequests = async () => {
+    if (!user?.organizationId) {
+      console.warn('No organization ID available for fetching requests');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
+      setError(null);
+      console.log('Fetching requests for organization:', user.organizationId);
+      
+      // Simplified query with organization filtering
       const { data, error } = await supabase
         .from('requests')
         .select(`
           *,
-          request_type:request_types(name, category, description),
-          requested_by_user:users!requests_requested_by_fkey(id, name, email)
+          request_type:request_types(id, name, category, description),
+          requested_by_user:users(id, name, email)
         `)
+        .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching requests:', error);
+        throw error;
+      }
+      
+      console.log('Fetched requests:', data?.length || 0);
+      
       setRequests((data || []).map(item => ({
         ...item,
         form_data: typeof item.form_data === 'object' && item.form_data !== null ? item.form_data as Record<string, any> : {},
@@ -61,10 +101,9 @@ export function useEnhancedRequests() {
         due_date: item.due_date || undefined,
         submitted_at: item.submitted_at || undefined,
         completed_at: item.completed_at || undefined,
+        // Keep the actual request_type data instead of overriding it
         request_type: item.request_type ? {
           ...item.request_type,
-          id: '',
-          organization_id: '',
           form_schema: [],
           requires_approval: true,
           approval_roles: [],
@@ -73,11 +112,12 @@ export function useEnhancedRequests() {
           created_at: '',
           updated_at: ''
         } : undefined,
-        requested_by_user: (item.requested_by_user as any)?.id ? item.requested_by_user as any : undefined
+        requested_by_user: item.requested_by_user
       })) as unknown as Request[]);
     } catch (err) {
       console.error('Error fetching requests:', err);
       setError('Failed to load requests');
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -272,9 +312,11 @@ export function useEnhancedRequests() {
   };
 
   useEffect(() => {
-    fetchRequestTypes();
-    fetchRequests();
-  }, []);
+    if (user?.organizationId) {
+      fetchRequestTypes();
+      fetchRequests();
+    }
+  }, [user?.organizationId]);
 
   return {
     requests,

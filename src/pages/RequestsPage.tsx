@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Plus, Filter, Search, Calendar, Clock, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Filter, Search, Calendar, Clock, User, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { Request, PRIORITY_COLORS, STATUS_COLORS, REQUEST_CATEGORIES } from '@/types/requests';
@@ -14,13 +15,29 @@ import EnhancedRequestDetails from '@/components/requests/EnhancedRequestDetails
 import { format } from 'date-fns';
 
 export default function RequestsPage() {
-  const { requests, requestTypes, loading, fetchRequests } = useEnhancedRequests();
+  const { requests, requestTypes, loading, error, fetchRequests } = useEnhancedRequests();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showNewRequestDialog, setShowNewRequestDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchRequests();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log('RequestsPage mounted - User:', user?.id, 'Organization:', user?.organizationId);
+    console.log('Requests loaded:', requests.length);
+    console.log('Request types loaded:', requestTypes.length);
+  }, [user, requests.length, requestTypes.length]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,8 +55,33 @@ export default function RequestsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Loading requests...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Requests</h1>
+            <p className="text-muted-foreground">Manage and track your organizational requests</p>
+          </div>
+          <Button onClick={handleRefresh} disabled={isRefreshing} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Retry
+          </Button>
+        </div>
+        
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}. Please try refreshing the page or contact support if the problem persists.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -52,26 +94,38 @@ export default function RequestsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Requests</h1>
           <p className="text-muted-foreground">Manage and track your organizational requests</p>
         </div>
-        <Dialog open={showNewRequestDialog} onOpenChange={setShowNewRequestDialog}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Request
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Request</DialogTitle>
-            </DialogHeader>
-            <RequestForm 
-              requestTypes={requestTypes}
-              onSuccess={() => {
-                setShowNewRequestDialog(false);
-                fetchRequests(); // Ensure the list is refreshed
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing || loading}
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Dialog open={showNewRequestDialog} onOpenChange={setShowNewRequestDialog}>
+            <DialogTrigger asChild>
+              <Button className="gap-2" disabled={requestTypes.length === 0}>
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Request</DialogTitle>
+              </DialogHeader>
+              <RequestForm 
+                requestTypes={requestTypes}
+                onSuccess={() => {
+                  setShowNewRequestDialog(false);
+                  fetchRequests(); // Ensure the list is refreshed
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -158,6 +212,15 @@ export default function RequestsPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Debug Info for Development */}
+      {process.env.NODE_ENV === 'development' && (
+        <Alert>
+          <AlertDescription>
+            Debug: {requests.length} requests, {requestTypes.length} request types loaded for organization {user?.organizationId}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Requests List */}
       <div className="grid gap-4">

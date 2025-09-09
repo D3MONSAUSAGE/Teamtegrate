@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 interface RequestWizardProps {
   requestTypes: RequestType[];
   onSuccess: () => void;
+  onError?: (errorMessage: string) => void;
   onCancel: () => void;
 }
 
@@ -27,7 +28,7 @@ interface FormData {
   attachments: File[];
 }
 
-export default function RequestWizard({ requestTypes, onSuccess, onCancel }: RequestWizardProps) {
+export default function RequestWizard({ requestTypes, onSuccess, onError, onCancel }: RequestWizardProps) {
   const { createRequestWithAutoAssignment, loading: requestsLoading } = useEnhancedRequests();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedRequestType, setSelectedRequestType] = useState<RequestType | null>(null);
@@ -133,6 +134,10 @@ export default function RequestWizard({ requestTypes, onSuccess, onCancel }: Req
       onSuccess();
     } catch (error) {
       console.error('Error creating request:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create request';
+      if (onError) {
+        onError(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
