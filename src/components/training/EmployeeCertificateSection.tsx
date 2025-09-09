@@ -13,10 +13,13 @@ import {
   Clock, 
   XCircle, 
   AlertCircle,
-  Award
+  Award,
+  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import CertificatePreviewModal from './CertificatePreviewModal';
+import CertificateReplacementModal from './CertificateReplacementModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CertificateAssignment {
   id: string;
@@ -47,7 +50,10 @@ const EmployeeCertificateSection: React.FC<EmployeeCertificateSectionProps> = ({
   assignments
 }) => {
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null);
+  const [selectedCertificateAssignment, setSelectedCertificateAssignment] = useState<any>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [certificateReplacementOpen, setCertificateReplacementOpen] = useState(false);
+  const { user } = useAuth();
 
   // Filter assignments that have certificates or require certificates
   const certificateAssignments = assignments.filter(assignment => 
@@ -103,6 +109,14 @@ const EmployeeCertificateSection: React.FC<EmployeeCertificateSectionProps> = ({
       document.body.removeChild(link);
     }
   };
+
+  const handleEditCertificate = (assignment: CertificateAssignment) => {
+    setSelectedCertificateAssignment(assignment);
+    setCertificateReplacementOpen(true);
+  };
+
+  // Check if current user is a manager/admin who can edit certificates
+  const canEditCertificates = user && ['manager', 'admin', 'superadmin'].includes(user.role);
 
   const uploadedCount = certificateAssignments.filter(a => a.certificate_status === 'uploaded' || a.certificate_status === 'verified').length;
   const verifiedCount = certificateAssignments.filter(a => a.certificate_status === 'verified').length;
@@ -176,6 +190,17 @@ const EmployeeCertificateSection: React.FC<EmployeeCertificateSectionProps> = ({
                             >
                               <Download className="h-3 w-3" />
                             </Button>
+                            {canEditCertificates && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditCertificate(assignment)}
+                                className="h-8 px-2"
+                                title="Edit Certificate"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>
@@ -232,6 +257,15 @@ const EmployeeCertificateSection: React.FC<EmployeeCertificateSectionProps> = ({
         onOpenChange={setPreviewModalOpen}
         certificate={selectedCertificate}
       />
+
+      {/* Certificate Replacement Modal for Managers */}
+      {selectedCertificateAssignment && (
+        <CertificateReplacementModal
+          open={certificateReplacementOpen}
+          onOpenChange={setCertificateReplacementOpen}
+          assignment={selectedCertificateAssignment}
+        />
+      )}
     </>
   );
 };

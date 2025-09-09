@@ -1475,6 +1475,77 @@ export const useDeleteQuiz = () => {
   });
 };
 
+// Hook to update certificate in an assignment
+export const useUpdateCertificate = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      assignmentId, 
+      certificateFile, 
+      reason 
+    }: {
+      assignmentId: string;
+      certificateFile: File;
+      reason?: string;
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Upload the new certificate file to storage
+      const fileExt = certificateFile.name.split('.').pop();
+      const fileName = `${user.id}_${assignmentId}_${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('certificates')
+        .upload(fileName, certificateFile);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('certificates')
+        .getPublicUrl(fileName);
+      
+      // Update the assignment record
+      // For managers/admins, we don't restrict by assigned_to
+      const isManagerOrAdmin = user.role && ['manager', 'admin', 'superadmin'].includes(user.role);
+      
+      let query = supabase
+        .from('training_assignments')
+        .update({
+          certificate_url: publicUrl,
+          certificate_status: 'uploaded',
+          certificate_uploaded_at: new Date().toISOString(),
+          // Clear any previous verification data
+          verified_at: null,
+          verified_by: null,
+          verification_notes: reason ? `Certificate replaced by ${user.name}. Reason: ${reason}` : `Certificate replaced by ${user.name}`
+        })
+        .eq('id', assignmentId);
+      
+      // Only add assigned_to restriction if user is not a manager/admin
+      if (!isManagerOrAdmin) {
+        query = query.eq('assigned_to', user.id);
+      }
+      
+      const { data, error } = await query.select().single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['certificate-assignments'] });
+      enhancedNotifications.success('Certificate updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Error updating certificate:', error);
+      enhancedNotifications.error('Failed to update certificate');
+    }
+  });
+};
+
 export const useUpdateAssignmentStatus = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();

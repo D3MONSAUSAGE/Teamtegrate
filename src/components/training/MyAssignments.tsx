@@ -14,12 +14,14 @@ import {
   AlertTriangle,
   Calendar,
   User,
-  Target
+  Target,
+  RefreshCw
 } from 'lucide-react';
 import { useTrainingAssignments, useUpdateAssignmentStatus, useQuizAttempts } from '@/hooks/useTrainingData';
 import { format, isAfter, parseISO } from 'date-fns';
 import QuizTaker from './QuizTaker';
 import CourseAssignmentViewer from './CourseAssignmentViewer';
+import CertificateReplacementModal from './CertificateReplacementModal';
 import { useQuizzes } from '@/hooks/useTrainingData';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -32,8 +34,10 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   const [selectedTab, setSelectedTab] = useState('pending');
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
   const [selectedCourseAssignment, setSelectedCourseAssignment] = useState<any>(null);
+  const [selectedCertificateAssignment, setSelectedCertificateAssignment] = useState<any>(null);
   const [isQuizTakerOpen, setIsQuizTakerOpen] = useState(false);
   const [isCourseViewerOpen, setIsCourseViewerOpen] = useState(false);
+  const [isCertificateReplacementOpen, setIsCertificateReplacementOpen] = useState(false);
   
   const { data: assignments = [], isLoading } = useTrainingAssignments();
   const { data: allQuizzes = [] } = useQuizzes();
@@ -129,6 +133,11 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
   const handleCourseExit = () => {
     setIsCourseViewerOpen(false);
     setSelectedCourseAssignment(null);
+  };
+
+  const handleReplaceCertificate = (assignment: any) => {
+    setSelectedCertificateAssignment(assignment);
+    setIsCertificateReplacementOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -240,6 +249,21 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
                 >
                   <BookOpen className="h-4 w-4" />
                   Continue Course
+                </Button>
+              </div>
+            )}
+
+            {/* Show replace certificate button for assignments with uploaded certificates */}
+            {assignment.certificate_url && (
+              <div className="flex justify-end">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleReplaceCertificate(assignment)}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Replace Certificate
                 </Button>
               </div>
             )}
@@ -387,6 +411,15 @@ const MyAssignments: React.FC<MyAssignmentsProps> = ({ open, onOpenChange }) => 
           onOpenChange={setIsCourseViewerOpen}
           assignment={selectedCourseAssignment}
           onComplete={handleCourseComplete}
+        />
+      )}
+
+      {/* Certificate Replacement Modal */}
+      {selectedCertificateAssignment && (
+        <CertificateReplacementModal
+          open={isCertificateReplacementOpen}
+          onOpenChange={setIsCertificateReplacementOpen}
+          assignment={selectedCertificateAssignment}
         />
       )}
     </>
