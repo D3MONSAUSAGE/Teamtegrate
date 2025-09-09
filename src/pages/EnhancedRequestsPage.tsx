@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Request } from '@/types/requests';
-import RequestForm from '@/components/requests/RequestForm';
+import SimpleRequestForm from '@/components/requests/SimpleRequestForm';
 import RequestDetails from '@/components/requests/RequestDetails';
 import { RequestsDashboard } from '@/components/requests/RequestsDashboard';
 import { supabase } from '@/integrations/supabase/client';
@@ -121,7 +121,7 @@ export default function EnhancedRequestsPage() {
           <DialogHeader>
             <DialogTitle>Create New Request</DialogTitle>
           </DialogHeader>
-          <RequestForm requestTypes={requestTypes} onSuccess={handleRequestSuccess} />
+          <SimpleRequestForm onSuccess={handleRequestSuccess} />
         </DialogContent>
       </Dialog>
 
