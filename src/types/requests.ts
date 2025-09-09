@@ -16,6 +16,8 @@ export interface RequestType {
   viewer_role_restrictions?: string[];
   permission_metadata?: Record<string, any>;
   default_job_roles?: string[];
+  selected_user_ids?: string[];
+  assignment_strategy?: 'first_available' | 'round_robin' | 'least_busy' | 'manual' | 'auto';
   expertise_tags?: string[];
   geographic_scope?: string;
   workload_balancing_enabled?: boolean;

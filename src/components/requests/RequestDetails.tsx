@@ -8,14 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Request, PRIORITY_COLORS, STATUS_COLORS, REQUEST_CATEGORIES } from '@/types/requests';
-import { useRequestDetails } from '@/hooks/useRequests';
+import { useRequestComments } from '@/hooks/useRequestComments';
 
 interface RequestDetailsProps {
   request: Request;
 }
 
 export default function RequestDetails({ request }: RequestDetailsProps) {
-  const { comments, loading, addComment } = useRequestDetails(request.id);
+  const { comments, loading, addComment } = useRequestComments(request.id);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 

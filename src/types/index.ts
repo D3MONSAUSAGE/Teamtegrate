@@ -10,6 +10,9 @@ export interface User {
   timezone?: string;
   createdAt: Date;
   avatar_url?: string;
+  location?: string;
+  expertise_tags?: string[];
+  workload_preference?: string;
 }
 
 export type TaskPriority = 'Low' | 'Medium' | 'High';

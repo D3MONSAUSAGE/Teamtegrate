@@ -326,7 +326,11 @@ export function useRequestDetails(requestId: string) {
         });
       }
 
-      await fetchRequestDetails();
+      // Force immediate refresh of comments
+      setTimeout(async () => {
+        await fetchRequestDetails();
+      }, 100);
+
       enhancedNotifications.success('Comment added successfully');
     } catch (err) {
       console.error('Error adding comment:', err);

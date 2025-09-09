@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { RequestType } from '@/types/requests';
 import { cn } from '@/lib/utils';
 
 interface SimpleRequestType {
@@ -98,6 +99,7 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
 
     setLoading(true);
     try {
+      // Create the request first
       const requestData = {
         organization_id: user.organizationId,
         requested_by: user.id,
@@ -110,13 +112,66 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
         form_data: {},
       };
 
-      const { error } = await supabase
+      const { data: newRequest, error } = await supabase
         .from('requests')
-        .insert(requestData);
+        .insert(requestData)
+        .select(`
+          *,
+          request_type:request_types(
+            id, name, category, description, organization_id, created_by, created_at, updated_at,
+            requires_approval, approval_roles, is_active, 
+            default_job_roles, expertise_tags, geographic_scope, workload_balancing_enabled
+          )
+        `)
+        .single();
 
       if (error) throw error;
 
-      toast.success('Request submitted successfully');
+      // Import and use smart assignment service
+      const { SmartAssignmentService } = await import('@/services/smartAssignmentService');
+      
+      if (newRequest.request_type) {
+        // Transform the request type to match our interface
+        const requestType: RequestType = {
+          id: newRequest.request_type.id || '',
+          organization_id: newRequest.request_type.organization_id || '',
+          name: newRequest.request_type.name || '',
+          description: newRequest.request_type.description,
+          category: newRequest.request_type.category || '',
+          form_schema: [], // Initialize empty form schema
+          requires_approval: newRequest.request_type.requires_approval ?? true,
+          approval_roles: newRequest.request_type.approval_roles || [],
+          is_active: newRequest.request_type.is_active ?? true,
+          created_by: newRequest.request_type.created_by || '',
+          created_at: newRequest.request_type.created_at || '',
+          updated_at: newRequest.request_type.updated_at || '',
+          default_job_roles: newRequest.request_type.default_job_roles || [],
+          selected_user_ids: [], // Not available in database yet
+          assignment_strategy: 'first_available', // Default strategy
+          expertise_tags: newRequest.request_type.expertise_tags || [],
+          geographic_scope: newRequest.request_type.geographic_scope,
+          workload_balancing_enabled: newRequest.request_type.workload_balancing_enabled || false
+        };
+        
+        const assignmentResult = await SmartAssignmentService.assignRequest(
+          newRequest.id,
+          requestType,
+          requestData,
+          user.organizationId
+        );
+
+        // Send notifications to assigned users
+        if (assignmentResult.assignedUsers.length > 0) {
+          await SmartAssignmentService.sendAssignmentNotifications(
+            newRequest.id,
+            assignmentResult.assignedUsers,
+            data.title,
+            user.organizationId
+          );
+        }
+      }
+
+      toast.success('Request submitted and assigned successfully');
       form.reset();
       onSuccess?.();
     } catch (error) {
