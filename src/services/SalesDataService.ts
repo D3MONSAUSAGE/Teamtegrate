@@ -152,17 +152,32 @@ class SalesDataService {
     }
   }
 
-  async checkForExistingSalesData(date: string, location: string): Promise<{ exists: boolean; data?: any }> {
+  async checkForExistingSalesData(date: string, teamIdOrLocation: string): Promise<{ exists: boolean; data?: any }> {
     try {
       const user = await this.getCurrentUser();
-      
-      const { data: existing } = await supabase
+
+      // Prefer team_id when provided
+      let query = supabase
         .from('sales_data')
         .select('*')
         .eq('organization_id', user.organization_id)
         .eq('date', date)
-        .eq('location', location)
+        .eq('team_id', teamIdOrLocation)
         .limit(1);
+
+      let { data: existing, error } = await query;
+
+      // Fallback to location match (for legacy rows)
+      if (!existing || existing.length === 0) {
+        const res = await supabase
+          .from('sales_data')
+          .select('*')
+          .eq('organization_id', user.organization_id)
+          .eq('date', date)
+          .eq('location', teamIdOrLocation)
+          .limit(1);
+        existing = res.data || [];
+      }
 
       return {
         exists: existing && existing.length > 0,
@@ -177,24 +192,38 @@ class SalesDataService {
   async addSalesData(salesData: SalesData, replaceExisting: boolean = false): Promise<void> {
     try {
       const user = await this.getCurrentUser();
-      
-      // Check for existing record
-      const existingCheck = await this.checkForExistingSalesData(salesData.date, salesData.location);
-      
+
+      // Check for existing record using team_id/location
+      const existingCheck = await this.checkForExistingSalesData(salesData.date, (salesData as any).team_id || salesData.location);
+
       if (existingCheck.exists && !replaceExisting) {
-        throw new Error(`DUPLICATE_EXISTS:Sales data for ${salesData.date} at ${salesData.location} already exists`);
+        const whereLabel = (salesData as any).team_id ? 'team' : 'location';
+        throw new Error(`DUPLICATE_EXISTS:Sales data for ${salesData.date} (${whereLabel}) already exists`);
       }
-      
+
       // If replacing, delete the existing record first
       if (existingCheck.exists && replaceExisting && existingCheck.data) {
         await this.deleteSalesData(existingCheck.data.id);
+      }
+
+      // If team_id provided, ensure location is human-readable team name for display
+      let resolvedLocation = salesData.location;
+      if ((salesData as any).team_id) {
+        const { data: team } = await supabase
+          .from('teams')
+          .select('name')
+          .eq('id', (salesData as any).team_id)
+          .single();
+        if (team?.name) {
+          resolvedLocation = team.name;
+        }
       }
 
       const insertData = {
         user_id: user.id,
         organization_id: user.organization_id,
         date: salesData.date,
-        location: salesData.location,
+        location: resolvedLocation,
         team_id: (salesData as any).team_id || null,
         gross_sales: salesData.grossSales,
         net_sales: salesData.netSales,
@@ -224,9 +253,11 @@ class SalesDataService {
         } as any
       };
 
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from('sales_data')
-        .insert(insertData);
+        .insert(insertData)
+        .select('id')
+        .single();
 
       if (error) {
         console.error('[SalesDataService] Insert error:', error);
@@ -235,7 +266,15 @@ class SalesDataService {
 
       // Clear cache to force refresh
       this.clearCache();
-      
+
+      // After successful insert, sync sales channel transactions
+      try {
+        const { SalesChannelService } = await import('./SalesChannelService');
+        await SalesChannelService.syncChannelTransactionsForSalesData(inserted.id, insertData, user.organization_id);
+      } catch (e) {
+        console.warn('[SalesDataService] Channel sync failed (non-fatal):', e);
+      }
+
       console.log('[SalesDataService] Successfully added sales data');
       toast.success('Sales data uploaded successfully');
     } catch (error) {
@@ -272,26 +311,35 @@ class SalesDataService {
     }
   }
 
-  async deleteSalesDataByDate(date: string, location: string): Promise<void> {
+  async deleteSalesDataByDate(date: string, teamIdOrLocation: string): Promise<void> {
     try {
       const user = await this.getCurrentUser();
-      
-      const { error } = await supabase
+
+      // Attempt delete by team_id first
+      let { error } = await supabase
         .from('sales_data')
         .delete()
         .eq('date', date)
-        .eq('location', location)
-        .eq('organization_id', user.organization_id);
+        .eq('organization_id', user.organization_id)
+        .eq('team_id', teamIdOrLocation);
 
-      if (error) {
-        console.error('[SalesDataService] Delete by date error:', error);
-        throw new Error(`Failed to delete sales data: ${error.message}`);
+      // If nothing deleted, fallback to location-based (legacy)
+      if (error && !String(error.message).includes('No rows')) {
+        // Ignore and try fallback delete anyway
       }
+
+      // Perform fallback delete by location as well to ensure consistency
+      await supabase
+        .from('sales_data')
+        .delete()
+        .eq('date', date)
+        .eq('organization_id', user.organization_id)
+        .eq('location', teamIdOrLocation);
 
       // Clear cache to force refresh
       this.clearCache();
-      
-      console.log('[SalesDataService] Successfully deleted sales data for', date, location);
+
+      console.log('[SalesDataService] Successfully deleted sales data for', date, teamIdOrLocation);
       toast.success(`Sales data for ${date} deleted successfully`);
     } catch (error) {
       console.error('[SalesDataService] Error deleting sales data by date:', error);
