@@ -47,8 +47,16 @@ export interface Request {
   completed_at?: string;
   created_at: string;
   updated_at: string;
+  ticket_number?: string;
+  assigned_to?: string;
+  assigned_at?: string;
   request_type?: RequestType;
   requested_by_user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  assigned_to_user?: {
     id: string;
     name: string;
     email: string;
