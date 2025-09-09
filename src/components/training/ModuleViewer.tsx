@@ -15,7 +15,10 @@ import {
   BookOpen,
   Award,
   Lock,
-  Unlock
+  Unlock,
+  Download,
+  Eye,
+  File
 } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,10 +30,13 @@ interface Module {
   title: string;
   description: string;
   content?: string;
-  content_type: 'text' | 'video' | 'mixed';
+  content_type: 'text' | 'video' | 'mixed' | 'file' | 'text_file' | 'video_file' | 'mixed_file';
   youtube_video_id?: string;
   module_order: number;
   duration_minutes?: number;
+  file_path?: string;
+  file_name?: string;
+  file_size?: number;
 }
 
 interface Quiz {

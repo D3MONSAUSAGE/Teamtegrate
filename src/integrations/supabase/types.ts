@@ -5589,6 +5589,9 @@ export type Database = {
           course_id: string
           created_at: string
           description: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
           id: string
           module_order: number
           text_content: string | null
@@ -5601,6 +5604,9 @@ export type Database = {
           course_id: string
           created_at?: string
           description?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           module_order: number
           text_content?: string | null
@@ -5613,6 +5619,9 @@ export type Database = {
           course_id?: string
           created_at?: string
           description?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           module_order?: number
           text_content?: string | null

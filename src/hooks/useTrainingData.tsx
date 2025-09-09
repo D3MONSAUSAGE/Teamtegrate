@@ -23,6 +23,12 @@ export const useTrainingCourses = () => {
             title,
             description,
             module_order,
+            content_type,
+            text_content,
+            youtube_video_id,
+            file_path,
+            file_name,
+            file_size,
             quizzes(
               id,
               title,
