@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, ShieldCheck, CheckCircle2, Lock } from 'lucide-react';
+import { Plus, Pencil, Trash2, ShieldCheck, CheckCircle2, Lock, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { RequestType } from '@/types/requests';
@@ -13,6 +14,9 @@ import { REQUEST_CATEGORIES } from '@/types/requests';
 import RequestTypeEditorDialog from './RequestTypeEditorDialog';
 import { toast } from '@/components/ui/sonner';
 import { useRequestPermissions } from '@/hooks/access-control/useRequestPermissions';
+import { RequestTemplateMarketplace } from '@/components/requests/RequestTemplateMarketplace';
+import { RequestAnalyticsDashboard } from '@/components/requests/RequestAnalyticsDashboard';
+import { RequestTemplate } from '@/hooks/requests/useRequestTemplates';
 
 export default function RequestTypeManager() {
   const { user } = useAuth();
@@ -23,6 +27,7 @@ export default function RequestTypeManager() {
   const [category, setCategory] = useState<string>('all');
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<RequestType | null>(null);
+  const [activeTab, setActiveTab] = useState('manage');
 
   const load = async () => {
     if (!user?.organizationId) return;
@@ -92,6 +97,29 @@ export default function RequestTypeManager() {
     }
   };
 
+  const handleSelectTemplate = (template: RequestTemplate) => {
+    // Convert template to RequestType format for editing
+    const templateAsRequestType: Partial<RequestType> = {
+      name: template.name,
+      description: template.description || '',
+      category: template.category,
+      form_schema: template.template_data.form_schema || [],
+      requires_approval: template.template_data.requires_approval || false,
+      approval_roles: template.template_data.approval_roles || ['manager'],
+      is_active: true,
+      default_job_roles: template.template_data.default_job_roles || [],
+      expertise_tags: template.tags || [],
+    };
+    
+    setEditing(templateAsRequestType as RequestType);
+    setEditorOpen(true);
+  };
+
+  const handleCreateNew = () => {
+    setEditing(null);
+    setEditorOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       {!canManageRequestTypes && (
@@ -105,16 +133,25 @@ export default function RequestTypeManager() {
 
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Request Types</h1>
-          <p className="text-sm text-muted-foreground">Create and manage the request options available to your organization.</p>
+          <h1 className="text-xl font-semibold">Request Management</h1>
+          <p className="text-sm text-muted-foreground">Manage request types, view analytics, and browse templates</p>
         </div>
         <Button 
-          onClick={() => { setEditing(null); setEditorOpen(true); }}
+          onClick={handleCreateNew}
           disabled={!canManageRequestTypes}
         >
           <Plus className="h-4 w-4 mr-2" /> New Type
         </Button>
       </header>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="manage">Manage Types</TabsTrigger>
+          <TabsTrigger value="templates">Template Marketplace</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="manage" className="space-y-4">
 
       <Card>
         <CardHeader>
@@ -207,6 +244,19 @@ export default function RequestTypeManager() {
           </Card>
         )}
       </div>
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <RequestTemplateMarketplace
+            onSelectTemplate={handleSelectTemplate}
+            onCreateNew={handleCreateNew}
+          />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <RequestAnalyticsDashboard />
+        </TabsContent>
+      </Tabs>
 
       <RequestTypeEditorDialog open={editorOpen} onOpenChange={setEditorOpen} initial={editing} onSaved={load} />
     </div>

@@ -3437,6 +3437,54 @@ export type Database = {
           },
         ]
       }
+      request_analytics: {
+        Row: {
+          approver_id: string | null
+          created_at: string
+          event_timestamp: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          organization_id: string
+          previous_status: string | null
+          processing_time_minutes: number | null
+          request_id: string
+          request_type_id: string
+          user_id: string
+        }
+        Insert: {
+          approver_id?: string | null
+          created_at?: string
+          event_timestamp?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          organization_id: string
+          previous_status?: string | null
+          processing_time_minutes?: number | null
+          request_id: string
+          request_type_id: string
+          user_id: string
+        }
+        Update: {
+          approver_id?: string | null
+          created_at?: string
+          event_timestamp?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          organization_id?: string
+          previous_status?: string | null
+          processing_time_minutes?: number | null
+          request_id?: string
+          request_type_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       request_approval_workflows: {
         Row: {
           approval_levels: Json
@@ -3663,6 +3711,54 @@ export type Database = {
           },
         ]
       }
+      request_automation_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          created_by: string
+          execution_count: number | null
+          id: string
+          is_active: boolean | null
+          last_executed_at: string | null
+          organization_id: string
+          priority: number | null
+          request_type_id: string | null
+          rule_name: string
+          updated_at: string
+        }
+        Insert: {
+          actions: Json
+          conditions: Json
+          created_at?: string
+          created_by: string
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          organization_id: string
+          priority?: number | null
+          request_type_id?: string | null
+          rule_name: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          organization_id?: string
+          priority?: number | null
+          request_type_id?: string | null
+          rule_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       request_comments: {
         Row: {
           content: string
@@ -3740,6 +3836,90 @@ export type Database = {
         }
         Relationships: []
       }
+      request_template_usage: {
+        Row: {
+          id: string
+          organization_id: string
+          request_id: string | null
+          template_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          request_id?: string | null
+          template_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          request_id?: string | null
+          template_id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      request_type_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_featured: boolean | null
+          is_public: boolean | null
+          name: string
+          organization_id: string | null
+          popularity_score: number | null
+          tags: string[] | null
+          template_data: Json
+          updated_at: string
+          usage_count: number | null
+          version: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          name: string
+          organization_id?: string | null
+          popularity_score?: number | null
+          tags?: string[] | null
+          template_data: Json
+          updated_at?: string
+          usage_count?: number | null
+          version?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          name?: string
+          organization_id?: string | null
+          popularity_score?: number | null
+          tags?: string[] | null
+          template_data?: Json
+          updated_at?: string
+          usage_count?: number | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       request_types: {
         Row: {
           approval_roles: string[] | null
@@ -3811,50 +3991,77 @@ export type Database = {
       }
       requests: {
         Row: {
+          actual_processing_time: number | null
+          attachments_count: number | null
+          automation_applied: boolean | null
+          automation_rule_ids: string[] | null
+          comments_count: number | null
           completed_at: string | null
           created_at: string
           description: string | null
           due_date: string | null
+          estimated_processing_time: number | null
           form_data: Json | null
           id: string
           organization_id: string
           priority: string | null
           request_type_id: string
           requested_by: string
+          sla_breached: boolean | null
+          sla_deadline: string | null
           status: string | null
           submitted_at: string | null
+          template_used_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          actual_processing_time?: number | null
+          attachments_count?: number | null
+          automation_applied?: boolean | null
+          automation_rule_ids?: string[] | null
+          comments_count?: number | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
+          estimated_processing_time?: number | null
           form_data?: Json | null
           id?: string
           organization_id: string
           priority?: string | null
           request_type_id: string
           requested_by: string
+          sla_breached?: boolean | null
+          sla_deadline?: string | null
           status?: string | null
           submitted_at?: string | null
+          template_used_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          actual_processing_time?: number | null
+          attachments_count?: number | null
+          automation_applied?: boolean | null
+          automation_rule_ids?: string[] | null
+          comments_count?: number | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
+          estimated_processing_time?: number | null
           form_data?: Json | null
           id?: string
           organization_id?: string
           priority?: string | null
           request_type_id?: string
           requested_by?: string
+          sla_breached?: boolean | null
+          sla_deadline?: string | null
           status?: string | null
           submitted_at?: string | null
+          template_used_id?: string | null
           title?: string
           updated_at?: string
         }
