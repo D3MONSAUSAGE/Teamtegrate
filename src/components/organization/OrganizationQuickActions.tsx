@@ -39,6 +39,14 @@ const OrganizationQuickActions: React.FC = () => {
       available: canManageJobRoles
     },
     {
+      to: "/dashboard/organization/request-types",
+      icon: Settings,
+      label: "Manage Request Types",
+      gradient: "from-orange-500 to-orange-600",
+      hoverGradient: "hover:from-orange-600 hover:to-orange-700",
+      available: canManageJobRoles
+    },
+    {
       to: "/dashboard/reports",
       icon: BarChart3,
       label: "View Reports",
