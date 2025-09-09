@@ -5,7 +5,7 @@ import { ArrowLeft, AlertCircle, Loader2, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
-import RequestTypeManager from '@/components/organization/requests/RequestTypeManager';
+import SimpleRequestTypeManager from '@/components/organization/requests/SimpleRequestTypeManager';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 
 const RequestTypesPage = () => {
@@ -83,11 +83,11 @@ const RequestTypesPage = () => {
 
         {/* Request Type Manager */}
         <ModernSectionCard
-          title="Request Types"
+          title="Request Categories"
           icon={AlertCircle}
           gradient="from-blue-500/10 via-purple-500/10 to-indigo-500/10"
         >
-          <RequestTypeManager />
+          <SimpleRequestTypeManager />
         </ModernSectionCard>
       </div>
     </div>
