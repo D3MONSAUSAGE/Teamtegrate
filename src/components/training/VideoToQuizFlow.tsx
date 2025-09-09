@@ -27,9 +27,8 @@ interface Module {
   description?: string;
   content?: string;
   content_type: 'text' | 'video' | 'mixed';
-  youtube_video_id?: string; // For backward compatibility
-  video_url?: string;
-  video_source?: 'youtube' | 'google_drive' | 'direct_link';
+  youtube_video_id?: string;
+  video_url?: string; // Contains YouTube video ID
   duration_minutes?: number;
 }
 
@@ -357,8 +356,7 @@ const VideoToQuizFlow: React.FC<VideoToQuizFlowProps> = ({
       <CardContent className="space-y-4">
         {(module.video_url || module.youtube_video_id) && (
           <VideoPlayer
-            videoUrl={module.video_url || module.youtube_video_id}
-            videoSource={module.video_source}
+            youtubeVideoId={module.video_url || module.youtube_video_id || ''}
             title={module.title}
             onProgress={handleVideoProgress}
             onComplete={handleVideoComplete}

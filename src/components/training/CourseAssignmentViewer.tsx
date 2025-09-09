@@ -42,9 +42,8 @@ interface CourseModule {
   content?: string;
   text_content?: string;
   content_type: string;
-  youtube_video_id?: string; // For backward compatibility
-  video_url?: string;
-  video_source?: 'youtube' | 'google_drive' | 'direct_link';
+  youtube_video_id?: string;
+  video_url?: string; // Contains YouTube video ID
   duration_minutes?: number;
   module_order: number;
   quizzes?: Quiz[];

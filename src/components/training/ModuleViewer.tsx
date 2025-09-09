@@ -31,9 +31,8 @@ interface Module {
   description: string;
   content?: string;
   content_type: 'text' | 'video' | 'mixed' | 'file' | 'text_file' | 'video_file' | 'mixed_file';
-  youtube_video_id?: string; // For backward compatibility
-  video_url?: string;
-  video_source?: 'youtube' | 'google_drive' | 'direct_link';
+  youtube_video_id?: string;
+  video_url?: string; // Contains YouTube video ID
   module_order: number;
   duration_minutes?: number;
   file_path?: string;
@@ -287,8 +286,7 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
                 </CardHeader>
                 <CardContent>
                   <VideoPlayer
-                    videoUrl={module.video_url || module.youtube_video_id}
-                    videoSource={module.video_source}
+                    youtubeVideoId={module.video_url || module.youtube_video_id || ''}
                     title={module.title}
                     onProgress={handleVideoProgress}
                     onComplete={handleVideoComplete}
