@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Request } from '@/types/requests';
@@ -15,7 +15,29 @@ export default function EnhancedRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [viewMode, setViewMode] = useState<'dashboard' | 'list'>('dashboard');
+  const [requestTypes, setRequestTypes] = useState<any[]>([]);
   const { user } = useAuth();
+
+  useEffect(() => {
+    fetchRequestTypes();
+  }, [user]);
+
+  const fetchRequestTypes = async () => {
+    if (!user?.organizationId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('request_types')
+        .select('*')
+        .eq('organization_id', user.organizationId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setRequestTypes(data || []);
+    } catch (error) {
+      console.error('Error fetching request types:', error);
+    }
+  };
 
   const handleRequestSuccess = () => {
     setShowCreateForm(false);
@@ -99,7 +121,7 @@ export default function EnhancedRequestsPage() {
           <DialogHeader>
             <DialogTitle>Create New Request</DialogTitle>
           </DialogHeader>
-          <RequestForm onSuccess={handleRequestSuccess} />
+          <RequestForm requestTypes={requestTypes} onSuccess={handleRequestSuccess} />
         </DialogContent>
       </Dialog>
 

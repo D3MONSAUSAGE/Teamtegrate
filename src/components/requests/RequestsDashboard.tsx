@@ -39,20 +39,33 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     if (!user?.organizationId) return;
 
     try {
-      const { data, error } = await supabase
+      // First get requests without joins
+      const { data: requestsData, error } = await supabase
         .from('requests')
-        .select(`
-          *,
-          request_type:request_types(*),
-          requested_by_user:users!requests_requested_by_fkey(id, name, email),
-          assigned_to_user:users!requests_assigned_to_fkey(id, name, email)
-        `)
+        .select('*')
         .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      // Simple type conversion for display
-      const mappedRequests = (data || []).map(item => ({
+
+      // Then get user details separately to avoid foreign key issues
+      const userIds = [...new Set([
+        ...requestsData.map(r => r.requested_by),
+        ...requestsData.map(r => r.assigned_to).filter(Boolean)
+      ])];
+
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .in('id', userIds);
+
+      const userMap = usersData?.reduce((acc, user) => {
+        acc[user.id] = user;
+        return acc;
+      }, {} as Record<string, any>) || {};
+
+      // Map the requests with user data
+      const mappedRequests: Request[] = requestsData.map(item => ({
         id: item.id,
         organization_id: item.organization_id,
         request_type_id: item.request_type_id,
@@ -70,9 +83,10 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
         ticket_number: item.ticket_number,
         assigned_to: item.assigned_to,
         assigned_at: item.assigned_at,
-        requested_by_user: item.requested_by_user,
-        assigned_to_user: item.assigned_to_user
+        requested_by_user: userMap[item.requested_by] || { id: item.requested_by, name: 'Unknown User', email: '' },
+        assigned_to_user: item.assigned_to ? userMap[item.assigned_to] : undefined
       }));
+
       setRequests(mappedRequests);
     } catch (error) {
       console.error('Error fetching requests:', error);
