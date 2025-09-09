@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Request } from '@/types/requests';
 import SimpleRequestForm from '@/components/requests/SimpleRequestForm';
 import RequestDetails from '@/components/requests/RequestDetails';
 import { RequestsDashboard } from '@/components/requests/RequestsDashboard';
+import SimpleRequestTypeManager from '@/components/organization/requests/SimpleRequestTypeManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { toast } from '@/components/ui/sonner';
-import { Plus, LayoutDashboard, List } from 'lucide-react';
+import { Plus, LayoutDashboard, List, Settings } from 'lucide-react';
 
 export default function EnhancedRequestsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [viewMode, setViewMode] = useState<'dashboard' | 'list'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'requests' | 'types'>('requests');
   const [requestTypes, setRequestTypes] = useState<any[]>([]);
   const { user } = useAuth();
+
+  const canManageTypes = hasRoleAccess(user?.role, 'manager');
 
   useEffect(() => {
     fetchRequestTypes();
@@ -80,40 +86,67 @@ export default function EnhancedRequestsPage() {
           <p className="text-muted-foreground">Track and manage organizational requests with visual indicators and ticket numbers</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'dashboard' ? 'default' : 'outline'}
-            onClick={() => setViewMode('dashboard')}
-            size="sm"
-          >
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            Dashboard
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            onClick={() => setViewMode('list')}
-            size="sm"
-          >
-            <List className="mr-2 h-4 w-4" />
-            List View
-          </Button>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Request
-          </Button>
+          {activeTab === 'requests' && (
+            <>
+              <Button
+                variant={viewMode === 'dashboard' ? 'default' : 'outline'}
+                onClick={() => setViewMode('dashboard')}
+                size="sm"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                onClick={() => setViewMode('list')}
+                size="sm"
+              >
+                <List className="mr-2 h-4 w-4" />
+                List View
+              </Button>
+              <Button onClick={() => setShowCreateForm(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Request
+              </Button>
+            </>
+          )}
         </div>
       </div>
-      
-      {viewMode === 'dashboard' ? (
-        <RequestsDashboard 
-          onViewRequest={handleViewRequest}
-          onAssignRequest={handleAssignRequest}
-          onStatusChange={handleStatusChange}
-        />
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">List view coming soon. Use dashboard view for now.</p>
-        </div>
-      )}
+
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'requests' | 'types')}>
+        <TabsList className={`grid w-full ${canManageTypes ? 'grid-cols-2 lg:w-[400px]' : 'grid-cols-1 lg:w-[200px]'}`}>
+          <TabsTrigger value="requests" className="flex items-center gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            Requests
+          </TabsTrigger>
+          {canManageTypes && (
+            <TabsTrigger value="types" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Manage Types
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="requests" className="space-y-6 mt-6">
+          {viewMode === 'dashboard' ? (
+            <RequestsDashboard 
+              onViewRequest={handleViewRequest}
+              onAssignRequest={handleAssignRequest}
+              onStatusChange={handleStatusChange}
+            />
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">List view coming soon. Use dashboard view for now.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        {canManageTypes && (
+          <TabsContent value="types" className="mt-6">
+            <SimpleRequestTypeManager />
+          </TabsContent>
+        )}
+      </Tabs>
 
       {/* Create Request Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
