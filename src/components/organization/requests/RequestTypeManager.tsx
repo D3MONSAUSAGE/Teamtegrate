@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, ShieldCheck, CheckCircle2, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { RequestType } from '@/types/requests';
 import { REQUEST_CATEGORIES } from '@/types/requests';
 import RequestTypeEditorDialog from './RequestTypeEditorDialog';
 import { toast } from '@/components/ui/sonner';
+import { useRequestPermissions } from '@/hooks/access-control/useRequestPermissions';
 
 export default function RequestTypeManager() {
   const { user } = useAuth();
+  const { canManageRequestTypes, canViewRequestType } = useRequestPermissions();
   const [types, setTypes] = useState<RequestType[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -46,11 +49,16 @@ export default function RequestTypeManager() {
     const term = search.toLowerCase();
     return types.filter(t => 
       (category === 'all' || t.category === category) &&
-      (t.name.toLowerCase().includes(term) || (t.description || '').toLowerCase().includes(term))
+      (t.name.toLowerCase().includes(term) || (t.description || '').toLowerCase().includes(term)) &&
+      canViewRequestType(t)
     );
-  }, [types, search, category]);
+  }, [types, search, category, canViewRequestType]);
 
   const handleDelete = async (t: RequestType) => {
+    if (!canManageRequestTypes) {
+      toast.error('You do not have permission to delete request types');
+      return;
+    }
     if (!confirm(`Delete request type "${t.name}"? This cannot be undone.`)) return;
     try {
       const { error } = await supabase
@@ -67,6 +75,10 @@ export default function RequestTypeManager() {
   };
 
   const toggleActive = async (t: RequestType) => {
+    if (!canManageRequestTypes) {
+      toast.error('You do not have permission to modify request types');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('request_types')
@@ -82,12 +94,24 @@ export default function RequestTypeManager() {
 
   return (
     <div className="space-y-4">
+      {!canManageRequestTypes && (
+        <Alert>
+          <Lock className="h-4 w-4" />
+          <AlertDescription>
+            You have view-only access to request types. Contact your administrator to manage request types.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Request Types</h1>
           <p className="text-sm text-muted-foreground">Create and manage the request options available to your organization.</p>
         </div>
-        <Button onClick={() => { setEditing(null); setEditorOpen(true); }}>
+        <Button 
+          onClick={() => { setEditing(null); setEditorOpen(true); }}
+          disabled={!canManageRequestTypes}
+        >
           <Plus className="h-4 w-4 mr-2" /> New Type
         </Button>
       </header>
@@ -121,10 +145,22 @@ export default function RequestTypeManager() {
                   <CardDescription>{t.description || 'No description'}</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="icon" variant="ghost" onClick={() => { setEditing(t); setEditorOpen(true); }} aria-label="Edit">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => { setEditing(t); setEditorOpen(true); }} 
+                    aria-label="Edit"
+                    disabled={!canManageRequestTypes}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleDelete(t)} aria-label="Delete">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => handleDelete(t)} 
+                    aria-label="Delete"
+                    disabled={!canManageRequestTypes}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -145,8 +181,22 @@ export default function RequestTypeManager() {
               )}
               <Separator className="my-3" />
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => toggleActive(t)}>{t.is_active ? 'Deactivate' : 'Activate'}</Button>
-                <Button size="sm" variant="secondary" onClick={() => { setEditing(t); setEditorOpen(true); }}>Edit</Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => toggleActive(t)}
+                  disabled={!canManageRequestTypes}
+                >
+                  {t.is_active ? 'Deactivate' : 'Activate'}
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  onClick={() => { setEditing(t); setEditorOpen(true); }}
+                  disabled={!canManageRequestTypes}
+                >
+                  Edit
+                </Button>
               </div>
             </CardContent>
           </Card>

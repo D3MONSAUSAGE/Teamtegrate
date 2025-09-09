@@ -11,6 +11,10 @@ export interface RequestType {
   created_by: string;
   created_at: string;
   updated_at: string;
+  required_permissions?: Array<{ module_id: string; action_id: string }>;
+  creator_role_restrictions?: string[];
+  viewer_role_restrictions?: string[];
+  permission_metadata?: Record<string, any>;
 }
 
 export interface FormField {

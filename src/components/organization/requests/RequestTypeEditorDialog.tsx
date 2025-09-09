@@ -5,12 +5,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { RequestType, FormField } from '@/types/requests';
 import { REQUEST_CATEGORIES } from '@/types/requests';
 import { toast } from '@/components/ui/sonner';
 import { addOrgIdToInsert } from '@/utils/organizationHelpers';
+import { ALL_ROLES } from '@/hooks/access-control/useAccessControlData';
 
 interface Props {
   open: boolean;
@@ -28,6 +32,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   const [approvalRolesText, setApprovalRolesText] = useState('manager');
   const [formSchemaText, setFormSchemaText] = useState('[]');
   const [isActive, setIsActive] = useState(true);
+  const [creatorRoles, setCreatorRoles] = useState<string[]>([]);
+  const [viewerRoles, setViewerRoles] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -39,6 +45,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setApprovalRolesText((initial.approval_roles || ['manager']).join(','));
       setFormSchemaText(JSON.stringify(initial.form_schema || [], null, 2));
       setIsActive(!!initial.is_active);
+      setCreatorRoles((initial as any).creator_role_restrictions || []);
+      setViewerRoles((initial as any).viewer_role_restrictions || []);
     } else {
       setName('');
       setCategory('custom');
@@ -47,6 +55,8 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setApprovalRolesText('manager');
       setFormSchemaText('[\n  {\n    "field": "title",\n    "type": "text",\n    "label": "Title",\n    "required": true,\n    "placeholder": "Enter a short title"\n  }\n]');
       setIsActive(true);
+      setCreatorRoles([]);
+      setViewerRoles([]);
     }
   }, [initial, open]);
 
@@ -79,6 +89,10 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       approval_roles: approvalRolesText.split(',').map(r => r.trim()).filter(Boolean),
       is_active: isActive,
       created_by: user.id,
+      required_permissions: [{ module_id: 'requests', action_id: 'create' }],
+      creator_role_restrictions: creatorRoles.length > 0 ? creatorRoles : null,
+      viewer_role_restrictions: viewerRoles.length > 0 ? viewerRoles : null,
+      permission_metadata: {}
     } as Partial<RequestType> & { created_by: string };
 
     setSaving(true);
@@ -157,6 +171,65 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
             <Label htmlFor="approval_roles">Approval Roles (comma-separated)</Label>
             <Input id="approval_roles" value={approvalRolesText} onChange={(e) => setApprovalRolesText(e.target.value)} placeholder="manager,admin" />
           </div>
+
+          <Separator className="my-4" />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Permission Configuration</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Creator Role Restrictions</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select which roles can create requests of this type. Leave empty to allow all roles.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_ROLES.map(role => (
+                    <Badge
+                      key={role}
+                      variant={creatorRoles.includes(role) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (creatorRoles.includes(role)) {
+                          setCreatorRoles(prev => prev.filter(r => r !== role));
+                        } else {
+                          setCreatorRoles(prev => [...prev, role]);
+                        }
+                      }}
+                    >
+                      {role}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <Label>Viewer Role Restrictions</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select which roles can view requests of this type. Leave empty to follow default access rules.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_ROLES.map(role => (
+                    <Badge
+                      key={role}
+                      variant={viewerRoles.includes(role) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (viewerRoles.includes(role)) {
+                          setViewerRoles(prev => prev.filter(r => r !== role));
+                        } else {
+                          setViewerRoles(prev => [...prev, role]);
+                        }
+                      }}
+                    >
+                      {role}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div>
             <Label htmlFor="form_schema">Form Schema (JSON)</Label>

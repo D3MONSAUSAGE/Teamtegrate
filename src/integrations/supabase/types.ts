@@ -3539,42 +3539,54 @@ export type Database = {
           category: string
           created_at: string
           created_by: string
+          creator_role_restrictions: string[] | null
           description: string | null
           form_schema: Json | null
           id: string
           is_active: boolean | null
           name: string
           organization_id: string
+          permission_metadata: Json | null
+          required_permissions: Json | null
           requires_approval: boolean | null
           updated_at: string
+          viewer_role_restrictions: string[] | null
         }
         Insert: {
           approval_roles?: string[] | null
           category: string
           created_at?: string
           created_by: string
+          creator_role_restrictions?: string[] | null
           description?: string | null
           form_schema?: Json | null
           id?: string
           is_active?: boolean | null
           name: string
           organization_id: string
+          permission_metadata?: Json | null
+          required_permissions?: Json | null
           requires_approval?: boolean | null
           updated_at?: string
+          viewer_role_restrictions?: string[] | null
         }
         Update: {
           approval_roles?: string[] | null
           category?: string
           created_at?: string
           created_by?: string
+          creator_role_restrictions?: string[] | null
           description?: string | null
           form_schema?: Json | null
           id?: string
           is_active?: boolean | null
           name?: string
           organization_id?: string
+          permission_metadata?: Json | null
+          required_permissions?: Json | null
           requires_approval?: boolean | null
           updated_at?: string
+          viewer_role_restrictions?: string[] | null
         }
         Relationships: []
       }

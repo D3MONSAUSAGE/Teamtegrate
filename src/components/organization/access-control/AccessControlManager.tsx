@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShieldCheck, UserCog, Briefcase } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ShieldCheck, UserCog, Briefcase, FileText, Info } from 'lucide-react';
 
 const AccessControlManager: React.FC = () => {
   const { user } = useAuth();
@@ -83,37 +85,62 @@ const AccessControlManager: React.FC = () => {
               </div>
 
               <div className="overflow-x-auto rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Module</TableHead>
-                      {schema[0]?.actions.map(a => (
-                        <TableHead key={a.id} className="text-center">{a.display_name}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {schema.map(({ module, actions }) => (
-                      <TableRow key={module.id}>
-                        <TableCell className="font-medium">{module.display_name}</TableCell>
-                        {actions.map(action => {
-                          const key = `${module.id}:${action.id}:${selectedRole}`;
-                          const checked = grantsForRole.get(key) ?? false;
-                          return (
-                            <TableCell key={action.id} className="text-center">
-                              <Switch
-                                checked={!!checked}
-                                onCheckedChange={(val) => upsertRolePermission(selectedRole as any, module.id, action.id, val)}
-                                disabled={viewOnly || loading}
-                                aria-label={`Toggle ${action.display_name} for ${module.display_name}`}
-                              />
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                 <Table>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>Module</TableHead>
+                       {schema[0]?.actions.map(a => (
+                         <TableHead key={a.id} className="text-center">
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger className="flex items-center gap-1">
+                                 {a.display_name}
+                                 {a.description && <Info className="h-3 w-3 text-muted-foreground" />}
+                               </TooltipTrigger>
+                               {a.description && (
+                                 <TooltipContent>
+                                   <p>{a.description}</p>
+                                 </TooltipContent>
+                               )}
+                             </Tooltip>
+                           </TooltipProvider>
+                         </TableHead>
+                       ))}
+                     </TableRow>
+                   </TableHeader>
+                   <TableBody>
+                     {schema.map(({ module, actions }) => (
+                       <TableRow key={module.id} className={module.name === 'requests' ? 'bg-primary/5 border-primary/20' : ''}>
+                         <TableCell className="font-medium">
+                           <div className="flex items-center gap-2">
+                             {module.name === 'requests' && <FileText className="h-4 w-4 text-primary" />}
+                             {module.display_name}
+                             {module.name === 'requests' && (
+                               <Badge variant="secondary" className="text-xs">Request System</Badge>
+                             )}
+                           </div>
+                           {module.description && (
+                             <p className="text-xs text-muted-foreground mt-1">{module.description}</p>
+                           )}
+                         </TableCell>
+                         {actions.map(action => {
+                           const key = `${module.id}:${action.id}:${selectedRole}`;
+                           const checked = grantsForRole.get(key) ?? false;
+                           return (
+                             <TableCell key={action.id} className="text-center">
+                               <Switch
+                                 checked={!!checked}
+                                 onCheckedChange={(val) => upsertRolePermission(selectedRole as any, module.id, action.id, val)}
+                                 disabled={viewOnly || loading}
+                                 aria-label={`Toggle ${action.display_name} for ${module.display_name}`}
+                               />
+                             </TableCell>
+                           );
+                         })}
+                       </TableRow>
+                     ))}
+                   </TableBody>
+                 </Table>
               </div>
             </CardContent>
           </Card>
