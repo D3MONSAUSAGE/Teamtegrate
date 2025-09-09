@@ -32,6 +32,7 @@ const JobRoleSelector: React.FC<JobRoleSelectorProps> = ({
   const { jobRoles, isLoading } = useJobRoles();
 
   const handleRoleToggle = (roleId: string) => {
+    console.log('Toggling job role:', roleId, 'Current selection:', selectedRoles);
     if (selectedRoles.includes(roleId)) {
       onSelectionChange(selectedRoles.filter(id => id !== roleId));
     } else {
@@ -74,8 +75,13 @@ const JobRoleSelector: React.FC<JobRoleSelectorProps> = ({
                 <Badge
                   key={role.id}
                   variant={selectedRoles.includes(role.id) ? "default" : "outline"}
-                  className="cursor-pointer transition-colors"
-                  onClick={() => handleRoleToggle(role.id)}
+                  className="cursor-pointer transition-colors hover:scale-105"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Job role badge clicked:', role.id);
+                    handleRoleToggle(role.id);
+                  }}
                 >
                   {role.name}
                 </Badge>

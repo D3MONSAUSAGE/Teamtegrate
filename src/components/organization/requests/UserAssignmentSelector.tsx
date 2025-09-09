@@ -29,6 +29,7 @@ const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
   const { users, isLoading } = useUsers();
 
   const handleUserToggle = (userId: string) => {
+    console.log('Toggling user:', userId, 'Current selection:', selectedUserIds);
     if (selectedUserIds.includes(userId)) {
       onSelectionChange(selectedUserIds.filter(id => id !== userId));
     } else {
@@ -58,15 +59,18 @@ const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
           
           <div className="space-y-3">
             <Label>Select Users</Label>
-            <Select onValueChange={handleUserToggle}>
-              <SelectTrigger>
+            <Select onValueChange={(value) => {
+              console.log('User selected:', value);
+              handleUserToggle(value);
+            }}>
+              <SelectTrigger className="bg-background border-input">
                 <SelectValue placeholder="Choose a user to add..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[100] bg-popover border shadow-lg">
                 {users
                   .filter(user => !selectedUserIds.includes(user.id))
                   .map(user => (
-                    <SelectItem key={user.id} value={user.id}>
+                    <SelectItem key={user.id} value={user.id} className="hover:bg-accent cursor-pointer">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         <span>{user.name}</span>
@@ -86,8 +90,13 @@ const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
                   <Badge
                     key={user.id}
                     variant="secondary"
-                    className="cursor-pointer hover:bg-destructive/10"
-                    onClick={() => handleUserToggle(user.id)}
+                    className="cursor-pointer hover:bg-destructive/10 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Badge clicked for user:', user.id);
+                      handleUserToggle(user.id);
+                    }}
                   >
                     {user.name} ({user.role}) ×
                   </Badge>
@@ -115,13 +124,16 @@ const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
             <p className="text-sm text-muted-foreground">
               How should requests be assigned when multiple people are eligible?
             </p>
-            <Select value={assignmentStrategy} onValueChange={onStrategyChange}>
-              <SelectTrigger>
+            <Select value={assignmentStrategy} onValueChange={(value) => {
+              console.log('Assignment strategy changed:', value);
+              onStrategyChange?.(value);
+            }}>
+              <SelectTrigger className="bg-background border-input">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[100] bg-popover border shadow-lg">
                 {ASSIGNMENT_STRATEGIES.map(strategy => (
-                  <SelectItem key={strategy.id} value={strategy.id}>
+                  <SelectItem key={strategy.id} value={strategy.id} className="hover:bg-accent cursor-pointer">
                     <div>
                       <div className="font-medium">{strategy.label}</div>
                       <div className="text-xs text-muted-foreground">{strategy.description}</div>
