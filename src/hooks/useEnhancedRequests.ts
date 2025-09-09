@@ -40,7 +40,8 @@ export function useEnhancedRequests() {
         .select('*')
         .eq('is_active', true)
         .in('organization_id', [user.organizationId, '00000000-0000-0000-0000-000000000000'])
-        .order('category, name');
+        .order('category', { ascending: true })
+        .order('name', { ascending: true });
 
       if (error) {
         console.error('Supabase error fetching request types:', error);
@@ -79,8 +80,7 @@ export function useEnhancedRequests() {
         .from('requests')
         .select(`
           *,
-          request_type:request_types(id, name, category, description),
-          requested_by_user:users(id, name, email)
+          request_type:request_types(id, name, category, description)
         `)
         .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
@@ -111,8 +111,7 @@ export function useEnhancedRequests() {
           created_by: '',
           created_at: '',
           updated_at: ''
-        } : undefined,
-        requested_by_user: item.requested_by_user
+        } : undefined
       })) as unknown as Request[]);
     } catch (err) {
       console.error('Error fetching requests:', err);
@@ -270,10 +269,7 @@ export function useEnhancedRequests() {
           ...(newStatus === 'completed' && { completed_at: new Date().toISOString() })
         })
         .eq('id', requestId)
-        .select(`
-          *,
-          requested_by_user:users!requests_requested_by_fkey(name)
-        `)
+        .select('*')
         .single();
 
       if (updateError) throw updateError;
