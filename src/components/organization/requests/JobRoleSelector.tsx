@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useJobRoles } from '@/hooks/useJobRoles';
-import { Users, Target, MapPin, BarChart3 } from 'lucide-react';
+import { Briefcase, Plus, X } from 'lucide-react';
 
 interface JobRoleSelectorProps {
   selectedRoles: string[];
-  onSelectionChange: (roleIds: string[]) => void;
+  onSelectionChange: (roles: string[]) => void;
   expertiseTags?: string[];
   onExpertiseChange?: (tags: string[]) => void;
   geographicScope?: string;
@@ -17,6 +20,14 @@ interface JobRoleSelectorProps {
   onWorkloadBalancingChange?: (enabled: boolean) => void;
   showAdvanced?: boolean;
 }
+
+const GEOGRAPHIC_SCOPES = [
+  { id: 'any', label: 'Any Location' },
+  { id: 'local', label: 'Local Only' },
+  { id: 'regional', label: 'Regional' },
+  { id: 'national', label: 'National' },
+  { id: 'international', label: 'International' }
+];
 
 const JobRoleSelector: React.FC<JobRoleSelectorProps> = ({
   selectedRoles,
@@ -40,169 +51,142 @@ const JobRoleSelector: React.FC<JobRoleSelectorProps> = ({
     }
   };
 
-  const handleExpertiseTagAdd = (tag: string) => {
-    if (onExpertiseChange && !expertiseTags.includes(tag)) {
-      onExpertiseChange([...expertiseTags, tag]);
+  const [newExpertiseTag, setNewExpertiseTag] = useState('');
+
+  const handleExpertiseTagAdd = () => {
+    if (newExpertiseTag.trim() && !expertiseTags.includes(newExpertiseTag.trim())) {
+      onExpertiseChange?.([...expertiseTags, newExpertiseTag.trim()]);
+      setNewExpertiseTag('');
     }
   };
 
-  const handleExpertiseTagRemove = (tag: string) => {
-    if (onExpertiseChange) {
-      onExpertiseChange(expertiseTags.filter(t => t !== tag));
-    }
+  const handleExpertiseTagRemove = (tagToRemove: string) => {
+    onExpertiseChange?.(expertiseTags.filter(tag => tag !== tagToRemove));
   };
 
   if (isLoading) {
-    return <div className="animate-pulse h-24 bg-muted rounded"></div>;
+    return <div className="animate-pulse h-32 bg-muted rounded"></div>;
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4" />
-            Default Job Roles
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Select which job roles should typically handle this request type.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {jobRoles.map(role => (
-                <Badge
-                  key={role.id}
-                  variant={selectedRoles.includes(role.id) ? "default" : "outline"}
-                  className="cursor-pointer transition-colors hover:scale-105"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Job role badge clicked:', role.id);
-                    handleRoleToggle(role.id);
-                  }}
-                >
-                  {role.name}
-                </Badge>
-              ))}
+    <div className="space-y-6">
+      {/* Job Roles Selection */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Briefcase className="h-4 w-4" />
+          <Label className="text-base font-medium">Default Job Roles</Label>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Select which job roles should be considered for assignment by default.
+        </p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {jobRoles.map(role => (
+            <div key={role.id} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-muted/50">
+              <Checkbox
+                id={`role-${role.id}`}
+                checked={selectedRoles.includes(role.id)}
+                onCheckedChange={() => handleRoleToggle(role.id)}
+              />
+              <Label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer text-sm">
+                {role.name}
+              </Label>
             </div>
-            {selectedRoles.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                No job roles selected. Requests will use standard role-based assignment.
-              </p>
-            )}
+          ))}
+        </div>
+
+        {selectedRoles.length > 0 && (
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-sm font-medium">Selected Roles ({selectedRoles.length})</p>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {selectedRoles.map(roleId => {
+                const role = jobRoles.find(r => r.id === roleId);
+                return role ? (
+                  <Badge key={roleId} variant="secondary" className="text-xs">
+                    {role.name}
+                  </Badge>
+                ) : null;
+              })}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
       {showAdvanced && (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="h-4 w-4" />
-                Expertise Requirements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Specify expertise tags to match specialized skills.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {expertiseTags.map(tag => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="cursor-pointer"
+          {/* Expertise Tags */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Expertise Tags</Label>
+            <p className="text-sm text-muted-foreground">
+              Add specific expertise requirements for this request type.
+            </p>
+            
+            <div className="flex gap-2">
+              <Input
+                value={newExpertiseTag}
+                onChange={(e) => setNewExpertiseTag(e.target.value)}
+                placeholder="Add expertise tag..."
+                onKeyPress={(e) => e.key === 'Enter' && handleExpertiseTagAdd()}
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon" 
+                onClick={handleExpertiseTagAdd}
+                disabled={!newExpertiseTag.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {expertiseTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {expertiseTags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="gap-1">
+                    {tag}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
                       onClick={() => handleExpertiseTagRemove(tag)}
-                    >
-                      {tag} ×
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Add expertise tag..."
-                    className="flex-1 px-3 py-1 text-sm border rounded"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        handleExpertiseTagAdd(e.currentTarget.value.trim());
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                      if (input?.value.trim()) {
-                        handleExpertiseTagAdd(input.value.trim());
-                        input.value = '';
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
+                    />
+                  </Badge>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MapPin className="h-4 w-4" />
-                Geographic Scope
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Prefer local assignees when possible.
+          {/* Geographic Scope */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Geographic Scope</Label>
+            <p className="text-sm text-muted-foreground">
+              Specify the geographic scope for this request type.
+            </p>
+            <RadioGroup value={geographicScope} onValueChange={onGeographicScopeChange}>
+              {GEOGRAPHIC_SCOPES.map(scope => (
+                <div key={scope.id} className="flex items-center space-x-2">
+                  <RadioGroupItem value={scope.id} id={`geo-${scope.id}`} />
+                  <Label htmlFor={`geo-${scope.id}`} className="text-sm">
+                    {scope.label}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+
+          {/* Workload Balancing */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="space-y-1">
+                <Label className="text-base font-medium">Workload Balancing</Label>
+                <p className="text-xs text-muted-foreground">
+                  Distribute requests evenly among eligible assignees based on current workload.
                 </p>
-                <select
-                  value={geographicScope}
-                  onChange={(e) => onGeographicScopeChange?.(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                >
-                  <option value="any">Any Location</option>
-                  <option value="local_preferred">Local Preferred</option>
-                  <option value="local_only">Local Only</option>
-                </select>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BarChart3 className="h-4 w-4" />
-                Assignment Options
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Workload Balancing</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Distribute requests evenly among eligible approvers
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={workloadBalancing}
-                    onChange={(e) => onWorkloadBalancingChange?.(e.target.checked)}
-                    className="rounded"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Switch 
+                checked={workloadBalancing} 
+                onCheckedChange={onWorkloadBalancingChange}
+              />
+            </div>
+          </div>
         </>
       )}
     </div>
