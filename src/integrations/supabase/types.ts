@@ -3404,6 +3404,57 @@ export type Database = {
           },
         ]
       }
+      request_approval_workflows: {
+        Row: {
+          approval_levels: Json
+          auto_escalate: boolean
+          created_at: string
+          created_by: string
+          delegation_allowed: boolean
+          emergency_override_roles: string[] | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          request_type_id: string
+          timeout_hours: number | null
+          updated_at: string
+          workflow_name: string
+          workflow_type: string
+        }
+        Insert: {
+          approval_levels?: Json
+          auto_escalate?: boolean
+          created_at?: string
+          created_by: string
+          delegation_allowed?: boolean
+          emergency_override_roles?: string[] | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          request_type_id: string
+          timeout_hours?: number | null
+          updated_at?: string
+          workflow_name: string
+          workflow_type?: string
+        }
+        Update: {
+          approval_levels?: Json
+          auto_escalate?: boolean
+          created_at?: string
+          created_by?: string
+          delegation_allowed?: boolean
+          emergency_override_roles?: string[] | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          request_type_id?: string
+          timeout_hours?: number | null
+          updated_at?: string
+          workflow_name?: string
+          workflow_type?: string
+        }
+        Relationships: []
+      }
       request_approvals: {
         Row: {
           approval_level: number
@@ -3447,6 +3498,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      request_assignment_rules: {
+        Row: {
+          assignment_strategy: string
+          conditions: Json
+          created_at: string
+          created_by: string
+          escalation_rules: Json | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          priority_order: number
+          request_type_id: string
+          rule_name: string
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_strategy?: string
+          conditions?: Json
+          created_at?: string
+          created_by: string
+          escalation_rules?: Json | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          priority_order?: number
+          request_type_id: string
+          rule_name: string
+          rule_type?: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_strategy?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string
+          escalation_rules?: Json | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          priority_order?: number
+          request_type_id?: string
+          rule_name?: string
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       request_attachments: {
         Row: {
@@ -3532,6 +3631,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      request_delegations: {
+        Row: {
+          delegate_approver_id: string
+          delegated_at: string
+          delegation_reason: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          original_approver_id: string
+          request_id: string
+        }
+        Insert: {
+          delegate_approver_id: string
+          delegated_at?: string
+          delegation_reason?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          original_approver_id: string
+          request_id: string
+        }
+        Update: {
+          delegate_approver_id?: string
+          delegated_at?: string
+          delegation_reason?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          original_approver_id?: string
+          request_id?: string
+        }
+        Relationships: []
       }
       request_types: {
         Row: {
