@@ -86,8 +86,12 @@ const UniversalVideoPlayer: React.FC<UniversalVideoPlayerProps> = ({
   let source = videoSource;
   let videoId = videoUrl;
   
+  console.log('UniversalVideoPlayer rendering:', { videoUrl, videoSource });
+  
   if (!source) {
     const videoInfo = parseVideoInput(videoUrl);
+    console.log('Parsed video info:', videoInfo);
+    
     if (!videoInfo) {
       return (
         <Card className="w-full aspect-video flex items-center justify-center bg-muted">
@@ -102,6 +106,8 @@ const UniversalVideoPlayer: React.FC<UniversalVideoPlayerProps> = ({
     source = videoInfo.source;
     videoId = videoInfo.id;
   }
+  
+  console.log('Final video details:', { source, videoId });
 
   // Render appropriate player based on source
   switch (source) {

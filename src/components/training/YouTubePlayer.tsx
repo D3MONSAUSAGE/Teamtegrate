@@ -22,6 +22,7 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   autoplay = false,
   className = ""
 }) => {
+  console.log('YouTubePlayer rendering with videoId:', videoId);
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,7 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   };
 
   const handleReady = useCallback((event: YouTubeEvent) => {
+    console.log('YouTube video ready:', videoId);
     setIsReady(true);
     setIsLoading(false);
     setError(null);
@@ -55,13 +57,35 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     
     // Start progress tracking
     startProgressTracking();
-  }, [onReady]);
+  }, [onReady, videoId]);
 
   const handleError = useCallback((event: YouTubeEvent) => {
-    setError('Failed to load video');
+    const errorCode = event.data;
+    let errorMessage = 'Failed to load video';
+    
+    // YouTube error codes: https://developers.google.com/youtube/iframe_api_reference#Events
+    switch (errorCode) {
+      case 2:
+        errorMessage = 'Invalid video ID';
+        break;
+      case 5:
+        errorMessage = 'HTML5 player error';
+        break;
+      case 100:
+        errorMessage = 'Video not found or private';
+        break;
+      case 101:
+      case 150:
+        errorMessage = 'Video embedding disabled';
+        break;
+      default:
+        errorMessage = `Video error (code: ${errorCode})`;
+    }
+    
+    console.error('YouTube player error:', { errorCode, videoId, errorMessage });
+    setError(errorMessage);
     setIsLoading(false);
-    console.error('YouTube player error:', event.data);
-  }, []);
+  }, [videoId]);
 
   const handleStateChange = useCallback((event: YouTubeEvent) => {
     const playerState = event.data;

@@ -21,11 +21,14 @@ export interface VideoInfo {
 export function extractYouTubeVideoId(input: string): string | null {
   if (!input) return null;
   
+  console.log('Extracting YouTube video ID from:', input);
+  
   // Remove whitespace
   const cleanInput = input.trim();
   
   // If it's already just a video ID (11 characters, alphanumeric and underscore/dash)
   if (/^[a-zA-Z0-9_-]{11}$/.test(cleanInput)) {
+    console.log('Direct video ID detected:', cleanInput);
     return cleanInput;
   }
   
@@ -39,10 +42,12 @@ export function extractYouTubeVideoId(input: string): string | null {
   for (const pattern of patterns) {
     const match = cleanInput.match(pattern);
     if (match && match[1]) {
+      console.log('Video ID extracted:', match[1]);
       return match[1];
     }
   }
   
+  console.log('No video ID found for input:', input);
   return null;
 }
 
