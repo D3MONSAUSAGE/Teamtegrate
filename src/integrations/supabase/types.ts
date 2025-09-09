@@ -4187,6 +4187,8 @@ export type Database = {
       requests: {
         Row: {
           actual_processing_time: number | null
+          assigned_at: string | null
+          assigned_to: string | null
           attachments_count: number | null
           automation_applied: boolean | null
           automation_rule_ids: string[] | null
@@ -4207,11 +4209,14 @@ export type Database = {
           status: string | null
           submitted_at: string | null
           template_used_id: string | null
+          ticket_number: string | null
           title: string
           updated_at: string
         }
         Insert: {
           actual_processing_time?: number | null
+          assigned_at?: string | null
+          assigned_to?: string | null
           attachments_count?: number | null
           automation_applied?: boolean | null
           automation_rule_ids?: string[] | null
@@ -4232,11 +4237,14 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           template_used_id?: string | null
+          ticket_number?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           actual_processing_time?: number | null
+          assigned_at?: string | null
+          assigned_to?: string | null
           attachments_count?: number | null
           automation_applied?: boolean | null
           automation_rule_ids?: string[] | null
@@ -4257,10 +4265,25 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           template_used_id?: string | null
+          ticket_number?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "requests_request_type_id_fkey"
             columns: ["request_type_id"]
@@ -5124,6 +5147,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ticket_counters: {
+        Row: {
+          last_number: number
+          year: string
+        }
+        Insert: {
+          last_number?: number
+          year: string
+        }
+        Update: {
+          last_number?: number
+          year?: string
+        }
+        Relationships: []
       }
       time_entries: {
         Row: {
@@ -6555,6 +6593,10 @@ export type Database = {
       }
       generate_recurring_task_occurrence: {
         Args: { organization_id_param: string; parent_task_id: string }
+        Returns: string
+      }
+      generate_ticket_number: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_all_projects: {
