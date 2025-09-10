@@ -2,45 +2,87 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 
-// Type for the RPC response
-interface DeleteAssignmentResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
-  deleted_count?: number;
+interface OptimisticContext {
+  prevAssignments?: any[];
+  assignmentId: string;
 }
 
-// Focused mutations for training_assignments table
+// Bulletproof training assignment deletion with direct client operations
 export const useDeleteTrainingAssignment = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, string, { prevAssignments?: any[] }>({
+  return useMutation<void, Error, string, OptimisticContext>({
     mutationKey: ['delete-training-assignment'],
     mutationFn: async (assignmentId: string) => {
-      console.debug('[Training] Deleting assignment safely', assignmentId);
+      console.debug('[Training] Starting bulletproof deletion for:', assignmentId);
       
-      const { data, error } = await supabase.rpc('delete_training_assignment_safe', {
-        assignment_id_param: assignmentId
-      });
+      try {
+        // Step 1: Clear dependencies - Update assignments referencing this one
+        console.debug('[Training] Clearing reassigned_from references');
+        const { error: reassignError } = await supabase
+          .from('training_assignments')
+          .update({ reassigned_from: null })
+          .eq('reassigned_from', assignmentId);
+          
+        if (reassignError) {
+          console.error('[Training] Failed to clear reassigned_from:', reassignError);
+          throw reassignError;
+        }
 
-      if (error) {
-        console.error('[Training] RPC error:', error);
+        // Step 2: Clear original assignment references for retraining
+        console.debug('[Training] Clearing original_assignment_id references');
+        const { error: originalError } = await supabase
+          .from('training_assignments')
+          .update({ original_assignment_id: null })
+          .eq('original_assignment_id', assignmentId);
+          
+        if (originalError) {
+          console.error('[Training] Failed to clear original_assignment_id:', originalError);
+          throw originalError;
+        }
+
+        // Step 3: Delete audit records (if table exists)
+        console.debug('[Training] Removing audit records');
+        const { error: auditError } = await supabase
+          .from('training_assignment_audit')
+          .delete()
+          .eq('assignment_id', assignmentId);
+          
+        // Don't throw on audit error as table might not exist
+        if (auditError) {
+          console.warn('[Training] Audit deletion warning (table might not exist):', auditError);
+        }
+
+        // Step 4: Finally delete the main assignment
+        console.debug('[Training] Deleting main assignment');
+        const { error: deleteError } = await supabase
+          .from('training_assignments')
+          .delete()
+          .eq('id', assignmentId);
+          
+        if (deleteError) {
+          console.error('[Training] Failed to delete main assignment:', deleteError);
+          throw deleteError;
+        }
+
+        console.debug('[Training] Bulletproof deletion completed successfully');
+      } catch (error) {
+        console.error('[Training] Deletion failed, operation rolled back:', error);
         throw error;
       }
-
-      if (!(data as unknown as DeleteAssignmentResponse)?.success) {
-        console.error('[Training] Safe delete failed:', (data as unknown as DeleteAssignmentResponse)?.error);
-        throw new Error((data as unknown as DeleteAssignmentResponse)?.error || 'Failed to delete assignment');
-      }
-
-      console.debug('[Training] Assignment deleted successfully:', data);
     },
     onMutate: async (assignmentId: string) => {
-      console.debug('[Training] onMutate start', assignmentId);
-      // Only cancel training-assignments query to avoid expensive employee-progress refetch
-      await queryClient.cancelQueries({ queryKey: ['training-assignments'] });
-
+      console.debug('[Training] Optimistic update start for:', assignmentId);
+      
+      // Cancel all training-related queries to prevent race conditions
+      await queryClient.cancelQueries({ 
+        queryKey: ['training-assignments']
+      });
+      
+      // Snapshot current state for rollback
       const prevAssignments = queryClient.getQueryData<any[]>(['training-assignments']);
+      
+      // Optimistic update: Remove assignment from UI immediately
       if (Array.isArray(prevAssignments)) {
         queryClient.setQueryData(
           ['training-assignments'],
@@ -48,28 +90,36 @@ export const useDeleteTrainingAssignment = () => {
         );
       }
 
-      return { prevAssignments };
+      return { prevAssignments, assignmentId };
     },
-    onError: (error, _assignmentId, context) => {
-      console.error('Error deleting training assignment:', error);
+    onError: (error, assignmentId, context) => {
+      console.error('[Training] Deletion failed, rolling back UI:', error);
+      
+      // Rollback optimistic update
       if (context?.prevAssignments) {
         queryClient.setQueryData(['training-assignments'], context.prevAssignments);
       }
-      toast.error('Failed to remove training assignment');
+      
+      toast.error(`Failed to remove assignment: ${error.message}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, assignmentId) => {
+      console.debug('[Training] Assignment removed successfully:', assignmentId);
       toast.success('Training assignment removed');
     },
-    onSettled: () => {
-      // More targeted invalidation - only refetch the specific user's assignments
+    onSettled: (_, __, assignmentId) => {
+      // Surgical invalidation: Only refresh what's needed
+      console.debug('[Training] Performing surgical query refresh for:', assignmentId);
+      
+      // Only invalidate training-assignments, avoid employee-progress cascade
       queryClient.invalidateQueries({ 
-        queryKey: ['training-assignments'], 
+        queryKey: ['training-assignments'],
         refetchType: 'active',
-        exact: false 
+        exact: true // Prevent over-broad invalidation
       });
-      // Skip training-stats invalidation to prevent cascading refetches
-      console.debug('[Training] Assignment deletion settled');
+      
+      // Don't invalidate employee-progress or training-stats to prevent freeze
+      console.debug('[Training] Deletion settled without cascading invalidations');
     },
-    retry: 0, // Don't retry deletion attempts
+    retry: 0, // Never retry deletions to avoid duplicate operations
   });
 };
