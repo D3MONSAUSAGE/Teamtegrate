@@ -129,13 +129,22 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ open, onOpenChange, quiz }) => 
     if (!quiz?.id) return;
 
     try {
+      console.log('🗑️ QuizEditor: Attempting to delete quiz:', quiz.id);
       await deleteQuizMutation.mutateAsync(quiz.id);
       enhancedNotifications.success('Quiz deleted successfully!');
       setShowDeleteConfirm(false);
       onOpenChange(false);
-    } catch (error) {
-      console.error('Error deleting quiz:', error);
-      enhancedNotifications.error('Failed to delete quiz');
+    } catch (error: any) {
+      console.error('🔴 QuizEditor: Error deleting quiz:', error);
+      
+      // Check for specific RLS errors
+      if (error?.message?.includes('row-level security policy')) {
+        enhancedNotifications.error('Permission denied: You do not have permission to delete this quiz');
+      } else if (error?.code === 'PGRST116') {
+        enhancedNotifications.error('Quiz not found or permission denied');
+      } else {
+        enhancedNotifications.error(`Failed to delete quiz: ${error?.message || 'Unknown error'}`);
+      }
     }
   };
 
