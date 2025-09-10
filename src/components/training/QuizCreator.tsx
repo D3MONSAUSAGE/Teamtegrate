@@ -40,6 +40,7 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   
   const { data: courses = [] } = useTrainingCourses();
   const { data: modules = [] } = useTrainingModules(selectedCourse);
@@ -52,8 +53,8 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
       errors.push('Quiz title is required');
     }
     
-    if (!quizData.module_id) {
-      errors.push('Please select a module');
+    if (!isStandalone && !quizData.module_id) {
+      errors.push('Please select a module for module-based quizzes');
     }
     
     if (questions.length === 0) {
@@ -130,8 +131,13 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
     }
 
     try {
+      const quizPayload = {
+        ...quizData,
+        module_id: isStandalone ? null : quizData.module_id
+      };
+      
       await createQuizMutation.mutateAsync({
-        quiz: quizData,
+        quiz: quizPayload,
         questions: questions
       });
       
@@ -148,6 +154,7 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
       setSelectedCourse('');
       setValidationErrors([]);
       setShowPreview(false);
+      setIsStandalone(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create quiz:', error);
@@ -215,15 +222,15 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm font-medium">
                   <span>Quiz Creation Progress</span>
-                  <span>{Math.round(((quizData.title ? 1 : 0) + (quizData.module_id ? 1 : 0) + (questions.length > 0 ? 2 : 0)) / 4 * 100)}%</span>
+                  <span>{Math.round(((quizData.title ? 1 : 0) + (isStandalone || quizData.module_id ? 1 : 0) + (questions.length > 0 ? 2 : 0)) / 4 * 100)}%</span>
                 </div>
                 <Progress 
-                  value={((quizData.title ? 1 : 0) + (quizData.module_id ? 1 : 0) + (questions.length > 0 ? 2 : 0)) / 4 * 100} 
+                  value={((quizData.title ? 1 : 0) + (isStandalone || quizData.module_id ? 1 : 0) + (questions.length > 0 ? 2 : 0)) / 4 * 100} 
                   className="h-2"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className={quizData.title ? 'text-green-600' : ''}>✓ Title</span>
-                  <span className={quizData.module_id ? 'text-green-600' : ''}>✓ Module</span>
+                  <span className={isStandalone || quizData.module_id ? 'text-green-600' : ''}>✓ {isStandalone ? 'Standalone' : 'Module'}</span>
                   <span className={questions.length > 0 ? 'text-green-600' : ''}>✓ Questions</span>
                   <span className={validationErrors.length === 0 && questions.length > 0 ? 'text-green-600' : ''}>✓ Ready</span>
                 </div>
@@ -307,6 +314,46 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
                   <CardTitle className="text-lg">Quiz Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Quiz Type Selection */}
+                  <div className="space-y-3">
+                    <Label>Quiz Type</Label>
+                    <div className="flex gap-4">
+                      <Button
+                        type="button"
+                        variant={!isStandalone ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setIsStandalone(false);
+                          setQuizData({ ...quizData, module_id: '' });
+                          if (validationErrors.length > 0) validateQuiz();
+                        }}
+                        className="gap-2"
+                      >
+                        📚 Module Quiz
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={isStandalone ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setIsStandalone(true);
+                          setQuizData({ ...quizData, module_id: '' });
+                          setSelectedCourse('');
+                          if (validationErrors.length > 0) validateQuiz();
+                        }}
+                        className="gap-2"
+                      >
+                        ⚡ Standalone Quiz
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {isStandalone 
+                        ? "Create an independent quiz not tied to any course or module" 
+                        : "Create a quiz that belongs to a specific course module"
+                      }
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Quiz Title *</Label>
@@ -345,55 +392,57 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="course">Course *</Label>
-                      <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                        <SelectTrigger className={!selectedCourse && validationErrors.length > 0 ? 'border-destructive' : ''}>
-                          <SelectValue placeholder="Select course" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {courses.map((course: any) => (
-                            <SelectItem key={course.id} value={course.id}>
-                              {course.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {!isStandalone && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="course">Course *</Label>
+                        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                          <SelectTrigger className={!selectedCourse && validationErrors.length > 0 ? 'border-destructive' : ''}>
+                            <SelectValue placeholder="Select course" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map((course: any) => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="module">Module *</Label>
+                        <Select 
+                          value={quizData.module_id} 
+                          onValueChange={(value) => {
+                            setQuizData({ ...quizData, module_id: value });
+                            if (validationErrors.length > 0) validateQuiz();
+                          }}
+                        >
+                          <SelectTrigger className={!quizData.module_id && validationErrors.length > 0 ? 'border-destructive' : ''}>
+                            <SelectValue placeholder="Select module" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {modules.map((module: any) => (
+                              <SelectItem key={module.id} value={module.id}>
+                                {module.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="module">Module *</Label>
-                      <Select 
-                        value={quizData.module_id} 
-                        onValueChange={(value) => {
-                          setQuizData({ ...quizData, module_id: value });
-                          if (validationErrors.length > 0) validateQuiz();
-                        }}
-                      >
-                        <SelectTrigger className={!quizData.module_id && validationErrors.length > 0 ? 'border-destructive' : ''}>
-                          <SelectValue placeholder="Select module" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {modules.map((module: any) => (
-                            <SelectItem key={module.id} value={module.id}>
-                              {module.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="max-attempts">Max Attempts</Label>
-                      <Input
-                        id="max-attempts"
-                        type="number"
-                        value={quizData.max_attempts}
-                        onChange={(e) => setQuizData({ ...quizData, max_attempts: parseInt(e.target.value) || 3 })}
-                        min="1"
-                      />
-                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="max-attempts">Max Attempts</Label>
+                    <Input
+                      id="max-attempts"
+                      type="number"
+                      value={quizData.max_attempts}
+                      onChange={(e) => setQuizData({ ...quizData, max_attempts: parseInt(e.target.value) || 3 })}
+                      min="1"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -585,7 +634,7 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
             </Button>
             <Button 
               onClick={handleSubmit}
-              disabled={!quizData.title || !quizData.module_id || questions.length === 0 || validationErrors.length > 0 || createQuizMutation.isPending}
+              disabled={!quizData.title || (!isStandalone && !quizData.module_id) || questions.length === 0 || validationErrors.length > 0 || createQuizMutation.isPending}
               className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
             >
               <Save className="h-4 w-4 mr-2" />

@@ -322,6 +322,8 @@ const QuizCard: React.FC<{
   onViewResults: () => void;
 }> = ({ quiz, viewMode, canManageContent, onEdit, onViewResults }) => {
   const questionCount = quiz.quiz_questions?.length || 0;
+  // @ts-ignore - quiz may have module_id property for standalone detection
+  const isStandalone = !quiz.module_id;
   
   if (viewMode === 'list') {
     return (
@@ -339,6 +341,12 @@ const QuizCard: React.FC<{
                   className="text-xs"
                 >
                   {questionCount} questions
+                </Badge>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${isStandalone ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-blue-300 text-blue-700 bg-blue-50'}`}
+                >
+                  {isStandalone ? '⚡ Standalone' : '📚 Module'}
                 </Badge>
                 <span>•</span>
                 <span>{quiz.passing_score}% to pass</span>
@@ -411,6 +419,12 @@ const QuizCard: React.FC<{
               className="text-xs"
             >
               {questionCount} questions
+            </Badge>
+            <Badge 
+              variant="outline" 
+              className={`text-xs ${isStandalone ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-blue-300 text-blue-700 bg-blue-50'}`}
+            >
+              {isStandalone ? '⚡ Standalone' : '📚 Module'}
             </Badge>
             <span className="text-xs text-muted-foreground">
               {quiz.passing_score}% to pass
