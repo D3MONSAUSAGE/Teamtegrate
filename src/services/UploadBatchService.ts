@@ -254,16 +254,18 @@ class UploadBatchService {
 
       return (data || []).map(item => ({
         ...item,
-        extracted_data: item.extracted_data as SalesData,
-        validation_errors: item.validation_errors as ValidationError[]
-      }));
+        extracted_data: (item.extracted_data as any) || {},
+        validation_errors: (item.validation_errors as any) || [],
+        user_corrections: (item.user_corrections as any) || {},
+        status: item.status as 'pending' | 'approved' | 'rejected' | 'needs_review'
+      })) as StagedData[];
     } catch (error) {
       console.error('[UploadBatchService] Error getting staged data:', error);
       throw error;
     }
   }
 
-  async updateStagedData(stagedId: string, corrections: Record<string, any>, status?: 'approved' | 'rejected'): Promise<void> {
+  async updateStagedData(stagedId: string, corrections: Record<string, any>, status?: 'approved' | 'rejected' | 'needs_review'): Promise<void> {
     try {
       const updateData: any = {
         user_corrections: corrections,
@@ -306,7 +308,10 @@ class UploadBatchService {
         throw new Error(`Failed to get batches: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(batch => ({
+        ...batch,
+        status: batch.status as 'processing' | 'completed' | 'failed' | 'cancelled'
+      })) as UploadBatch[];
     } catch (error) {
       console.error('[UploadBatchService] Error getting batches:', error);
       throw error;
@@ -332,7 +337,11 @@ class UploadBatchService {
         throw new Error(`Failed to get validation logs: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []).map(log => ({
+        ...log,
+        validation_type: log.validation_type as 'anomaly' | 'missing_field' | 'format_error' | 'business_rule',
+        severity: log.severity as 'info' | 'warning' | 'error' | 'critical'
+      })) as ValidationLog[];
     } catch (error) {
       console.error('[UploadBatchService] Error getting validation logs:', error);
       throw error;
