@@ -6572,6 +6572,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      delete_training_assignment_safe: {
+        Args: { assignment_id_param: string }
+        Returns: Json
+      }
       end_of_day_auto_close: {
         Args: Record<PropertyKey, never>
         Returns: undefined
