@@ -38,9 +38,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import EmbeddedCertificateReview from './EmbeddedCertificateReview';
 import QuizAttemptViewer from './QuizAttemptViewer';
 import { useQuizAttempts } from '@/hooks/useTrainingData';
-import { useDeleteTrainingAssignment } from '@/hooks/useTrainingAssignmentMutations';
+import { useDeleteComplianceAssignment } from '@/hooks/useComplianceAssignment';
 import { toast } from '@/components/ui/sonner';
-import { TrainingErrorBoundary } from '@/components/ErrorBoundary/TrainingErrorBoundary';
 
 interface EmployeeRecord {
   id: string;
@@ -94,7 +93,7 @@ const EmbeddedEmployeeRecords: React.FC = () => {
   
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { users } = useUsers();
-  const deleteAssignment = useDeleteTrainingAssignment();
+  const deleteAssignment = useDeleteComplianceAssignment();
 
   // Function to view quiz details
   const viewQuizDetails = (assignment: any) => {
@@ -120,13 +119,12 @@ const EmbeddedEmployeeRecords: React.FC = () => {
     if (!assignmentToRemove) return;
     
     try {
-      console.debug('[Training] Starting assignment removal:', assignmentToRemove.id);
       await deleteAssignment.mutateAsync(assignmentToRemove.id);
       toast.success(`Assignment "${assignmentToRemove.title}" removed successfully`);
       setAssignmentToRemove(null);
-      console.debug('[Training] Assignment removal completed');
+      
+      // Refresh employee data - you might want to refetch here
     } catch (error) {
-      console.error('[Training] Assignment removal failed:', error);
       toast.error('Failed to remove assignment');
     }
   };
@@ -781,29 +779,27 @@ const EmbeddedEmployeeRecords: React.FC = () => {
       />
 
       {/* Assignment Removal Confirmation */}
-      <TrainingErrorBoundary>
-        <AlertDialog open={!!assignmentToRemove} onOpenChange={() => setAssignmentToRemove(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove Training Assignment</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to remove the assignment "{assignmentToRemove?.title}" from {assignmentToRemove?.userName}? 
-                This action cannot be undone and will permanently delete their progress on this training.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmRemoveAssignment}
-                disabled={deleteAssignment.isPending}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {deleteAssignment.isPending ? 'Removing...' : 'Remove Assignment'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </TrainingErrorBoundary>
+      <AlertDialog open={!!assignmentToRemove} onOpenChange={() => setAssignmentToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Training Assignment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the assignment "{assignmentToRemove?.title}" from {assignmentToRemove?.userName}? 
+              This action cannot be undone and will permanently delete their progress on this training.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveAssignment}
+              disabled={deleteAssignment.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteAssignment.isPending ? 'Removing...' : 'Remove Assignment'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

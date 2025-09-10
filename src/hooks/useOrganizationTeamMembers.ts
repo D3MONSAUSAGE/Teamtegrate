@@ -115,9 +115,6 @@ export const useOrganizationTeamMembers = () => {
 
     console.log('useOrganizationTeamMembers: Setting up real-time subscription');
     
-    // Debounce invalidations to prevent cascade
-    let debounceTimer: NodeJS.Timeout;
-    
     const channel = supabase
       .channel('team-members-realtime')
       .on(
@@ -131,42 +128,16 @@ export const useOrganizationTeamMembers = () => {
         (payload) => {
           console.log('useOrganizationTeamMembers: Real-time change detected:', payload);
           
-          // Filter out non-user profile changes to avoid cascades
-          const isProfileChange = payload.eventType === 'UPDATE' && (
-            payload.old && payload.new && (
-              payload.old.name !== payload.new.name ||
-              payload.old.email !== payload.new.email ||
-              payload.old.role !== payload.new.role
-            )
-          );
-          
-          const isUserManagement = payload.eventType === 'INSERT' || payload.eventType === 'DELETE';
-          
-          // Only invalidate for actual user profile/management changes
-          if (isProfileChange || isUserManagement) {
-            // Clear existing timer
-            if (debounceTimer) {
-              clearTimeout(debounceTimer);
-            }
-            
-            // Debounce invalidations
-            debounceTimer = setTimeout(() => {
-              // Only invalidate specific team member queries, not broad user queries
-              queryClient.invalidateQueries({ 
-                queryKey: ['organization-team-members', currentUser.organizationId],
-                exact: false
-              });
-            }, 100);
-          }
+          // Invalidate and refetch team members data
+          queryClient.invalidateQueries({ queryKey: ['organization-team-members'] });
+          queryClient.invalidateQueries({ queryKey: ['users'] });
+          queryClient.invalidateQueries({ queryKey: ['unified-users'] });
         }
       )
       .subscribe();
 
     return () => {
       console.log('useOrganizationTeamMembers: Cleaning up real-time subscription');
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
       supabase.removeChannel(channel);
     };
   }, [currentUser?.organizationId, queryClient]);

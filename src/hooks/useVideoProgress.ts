@@ -133,7 +133,7 @@ export const useUpdateVideoProgress = () => {
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({ queryKey: ['video-progress', data.module_id] });
       queryClient.invalidateQueries({ queryKey: ['all-video-progress', data.user_id] });
-      // Avoid heavy employee-progress refetch here
+      queryClient.invalidateQueries({ queryKey: ['employee-progress'] });
     },
     onError: (error: Error) => {
       console.error('Failed to update video progress:', error);
@@ -185,7 +185,7 @@ export const useCompleteModule = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['video-progress', data.module_id] });
       queryClient.invalidateQueries({ queryKey: ['all-video-progress', data.user_id] });
-      // Avoid heavy employee-progress refetch here
+      queryClient.invalidateQueries({ queryKey: ['employee-progress'] });
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
     },
     onError: (error: Error) => {

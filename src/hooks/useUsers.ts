@@ -99,9 +99,6 @@ export const useUsers = () => {
 
     console.log('Setting up real-time subscription for users...');
     
-    // Debounce invalidations to prevent rapid successive calls
-    let debounceTimer: NodeJS.Timeout;
-    
     const channel = supabase
       .channel('users-realtime')
       .on(
@@ -115,19 +112,8 @@ export const useUsers = () => {
         (payload) => {
           console.log('Real-time user change detected:', payload);
           
-          // Clear existing timer
-          if (debounceTimer) {
-            clearTimeout(debounceTimer);
-          }
-          
-          // Debounce invalidations to prevent cascade
-          debounceTimer = setTimeout(() => {
-            // Only invalidate specific user queries, not all queries containing 'users'
-            queryClient.invalidateQueries({ 
-              queryKey: ['users', currentUser.organizationId, currentUser.role],
-              exact: false 
-            });
-          }, 100);
+          // Invalidate and refetch users data
+          queryClient.invalidateQueries({ queryKey: ['users'] });
           
           // Show toast notification for new users
           if (payload.eventType === 'INSERT' && payload.new) {
@@ -139,9 +125,6 @@ export const useUsers = () => {
 
     return () => {
       console.log('Cleaning up users real-time subscription');
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
       supabase.removeChannel(channel);
     };
   }, [currentUser?.organizationId, queryClient]);

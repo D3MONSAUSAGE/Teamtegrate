@@ -138,7 +138,7 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight, isR
   const { data: projects = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-projects', user?.organizationId],
     queryFn: async (): Promise<Project[]> => {
-      if (!user?.organizationId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.organizationId)) {
+      if (!user?.organizationId) {
         console.log('🚫 UnifiedDataContext: Missing organization data for projects query');
         return [];
       }
@@ -206,7 +206,7 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
   const { data: users = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-users', user?.organizationId],
     queryFn: async (): Promise<User[]> => {
-      if (!user?.organizationId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.organizationId)) {
+      if (!user?.organizationId) {
         console.log('🚫 UnifiedDataContext: Missing organization data for users query');
         return [];
       }
@@ -258,9 +258,6 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
 
     console.log('🔄 UnifiedDataContext: Setting up real-time users subscription');
     
-    // Debounce invalidations to prevent cascade
-    let debounceTimer: NodeJS.Timeout;
-    
     const channel = supabase
       .channel('unified-users-realtime')
       .on(
@@ -273,43 +270,15 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
         },
         (payload) => {
           console.log('🔄 UnifiedDataContext: Real-time user change:', payload);
-          
-          // Filter out non-user profile changes to avoid cascades
-          const isProfileChange = payload.eventType === 'UPDATE' && (
-            payload.old && payload.new && (
-              payload.old.name !== payload.new.name ||
-              payload.old.email !== payload.new.email ||
-              payload.old.role !== payload.new.role
-            )
-          );
-          
-          const isUserManagement = payload.eventType === 'INSERT' || payload.eventType === 'DELETE';
-          
-          // Only invalidate for actual user profile/management changes
-          if (isProfileChange || isUserManagement) {
-            // Clear existing timer
-            if (debounceTimer) {
-              clearTimeout(debounceTimer);
-            }
-            
-            // Debounce invalidations
-            debounceTimer = setTimeout(() => {
-              // Only invalidate unified users, not all user queries
-              queryClient.invalidateQueries({ 
-                queryKey: ['unified-users', user.organizationId],
-                exact: false
-              });
-            }, 100);
-          }
+          // Invalidate both unified and regular user queries
+          queryClient.invalidateQueries({ queryKey: ['unified-users'] });
+          queryClient.invalidateQueries({ queryKey: ['users'] });
         }
       )
       .subscribe();
 
     return () => {
       console.log('🧹 UnifiedDataContext: Cleaning up users real-time subscription');
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
       supabase.removeChannel(channel);
     };
   }, [user?.organizationId, queryClient, isReady]);
