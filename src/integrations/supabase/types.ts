@@ -6551,6 +6551,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_orphaned_training_assignments: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       create_get_all_projects_function: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -6700,6 +6704,10 @@ export type Database = {
       get_organization_stats: {
         Args: { org_id: string }
         Returns: Json
+      }
+      get_orphaned_assignments_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_project_comment_stats: {
         Args: { project_id_param: string }
