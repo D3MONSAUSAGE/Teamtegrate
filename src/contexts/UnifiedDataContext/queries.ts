@@ -258,6 +258,9 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
 
     console.log('🔄 UnifiedDataContext: Setting up real-time users subscription');
     
+    // Debounce invalidations to prevent cascade
+    let debounceTimer: NodeJS.Timeout;
+    
     const channel = supabase
       .channel('unified-users-realtime')
       .on(
@@ -270,15 +273,43 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
         },
         (payload) => {
           console.log('🔄 UnifiedDataContext: Real-time user change:', payload);
-          // Invalidate both unified and regular user queries
-          queryClient.invalidateQueries({ queryKey: ['unified-users'] });
-          queryClient.invalidateQueries({ queryKey: ['users'] });
+          
+          // Filter out non-user profile changes to avoid cascades
+          const isProfileChange = payload.eventType === 'UPDATE' && (
+            payload.old && payload.new && (
+              payload.old.name !== payload.new.name ||
+              payload.old.email !== payload.new.email ||
+              payload.old.role !== payload.new.role
+            )
+          );
+          
+          const isUserManagement = payload.eventType === 'INSERT' || payload.eventType === 'DELETE';
+          
+          // Only invalidate for actual user profile/management changes
+          if (isProfileChange || isUserManagement) {
+            // Clear existing timer
+            if (debounceTimer) {
+              clearTimeout(debounceTimer);
+            }
+            
+            // Debounce invalidations
+            debounceTimer = setTimeout(() => {
+              // Only invalidate unified users, not all user queries
+              queryClient.invalidateQueries({ 
+                queryKey: ['unified-users', user.organizationId],
+                exact: false
+              });
+            }, 100);
+          }
         }
       )
       .subscribe();
 
     return () => {
       console.log('🧹 UnifiedDataContext: Cleaning up users real-time subscription');
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       supabase.removeChannel(channel);
     };
   }, [user?.organizationId, queryClient, isReady]);
