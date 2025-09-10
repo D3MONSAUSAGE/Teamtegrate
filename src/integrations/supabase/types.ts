@@ -804,6 +804,93 @@ export type Database = {
         }
         Relationships: []
       }
+      data_validation_log: {
+        Row: {
+          actual_value: string | null
+          batch_id: string | null
+          created_at: string
+          expected_value: string | null
+          field_name: string | null
+          id: string
+          is_resolved: boolean
+          message: string
+          organization_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          sales_data_id: string | null
+          severity: string
+          validation_type: string
+        }
+        Insert: {
+          actual_value?: string | null
+          batch_id?: string | null
+          created_at?: string
+          expected_value?: string | null
+          field_name?: string | null
+          id?: string
+          is_resolved?: boolean
+          message: string
+          organization_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sales_data_id?: string | null
+          severity?: string
+          validation_type: string
+        }
+        Update: {
+          actual_value?: string | null
+          batch_id?: string | null
+          created_at?: string
+          expected_value?: string | null
+          field_name?: string | null
+          id?: string
+          is_resolved?: boolean
+          message?: string
+          organization_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sales_data_id?: string | null
+          severity?: string
+          validation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_validation_log_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "upload_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_validation_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_validation_log_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_validation_log_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_validation_log_sales_data_id_fkey"
+            columns: ["sales_data_id"]
+            isOneToOne: false
+            referencedRelation: "sales_data"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       digital_signatures: {
         Row: {
           created_at: string
@@ -2853,6 +2940,83 @@ export type Database = {
         }
         Relationships: []
       }
+      parsed_data_staging: {
+        Row: {
+          batch_id: string
+          confidence_score: number | null
+          created_at: string
+          extracted_data: Json
+          file_name: string
+          id: string
+          organization_id: string
+          pos_system: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_corrections: Json | null
+          validation_errors: Json | null
+        }
+        Insert: {
+          batch_id: string
+          confidence_score?: number | null
+          created_at?: string
+          extracted_data: Json
+          file_name: string
+          id?: string
+          organization_id: string
+          pos_system: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_corrections?: Json | null
+          validation_errors?: Json | null
+        }
+        Update: {
+          batch_id?: string
+          confidence_score?: number | null
+          created_at?: string
+          extracted_data?: Json
+          file_name?: string
+          id?: string
+          organization_id?: string
+          pos_system?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_corrections?: Json | null
+          validation_errors?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parsed_data_staging_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "upload_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parsed_data_staging_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parsed_data_staging_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parsed_data_staging_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_actions: {
         Row: {
           created_at: string
@@ -3122,6 +3286,61 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_system_configs: {
+        Row: {
+          config_data: Json
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          organization_id: string
+          system_name: string
+          updated_at: string
+        }
+        Insert: {
+          config_data?: Json
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          system_name: string
+          updated_at?: string
+        }
+        Update: {
+          config_data?: Json
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          system_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_system_configs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_system_configs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_system_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -5831,6 +6050,67 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upload_batches: {
+        Row: {
+          batch_name: string | null
+          completed_at: string | null
+          created_at: string
+          failed_files: number
+          id: string
+          organization_id: string
+          processed_files: number
+          status: string
+          total_files: number
+          uploaded_by: string
+        }
+        Insert: {
+          batch_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          failed_files?: number
+          id?: string
+          organization_id: string
+          processed_files?: number
+          status?: string
+          total_files?: number
+          uploaded_by: string
+        }
+        Update: {
+          batch_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          failed_files?: number
+          id?: string
+          organization_id?: string
+          processed_files?: number
+          status?: string
+          total_files?: number
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_batches_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_batches_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
