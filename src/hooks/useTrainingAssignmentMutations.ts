@@ -19,10 +19,8 @@ export const useDeleteTrainingAssignment = () => {
     },
     onMutate: async (assignmentId: string) => {
       console.debug('[Training] onMutate start', assignmentId);
-      await Promise.all([
-        queryClient.cancelQueries({ queryKey: ['training-assignments'] }),
-        queryClient.cancelQueries({ queryKey: ['employee-progress'] }),
-      ]);
+      // Only cancel training-assignments query to avoid expensive employee-progress refetch
+      await queryClient.cancelQueries({ queryKey: ['training-assignments'] });
 
       const prevAssignments = queryClient.getQueryData<any[]>(['training-assignments']);
       if (Array.isArray(prevAssignments)) {
@@ -45,13 +43,10 @@ export const useDeleteTrainingAssignment = () => {
       toast.success('Training assignment removed');
     },
     onSettled: () => {
-      // Keep refetches minimal to avoid heavy rerenders
+      // Only invalidate lightweight queries to prevent performance issues
       queryClient.invalidateQueries({ queryKey: ['training-assignments'], refetchType: 'active' });
-      // Stagger background refetches for heavier queries
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['employee-progress'], refetchType: 'active' });
-        queryClient.invalidateQueries({ queryKey: ['training-stats'], refetchType: 'active' });
-      }, 200);
+      queryClient.invalidateQueries({ queryKey: ['training-stats'], refetchType: 'active' });
+      console.debug('[Training] Assignment deletion settled');
     },
     retry: 1,
   });
