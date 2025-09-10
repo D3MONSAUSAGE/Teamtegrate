@@ -38,7 +38,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import EmbeddedCertificateReview from './EmbeddedCertificateReview';
 import QuizAttemptViewer from './QuizAttemptViewer';
 import { useQuizAttempts } from '@/hooks/useTrainingData';
-import { useDeleteComplianceAssignment } from '@/hooks/useComplianceAssignment';
+import { useDeleteTrainingAssignment } from '@/hooks/useTrainingAssignmentMutations';
 import { toast } from '@/components/ui/sonner';
 
 interface EmployeeRecord {
@@ -93,7 +93,7 @@ const EmbeddedEmployeeRecords: React.FC = () => {
   
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { users } = useUsers();
-  const deleteAssignment = useDeleteComplianceAssignment();
+  const deleteAssignment = useDeleteTrainingAssignment();
 
   // Function to view quiz details
   const viewQuizDetails = (assignment: any) => {
