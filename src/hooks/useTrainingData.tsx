@@ -67,7 +67,7 @@ export const useTrainingModules = (courseId?: string) => {
   });
 };
 
-// Quizzes Hook - Updated to fetch all quizzes when no moduleId provided
+// Quizzes Hook - Updated to fetch all quizzes when no moduleId provided (both module-based and standalone)
 export const useQuizzes = (moduleId?: string) => {
   const { user } = useAuth();
   
@@ -76,7 +76,54 @@ export const useQuizzes = (moduleId?: string) => {
     queryFn: async () => {
       if (!user?.organizationId) return [];
       
-      let query = supabase
+      console.log('🔍 useQuizzes: Fetching quizzes', { moduleId, orgId: user.organizationId });
+      
+      // Fetch standalone quizzes (with organization_id directly on quizzes table)
+      const { data: standaloneQuizzes, error: standaloneError } = await supabase
+        .from('quizzes')
+        .select(`
+          *,
+          quiz_questions(*)
+        `)
+        .eq('organization_id', user.organizationId)
+        .is('module_id', null)
+        .order('created_at', { ascending: false });
+      
+      if (standaloneError) {
+        console.error('❌ useQuizzes: Failed to fetch standalone quizzes:', standaloneError);
+        throw standaloneError;
+      }
+      
+      console.log('✅ useQuizzes: Standalone quizzes fetched:', standaloneQuizzes?.length || 0);
+      
+      // If moduleId is specified, only return module-specific quizzes
+      if (moduleId) {
+        const { data: moduleQuizzes, error: moduleError } = await supabase
+          .from('quizzes')
+          .select(`
+            *,
+            quiz_questions(*),
+            training_modules!inner(
+              training_courses!inner(
+                organization_id
+              )
+            )
+          `)
+          .eq('module_id', moduleId)
+          .eq('training_modules.training_courses.organization_id', user.organizationId)
+          .order('created_at', { ascending: false });
+        
+        if (moduleError) {
+          console.error('❌ useQuizzes: Failed to fetch module quizzes:', moduleError);
+          throw moduleError;
+        }
+        
+        console.log('✅ useQuizzes: Module quizzes fetched:', moduleQuizzes?.length || 0);
+        return moduleQuizzes || [];
+      }
+      
+      // If no moduleId, fetch all module-based quizzes as well and combine
+      const { data: moduleBasedQuizzes, error: moduleBasedError } = await supabase
         .from('quizzes')
         .select(`
           *,
@@ -88,16 +135,26 @@ export const useQuizzes = (moduleId?: string) => {
           )
         `)
         .eq('training_modules.training_courses.organization_id', user.organizationId)
+        .not('module_id', 'is', null)
         .order('created_at', { ascending: false });
       
-      if (moduleId) {
-        query = query.eq('module_id', moduleId);
+      if (moduleBasedError) {
+        console.error('❌ useQuizzes: Failed to fetch module-based quizzes:', moduleBasedError);
+        // Don't throw, just log error and return standalone quizzes
+        console.log('⚠️ useQuizzes: Returning only standalone quizzes due to module-based fetch error');
+        return standaloneQuizzes || [];
       }
       
-      const { data, error } = await query;
+      console.log('✅ useQuizzes: Module-based quizzes fetched:', moduleBasedQuizzes?.length || 0);
       
-      if (error) throw error;
-      return data || [];
+      // Combine both types
+      const allQuizzes = [...(standaloneQuizzes || []), ...(moduleBasedQuizzes || [])];
+      console.log('🎯 useQuizzes: Total quizzes returned:', allQuizzes.length, {
+        standalone: standaloneQuizzes?.length || 0,
+        moduleBased: moduleBasedQuizzes?.length || 0
+      });
+      
+      return allQuizzes;
     },
     enabled: !!user?.organizationId
   });

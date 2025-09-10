@@ -139,10 +139,20 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
         organization_id: user?.organizationId
       };
       
+      console.log('🚀 QuizCreator: Creating quiz with payload:', {
+        ...quizPayload,
+        questionsCount: questions.length,
+        isStandalone,
+        userRole: user?.role,
+        organizationId: user?.organizationId
+      });
+      
       await createQuizMutation.mutateAsync({
         quiz: quizPayload,
         questions: questions
       });
+      
+      console.log('✅ QuizCreator: Quiz created successfully');
       
       // Reset form
       setQuizData({
@@ -160,7 +170,13 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
       setIsStandalone(false);
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to create quiz:', error);
+      console.error('❌ QuizCreator: Failed to create quiz:', error);
+      console.error('❌ QuizCreator: Error details:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint
+      });
     }
   };
 
