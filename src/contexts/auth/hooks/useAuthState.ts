@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuthSession } from './useAuthSession';
 import { useAuthInitialization } from './useAuthInitialization';
+import { validateUUID } from '@/utils/uuidValidation';
 
 export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
@@ -58,6 +59,8 @@ export const useAuthState = () => {
   });
 
   // Enhanced debugging for auth state
+  const hasValidOrgId = !!validateUUID(user?.organizationId);
+  const isReady = !loading && !!user && !!session && hasValidOrgId;
   console.log('AuthState: Current state:', {
     loading,
     profileLoading,
@@ -65,7 +68,8 @@ export const useAuthState = () => {
     hasSession: !!session,
     userEmail: user?.email,
     userOrgId: user?.organizationId,
-    isReady: !loading && !!user && !!session
+    hasValidOrgId,
+    isReady
   });
 
   return {
@@ -73,7 +77,7 @@ export const useAuthState = () => {
     session,
     loading,
     profileLoading,
-    isReady: !loading && !!user && !!session,
+    isReady,
     setUser,
     setSession,
     setLoading,

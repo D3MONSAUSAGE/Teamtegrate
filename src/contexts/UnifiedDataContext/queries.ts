@@ -138,7 +138,7 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight, isR
   const { data: projects = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-projects', user?.organizationId],
     queryFn: async (): Promise<Project[]> => {
-      if (!user?.organizationId) {
+      if (!user?.organizationId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.organizationId)) {
         console.log('🚫 UnifiedDataContext: Missing organization data for projects query');
         return [];
       }
@@ -206,7 +206,7 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
   const { data: users = [], isLoading, error, refetch } = useQuery({
     queryKey: ['unified-users', user?.organizationId],
     queryFn: async (): Promise<User[]> => {
-      if (!user?.organizationId) {
+      if (!user?.organizationId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.organizationId)) {
         console.log('🚫 UnifiedDataContext: Missing organization data for users query');
         return [];
       }

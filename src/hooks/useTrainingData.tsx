@@ -940,11 +940,19 @@ export const useSubmitQuizAttempt = () => {
 export const useTrainingAssignments = (userId?: string) => {
   const { user } = useAuth();
   const targetUserId = userId || user?.id;
+  // Validate orgId to prevent null/empty UUID queries
+  const orgId = user?.organizationId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.organizationId)
+    ? user.organizationId
+    : null;
 
   return useQuery({
-    queryKey: ['training-assignments', targetUserId],
+    queryKey: ['training-assignments', targetUserId, orgId],
     queryFn: async () => {
       if (!targetUserId) throw new Error('No user ID available');
+      if (!orgId) {
+        console.log('useTrainingAssignments: Skipping fetch due to invalid organizationId');
+        return [];
+      }
       
       console.log('useTrainingAssignments: Fetching assignments for user:', targetUserId);
       
@@ -953,7 +961,7 @@ export const useTrainingAssignments = (userId?: string) => {
         .from('training_assignments')
         .select('*')
         .eq('assigned_to', targetUserId)
-        .eq('organization_id', user?.organizationId)
+        .eq('organization_id', orgId)
         .order('assigned_at', { ascending: false });
       
       if (assignmentsError) {
@@ -1105,7 +1113,8 @@ export const useTrainingAssignments = (userId?: string) => {
       
       return validAssignments;
     },
-    enabled: !!targetUserId
+    enabled: !!targetUserId && !!orgId,
+    retry: 0
   });
 };
 
