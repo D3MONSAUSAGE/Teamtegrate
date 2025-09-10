@@ -13,6 +13,7 @@ import AdminWelcomeHeader from './components/AdminWelcomeHeader';
 import AdminMetricsCards from './components/AdminMetricsCards';
 import AdminQuickActions from './components/AdminQuickActions';
 import { OrphanedAssignmentsCleanup } from './OrphanedAssignmentsCleanup';
+import TrainingAssignmentManagement from './TrainingAssignmentManagement';
 
 const AdminDashboard: React.FC = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -133,6 +134,7 @@ const AdminDashboard: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="database" className="space-y-6">
+            <TrainingAssignmentManagement />
             <OrphanedAssignmentsCleanup />
             <DataAuditPanel />
           </TabsContent>

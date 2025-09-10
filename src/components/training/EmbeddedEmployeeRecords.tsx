@@ -38,7 +38,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import EmbeddedCertificateReview from './EmbeddedCertificateReview';
 import QuizAttemptViewer from './QuizAttemptViewer';
 import { useQuizAttempts } from '@/hooks/useTrainingData';
-import { useDeleteComplianceAssignment } from '@/hooks/useComplianceAssignment';
 import { toast } from '@/components/ui/sonner';
 
 interface EmployeeRecord {
@@ -84,16 +83,9 @@ const EmbeddedEmployeeRecords: React.FC = () => {
     open: boolean;
   }>({ quizId: '', assignment: null, open: false });
 
-  // Assignment removal state
-  const [assignmentToRemove, setAssignmentToRemove] = useState<{
-    id: string;
-    title: string;
-    userName: string;
-  } | null>(null);
   
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { users } = useUsers();
-  const deleteAssignment = useDeleteComplianceAssignment();
 
   // Function to view quiz details
   const viewQuizDetails = (assignment: any) => {
@@ -105,29 +97,6 @@ const EmbeddedEmployeeRecords: React.FC = () => {
     });
   };
 
-  // Function to handle assignment removal
-  const handleRemoveAssignment = (assignment: any) => {
-    setAssignmentToRemove({
-      id: assignment.id,
-      title: assignment.content_title,
-      userName: selectedEmployee?.name || 'Unknown User'
-    });
-  };
-
-  // Function to confirm assignment removal
-  const confirmRemoveAssignment = async () => {
-    if (!assignmentToRemove) return;
-    
-    try {
-      await deleteAssignment.mutateAsync(assignmentToRemove.id);
-      toast.success(`Assignment "${assignmentToRemove.title}" removed successfully`);
-      setAssignmentToRemove(null);
-      
-      // Refresh employee data - you might want to refetch here
-    } catch (error) {
-      toast.error('Failed to remove assignment');
-    }
-  };
 
   // Get unique teams and departments for filtering
   const teams = useMemo(() => {
@@ -709,17 +678,8 @@ const EmbeddedEmployeeRecords: React.FC = () => {
                                        <Eye className="h-3 w-3 mr-1" />
                                        View Details
                                      </Button>
-                                   )}
-                                   <Button
-                                     size="sm"
-                                     variant="outline"
-                                     onClick={() => handleRemoveAssignment(assignment)}
-                                     className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                                   >
-                                     <Trash2 className="h-3 w-3 mr-1" />
-                                     Remove
-                                   </Button>
-                                 </div>
+                                    )}
+                                  </div>
                                </div>
                              </div>
                             <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
@@ -778,28 +738,6 @@ const EmbeddedEmployeeRecords: React.FC = () => {
         } : undefined}
       />
 
-      {/* Assignment Removal Confirmation */}
-      <AlertDialog open={!!assignmentToRemove} onOpenChange={() => setAssignmentToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Training Assignment</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove the assignment "{assignmentToRemove?.title}" from {assignmentToRemove?.userName}? 
-              This action cannot be undone and will permanently delete their progress on this training.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmRemoveAssignment}
-              disabled={deleteAssignment.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteAssignment.isPending ? 'Removing...' : 'Remove Assignment'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };

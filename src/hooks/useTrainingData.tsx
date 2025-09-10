@@ -263,7 +263,8 @@ export const useEmployeeProgress = () => {
             .eq('user_id', employee.id);
           
           // Get training assignments for this employee with certificate data
-          const { data: assignments } = await supabase
+          // Filter out orphaned assignments where content no longer exists
+          const { data: allAssignments } = await supabase
             .from('training_assignments')
             .select(`
               *,
@@ -276,6 +277,41 @@ export const useEmployeeProgress = () => {
             `)
             .eq('assigned_to', employee.id)
             .order('assigned_at', { ascending: false });
+
+          // Filter assignments to ensure content still exists
+          const assignments = [];
+          if (allAssignments) {
+            for (const assignment of allAssignments) {
+              let contentExists = false;
+              
+              if (assignment.assignment_type === 'course') {
+                const { data: course } = await supabase
+                  .from('training_courses')
+                  .select('id')
+                  .eq('id', assignment.content_id)
+                  .single();
+                contentExists = !!course;
+              } else if (assignment.assignment_type === 'quiz') {
+                const { data: quiz } = await supabase
+                  .from('quizzes')
+                  .select('id')
+                  .eq('id', assignment.content_id)
+                  .single();
+                contentExists = !!quiz;
+              } else if (assignment.assignment_type === 'compliance') {
+                const { data: compliance } = await supabase
+                  .from('compliance_training_records')
+                  .select('id')
+                  .eq('id', assignment.content_id)
+                  .single();
+                contentExists = !!compliance;
+              }
+              
+              if (contentExists) {
+                assignments.push(assignment);
+              }
+            }
+          }
           
           // Get quiz attempts for this employee
           const { data: quizAttempts } = await supabase
