@@ -278,37 +278,66 @@ export const useEmployeeProgress = () => {
             .eq('assigned_to', employee.id)
             .order('assigned_at', { ascending: false });
 
-          // Filter assignments to ensure content still exists
+          console.log(`🔍 useEmployeeProgress: Raw assignments for ${employee.name}:`, allAssignments?.length || 0, allAssignments);
+
+          // Filter assignments to ensure content still exists and add content titles
           const assignments = [];
           if (allAssignments) {
             for (const assignment of allAssignments) {
               let contentExists = false;
+              let contentTitle = assignment.content_title || 'Unknown Content';
               
               if (assignment.assignment_type === 'course') {
                 const { data: course } = await supabase
                   .from('training_courses')
-                  .select('id')
+                  .select('id, title')
                   .eq('id', assignment.content_id)
                   .single();
-                contentExists = !!course;
+                if (course) {
+                  contentExists = true;
+                  contentTitle = course.title || assignment.content_title || 'Untitled Course';
+                }
               } else if (assignment.assignment_type === 'quiz') {
                 const { data: quiz } = await supabase
                   .from('quizzes')
-                  .select('id')
+                  .select('id, title')
                   .eq('id', assignment.content_id)
                   .single();
-                contentExists = !!quiz;
+                if (quiz) {
+                  contentExists = true;
+                  contentTitle = quiz.title || assignment.content_title || 'Untitled Quiz';
+                }
               } else if (assignment.assignment_type === 'compliance') {
                 const { data: compliance } = await supabase
                   .from('compliance_training_records')
                   .select('id')
                   .eq('id', assignment.content_id)
                   .single();
-                contentExists = !!compliance;
+                if (compliance) {
+                  contentExists = true;
+                  contentTitle = assignment.content_title || 'Compliance Training';
+                }
               }
               
               if (contentExists) {
-                assignments.push(assignment);
+                // Add the content title to the assignment object
+                const enrichedAssignment = { 
+                  ...assignment, 
+                  content_title: contentTitle 
+                };
+                assignments.push(enrichedAssignment);
+                
+                // Debug specific employee
+                if (employee.name === 'Francisco Lopez') {
+                  console.log(`🎯 Francisco Lopez assignment:`, {
+                    id: assignment.id,
+                    type: assignment.assignment_type,
+                    status: assignment.status,
+                    contentId: assignment.content_id,
+                    contentTitle: contentTitle,
+                    originalTitle: assignment.content_title
+                  });
+                }
               }
             }
           }
@@ -350,6 +379,23 @@ export const useEmployeeProgress = () => {
             ? new Date(Math.max(...activityDates.map(d => d.getTime())))
             : null;
           
+          // Debug Francisco Lopez specifically
+          if (employee.name === 'Francisco Lopez') {
+            console.log(`🎯 Francisco Lopez complete record:`, {
+              id: employee.id,
+              name: employee.name,
+              totalAssignments,
+              assignments: assignments,
+              completedQuizzes: assignments?.filter(a => a.assignment_type === 'quiz' && a.status === 'completed'),
+              allAssignments: assignments?.map(a => ({
+                id: a.id,
+                type: a.assignment_type,
+                status: a.status,
+                title: a.content_title
+              }))
+            });
+          }
+
           return {
             id: employee.id,
             name: employee.name,

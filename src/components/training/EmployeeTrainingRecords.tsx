@@ -91,6 +91,30 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { users } = useUsers();
 
+  // Debug logging for employee data
+  React.useEffect(() => {
+    if (employeeData.length > 0) {
+      console.log('🔍 EmployeeTrainingRecords: Employee data loaded:', employeeData.length, 'employees');
+      
+      // Find Francisco Lopez specifically
+      const francisco = employeeData.find(emp => emp.name === 'Francisco Lopez');
+      if (francisco) {
+        console.log('🎯 Francisco Lopez found in employee data:', {
+          id: francisco.id,
+          name: francisco.name,
+          totalAssignments: francisco.totalAssignments,
+          assignmentsArray: francisco.assignments,
+          quizAssignments: francisco.assignments?.filter(a => a.assignment_type === 'quiz'),
+          completedQuizzes: francisco.assignments?.filter(a => a.assignment_type === 'quiz' && a.status === 'completed'),
+          hasCompletedQuizzes: francisco.assignments?.some(a => a.assignment_type === 'quiz' && a.status === 'completed')
+        });
+      } else {
+        console.log('❌ Francisco Lopez NOT found in employee data. Available employees:', 
+          employeeData.map(emp => emp.name));
+      }
+    }
+  }, [employeeData]);
+
   // Function to view quiz details
   const viewQuizDetails = (assignment: any) => {
     // Find the quiz ID from the assignment
@@ -721,11 +745,18 @@ const EmployeeTrainingRecords: React.FC<EmployeeTrainingRecordsProps> = ({
                     <div className="space-y-3">
                       {selectedEmployee.assignments.length > 0 ? (
                         selectedEmployee.assignments.map((assignment) => {
-                          // Debug logging
-                          console.log('Assignment data:', assignment);
-                          console.log('Assignment type:', assignment.assignment_type);
-                          console.log('Assignment status:', assignment.status);
-                          console.log('Is quiz and completed?', assignment.assignment_type === 'quiz' && assignment.status === 'completed');
+                          // Enhanced debug logging
+                          console.log('🔍 EmployeeTrainingRecords: Assignment details:', {
+                            id: assignment.id,
+                            type: assignment.assignment_type,
+                            status: assignment.status,
+                            contentId: assignment.content_id,
+                            contentTitle: assignment.content_title,
+                            isQuiz: assignment.assignment_type === 'quiz',
+                            isCompleted: assignment.status === 'completed',
+                            shouldShowEyeIcon: assignment.assignment_type === 'quiz' && assignment.status === 'completed',
+                            employeeName: selectedEmployee.name
+                          });
                           
                           return (
                           <div key={assignment.id} className="p-3 rounded border">
