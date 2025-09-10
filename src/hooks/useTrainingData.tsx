@@ -230,119 +230,155 @@ export const useEmployeeProgress = () => {
     queryFn: async () => {
       if (!user?.organizationId) return [];
       
-      // Get all users in the organization with team information
+      // Optimized: batch-fetch org users and related training data to avoid N+1 queries
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select(`
-          id, 
-          name, 
-          email, 
-          role, 
-          department, 
+          id,
+          name,
+          email,
+          role,
+          department,
           job_title,
           hire_date
         `)
         .eq('organization_id', user.organizationId);
-      
+
       if (usersError) throw usersError;
-      
-      const employeeProgress = await Promise.all(
-        (users || []).map(async (employee) => {
-          // Get team memberships for this employee
-          const { data: teamMemberships } = await supabase
-            .from('team_memberships')
-            .select(`
-              team_id,
-              role,
-              teams (
-                id,
-                name,
-                description
-              )
-            `)
-            .eq('user_id', employee.id);
-          
-          // Get training assignments for this employee with certificate data
-          const { data: assignments } = await supabase
-            .from('training_assignments')
-            .select(`
-              *,
-              certificate_url,
-              certificate_status,
-              certificate_uploaded_at,
-              verified_at,
-              verified_by,
-              verification_notes
-            `)
-            .eq('assigned_to', employee.id)
-            .order('assigned_at', { ascending: false });
-          
-          // Get quiz attempts for this employee
-          const { data: quizAttempts } = await supabase
-            .from('quiz_attempts')
-            .select('*')
-            .eq('user_id', employee.id)
-            .eq('organization_id', user.organizationId);
-          
-          // Get training progress for this employee
-          const { data: trainingProgress } = await supabase
-            .from('user_training_progress')
-            .select('*')
-            .eq('user_id', employee.id)
-            .eq('organization_id', user.organizationId);
-          
-          const totalAssignments = assignments?.length || 0;
-          const completedAssignments = assignments?.filter(a => a.status === 'completed').length || 0;
-          const inProgressAssignments = assignments?.filter(a => a.status === 'in_progress').length || 0;
-          const pendingAssignments = assignments?.filter(a => a.status === 'pending').length || 0;
-          const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
-          
-          // Calculate average quiz score
-          const passedAttempts = quizAttempts?.filter(attempt => attempt.passed) || [];
-          const averageQuizScore = passedAttempts.length > 0 
-            ? Math.round(passedAttempts.reduce((sum, attempt) => sum + (attempt.score / attempt.max_score * 100), 0) / passedAttempts.length)
-            : null;
-          
-          // Get last activity date from multiple sources
-          const activityDates = [
-            ...(assignments?.map(a => new Date(a.updated_at || a.assigned_at || 0)) || []),
-            ...(quizAttempts?.map(a => new Date(a.completed_at || a.started_at || 0)) || []),
-            ...(trainingProgress?.map(p => new Date(p.last_accessed_at || 0)) || [])
-          ].filter(date => date.getTime() > 0);
-          
-          const lastActivity = activityDates.length > 0 
-            ? new Date(Math.max(...activityDates.map(d => d.getTime())))
-            : null;
-          
-          return {
-            id: employee.id,
-            name: employee.name,
-            email: employee.email,
-            role: employee.role,
-            department: employee.department || 'Unassigned',
-            jobTitle: employee.job_title || '',
-            hireDate: employee.hire_date,
-            teams: teamMemberships?.map(tm => ({
-              id: tm.team_id,
-              name: (tm.teams as any)?.name || 'Unknown Team',
-              role: tm.role
-            })) || [],
-            totalAssignments,
-            completedAssignments,
-            inProgressAssignments,
-            pendingAssignments,
-            completionRate,
-            averageQuizScore,
-            coursesCompleted: assignments?.filter(a => a.assignment_type === 'course' && a.status === 'completed').length || 0,
-            quizzesCompleted: assignments?.filter(a => a.assignment_type === 'quiz' && a.status === 'completed').length || 0,
-            certificatesUploaded: assignments?.filter(a => a.certificate_status === 'uploaded' || a.certificate_status === 'verified').length || 0,
-            certificatesVerified: assignments?.filter(a => a.certificate_status === 'verified').length || 0,
-            lastActivity,
-            assignments: assignments || []
-          };
-        })
-      );
-      
+      const userList = users || [];
+      const userIds = userList.map((u) => u.id);
+      if (userIds.length === 0) return [];
+
+      // Batch all dependent data in parallel
+      const [teamMembershipsRes, assignmentsRes, quizAttemptsRes, trainingProgressRes] = await Promise.all([
+        supabase
+          .from('team_memberships')
+          .select(`
+            user_id,
+            team_id,
+            role,
+            teams (
+              id,
+              name,
+              description
+            )
+          `)
+          .in('user_id', userIds),
+        supabase
+          .from('training_assignments')
+          .select(`
+            *,
+            assigned_to,
+            certificate_url,
+            certificate_status,
+            certificate_uploaded_at,
+            verified_at,
+            verified_by,
+            verification_notes
+          `)
+          .in('assigned_to', userIds)
+          .order('assigned_at', { ascending: false }),
+        supabase
+          .from('quiz_attempts')
+          .select('*')
+          .in('user_id', userIds)
+          .eq('organization_id', user.organizationId),
+        supabase
+          .from('user_training_progress')
+          .select('*')
+          .in('user_id', userIds)
+          .eq('organization_id', user.organizationId)
+      ]);
+
+      if (teamMembershipsRes.error) throw teamMembershipsRes.error;
+      if (assignmentsRes.error) throw assignmentsRes.error;
+      if (quizAttemptsRes.error) throw quizAttemptsRes.error;
+      if (trainingProgressRes.error) throw trainingProgressRes.error;
+
+      const teamsByUser: Record<string, any[]> = {};
+      for (const tm of teamMembershipsRes.data || []) {
+        const key = tm.user_id;
+        if (!teamsByUser[key]) teamsByUser[key] = [];
+        teamsByUser[key].push({
+          id: tm.team_id,
+          name: (tm.teams as any)?.name || 'Unknown Team',
+          role: tm.role
+        });
+      }
+
+      const assignmentsByUser: Record<string, any[]> = {};
+      for (const a of assignmentsRes.data || []) {
+        const key = a.assigned_to;
+        if (!assignmentsByUser[key]) assignmentsByUser[key] = [];
+        assignmentsByUser[key].push(a);
+      }
+
+      const quizByUser: Record<string, any[]> = {};
+      for (const qa of quizAttemptsRes.data || []) {
+        const key = qa.user_id;
+        if (!quizByUser[key]) quizByUser[key] = [];
+        quizByUser[key].push(qa);
+      }
+
+      const progressByUser: Record<string, any[]> = {};
+      for (const p of trainingProgressRes.data || []) {
+        const key = p.user_id;
+        if (!progressByUser[key]) progressByUser[key] = [];
+        progressByUser[key].push(p);
+      }
+
+      const employeeProgress = userList.map((employee) => {
+        const teamMemberships = teamsByUser[employee.id] || [];
+        const assignments = assignmentsByUser[employee.id] || [];
+        const quizAttempts = quizByUser[employee.id] || [];
+        const trainingProgress = progressByUser[employee.id] || [];
+
+        const totalAssignments = assignments.length;
+        const completedAssignments = assignments.filter((a) => a.status === 'completed').length;
+        const inProgressAssignments = assignments.filter((a) => a.status === 'in_progress').length;
+        const pendingAssignments = assignments.filter((a) => a.status === 'pending').length;
+        const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
+
+        const passedAttempts = quizAttempts.filter((attempt: any) => attempt.passed);
+        const averageQuizScore = passedAttempts.length > 0
+          ? Math.round(
+              passedAttempts.reduce((sum: number, attempt: any) => sum + (attempt.score / attempt.max_score * 100), 0) /
+              passedAttempts.length
+            )
+          : null;
+
+        const activityDates = [
+          ...assignments.map((a: any) => new Date(a.updated_at || a.assigned_at || 0)),
+          ...quizAttempts.map((a: any) => new Date(a.completed_at || a.started_at || 0)),
+          ...trainingProgress.map((p: any) => new Date(p.last_accessed_at || 0))
+        ].filter((d) => d.getTime() > 0);
+
+        const lastActivity = activityDates.length > 0 ? new Date(Math.max(...activityDates.map((d) => d.getTime()))) : null;
+
+        return {
+          id: employee.id,
+          name: employee.name,
+          email: employee.email,
+          role: employee.role,
+          department: employee.department || 'Unassigned',
+          jobTitle: employee.job_title || '',
+          hireDate: employee.hire_date,
+          teams: teamMemberships,
+          totalAssignments,
+          completedAssignments,
+          inProgressAssignments,
+          pendingAssignments,
+          completionRate,
+          averageQuizScore,
+          coursesCompleted: assignments.filter((a: any) => a.assignment_type === 'course' && a.status === 'completed').length,
+          quizzesCompleted: assignments.filter((a: any) => a.assignment_type === 'quiz' && a.status === 'completed').length,
+          certificatesUploaded: assignments.filter((a: any) => a.certificate_status === 'uploaded' || a.certificate_status === 'verified').length,
+          certificatesVerified: assignments.filter((a: any) => a.certificate_status === 'verified').length,
+          lastActivity,
+          assignments
+        };
+      });
+
       return employeeProgress;
     },
     enabled: !!user?.organizationId,
@@ -883,10 +919,9 @@ export const useSubmitQuizAttempt = () => {
       };
     },
     onSuccess: (data) => {
-      // Invalidate all related queries
+      // Invalidate all related queries (avoid heavy employee-progress refetch)
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       queryClient.invalidateQueries({ queryKey: ['quiz-results-with-names'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-progress'] });
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['training-stats'] });
       queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
