@@ -126,16 +126,16 @@ export const usePersonalTasks = () => {
             return [];
           }
 
-          // Client-side filtering: show ONLY tasks explicitly assigned to this user (sole assignee)
-          const filteredTasks = combinedTasks.filter(task => {
-            // Single assignment to this user with no additional assignees
-            const isAssignedExclusivelyToUser =
-              (task.assigned_to_id === user.id && (!task.assigned_to_ids || task.assigned_to_ids.length <= 1)) ||
-              (task.assigned_to_ids && task.assigned_to_ids.length === 1 && task.assigned_to_ids[0] === user.id);
+           // Client-side filtering: show tasks where user is ANY assignee (including multi-assigned tasks)
+           const filteredTasks = combinedTasks.filter(task => {
+             // Check if user is assigned either through single or multiple assignment
+             const isAssignedToUser = 
+               task.assigned_to_id === user.id ||
+               (task.assigned_to_ids && Array.isArray(task.assigned_to_ids) && task.assigned_to_ids.includes(user.id));
 
-            // Do NOT include unassigned tasks even if created by the user
-            return isAssignedExclusivelyToUser;
-          });
+             // Do NOT include unassigned tasks even if created by the user
+             return isAssignedToUser;
+           });
 
           // Fetch users data for name lookup with timeout
           const usersPromise = supabase
@@ -214,13 +214,14 @@ export const usePersonalTasks = () => {
             };
           });
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log('usePersonalTasks: Successfully processed PERSONAL TASKS ONLY:', {
-              processedCount: transformedTasks.length,
-              userId: user.id,
-              role: user.role
-            });
-          }
+           if (process.env.NODE_ENV === 'development') {
+             console.log('usePersonalTasks: Successfully processed PERSONAL AND MULTI-ASSIGNED TASKS:', {
+               processedCount: transformedTasks.length,
+               userId: user.id,
+               role: user.role,
+               tasksWithMultipleAssignees: transformedTasks.filter(t => t.assignedToIds && t.assignedToIds.length > 1).length
+             });
+           }
 
           return transformedTasks;
 
