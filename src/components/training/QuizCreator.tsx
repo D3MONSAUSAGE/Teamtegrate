@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Save, X, PenTool, MessageSquare, Eye, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useTrainingCourses, useTrainingModules, useCreateQuiz } from '@/hooks/useTrainingData';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Question {
   question_text: string;
@@ -42,6 +43,7 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   
+  const { user } = useAuth();
   const { data: courses = [] } = useTrainingCourses();
   const { data: modules = [] } = useTrainingModules(selectedCourse);
   const createQuizMutation = useCreateQuiz();
@@ -133,7 +135,8 @@ const QuizCreator: React.FC<QuizCreatorProps> = ({ open, onOpenChange }) => {
     try {
       const quizPayload = {
         ...quizData,
-        module_id: isStandalone ? null : quizData.module_id
+        module_id: isStandalone ? null : quizData.module_id,
+        organization_id: user?.organizationId
       };
       
       await createQuizMutation.mutateAsync({

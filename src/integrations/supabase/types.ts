@@ -3452,6 +3452,7 @@ export type Database = {
           id: string
           max_attempts: number | null
           module_id: string | null
+          organization_id: string | null
           passing_score: number | null
           time_limit_minutes: number | null
           title: string
@@ -3463,6 +3464,7 @@ export type Database = {
           id?: string
           max_attempts?: number | null
           module_id?: string | null
+          organization_id?: string | null
           passing_score?: number | null
           time_limit_minutes?: number | null
           title: string
@@ -3474,6 +3476,7 @@ export type Database = {
           id?: string
           max_attempts?: number | null
           module_id?: string | null
+          organization_id?: string | null
           passing_score?: number | null
           time_limit_minutes?: number | null
           title?: string
