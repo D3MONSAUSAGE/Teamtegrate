@@ -969,9 +969,51 @@ export const useTrainingAssignments = (userId?: string) => {
       
       console.log('useTrainingAssignments: Raw assignments from database:', assignmentsData.length, assignmentsData);
       
-      // Separate course and quiz assignments
-      const courseAssignments = assignmentsData.filter(a => a.assignment_type === 'course');
-      const quizAssignments = assignmentsData.filter(a => a.assignment_type === 'quiz');
+      // Filter assignments to ensure content still exists (same logic as useEmployeeProgress)
+      const validAssignments = [];
+      for (const assignment of assignmentsData) {
+        let contentExists = false;
+        
+        if (assignment.assignment_type === 'course') {
+          const { data: course } = await supabase
+            .from('training_courses')
+            .select('id')
+            .eq('id', assignment.content_id)
+            .single();
+          contentExists = !!course;
+        } else if (assignment.assignment_type === 'quiz') {
+          const { data: quiz } = await supabase
+            .from('quizzes')
+            .select('id')
+            .eq('id', assignment.content_id)
+            .single();
+          contentExists = !!quiz;
+        } else if (assignment.assignment_type === 'compliance') {
+          const { data: compliance } = await supabase
+            .from('compliance_training_records')
+            .select('id')
+            .eq('id', assignment.content_id)
+            .single();
+          contentExists = !!compliance;
+        }
+        
+        if (contentExists) {
+          validAssignments.push(assignment);
+        } else {
+          console.log('useTrainingAssignments: Filtered out orphaned assignment:', assignment.id, assignment.content_title);
+        }
+      }
+      
+      console.log('useTrainingAssignments: Filtered assignments (content exists):', validAssignments.length, 'out of', assignmentsData.length);
+      
+      if (validAssignments.length === 0) {
+        console.log('useTrainingAssignments: No valid assignments after filtering');
+        return [];
+      }
+      
+      // Separate course and quiz assignments from valid assignments
+      const courseAssignments = validAssignments.filter(a => a.assignment_type === 'course');
+      const quizAssignments = validAssignments.filter(a => a.assignment_type === 'quiz');
       
       // Fetch course data for course assignments
       let coursesData: any[] = [];
@@ -1001,12 +1043,6 @@ export const useTrainingAssignments = (userId?: string) => {
         } else {
           coursesData = courses || [];
           console.log('useTrainingAssignments: Fetched courses data successfully:', coursesData.length, coursesData);
-          console.log('useTrainingAssignments: External courses found:', coursesData.filter(c => c.is_external).map(c => ({
-            id: c.id,
-            title: c.title,
-            is_external: c.is_external,
-            external_base_url: c.external_base_url
-          })));
         }
       }
       
@@ -1038,8 +1074,8 @@ export const useTrainingAssignments = (userId?: string) => {
       const coursesMap = new Map(coursesData.map(course => [course.id, course]));
       const quizzesMap = new Map(quizzesData.map(quiz => [quiz.id, quiz]));
       
-      // Process the data to ensure consistent structure
-      const processedData = assignmentsData.map(assignment => {
+      // Process the valid assignments to ensure consistent structure
+      const processedData = validAssignments.map(assignment => {
         console.log('useTrainingAssignments: Processing assignment:', assignment.id, assignment.assignment_type, assignment.content_title);
         
         // For course assignments, attach training_courses data
@@ -1082,7 +1118,7 @@ export const useTrainingAssignments = (userId?: string) => {
       });
       
       // Filter and validate processed data
-      const validAssignments = processedData.filter(assignment => {
+      const finalAssignments = processedData.filter(assignment => {
         const isValid = assignment && assignment.id && assignment.content_title;
         if (!isValid) {
           console.warn('useTrainingAssignments: Invalid assignment filtered out:', assignment);
@@ -1090,21 +1126,21 @@ export const useTrainingAssignments = (userId?: string) => {
         return isValid;
       });
       
-      console.log('useTrainingAssignments: Final processed assignments:', validAssignments.length);
+      console.log('useTrainingAssignments: Final processed assignments:', finalAssignments.length);
       console.log('useTrainingAssignments: Assignment breakdown:', {
-        total: validAssignments.length,
-        pending: validAssignments.filter(a => a.status === 'pending').length,
-        in_progress: validAssignments.filter(a => a.status === 'in_progress').length,
-        completed: validAssignments.filter(a => a.status === 'completed').length,
-        courses: validAssignments.filter(a => a.assignment_type === 'course').length,
-        quizzes: validAssignments.filter(a => a.assignment_type === 'quiz').length,
-        external_courses: validAssignments.filter(a => 
+        total: finalAssignments.length,
+        pending: finalAssignments.filter(a => a.status === 'pending').length,
+        in_progress: finalAssignments.filter(a => a.status === 'in_progress').length,
+        completed: finalAssignments.filter(a => a.status === 'completed').length,
+        courses: finalAssignments.filter(a => a.assignment_type === 'course').length,
+        quizzes: finalAssignments.filter(a => a.assignment_type === 'quiz').length,
+        external_courses: finalAssignments.filter(a => 
           a.assignment_type === 'course' && 
           (a as any).training_courses?.is_external
         ).length
       });
       
-      return validAssignments;
+      return finalAssignments;
     },
     enabled: !!targetUserId
   });
