@@ -92,7 +92,7 @@ const ManagementPanel: React.FC<ManagementPanelProps> = ({
     }] : []),
     ...(onManageAssignments ? [{
       title: 'Manage Assignments',
-      description: 'Reassign training and track status',
+      description: 'Remove mistaken assignments and track status',
       icon: Users,
       onClick: onManageAssignments,
       primary: false,

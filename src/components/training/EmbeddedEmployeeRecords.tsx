@@ -27,15 +27,19 @@ import {
   AlertCircle,
   Building2,
   UserCheck,
-  BarChart3
+  BarChart3,
+  Trash2
 } from 'lucide-react';
 import { useEmployeeProgress } from '@/hooks/useTrainingData';
 import { useUsers } from '@/hooks/useUsers';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import EmbeddedCertificateReview from './EmbeddedCertificateReview';
 import QuizAttemptViewer from './QuizAttemptViewer';
 import { useQuizAttempts } from '@/hooks/useTrainingData';
+import { useDeleteComplianceAssignment } from '@/hooks/useComplianceAssignment';
+import { toast } from '@/components/ui/sonner';
 
 interface EmployeeRecord {
   id: string;
@@ -79,9 +83,17 @@ const EmbeddedEmployeeRecords: React.FC = () => {
     assignment: any;
     open: boolean;
   }>({ quizId: '', assignment: null, open: false });
+
+  // Assignment removal state
+  const [assignmentToRemove, setAssignmentToRemove] = useState<{
+    id: string;
+    title: string;
+    userName: string;
+  } | null>(null);
   
   const { data: employeeData = [], isLoading } = useEmployeeProgress();
   const { users } = useUsers();
+  const deleteAssignment = useDeleteComplianceAssignment();
 
   // Function to view quiz details
   const viewQuizDetails = (assignment: any) => {
@@ -91,6 +103,30 @@ const EmbeddedEmployeeRecords: React.FC = () => {
       assignment,
       open: true
     });
+  };
+
+  // Function to handle assignment removal
+  const handleRemoveAssignment = (assignment: any) => {
+    setAssignmentToRemove({
+      id: assignment.id,
+      title: assignment.content_title,
+      userName: selectedEmployee?.name || 'Unknown User'
+    });
+  };
+
+  // Function to confirm assignment removal
+  const confirmRemoveAssignment = async () => {
+    if (!assignmentToRemove) return;
+    
+    try {
+      await deleteAssignment.mutateAsync(assignmentToRemove.id);
+      toast.success(`Assignment "${assignmentToRemove.title}" removed successfully`);
+      setAssignmentToRemove(null);
+      
+      // Refresh employee data - you might want to refetch here
+    } catch (error) {
+      toast.error('Failed to remove assignment');
+    }
   };
 
   // Get unique teams and departments for filtering
@@ -655,26 +691,37 @@ const EmbeddedEmployeeRecords: React.FC = () => {
                     <div className="space-y-3">
                       {selectedEmployee.assignments.length > 0 ? (
                         selectedEmployee.assignments.map((assignment) => (
-                          <div key={assignment.id} className="p-3 rounded border">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium">{assignment.content_title}</h4>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={assignment.status === 'completed' ? 'default' : assignment.status === 'in_progress' ? 'secondary' : 'destructive'}>
-                                  {assignment.status}
-                                </Badge>
-                                {assignment.assignment_type === 'quiz' && assignment.status === 'completed' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => viewQuizDetails(assignment)}
-                                    className="h-7 text-xs"
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    View Details
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
+                           <div key={assignment.id} className="p-3 rounded border">
+                             <div className="flex items-center justify-between mb-2">
+                               <h4 className="font-medium">{assignment.content_title}</h4>
+                               <div className="flex items-center gap-2">
+                                 <Badge variant={assignment.status === 'completed' ? 'default' : assignment.status === 'in_progress' ? 'secondary' : 'destructive'}>
+                                   {assignment.status}
+                                 </Badge>
+                                 <div className="flex items-center gap-1">
+                                   {assignment.assignment_type === 'quiz' && assignment.status === 'completed' && (
+                                     <Button
+                                       size="sm"
+                                       variant="outline"
+                                       onClick={() => viewQuizDetails(assignment)}
+                                       className="h-7 text-xs"
+                                     >
+                                       <Eye className="h-3 w-3 mr-1" />
+                                       View Details
+                                     </Button>
+                                   )}
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => handleRemoveAssignment(assignment)}
+                                     className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                   >
+                                     <Trash2 className="h-3 w-3 mr-1" />
+                                     Remove
+                                   </Button>
+                                 </div>
+                               </div>
+                             </div>
                             <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                               <div>Type: {assignment.assignment_type}</div>
                               <div>Priority: {assignment.priority}</div>
@@ -730,6 +777,29 @@ const EmbeddedEmployeeRecords: React.FC = () => {
           assignment: selectedQuizAttempt.assignment
         } : undefined}
       />
+
+      {/* Assignment Removal Confirmation */}
+      <AlertDialog open={!!assignmentToRemove} onOpenChange={() => setAssignmentToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Training Assignment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the assignment "{assignmentToRemove?.title}" from {assignmentToRemove?.userName}? 
+              This action cannot be undone and will permanently delete their progress on this training.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveAssignment}
+              disabled={deleteAssignment.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteAssignment.isPending ? 'Removing...' : 'Remove Assignment'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ManagementPanel from './ManagementPanel';
 import ContentGrid from './ContentGrid';
 import EmbeddedEmployeeRecords from './EmbeddedEmployeeRecords';
+import AssignmentManagementDialog from './AssignmentManagementDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Settings, 
@@ -65,6 +66,7 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
   onCertificateReview
 }) => {
   const { user } = useAuth();
+  const [assignmentManagementOpen, setAssignmentManagementOpen] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -103,6 +105,7 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
               onViewAnalytics={onViewAnalytics}
               onRetrainingSettings={onRetrainingSettings}
               onCertificateReview={onCertificateReview}
+              onManageAssignments={() => setAssignmentManagementOpen(true)}
               userRole={user?.role || 'user'}
             />
           </div>
@@ -173,6 +176,12 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
         </TabsContent>
 
       </Tabs>
+
+      {/* Assignment Management Dialog */}
+      <AssignmentManagementDialog
+        open={assignmentManagementOpen}
+        onOpenChange={setAssignmentManagementOpen}
+      />
     </div>
   );
 };

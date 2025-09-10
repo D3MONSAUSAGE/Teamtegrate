@@ -219,8 +219,10 @@ export const ComplianceAssignmentDashboard = () => {
                       size="sm"
                       onClick={() => handleDeleteAssignment(assignment.id)}
                       disabled={deleteAssignment.isPending}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Remove
                     </Button>
                   </div>
                 </div>
