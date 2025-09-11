@@ -210,7 +210,7 @@ export const useVerifyChecklistItem = () => {
           is_verified: isVerified,
           verified_by: isVerified ? (await supabase.auth.getUser()).data.user?.id : null,
           verified_at: isVerified ? new Date().toISOString() : null,
-          verification_notes: notes || null,
+          notes: notes || null,
         })
         .eq('id', itemId)
         .select()
