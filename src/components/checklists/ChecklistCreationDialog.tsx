@@ -108,15 +108,15 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create New Checklist</DialogTitle>
           <DialogDescription>
             Design a checklist template that can be assigned to team members for daily execution
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 h-0 pointer-events-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <Card>
@@ -407,9 +407,8 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
           </form>
         </ScrollArea>
 
-        <Separator />
-        
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex-shrink-0 border-t pt-4">
+          <div className="flex justify-end gap-3">
           <Button
             type="button"
             variant="outline"
@@ -423,6 +422,7 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
           >
             {createChecklist.isPending ? 'Creating...' : 'Create Checklist'}
           </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
