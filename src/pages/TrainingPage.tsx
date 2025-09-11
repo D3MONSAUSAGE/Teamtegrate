@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Loader2, GraduationCap, Settings } from 'lucide-react';
+import { AlertCircle, Loader2, GraduationCap, Settings, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import MyTrainingTab from '@/components/training/MyTrainingTab';
 import TrainingManagementTab from '@/components/training/TrainingManagementTab';
+import { VideoLibrary } from '@/components/training/video-library/VideoLibrary';
+import { VideoLibraryManager } from '@/components/training/video-library/VideoLibraryManager';
 // Add back required imports for dialogs and functionality
 import QuizCreator from '@/components/training/QuizCreator';
 import CourseCreator from '@/components/training/CourseCreator';
@@ -227,15 +229,19 @@ const TrainingPage = () => {
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
           <Tabs defaultValue="my-training" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
             <TabsTrigger value="my-training" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               My Training
             </TabsTrigger>
+            <TabsTrigger value="video-library" className="flex items-center gap-2">
+              <Video className="h-4 w-4" />
+              Video Library
+            </TabsTrigger>
             {canManageContent && (
               <TabsTrigger value="management" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Training Management
+                Management
               </TabsTrigger>
             )}
           </TabsList>
@@ -248,24 +254,41 @@ const TrainingPage = () => {
             />
           </TabsContent>
 
+          <TabsContent value="video-library" className="space-y-8">
+            <VideoLibrary />
+          </TabsContent>
+
           {canManageContent && (
             <TabsContent value="management" className="space-y-8">
-              <TrainingManagementTab
-                courses={courses}
-                quizzes={allQuizzes}
-                coursesLoading={coursesLoading}
-                quizzesLoading={quizzesLoading}
-                canManageContent={canManageContent}
-                onCreateCourse={handleCreateCourse}
-                onCreateQuiz={handleCreateQuiz}
-                onEditCourse={handleEditCourse}
-                onEditQuiz={handleEditQuiz}
-                onViewResults={handleViewResults}
-                onAssignContent={handleAssignContent}
-                onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
-                onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
-                onCertificateReview={() => setIsCertificateReviewOpen(true)}
-              />
+              <Tabs defaultValue="content" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="content">Training Content</TabsTrigger>
+                  <TabsTrigger value="video-library">Video Library</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="content">
+                  <TrainingManagementTab
+                    courses={courses}
+                    quizzes={allQuizzes}
+                    coursesLoading={coursesLoading}
+                    quizzesLoading={quizzesLoading}
+                    canManageContent={canManageContent}
+                    onCreateCourse={handleCreateCourse}
+                    onCreateQuiz={handleCreateQuiz}
+                    onEditCourse={handleEditCourse}
+                    onEditQuiz={handleEditQuiz}
+                    onViewResults={handleViewResults}
+                    onAssignContent={handleAssignContent}
+                    onViewAnalytics={() => setIsEmployeeProgressOpen(true)}
+                    onRetrainingSettings={() => setIsRetrainingSettingsOpen(true)}
+                    onCertificateReview={() => setIsCertificateReviewOpen(true)}
+                  />
+                </TabsContent>
+
+                <TabsContent value="video-library">
+                  <VideoLibraryManager />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
           )}
         </Tabs>

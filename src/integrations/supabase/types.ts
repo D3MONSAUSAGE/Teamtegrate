@@ -6487,6 +6487,142 @@ export type Database = {
           },
         ]
       }
+      video_library_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      video_library_items: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+          youtube_url: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+          youtube_url: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+          youtube_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_library_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "video_library_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_library_permissions: {
+        Row: {
+          created_at: string | null
+          granted_by: string
+          id: string
+          organization_id: string
+          permission_type: string
+          team_id: string | null
+          user_id: string | null
+          video_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by: string
+          id?: string
+          organization_id: string
+          permission_type?: string
+          team_id?: string | null
+          user_id?: string | null
+          video_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string
+          id?: string
+          organization_id?: string
+          permission_type?: string
+          team_id?: string | null
+          user_id?: string | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_library_permissions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "video_library_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_deliveries: {
         Row: {
           created_at: string
