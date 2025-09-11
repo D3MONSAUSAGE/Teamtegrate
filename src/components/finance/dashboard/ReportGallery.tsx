@@ -133,14 +133,32 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
     return matchesSearch && matchesCategory;
   });
 
-  const handleGenerateReport = (reportId: number) => {
-    // TODO: Implement report generation
-    console.log('Generating report:', reportId);
+  const handleGenerateReport = async (reportId: number) => {
+    try {
+      const { reportService } = await import('@/services/ReportService');
+      const template = reportService.getReportTemplates().find(t => t.id === reportId);
+      if (template) {
+        const blob = await template.generateFunction();
+        const { exportService } = await import('@/services/ExportService');
+        exportService.downloadBlob(blob, exportService.generateFilename(template.title, 'pdf'));
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+    }
   };
 
-  const handlePreviewReport = (reportId: number) => {
-    // TODO: Implement report preview
-    console.log('Previewing report:', reportId);
+  const handlePreviewReport = async (reportId: number) => {
+    try {
+      const { reportService } = await import('@/services/ReportService');
+      const template = reportService.getReportTemplates().find(t => t.id === reportId);
+      if (template) {
+        const preview = await template.previewFunction();
+        console.log('Report preview:', preview);
+        // Show preview modal here
+      }
+    } catch (error) {
+      console.error('Error previewing report:', error);
+    }
   };
 
   return (

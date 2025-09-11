@@ -620,18 +620,21 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         </div>
       </div>
 
-      {/* Batch Progress Card */}
+      {/* Processing Status */}
       {currentBatchId && (
-        <BatchProgressCard batchId={currentBatchId} />
+        <div className="text-center p-4 bg-primary/5 rounded-lg">
+          <p className="text-sm text-muted-foreground">Batch ID: {currentBatchId}</p>
+          <p className="text-sm">Processing files...</p>
+        </div>
       )}
 
       {/* Data Preview Modal */}
       <DataPreviewModal
-        open={showPreview}
-        onOpenChange={setShowPreview}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
         stagedData={stagedData}
         onApprove={handleApproveAndUpload}
-        onUpdateData={(updatedData) => setStagedData(updatedData)}
+        onReject={() => setShowPreview(false)}
       />
     </div>
   );

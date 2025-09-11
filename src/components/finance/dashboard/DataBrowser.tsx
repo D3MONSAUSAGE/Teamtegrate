@@ -255,10 +255,20 @@ const DataBrowser: React.FC<DataBrowserProps> = ({ onBackToDashboard }) => {
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => console.log('View data:', data)}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            onClick={() => console.log('Delete data:', data)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
