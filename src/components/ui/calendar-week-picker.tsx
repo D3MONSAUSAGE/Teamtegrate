@@ -68,6 +68,8 @@ export function CalendarWeekPicker({ selectedWeek, onWeekChange, className = "" 
   const selectedWeekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
   const selectedWeekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
 
+  const isCompactMode = className.includes('compact-calendar');
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Header with month navigation */}
@@ -96,18 +98,20 @@ export function CalendarWeekPicker({ selectedWeek, onWeekChange, className = "" 
         </Button>
       </div>
 
-      {/* Selected week display */}
-      <div className="text-center p-3 bg-primary/10 rounded-md border">
-        <div className="text-sm font-medium text-primary">
-          Selected Week
+      {/* Selected week display - hide in compact mode */}
+      {!isCompactMode && (
+        <div className="text-center p-3 bg-primary/10 rounded-md border">
+          <div className="text-sm font-medium text-primary">
+            Selected Week
+          </div>
+          <div className="text-lg font-semibold">
+            {format(selectedWeekStart, 'MMM d')} - {format(selectedWeekEnd, 'MMM d, yyyy')}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Week {getWeek(selectedWeek, { weekStartsOn: 1 })} of {format(selectedWeek, 'yyyy')}
+          </div>
         </div>
-        <div className="text-lg font-semibold">
-          {format(selectedWeekStart, 'MMM d')} - {format(selectedWeekEnd, 'MMM d, yyyy')}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Week {getWeek(selectedWeek, { weekStartsOn: 1 })} of {format(selectedWeek, 'yyyy')}
-        </div>
-      </div>
+      )}
 
       {/* Calendar grid */}
       <div className="space-y-2">

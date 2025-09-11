@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import WeeklySalesTable from './WeeklySalesTable';
+import { WeekSelectorPopover } from './WeekSelectorPopover';
 import { format, addWeeks, subWeeks, endOfWeek } from 'date-fns';
 import { WeeklySalesData } from '@/types/sales';
 
@@ -195,25 +196,11 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
             </Button>
           </div>
           
-          {/* Quick Week Selection */}
-          {weeksWithData.length > 0 && (
-            <Select 
-              value={format(selectedWeek, 'yyyy-MM-dd')} 
-              onValueChange={(value) => setSelectedWeek(new Date(value))}
-            >
-              <SelectTrigger className="w-60">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Jump to week..." />
-              </SelectTrigger>
-              <SelectContent>
-                {weeksWithData.map(week => (
-                  <SelectItem key={format(week, 'yyyy-MM-dd')} value={format(week, 'yyyy-MM-dd')}>
-                    {format(week, 'MMM dd')} - {format(endOfWeek(week, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          {/* Week Selection Popover */}
+          <WeekSelectorPopover
+            selectedWeek={selectedWeek}
+            onWeekChange={setSelectedWeek}
+          />
           
           {/* Team Filter */}
           <Select value={selectedTeam} onValueChange={setSelectedTeam}>
