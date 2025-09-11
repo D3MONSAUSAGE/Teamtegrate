@@ -9,6 +9,9 @@ import { SalesData } from '@/types/sales';
 import SalesUploadManager from './SalesUploadManager';
 import WeeklySalesView from './WeeklySalesView';
 import WeeklyDetailedReport from './WeeklyDetailedReport';
+import AnalyticsDashboard from './analytics/AnalyticsDashboard';
+import AdvancedReportsManager from './analytics/AdvancedReportsManager';
+import EnhancedSalesUploadManager from './enhanced/EnhancedSalesUploadManager';
 import { toast } from '@/components/ui/sonner';
 
 const DailySalesManager: React.FC = () => {
@@ -96,11 +99,18 @@ const DailySalesManager: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="weekly" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="weekly">Weekly View</TabsTrigger>
               <TabsTrigger value="report">Weekly Report</TabsTrigger>
-              <TabsTrigger value="upload">Upload Data</TabsTrigger>
+              <TabsTrigger value="advanced">Reports</TabsTrigger>
+              <TabsTrigger value="enhanced-upload">Enhanced Upload</TabsTrigger>
+              <TabsTrigger value="upload">Quick Upload</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="analytics" className="mt-6">
+              <AnalyticsDashboard />
+            </TabsContent>
             
             <TabsContent value="weekly" className="mt-6">
           <WeeklySalesView
@@ -129,6 +139,20 @@ const DailySalesManager: React.FC = () => {
             salesData={parsedSalesData}
             isLoading={isLoading}
           />
+            </TabsContent>
+            
+            <TabsContent value="advanced" className="mt-6">
+              <AdvancedReportsManager />
+            </TabsContent>
+            
+            <TabsContent value="enhanced-upload" className="mt-6">
+              <EnhancedSalesUploadManager 
+                onUpload={handleSalesDataUpload}
+                onDateExtracted={(date) => {
+                  setSelectedWeek(date);
+                }}
+                isUploading={isUploading}
+              />
             </TabsContent>
             
             <TabsContent value="upload" className="mt-6">
