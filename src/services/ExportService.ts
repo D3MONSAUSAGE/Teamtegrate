@@ -1,5 +1,11 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 import { SalesData, WeeklySalesData } from '@/types/sales';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { analyticsService, KPIMetrics, PerformanceInsight } from './AnalyticsService';
@@ -157,7 +163,7 @@ class ExportService {
       `$${sale.orderAverage.toFixed(2)}`
     ]);
 
-    (doc as any).autoTable({
+    doc.autoTable({
       head: [['Date', 'Location', 'Gross Sales', 'Net Sales', 'Orders', 'Avg Order']],
       body: tableData,
       startY: 95,
@@ -297,7 +303,7 @@ class ExportService {
       ];
     });
 
-    (doc as any).autoTable({
+    doc.autoTable({
       head: [['Day', 'Date', 'Gross Sales', 'Net Sales', 'Orders']],
       body: tableData,
       startY: 140,
