@@ -29,8 +29,8 @@ export const useMyChecklistExecutions = (date?: string) => {
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_assigned_to_user_id_fkey(id, name, email),
-          verifier:users!checklist_executions_verified_by_fkey(id, name, email)
+          assigned_user:users!checklist_executions_user_fk(id, name, email),
+          verifier:users!checklist_executions_verified_by_fk(id, name, email)
         `)
         .eq('assigned_to_user_id', user.id)
         .eq('execution_date', targetDate)
@@ -52,7 +52,7 @@ export const useChecklistExecutionItems = (executionId: string) => {
         .select(`
           *,
           checklist_item:checklist_items(*),
-          verifier:users!checklist_execution_items_verified_by_fkey(id, name, email)
+          verifier:users!checklist_execution_items_verified_by_fk(id, name, email)
         `)
         .eq('execution_id', executionId)
         .order('checklist_item.order_index');
@@ -78,8 +78,8 @@ export const useChecklistExecutionHistory = (userId?: string, limit = 50) => {
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_assigned_to_user_id_fkey(id, name, email),
-          verifier:users!checklist_executions_verified_by_fkey(id, name, email)
+          assigned_user:users!checklist_executions_user_fk(id, name, email),
+          verifier:users!checklist_executions_verified_by_fk(id, name, email)
         `)
         .eq('assigned_to_user_id', targetUserId)
         .order('execution_date', { ascending: false })
