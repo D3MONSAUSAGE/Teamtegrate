@@ -74,7 +74,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
         description: item.description,
         form_data: (item.form_data as Record<string, any>) || {},
         priority: item.priority as 'low' | 'medium' | 'high' | 'urgent',
-        status: item.status as 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'completed' | 'cancelled',
+        status: item.status as 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'cancelled',
         due_date: item.due_date,
         submitted_at: item.submitted_at,
         completed_at: item.completed_at,
@@ -120,6 +120,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     return {
       total: requests.length,
       pending: getRequestsByStatus('submitted').length,
+      inProgress: getRequestsByStatus('in_progress').length,
       approved: getRequestsByStatus('approved').length,
       overdue: getOverdueRequests().length,
       myRequests: getMyRequests().length,
@@ -169,10 +170,10 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Approved</p>
-                <p className="text-2xl font-bold">{stats.approved}</p>
+                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-2xl font-bold">{stats.inProgress}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <TrendingUp className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -231,6 +232,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
               <EnhancedRequestCard
                 key={request.id}
                 request={request}
+                currentUserId={user?.id}
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
@@ -245,6 +247,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
               <EnhancedRequestCard
                 key={request.id}
                 request={request}
+                currentUserId={user?.id}
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
@@ -259,6 +262,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
               <EnhancedRequestCard
                 key={request.id}
                 request={request}
+                currentUserId={user?.id}
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
@@ -273,6 +277,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
               <EnhancedRequestCard
                 key={request.id}
                 request={request}
+                currentUserId={user?.id}
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
@@ -287,6 +292,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
               <EnhancedRequestCard
                 key={request.id}
                 request={request}
+                currentUserId={user?.id}
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
@@ -301,6 +307,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
               <EnhancedRequestCard
                 key={request.id}
                 request={request}
+                currentUserId={user?.id}
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}

@@ -96,7 +96,7 @@ export function useEnhancedRequests() {
         ...item,
         form_data: typeof item.form_data === 'object' && item.form_data !== null ? item.form_data as Record<string, any> : {},
         priority: item.priority as 'low' | 'medium' | 'high' | 'urgent',
-        status: item.status as 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'completed' | 'cancelled',
+        status: item.status as 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'cancelled',
         description: item.description || undefined,
         due_date: item.due_date || undefined,
         submitted_at: item.submitted_at || undefined,
@@ -256,7 +256,7 @@ export function useEnhancedRequests() {
 
   const updateRequestStatus = async (
     requestId: string, 
-    newStatus: 'approved' | 'rejected' | 'completed',
+    newStatus: 'approved' | 'rejected' | 'in_progress' | 'completed',
     comments?: string
   ) => {
     try {
@@ -274,19 +274,21 @@ export function useEnhancedRequests() {
 
       if (updateError) throw updateError;
 
-      // Update the approval record
-      const { error: approvalError } = await supabase
-        .from('request_approvals')
-        .update({
-          status: newStatus === 'completed' ? 'approved' : newStatus,
-          approved_at: new Date().toISOString(),
-          comments
-        })
-        .eq('request_id', requestId)
-        .eq('approver_id', user.id);
+      // Update the approval record only for approval/rejection actions
+      if (['approved', 'rejected'].includes(newStatus)) {
+        const { error: approvalError } = await supabase
+          .from('request_approvals')
+          .update({
+            status: newStatus,
+            approved_at: new Date().toISOString(),
+            comments
+          })
+          .eq('request_id', requestId)
+          .eq('approver_id', user.id);
 
-      if (approvalError) {
-        console.warn('Failed to update approval record:', approvalError);
+        if (approvalError) {
+          console.warn('Failed to update approval record:', approvalError);
+        }
       }
 
       // Notify the requester

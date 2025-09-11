@@ -13,12 +13,15 @@ import {
   FileText,
   Calendar,
   Timer,
-  UserCheck
+  UserCheck,
+  Play,
+  CheckSquare
 } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 
 interface EnhancedRequestCardProps {
   request: Request;
+  currentUserId?: string;
   onView?: (request: Request) => void;
   onAssign?: (request: Request) => void;
   onStatusChange?: (request: Request, status: string) => void;
@@ -26,6 +29,7 @@ interface EnhancedRequestCardProps {
 
 export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
   request,
+  currentUserId,
   onView,
   onAssign,
   onStatusChange
@@ -59,6 +63,13 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
           icon: FileText,
           bg: 'border-l-blue-500',
           textColor: 'text-blue-700'
+        };
+      case 'in_progress':
+        return {
+          color: 'bg-purple-50 text-purple-700 border-purple-200',
+          icon: Play,
+          bg: 'border-l-purple-500',
+          textColor: 'text-purple-700'
         };
       case 'completed':
         return {
@@ -95,6 +106,7 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
   const isOverdue = request.due_date && isAfter(new Date(), new Date(request.due_date));
   const statusConfig = getStatusConfig(request.status);
   const StatusIcon = statusConfig.icon;
+  const isAssignedToCurrentUser = request.assigned_to === currentUserId;
 
   return (
     <Card className={`hover:shadow-md transition-all duration-200 border-l-4 ${statusConfig.bg} ${isOverdue ? 'bg-red-50' : ''}`}>
@@ -195,6 +207,7 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
             </Button>
           )}
 
+          {/* Approval buttons for managers when status is submitted */}
           {request.status === 'submitted' && onStatusChange && (
             <div className="flex gap-1">
               <Button
@@ -214,6 +227,32 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
                 <XCircle className="h-4 w-4" />
               </Button>
             </div>
+          )}
+
+          {/* Start Work button for assignees when status is approved */}
+          {request.status === 'approved' && isAssignedToCurrentUser && onStatusChange && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onStatusChange(request, 'in_progress')}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Play className="h-4 w-4 mr-1" />
+              Start Work
+            </Button>
+          )}
+
+          {/* Mark Complete button for assignees when status is in_progress */}
+          {request.status === 'in_progress' && isAssignedToCurrentUser && onStatusChange && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onStatusChange(request, 'completed')}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckSquare className="h-4 w-4 mr-1" />
+              Mark Complete
+            </Button>
           )}
         </div>
       </CardContent>

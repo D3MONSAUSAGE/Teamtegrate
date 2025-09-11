@@ -43,7 +43,7 @@ export interface Request {
   description?: string;
   form_data: Record<string, any>;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
   due_date?: string;
   submitted_at?: string;
   completed_at?: string;
@@ -131,6 +131,7 @@ export const STATUS_COLORS = {
   under_review: 'bg-yellow-100 text-yellow-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
+  in_progress: 'bg-purple-100 text-purple-800',
   completed: 'bg-green-100 text-green-800',
   cancelled: 'bg-gray-100 text-gray-800'
 } as const;

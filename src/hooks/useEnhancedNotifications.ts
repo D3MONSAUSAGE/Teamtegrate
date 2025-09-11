@@ -154,6 +154,7 @@ export const useEnhancedNotifications = () => {
       const statusMessages = {
         approved: 'has been approved',
         rejected: 'has been rejected',
+        in_progress: 'is now in progress',
         completed: 'has been completed'
       };
 
