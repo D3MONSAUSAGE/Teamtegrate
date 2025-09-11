@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { WeekPicker } from '@/components/ui/week-picker';
+import { MonthWeekPicker } from '@/components/ui/month-week-picker';
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar,
@@ -69,8 +69,40 @@ const SalesSummaryTab: React.FC = () => {
   };
 
   const handleExport = () => {
-    // Export functionality
-    console.log('Exporting sales data...');
+    if (!weeklyData) return;
+    
+    const teamName = teams.find(t => t.id === selectedTeam)?.name || 'All-Teams';
+    const dateStr = timePeriod === 'custom' 
+      ? `${customDateRange?.from?.toISOString().split('T')[0]}-to-${customDateRange?.to?.toISOString().split('T')[0]}`
+      : timePeriod;
+    
+    const filename = `Sales-Report_${teamName}_${dateStr}_${new Date().toISOString().split('T')[0]}.csv`;
+    
+    // Prepare CSV data
+    const headers = ['Date', 'Gross Sales', 'Net Sales', 'Orders', 'Avg Order', 'Labor %', 'Cash', 'Non-Cash'];
+    const rows = weeklyData.dailySales.map(day => [
+      day.date,
+      day.grossSales.toFixed(2),
+      day.netSales.toFixed(2),
+      day.orderCount.toString(),
+      day.orderAverage.toFixed(2),
+      day.labor.percentage.toFixed(1),
+      day.paymentBreakdown.totalCash.toFixed(2),
+      day.paymentBreakdown.nonCash.toFixed(2)
+    ]);
+    
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
   };
 
   return (
@@ -157,7 +189,7 @@ const SalesSummaryTab: React.FC = () => {
               </label>
               
               {(timePeriod === 'this-week' || timePeriod === 'last-week') && (
-                <WeekPicker 
+                <MonthWeekPicker 
                   selectedWeek={selectedWeek}
                   onWeekChange={setSelectedWeek}
                 />
@@ -192,22 +224,6 @@ const SalesSummaryTab: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Sales Chart */}
-      {weeklyData && (
-        <Card className="glass-card border-0 shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Performance Visualization
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              Sales chart coming soon
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Detailed Sales Table */}
       {weeklyData && (
