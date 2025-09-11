@@ -14,6 +14,16 @@ export const useMyChecklistExecutions = (date?: string) => {
 
       const targetDate = date || new Date().toISOString().split('T')[0];
 
+      // Generate daily executions for the target date
+      const { error: genError } = await supabase.rpc('generate_daily_checklist_executions', {
+        target_date: targetDate
+      });
+      
+      if (genError) {
+        console.warn('Failed to generate daily executions:', genError);
+      }
+
+      // Fetch executions for the user
       const { data, error } = await supabase
         .from('checklist_executions')
         .select(`

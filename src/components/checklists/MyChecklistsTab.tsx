@@ -13,12 +13,11 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export const MyChecklistsTab: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedExecution, setSelectedExecution] = useState<ChecklistExecution | null>(null);
   const [executionDialogOpen, setExecutionDialogOpen] = useState(false);
 
-  const dateString = selectedDate.toISOString().split('T')[0];
-  const { data: executions, isLoading } = useMyChecklistExecutions(dateString);
+  // Always show today's checklists
+  const { data: executions, isLoading } = useMyChecklistExecutions();
 
   const handleStartExecution = (execution: ChecklistExecution) => {
     setSelectedExecution(execution);
@@ -81,33 +80,14 @@ export const MyChecklistsTab: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        {/* Date Selector */}
+        {/* Today's Checklists Header */}
         <div className="flex items-center gap-4">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-64 justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : "Select date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Today's Checklists</h2>
+          </div>
           <div className="text-sm text-muted-foreground">
-            {executions?.length || 0} checklists for {format(selectedDate, "MMM d, yyyy")}
+            {executions?.length || 0} tasks for {format(new Date(), "MMM d, yyyy")}
           </div>
         </div>
 
@@ -187,9 +167,9 @@ export const MyChecklistsTab: React.FC = () => {
           <Card className="text-center py-12">
             <CardContent>
               <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No checklists for this date</h3>
+              <h3 className="text-lg font-semibold mb-2">No checklists for today</h3>
               <p className="text-muted-foreground">
-                Try selecting a different date or check if you have any assigned checklists.
+                You don't have any checklists scheduled for today. Check back later or ask your manager about available checklists.
               </p>
             </CardContent>
           </Card>

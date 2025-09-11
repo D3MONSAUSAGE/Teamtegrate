@@ -7390,6 +7390,10 @@ export type Database = {
           missing_from_public: boolean
         }[]
       }
+      generate_daily_checklist_executions: {
+        Args: { target_date?: string }
+        Returns: Json
+      }
       generate_invite_code: {
         Args: {
           created_by_id: string
