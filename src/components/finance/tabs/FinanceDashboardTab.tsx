@@ -37,9 +37,16 @@ const FinanceDashboardTab: React.FC = () => {
   const isAdmin = hasRoleAccess(user?.role, 'admin');
   const isSuperAdmin = hasRoleAccess(user?.role, 'superadmin');
 
-  // Show data immediately for managers, require selection for admins
-  const shouldShowData = isManager || (isAdmin || isSuperAdmin) && selectedTeam !== 'all';
+  // Show data for managers always, for admins/superadmins always (including 'all' teams)
+  const shouldShowData = isManager || isAdmin || isSuperAdmin;
   const showTeamSelector = isAdmin || isSuperAdmin;
+  
+  // Debug logging
+  console.log('[FinanceDashboard] User role:', user?.role);
+  console.log('[FinanceDashboard] Selected team:', selectedTeam);
+  console.log('[FinanceDashboard] Should show data:', shouldShowData);
+  console.log('[FinanceDashboard] Weekly data exists:', !!weeklyData);
+  console.log('[FinanceDashboard] Teams available:', teams?.length);
 
   const kpiCards = [
     {
@@ -157,12 +164,21 @@ const FinanceDashboardTab: React.FC = () => {
             </div>
           </div>
           
-          {/* Role-based messaging */}
-          {!shouldShowData && showTeamSelector && (
+          {/* Loading and data status */}
+          {isLoading && (
             <div className="mt-4 p-4 bg-muted/50 rounded-lg border border-border/50 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-muted-foreground" />
+              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
               <p className="text-sm text-muted-foreground">
-                Select a team and week to view detailed sales data
+                Loading sales data...
+              </p>
+            </div>
+          )}
+          
+          {!isLoading && shouldShowData && !weeklyData && (
+            <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+              <p className="text-sm text-amber-700">
+                No sales data found for the selected team and week. Try selecting a different week or check if data has been uploaded.
               </p>
             </div>
           )}

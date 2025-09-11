@@ -82,7 +82,14 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
 
   // Weekly data calculation
   const weeklyData = useMemo((): WeeklySalesData | null => {
-    if (filteredSalesData.length === 0) return null;
+    console.log('[useSalesManager] Calculating weekly data. Filtered data length:', filteredSalesData.length);
+    console.log('[useSalesManager] Selected week:', selectedWeek);
+    console.log('[useSalesManager] Selected team:', selectedTeam);
+    
+    if (filteredSalesData.length === 0) {
+      console.log('[useSalesManager] No filtered data available');
+      return null;
+    }
     
     const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
@@ -91,9 +98,12 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       isSameWeek(sale.date, selectedWeek, { weekStartsOn: 1 })
     );
     
+    console.log('[useSalesManager] Week sales count:', weekSales.length);
+    
     if (weekSales.length === 0) {
       const selectedTeamName = selectedTeam === 'all' ? 'All Teams' : 
         teams.find(t => t.id === selectedTeam)?.name || selectedTeam;
+      console.log('[useSalesManager] No sales for selected week, returning empty data for team:', selectedTeamName);
       return {
         weekStart,
         weekEnd,
@@ -169,11 +179,13 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     
     try {
       console.log('[useSalesManager] Fetching sales data with filters:', filters);
+      console.log('[useSalesManager] Selected team for fetch:', selectedTeam);
       const data = await salesDataService.fetchSalesData({
         ...filters,
         team_id: selectedTeam !== 'all' ? selectedTeam : undefined
       });
       
+      console.log('[useSalesManager] Fetched data count:', data.length);
       setSalesData(data);
       
       // Auto-select most recent week with data if no week selected
@@ -181,6 +193,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
         const mostRecentData = data.reduce((latest, current) => {
           return new Date(current.date) > new Date(latest.date) ? current : latest;
         });
+        console.log('[useSalesManager] Auto-selecting week:', mostRecentData.date);
         setSelectedWeek(new Date(mostRecentData.date));
       }
     } catch (err) {
@@ -266,6 +279,12 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       cleanup?.();
     };
   }, [filters]);
+
+  // Refetch data when team selection changes
+  useEffect(() => {
+    console.log('[useSalesManager] Team selection changed to:', selectedTeam);
+    fetchData(false);
+  }, [selectedTeam, fetchData]);
 
   // Update selected week when weeks with data changes
   useEffect(() => {
