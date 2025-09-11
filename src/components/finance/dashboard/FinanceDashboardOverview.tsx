@@ -23,13 +23,15 @@ interface FinanceDashboardOverviewProps {
   onNavigateToReports: () => void;
   onNavigateToData: () => void;
   onNavigateToAnalytics: () => void;
+  onNavigateToWeeklySummary: () => void;
 }
 
 const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
   onNavigateToUpload,
   onNavigateToReports,
   onNavigateToData,
-  onNavigateToAnalytics
+  onNavigateToAnalytics,
+  onNavigateToWeeklySummary
 }) => {
   const { weeklyData, salesData, isLoading } = useSalesManager();
 
@@ -94,11 +96,20 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
 
   const quickActions = [
     {
+      title: 'Weekly Sales Summary',
+      description: 'View comprehensive weekly sales performance',
+      icon: TrendingUp,
+      onClick: onNavigateToWeeklySummary,
+      gradient: 'from-emerald-500 to-emerald-600',
+      disabled: false,
+      badge: 'Popular'
+    },
+    {
       title: 'Upload Sales Data',
       description: 'Add new sales reports from your POS system',
       icon: Upload,
       onClick: onNavigateToUpload,
-      gradient: 'from-emerald-500 to-emerald-600',
+      gradient: 'from-blue-500 to-blue-600',
       disabled: false
     },
     {
@@ -106,7 +117,7 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
       description: 'Deep insights and performance analytics',
       icon: BarChart3,
       onClick: onNavigateToAnalytics,
-      gradient: 'from-blue-500 to-blue-600',
+      gradient: 'from-purple-500 to-purple-600',
       disabled: false
     },
     {
@@ -114,14 +125,6 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
       description: 'Create comprehensive business reports',
       icon: FileText,
       onClick: onNavigateToReports,
-      gradient: 'from-purple-500 to-purple-600',
-      disabled: false
-    },
-    {
-      title: 'Browse Data',
-      description: 'Review and manage your financial data',
-      icon: Activity,
-      onClick: onNavigateToData,
       gradient: 'from-amber-500 to-amber-600',
       disabled: false
     }
@@ -273,17 +276,26 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {quickActions.map((action, index) => (
               <Button
                 key={action.title}
                 variant="ghost"
                 onClick={action.onClick}
                 disabled={action.disabled}
-                className="h-auto p-6 flex flex-col items-start gap-3 hover:bg-gradient-to-br hover:from-muted/50 hover:to-muted/30 border border-border/50 rounded-xl group transition-all duration-200"
+                className={`h-auto p-6 flex flex-col items-start gap-3 hover:bg-gradient-to-br hover:from-muted/50 hover:to-muted/30 border border-border/50 rounded-xl group transition-all duration-200 ${
+                  action.badge ? 'ring-2 ring-primary/20' : ''
+                }`}
               >
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} text-white group-hover:scale-110 transition-transform duration-200`}>
-                  <action.icon className="w-5 h-5" />
+                <div className="flex items-center justify-between w-full">
+                  <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} text-white group-hover:scale-110 transition-transform duration-200`}>
+                    <action.icon className="w-5 h-5" />
+                  </div>
+                  {action.badge && (
+                    <Badge variant="default" className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+                      {action.badge}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-left">
                   <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">

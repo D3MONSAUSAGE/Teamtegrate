@@ -18,8 +18,9 @@ import SmartUploadCenter from '@/components/finance/dashboard/SmartUploadCenter'
 import DataBrowser from '@/components/finance/dashboard/DataBrowser';
 import ReportGallery from '@/components/finance/dashboard/ReportGallery';
 import AdvancedAnalyticsDashboard from '@/components/finance/analytics/AdvancedAnalyticsDashboard';
+import WeeklySalesView from '@/components/finance/weekly/WeeklySalesView';
 
-type FinanceView = 'dashboard' | 'upload' | 'data' | 'reports' | 'analytics';
+type FinanceView = 'dashboard' | 'upload' | 'data' | 'reports' | 'analytics' | 'weekly-summary';
 
 const FinancePage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -78,6 +79,7 @@ const FinancePage: React.FC = () => {
             onNavigateToReports={() => setCurrentView('reports')}
             onNavigateToData={() => setCurrentView('data')}
             onNavigateToAnalytics={() => setCurrentView('analytics')}
+            onNavigateToWeeklySummary={() => setCurrentView('weekly-summary')}
           />
         );
       case 'analytics':
@@ -93,6 +95,8 @@ const FinancePage: React.FC = () => {
         );
       case 'data':
         return <DataBrowser onBackToDashboard={() => setCurrentView('dashboard')} />;
+      case 'weekly-summary':
+        return <WeeklySalesView onBackToDashboard={() => setCurrentView('dashboard')} />;
       default:
         return <div>View not found</div>;
     }
