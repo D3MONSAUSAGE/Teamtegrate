@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -35,21 +35,70 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
   editingChecklist,
 }) => {
   const [formData, setFormData] = useState<ChecklistFormData>({
-    name: editingChecklist?.name || '',
-    description: editingChecklist?.description || '',
-    priority: (editingChecklist?.priority || 'medium') as ChecklistPriority,
-    assignment_type: (editingChecklist?.assignment_type || 'individual') as AssignmentType,
-    execution_window_start: editingChecklist?.execution_window_start || '',
-    execution_window_end: editingChecklist?.execution_window_end || '',
-    cutoff_time: editingChecklist?.cutoff_time || '',
-    branch_area: editingChecklist?.branch_area || '',
-    shift_type: editingChecklist?.shift_type || '',
-    verification_required: editingChecklist?.verification_required ?? true,
-    scoring_enabled: editingChecklist?.scoring_enabled ?? true,
-    scheduled_days: editingChecklist?.scheduled_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    name: '',
+    description: '',
+    priority: 'medium',
+    assignment_type: 'individual',
+    execution_window_start: '',
+    execution_window_end: '',
+    cutoff_time: '',
+    branch_area: '',
+    shift_type: '',
+    verification_required: true,
+    scoring_enabled: true,
+    scheduled_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
     items: [],
     assignments: [],
   });
+
+  // Initialize form data when editingChecklist changes
+  useEffect(() => {
+    if (editingChecklist) {
+      // Transform checklist_items from database format to form format (using any to handle dynamic data)
+      const checklistWithItems = editingChecklist as any;
+      const transformedItems = checklistWithItems.checklist_items?.map((item: any) => ({
+        title: item.title,
+        description: item.description || '',
+        is_required: item.is_required,
+        verification_required: item.verification_required,
+      })) || [];
+
+      setFormData({
+        name: editingChecklist.name || '',
+        description: editingChecklist.description || '',
+        priority: (editingChecklist.priority || 'medium') as ChecklistPriority,
+        assignment_type: (editingChecklist.assignment_type || 'individual') as AssignmentType,
+        execution_window_start: editingChecklist.execution_window_start || '',
+        execution_window_end: editingChecklist.execution_window_end || '',
+        cutoff_time: editingChecklist.cutoff_time || '',
+        branch_area: editingChecklist.branch_area || '',
+        shift_type: editingChecklist.shift_type || '',
+        verification_required: editingChecklist.verification_required ?? true,
+        scoring_enabled: editingChecklist.scoring_enabled ?? true,
+        scheduled_days: editingChecklist.scheduled_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        items: transformedItems,
+        assignments: [],
+      });
+    } else {
+      // Reset form for new checklist
+      setFormData({
+        name: '',
+        description: '',
+        priority: 'medium',
+        assignment_type: 'individual',
+        execution_window_start: '',
+        execution_window_end: '',
+        cutoff_time: '',
+        branch_area: '',
+        shift_type: '',
+        verification_required: true,
+        scoring_enabled: true,
+        scheduled_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        items: [],
+        assignments: [],
+      });
+    }
+  }, [editingChecklist]);
 
   const [currentItem, setCurrentItem] = useState({
     title: '',
