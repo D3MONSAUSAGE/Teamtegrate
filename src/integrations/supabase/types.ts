@@ -536,6 +536,381 @@ export type Database = {
           },
         ]
       }
+      checklist_assignments: {
+        Row: {
+          assigned_role: string | null
+          assigned_to_team_id: string | null
+          assigned_to_user_id: string | null
+          checklist_id: string
+          created_at: string
+          created_by: string
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          assigned_role?: string | null
+          assigned_to_team_id?: string | null
+          assigned_to_user_id?: string | null
+          checklist_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          assigned_role?: string | null
+          assigned_to_team_id?: string | null
+          assigned_to_user_id?: string | null
+          checklist_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_assignments_checklist_fk"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          execution_item_id: string
+          id: string
+          is_verification_comment: boolean
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          execution_item_id: string
+          id?: string
+          is_verification_comment?: boolean
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          execution_item_id?: string
+          id?: string
+          is_verification_comment?: boolean
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_comments_execution_item_fk"
+            columns: ["execution_item_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_execution_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_comments_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_comments_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_execution_items: {
+        Row: {
+          checklist_item_id: string
+          completed_at: string | null
+          created_at: string
+          execution_id: string
+          id: string
+          is_completed: boolean
+          is_verified: boolean
+          notes: string | null
+          organization_id: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          checklist_item_id: string
+          completed_at?: string | null
+          created_at?: string
+          execution_id: string
+          id?: string
+          is_completed?: boolean
+          is_verified?: boolean
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          checklist_item_id?: string
+          completed_at?: string | null
+          created_at?: string
+          execution_id?: string
+          id?: string
+          is_completed?: boolean
+          is_verified?: boolean
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_execution_items_execution_fk"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_executions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_execution_items_item_fk"
+            columns: ["checklist_item_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_execution_items_verified_by_fk"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_execution_items_verified_by_fk"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_executions: {
+        Row: {
+          assigned_to_user_id: string
+          checklist_id: string
+          completed_at: string | null
+          created_at: string
+          execution_date: string
+          execution_score: number | null
+          id: string
+          notes: string | null
+          organization_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["execution_status"]
+          total_score: number | null
+          updated_at: string
+          verification_score: number | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          assigned_to_user_id: string
+          checklist_id: string
+          completed_at?: string | null
+          created_at?: string
+          execution_date: string
+          execution_score?: number | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["execution_status"]
+          total_score?: number | null
+          updated_at?: string
+          verification_score?: number | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          assigned_to_user_id?: string
+          checklist_id?: string
+          completed_at?: string | null
+          created_at?: string
+          execution_date?: string
+          execution_score?: number | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["execution_status"]
+          total_score?: number | null
+          updated_at?: string
+          verification_score?: number | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_executions_checklist_fk"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_executions_user_fk"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_executions_user_fk"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_executions_verified_by_fk"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_executions_verified_by_fk"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_items: {
+        Row: {
+          checklist_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_required: boolean
+          order_index: number
+          organization_id: string
+          title: string
+          verification_required: boolean
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          order_index?: number
+          organization_id: string
+          title: string
+          verification_required?: boolean
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean
+          order_index?: number
+          organization_id?: string
+          title?: string
+          verification_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_items_checklist_fk"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklists: {
+        Row: {
+          assignment_type: Database["public"]["Enums"]["assignment_type"]
+          branch_area: string | null
+          created_at: string
+          created_by: string
+          cutoff_time: string | null
+          description: string | null
+          execution_window_end: string | null
+          execution_window_start: string | null
+          id: string
+          is_daily: boolean
+          name: string
+          organization_id: string
+          priority: Database["public"]["Enums"]["checklist_priority"]
+          scoring_enabled: boolean
+          shift_type: string | null
+          status: Database["public"]["Enums"]["checklist_status"]
+          updated_at: string
+          verification_required: boolean
+        }
+        Insert: {
+          assignment_type?: Database["public"]["Enums"]["assignment_type"]
+          branch_area?: string | null
+          created_at?: string
+          created_by: string
+          cutoff_time?: string | null
+          description?: string | null
+          execution_window_end?: string | null
+          execution_window_start?: string | null
+          id?: string
+          is_daily?: boolean
+          name: string
+          organization_id: string
+          priority?: Database["public"]["Enums"]["checklist_priority"]
+          scoring_enabled?: boolean
+          shift_type?: string | null
+          status?: Database["public"]["Enums"]["checklist_status"]
+          updated_at?: string
+          verification_required?: boolean
+        }
+        Update: {
+          assignment_type?: Database["public"]["Enums"]["assignment_type"]
+          branch_area?: string | null
+          created_at?: string
+          created_by?: string
+          cutoff_time?: string | null
+          description?: string | null
+          execution_window_end?: string | null
+          execution_window_start?: string | null
+          id?: string
+          is_daily?: boolean
+          name?: string
+          organization_id?: string
+          priority?: Database["public"]["Enums"]["checklist_priority"]
+          scoring_enabled?: boolean
+          shift_type?: string | null
+          status?: Database["public"]["Enums"]["checklist_status"]
+          updated_at?: string
+          verification_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklists_organization_fk"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           category: string | null
@@ -6926,6 +7301,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      calculate_execution_score: {
+        Args: { execution_id_param: string }
+        Returns: number
+      }
       calculate_meeting_effectiveness: {
         Args: { meeting_id: string }
         Returns: number
@@ -7323,6 +7702,15 @@ export type Database = {
       }
     }
     Enums: {
+      assignment_type: "individual" | "team" | "role_based"
+      checklist_priority: "low" | "medium" | "high" | "critical"
+      checklist_status: "draft" | "active" | "inactive" | "archived"
+      execution_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "overdue"
+        | "verified"
       message_type: "text" | "system"
       onboarding_feedback_status: "pending" | "completed"
       onboarding_instance_status:
@@ -7468,6 +7856,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      assignment_type: ["individual", "team", "role_based"],
+      checklist_priority: ["low", "medium", "high", "critical"],
+      checklist_status: ["draft", "active", "inactive", "archived"],
+      execution_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "overdue",
+        "verified",
+      ],
       message_type: ["text", "system"],
       onboarding_feedback_status: ["pending", "completed"],
       onboarding_instance_status: [

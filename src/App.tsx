@@ -33,6 +33,7 @@ import MeetingsPage from "@/pages/MeetingsPage";
 import TrainingPage from "@/pages/TrainingPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import EnhancedRequestsPage from "@/pages/EnhancedRequestsPage";
+import ChecklistsPage from "@/pages/ChecklistsPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
 import TeamDetailPage from "@/pages/TeamDetailPage";
@@ -85,8 +86,9 @@ function App() {
                   <Route path="focus" element={<FocusZonePage />} />
                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
                   <Route path="finance" element={<FinancePage />} />
-                  <Route path="meetings" element={<MeetingsPage />} />
-                  <Route path="training" element={<TrainingPage />} />
+                   <Route path="meetings" element={<MeetingsPage />} />
+                   <Route path="training" element={<TrainingPage />} />
+                   <Route path="checklists" element={<ChecklistsPage />} />
                 </Route>
                 
                 {/* Fallback for unmatched routes */}
