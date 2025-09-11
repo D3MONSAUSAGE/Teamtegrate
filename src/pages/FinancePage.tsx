@@ -83,6 +83,7 @@ const FinancePage: React.FC = () => {
             onNavigateToUpload={() => setCurrentView('upload')}
             onNavigateToReports={() => setCurrentView('reports')}
             onNavigateToData={() => setCurrentView('data')}
+            onNavigateToWeekly={() => setCurrentView('analytics')}
           />
         );
       case 'upload':

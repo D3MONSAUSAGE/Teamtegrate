@@ -24,7 +24,7 @@ import {
 import { toast } from '@/components/ui/sonner';
 import { SalesData } from '@/types/sales';
 import { Team } from '@/types/teams';
-import { parseBrinkPOSReport } from '@/utils/pdfParser';
+import { parseUniversalPDF } from '@/utils/universalPdfParser';
 import { salesDataService } from '@/services/SalesDataService';
 import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
@@ -99,25 +99,23 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       setUploadStatus('processing');
       setUploadProgress(25);
       
-      const arrayBuffer = await file.arrayBuffer();
-      const { parseRealPDFContent, extractSalesMetrics } = await import('@/utils/pdfParser');
+      // Use universal parser for date extraction
+      const result = await parseUniversalPDF(file, 'temp', new Date());
       
       setUploadProgress(50);
-      const pdfText = await parseRealPDFContent(arrayBuffer);
       
-      setUploadProgress(75);
-      const metrics = extractSalesMetrics(pdfText);
-      
-      if (metrics.extractedDate) {
-        file.extractedDate = metrics.extractedDate;
-        setSalesDate(metrics.extractedDate);
+      if (result.success && result.extractedDate) {
+        setUploadProgress(75);
+        
+        file.extractedDate = result.extractedDate;
+        setSalesDate(result.extractedDate);
         setIsDateExtracted(true);
-        onDateExtracted?.(metrics.extractedDate);
+        onDateExtracted?.(result.extractedDate);
         
         toast.success(
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            Date auto-detected: {format(metrics.extractedDate, "PPP")}
+            Date auto-detected: {format(result.extractedDate, "PPP")}
           </div>
         );
       }
@@ -167,8 +165,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         );
         
         if (existingCheck.exists) {
-          // Parse the PDF first to show comparison
-          const parseResult = await parseBrinkPOSReport(files[0], teamId!, salesDate);
+          // Parse the PDF first to show comparison using universal parser
+          const parseResult = await parseUniversalPDF(files[0], teamId!, salesDate);
           if (parseResult.success && parseResult.data) {
             setExistingData(existingCheck.data);
             setPendingUpload(parseResult.data);
@@ -190,8 +188,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         });
       }, 300);
       
-      // Parse the PDF with team ID
-      const parseResult = await parseBrinkPOSReport(files[0], teamId!, salesDate);
+      // Parse the PDF with universal parser and team ID
+      const parseResult = await parseUniversalPDF(files[0], teamId!, salesDate);
       
       clearInterval(progressInterval);
       setUploadProgress(90);
@@ -368,7 +366,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Upload Brink POS Report
+            Upload POS Report
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -396,13 +394,13 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
                   <p className="text-lg font-medium">
                     {isDragActive
                       ? "Drop your PDF file here"
-                      : "Drag & drop your Brink POS report here"}
+                      : "Drag & drop your POS report here"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     or click to browse files
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Only PDF files from Brink POS are supported
+                    Supports Brink, Square, Toast, Lightspeed, and Clover POS systems
                   </p>
                 </div>
               </div>

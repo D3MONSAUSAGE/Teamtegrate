@@ -15,18 +15,21 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { WeeklySalesButton } from './WeeklySalesButton';
 import { useSalesManager } from '@/hooks/useSalesManager';
 
 interface FinanceDashboardOverviewProps {
   onNavigateToUpload: () => void;
   onNavigateToReports: () => void;
   onNavigateToData: () => void;
+  onNavigateToWeekly: () => void;
 }
 
 const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
   onNavigateToUpload,
   onNavigateToReports,
-  onNavigateToData
+  onNavigateToData,
+  onNavigateToWeekly
 }) => {
   const { weeklyData, salesData, isLoading } = useSalesManager();
 
@@ -178,6 +181,37 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Weekly Sales Access */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <WeeklySalesButton
+            onNavigateToWeekly={onNavigateToWeekly}
+            weeklyStats={{
+              currentWeekSales: weeklyData?.totals.grossTotal || 0,
+              weeklyGrowth: 5.2, // Calculate from analytics service in future
+              daysWithData: weeklyData?.dailySales.length || 0
+            }}
+          />
+        </div>
+        
+        <div className="lg:col-span-2">
+          {/* Future: Additional weekly insights or charts */}
+          <Card className="glass-card border-0 shadow-md h-full">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                Weekly Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-32">
+              <p className="text-muted-foreground text-sm">
+                Advanced weekly analytics coming soon
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Quick Actions */}

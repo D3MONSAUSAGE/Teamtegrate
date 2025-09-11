@@ -40,10 +40,10 @@ const SmartUploadCenter: React.FC<SmartUploadCenterProps> = ({ onBackToDashboard
 
   const supportedSystems = [
     { name: 'Brink POS', status: 'active', icon: '🟢' },
-    { name: 'Square', status: 'coming-soon', icon: '🟡' },
-    { name: 'Toast', status: 'coming-soon', icon: '🟡' },
-    { name: 'Lightspeed', status: 'coming-soon', icon: '🟡' },
-    { name: 'Clover', status: 'coming-soon', icon: '🟡' }
+    { name: 'Square', status: 'active', icon: '🟢' },
+    { name: 'Toast', status: 'active', icon: '🟢' },
+    { name: 'Lightspeed', status: 'active', icon: '🟢' },
+    { name: 'Clover', status: 'active', icon: '🟢' }
   ];
 
   const uploadOptions = [
@@ -53,7 +53,7 @@ const SmartUploadCenter: React.FC<SmartUploadCenterProps> = ({ onBackToDashboard
       description: 'Fast single file upload with auto-detection',
       icon: Zap,
       recommended: true,
-      features: ['Auto POS detection', 'Smart validation', 'Instant preview']
+      features: ['Auto POS detection', 'Multi-system support', 'Instant preview']
     },
     {
       id: 'enhanced',
@@ -61,7 +61,7 @@ const SmartUploadCenter: React.FC<SmartUploadCenterProps> = ({ onBackToDashboard
       description: 'Upload multiple files with advanced processing',
       icon: FolderOpen,
       recommended: false,
-      features: ['Batch processing', 'OCR support', 'Advanced validation']
+      features: ['Batch processing', 'Multi-POS support', 'Advanced validation']
     }
   ];
 
@@ -140,11 +140,11 @@ const SmartUploadCenter: React.FC<SmartUploadCenterProps> = ({ onBackToDashboard
               <div key={system.name} className="flex flex-col items-center p-4 rounded-lg border border-border/50 hover:bg-muted/20 transition-colors">
                 <span className="text-2xl mb-2">{system.icon}</span>
                 <span className="text-sm font-medium text-center">{system.name}</span>
-                <Badge 
+                 <Badge 
                   variant={system.status === 'active' ? 'default' : 'secondary'}
                   className="mt-2 text-xs"
                 >
-                  {system.status === 'active' ? 'Active' : 'Coming Soon'}
+                  {system.status === 'active' ? 'Ready' : 'Coming Soon'}
                 </Badge>
               </div>
             ))}
