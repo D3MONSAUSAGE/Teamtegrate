@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { ReportPreviewModal } from '@/components/finance/modals/ReportPreviewModal';
-import { reportService, ReportPreview } from '@/services/ReportService';
+import { ReportFilters } from '@/components/finance/reports/ReportFilters';
+import { reportService, ReportPreview, ReportGenerationOptions } from '@/services/ReportService';
 import { exportService } from '@/services/ExportService';
+import { useReportFilters } from '@/hooks/useReportFilters';
 import { 
   FileText, 
   TrendingUp, 
@@ -41,6 +43,17 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
     reportId: number | null;
   }>({ isOpen: false, preview: null, reportId: null });
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Use custom hook for filter management
+  const {
+    timeRange,
+    dateRange,
+    selectedTeamId,
+    calculatedDateRange,
+    setTimeRange,
+    setDateRange,
+    setSelectedTeamId
+  } = useReportFilters();
 
   const reportCategories = [
     { id: 'all', label: 'All Reports', count: 12 },
@@ -148,8 +161,20 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
     try {
       const template = reportService.getReportTemplates().find(t => t.id === reportId);
       if (template) {
-        const blob = await template.generateFunction();
-        exportService.downloadBlob(blob, exportService.generateFilename(template.title, 'pdf'));
+        const reportOptions: ReportGenerationOptions = {
+          dateRange: {
+            start: calculatedDateRange.from,
+            end: calculatedDateRange.to
+          },
+          teamId: selectedTeamId || undefined
+        };
+        
+        const blob = await template.generateFunction(reportOptions);
+        const filename = exportService.generateFilename(
+          `${template.title} - ${calculatedDateRange.label}${selectedTeamId ? ` - Team` : ''}`, 
+          'pdf'
+        );
+        exportService.downloadBlob(blob, filename);
         toast.success('Report generated successfully!');
       }
     } catch (error) {
@@ -164,7 +189,15 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
     try {
       const template = reportService.getReportTemplates().find(t => t.id === reportId);
       if (template) {
-        const preview = await template.previewFunction();
+        const reportOptions: ReportGenerationOptions = {
+          dateRange: {
+            start: calculatedDateRange.from,
+            end: calculatedDateRange.to
+          },
+          teamId: selectedTeamId || undefined
+        };
+        
+        const preview = await template.previewFunction(reportOptions);
         setPreviewModal({ isOpen: true, preview, reportId });
       }
     } catch (error) {
@@ -205,7 +238,18 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Report Filters */}
+      <ReportFilters
+        timeRange={timeRange}
+        dateRange={dateRange}
+        selectedTeamId={selectedTeamId}
+        onTimeRangeChange={setTimeRange}
+        onDateRangeChange={setDateRange}
+        onTeamChange={setSelectedTeamId}
+        calculatedDateRange={calculatedDateRange}
+      />
+
+      {/* Search and Category Filters */}
       <Card className="glass-card border-0">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
