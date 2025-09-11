@@ -855,6 +855,7 @@ export type Database = {
           name: string
           organization_id: string
           priority: Database["public"]["Enums"]["checklist_priority"]
+          scheduled_days: Json | null
           scoring_enabled: boolean
           shift_type: string | null
           status: Database["public"]["Enums"]["checklist_status"]
@@ -875,6 +876,7 @@ export type Database = {
           name: string
           organization_id: string
           priority?: Database["public"]["Enums"]["checklist_priority"]
+          scheduled_days?: Json | null
           scoring_enabled?: boolean
           shift_type?: string | null
           status?: Database["public"]["Enums"]["checklist_status"]
@@ -895,6 +897,7 @@ export type Database = {
           name?: string
           organization_id?: string
           priority?: Database["public"]["Enums"]["checklist_priority"]
+          scheduled_days?: Json | null
           scoring_enabled?: boolean
           shift_type?: string | null
           status?: Database["public"]["Enums"]["checklist_status"]

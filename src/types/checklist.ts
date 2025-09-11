@@ -19,6 +19,7 @@ export interface Checklist {
   shift_type?: string;
   scoring_enabled: boolean;
   verification_required: boolean;
+  scheduled_days: string[];
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -107,11 +108,12 @@ export interface ChecklistFormData {
   assignment_type: AssignmentType;
   execution_window_start: string;
   execution_window_end: string;
-  cutoff_time: string;
+  cutoff_time?: string;
   branch_area: string;
   shift_type: string;
   verification_required: boolean;
   scoring_enabled: boolean;
+  scheduled_days: string[];
   items: Array<{
     title: string;
     description: string;

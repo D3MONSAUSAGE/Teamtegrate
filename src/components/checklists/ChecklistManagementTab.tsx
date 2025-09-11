@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useChecklists, useUpdateChecklistStatus } from '@/hooks/useChecklists';
+import { useChecklists, useUpdateChecklistStatus, useDeleteChecklist } from '@/hooks/useChecklists';
 import { ChecklistCreationDialog } from './ChecklistCreationDialog';
+import { ChecklistEditDialog } from './ChecklistEditDialog';
 import { Checklist } from '@/types/checklist';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Search, Filter, Edit, MoreVertical, Users, Clock, CheckCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
@@ -16,9 +18,14 @@ export const ChecklistManagementTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingChecklistId, setEditingChecklistId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingChecklistId, setDeletingChecklistId] = useState<string | null>(null);
 
   const { data: checklists, isLoading } = useChecklists();
   const updateStatus = useUpdateChecklistStatus();
+  const deleteChecklist = useDeleteChecklist();
 
   const filteredChecklists = checklists?.filter(checklist => {
     const matchesSearch = checklist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,6 +36,24 @@ export const ChecklistManagementTab: React.FC = () => {
 
   const handleStatusChange = (id: string, status: 'active' | 'inactive' | 'archived') => {
     updateStatus.mutate({ id, status });
+  };
+
+  const handleEditChecklist = (id: string) => {
+    setEditingChecklistId(id);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteChecklist = (id: string) => {
+    setDeletingChecklistId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteChecklist = () => {
+    if (deletingChecklistId) {
+      deleteChecklist.mutate(deletingChecklistId);
+      setDeleteDialogOpen(false);
+      setDeletingChecklistId(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -137,7 +162,7 @@ export const ChecklistManagementTab: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditChecklist(checklist.id)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit Checklist
                     </DropdownMenuItem>
@@ -159,6 +184,12 @@ export const ChecklistManagementTab: React.FC = () => {
                       onClick={() => handleStatusChange(checklist.id, 'archived')}
                     >
                       Archive
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDeleteChecklist(checklist.id)}
+                      className="text-destructive"
+                    >
+                      Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -202,11 +233,25 @@ export const ChecklistManagementTab: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Created:</span>
-                  <span>{format(new Date(checklist.created_at), 'MMM d, yyyy')}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Created:</span>
+                    <span>{format(new Date(checklist.created_at), 'MMM d, yyyy')}</span>
+                  </div>
                 </div>
-              </div>
+
+                {/* Scheduled Days */}
+                {checklist.scheduled_days && checklist.scheduled_days.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-sm text-muted-foreground">Scheduled Days:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {checklist.scheduled_days.map(day => (
+                        <Badge key={day} variant="outline" className="text-xs capitalize">
+                          {day.slice(0, 3)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               {/* Additional Info */}
               {checklist.branch_area && (
@@ -248,6 +293,32 @@ export const ChecklistManagementTab: React.FC = () => {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
+
+      {/* Edit Checklist Dialog */}
+      <ChecklistEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        checklistId={editingChecklistId}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Checklist</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this checklist? This action cannot be undone.
+              All associated data will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteChecklist} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

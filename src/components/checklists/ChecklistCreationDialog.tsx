@@ -16,31 +16,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { useCreateChecklist } from '@/hooks/useChecklists';
-import { ChecklistFormData, ChecklistPriority, AssignmentType } from '@/types/checklist';
-import { Plus, X, GripVertical, Clock, Users, Settings } from 'lucide-react';
+import { useCreateChecklist, useUpdateChecklist } from '@/hooks/useChecklists';
+import { ChecklistFormData, ChecklistPriority, AssignmentType, Checklist } from '@/types/checklist';
+import { useUsers } from '@/hooks/useUsers';
+import { useTeams } from '@/hooks/useTeams';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, X, GripVertical, Clock, Users, Settings, Calendar } from 'lucide-react';
 
 interface ChecklistCreationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingChecklist?: Checklist | null;
 }
 
 export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = ({
   open,
   onOpenChange,
+  editingChecklist,
 }) => {
   const [formData, setFormData] = useState<ChecklistFormData>({
-    name: '',
-    description: '',
-    priority: 'medium' as ChecklistPriority,
-    assignment_type: 'individual' as AssignmentType,
-    execution_window_start: '',
-    execution_window_end: '',
-    cutoff_time: '',
-    branch_area: '',
-    shift_type: '',
-    verification_required: true,
-    scoring_enabled: true,
+    name: editingChecklist?.name || '',
+    description: editingChecklist?.description || '',
+    priority: (editingChecklist?.priority || 'medium') as ChecklistPriority,
+    assignment_type: (editingChecklist?.assignment_type || 'individual') as AssignmentType,
+    execution_window_start: editingChecklist?.execution_window_start || '',
+    execution_window_end: editingChecklist?.execution_window_end || '',
+    cutoff_time: editingChecklist?.cutoff_time || '',
+    branch_area: editingChecklist?.branch_area || '',
+    shift_type: editingChecklist?.shift_type || '',
+    verification_required: editingChecklist?.verification_required ?? true,
+    scoring_enabled: editingChecklist?.scoring_enabled ?? true,
+    scheduled_days: editingChecklist?.scheduled_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
     items: [],
     assignments: [],
   });
@@ -53,6 +59,17 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
   });
 
   const createChecklist = useCreateChecklist();
+  const updateChecklist = useUpdateChecklist();
+  const { users } = useUsers();
+  const { teams } = useTeams();
+
+  const WEEKDAYS = [
+    { id: 'monday', label: 'Monday' },
+    { id: 'tuesday', label: 'Tuesday' },
+    { id: 'wednesday', label: 'Wednesday' },
+    { id: 'thursday', label: 'Thursday' },
+    { id: 'friday', label: 'Friday' },
+  ];
 
   const handleAddItem = () => {
     if (currentItem.title.trim()) {
@@ -69,6 +86,32 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
     }
   };
 
+  const handleAddAssignment = (type: 'user' | 'team' | 'role', id: string, name: string) => {
+    const exists = formData.assignments.some(a => a.type === type && a.id === id);
+    if (!exists) {
+      setFormData(prev => ({
+        ...prev,
+        assignments: [...prev.assignments, { type, id, name }]
+      }));
+    }
+  };
+
+  const handleRemoveAssignment = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      assignments: prev.assignments.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleScheduledDayChange = (day: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      scheduled_days: checked 
+        ? [...prev.scheduled_days, day]
+        : prev.scheduled_days.filter(d => d !== day)
+    }));
+  };
+
   const handleRemoveItem = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -83,7 +126,11 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
     if (formData.items.length === 0) return;
 
     try {
-      await createChecklist.mutateAsync(formData);
+      if (editingChecklist) {
+        await updateChecklist.mutateAsync({ id: editingChecklist.id, data: formData });
+      } else {
+        await createChecklist.mutateAsync(formData);
+      }
       onOpenChange(false);
       // Reset form
       setFormData({
@@ -98,11 +145,12 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
         shift_type: '',
         verification_required: true,
         scoring_enabled: true,
+        scheduled_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
         items: [],
         assignments: [],
       });
     } catch (error) {
-      console.error('Error creating checklist:', error);
+      console.error('Error saving checklist:', error);
     }
   };
 
@@ -110,9 +158,9 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Create New Checklist</DialogTitle>
+          <DialogTitle>{editingChecklist ? 'Edit Checklist' : 'Create New Checklist'}</DialogTitle>
           <DialogDescription>
-            Design a checklist template that can be assigned to team members for daily execution
+            {editingChecklist ? 'Update the checklist template' : 'Design a checklist template that can be assigned to team members for daily execution'}
           </DialogDescription>
         </DialogHeader>
 
@@ -182,7 +230,7 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="execution_window_start">Start Time</Label>
                     <Input
@@ -202,15 +250,29 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
                       onChange={(e) => setFormData(prev => ({ ...prev, execution_window_end: e.target.value }))}
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="cutoff_time">Cutoff Time</Label>
-                    <Input
-                      id="cutoff_time"
-                      type="time"
-                      value={formData.cutoff_time}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cutoff_time: e.target.value }))}
-                    />
+                </div>
+
+                {/* Scheduled Days */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Scheduled Days
+                  </Label>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {WEEKDAYS.map(day => (
+                      <div key={day.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={day.id}
+                          checked={formData.scheduled_days.includes(day.id)}
+                          onCheckedChange={(checked) => 
+                            handleScheduledDayChange(day.id, !!checked)
+                          }
+                        />
+                        <Label htmlFor={day.id} className="text-sm">
+                          {day.label}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -252,7 +314,7 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
                   <Select
                     value={formData.assignment_type}
                     onValueChange={(value: AssignmentType) => 
-                      setFormData(prev => ({ ...prev, assignment_type: value }))
+                      setFormData(prev => ({ ...prev, assignment_type: value, assignments: [] }))
                     }
                   >
                     <SelectTrigger>
@@ -265,6 +327,103 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Assignment Selection */}
+                {formData.assignment_type === 'individual' && (
+                  <div className="space-y-3">
+                    <Label>Select Users</Label>
+                    <div className="border rounded-lg p-3 max-h-40 overflow-y-auto">
+                      {users.map(user => (
+                        <div key={user.id} className="flex items-center justify-between py-1">
+                          <span className="text-sm">{user.name} ({user.email})</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddAssignment('user', user.id, user.name)}
+                            disabled={formData.assignments.some(a => a.type === 'user' && a.id === user.id)}
+                          >
+                            {formData.assignments.some(a => a.type === 'user' && a.id === user.id) ? 'Added' : 'Add'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.assignment_type === 'team' && (
+                  <div className="space-y-3">
+                    <Label>Select Teams</Label>
+                    <div className="border rounded-lg p-3 max-h-40 overflow-y-auto">
+                      {teams.map(team => (
+                        <div key={team.id} className="flex items-center justify-between py-1">
+                          <span className="text-sm">{team.name}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleAddAssignment('team', team.id, team.name)}
+                            disabled={formData.assignments.some(a => a.type === 'team' && a.id === team.id)}
+                          >
+                            {formData.assignments.some(a => a.type === 'team' && a.id === team.id) ? 'Added' : 'Add'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.assignment_type === 'role_based' && (
+                  <div className="space-y-3">
+                    <Label>Select Role</Label>
+                    <Select
+                      value={formData.assignments[0]?.id || ''}
+                      onValueChange={(value) => {
+                        const roleName = value.charAt(0).toUpperCase() + value.slice(1);
+                        setFormData(prev => ({
+                          ...prev,
+                          assignments: [{ type: 'role', id: value, name: roleName }]
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="team_leader">Team Leader</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Selected Assignments */}
+                {formData.assignments.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Selected Assignments</Label>
+                    <div className="space-y-2">
+                      {formData.assignments.map((assignment, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                          <Badge variant="outline">
+                            {assignment.type === 'user' ? 'User' : 
+                             assignment.type === 'team' ? 'Team' : 'Role'}
+                          </Badge>
+                          <span className="flex-1 text-sm">{assignment.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveAssignment(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -418,9 +577,12 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!formData.name.trim() || formData.items.length === 0 || createChecklist.isPending}
+            disabled={!formData.name.trim() || formData.items.length === 0 || createChecklist.isPending || updateChecklist.isPending}
           >
-            {createChecklist.isPending ? 'Creating...' : 'Create Checklist'}
+            {createChecklist.isPending || updateChecklist.isPending 
+              ? (editingChecklist ? 'Updating...' : 'Creating...') 
+              : (editingChecklist ? 'Update Checklist' : 'Create Checklist')
+            }
           </Button>
           </div>
         </div>
