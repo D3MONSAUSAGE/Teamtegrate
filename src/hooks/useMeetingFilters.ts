@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth/AuthProvider';
 
 export interface MeetingFilters {
   search: string;
-  status: 'all' | 'upcoming' | 'pending' | 'past' | 'my_meetings';
+  status: 'all' | 'upcoming' | 'pending' | 'past' | 'my_meetings' | 'needsResponse' | 'fullyConfirmed';
   sortBy: 'date' | 'title' | 'participants';
   sortOrder: 'asc' | 'desc';
 }
@@ -60,6 +60,20 @@ export const useMeetingFilters = (meetings: MeetingRequestWithParticipants[]) =>
         filtered = filtered.filter(meeting => 
           meeting.organizer_id === user?.id
         );
+        break;
+      case 'needsResponse':
+        filtered = filtered.filter(meeting => {
+          const pendingCount = meeting.participants.filter(p => p.response_status === 'invited').length;
+          return pendingCount > 0 && new Date(meeting.start_time) > now && meeting.status !== 'cancelled';
+        });
+        break;
+      case 'fullyConfirmed':
+        filtered = filtered.filter(meeting => {
+          const allResponded = meeting.participants.length > 0 && 
+            meeting.participants.every(p => p.response_status !== 'invited');
+          const hasAccepted = meeting.participants.some(p => p.response_status === 'accepted');
+          return allResponded && hasAccepted && new Date(meeting.start_time) > now && meeting.status !== 'cancelled';
+        });
         break;
       case 'all':
       default:
@@ -122,8 +136,18 @@ export const useMeetingFilters = (meetings: MeetingRequestWithParticipants[]) =>
     const myMeetings = meetings.filter(m => 
       m.organizer_id === user?.id
     ).length;
+    const needsResponse = meetings.filter(m => {
+      const pendingCount = m.participants.filter(p => p.response_status === 'invited').length;
+      return pendingCount > 0 && new Date(m.start_time) > now && m.status !== 'cancelled';
+    }).length;
+    const fullyConfirmed = meetings.filter(m => {
+      const allResponded = m.participants.length > 0 && 
+        m.participants.every(p => p.response_status !== 'invited');
+      const hasAccepted = m.participants.some(p => p.response_status === 'accepted');
+      return allResponded && hasAccepted && new Date(m.start_time) > now && m.status !== 'cancelled';
+    }).length;
 
-    return { all, upcoming, past, pending, myMeetings };
+    return { all, upcoming, past, pending, myMeetings, needsResponse, fullyConfirmed };
   }, [meetings, user?.id]);
 
   return {

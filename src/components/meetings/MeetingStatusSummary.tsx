@@ -28,6 +28,7 @@ export const MeetingStatusSummary: React.FC<MeetingStatusSummaryProps> = ({
   const tentative = statusCounts.tentative || 0;
 
   const confirmationRate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+  const responseRate = total > 0 ? Math.round(((confirmed + declined + tentative) / total) * 100) : 0;
 
   const statusConfigs = {
     accepted: {
@@ -58,33 +59,43 @@ export const MeetingStatusSummary: React.FC<MeetingStatusSummaryProps> = ({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1 text-sm font-medium">
           <Users className="h-4 w-4" />
-          <span>{total}</span>
+          <span>{total} invited</span>
         </div>
         
-        {Object.entries(statusConfigs).map(([status, config]) => {
-          if (config.count === 0) return null;
-          const Icon = config.icon;
-          return (
-            <Badge 
-              key={status}
-              variant="outline" 
-              className={cn("text-xs gap-1 transition-colors", config.color)}
-            >
-              <Icon className="h-3 w-3" />
-              {config.count}
-            </Badge>
-          );
-        })}
+        {/* Prominent status breakdown */}
+        <div className="flex items-center gap-2">
+          {Object.entries(statusConfigs).map(([status, config]) => {
+            if (config.count === 0) return null;
+            const Icon = config.icon;
+            return (
+              <Badge 
+                key={status}
+                variant="outline" 
+                className={cn("gap-1 transition-colors font-medium", config.color)}
+              >
+                <Icon className="h-3 w-3" />
+                {config.count} {config.label}
+              </Badge>
+            );
+          })}
+        </div>
 
-        {showTrend && confirmationRate > 0 && (
-          <Badge variant="outline" className="text-xs gap-1 bg-primary/10 text-primary border-primary/20">
-            <TrendingUp className="h-3 w-3" />
-            {confirmationRate}%
-          </Badge>
-        )}
+        {/* Response rate badge */}
+        <Badge 
+          variant="outline" 
+          className={cn(
+            "gap-1 font-medium",
+            responseRate >= 80 ? "bg-success/10 text-success border-success/30" :
+            responseRate >= 50 ? "bg-warning/10 text-warning border-warning/30" :
+            "bg-destructive/10 text-destructive border-destructive/30"
+          )}
+        >
+          <TrendingUp className="h-3 w-3" />
+          {responseRate}% responded
+        </Badge>
       </div>
     );
   }
@@ -126,14 +137,22 @@ export const MeetingStatusSummary: React.FC<MeetingStatusSummaryProps> = ({
       </div>
 
       {total > 0 && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-            <div 
-              className="h-full bg-success transition-all duration-500"
-              style={{ width: `${confirmationRate}%` }}
-            />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-success transition-all duration-500"
+                style={{ width: `${responseRate}%` }}
+              />
+            </div>
+            <span className="font-medium">{responseRate}% responded</span>
           </div>
-          <span>{confirmationRate}% response rate</span>
+          
+          {pending > 0 && (
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium text-warning">{pending} people</span> still need to respond
+            </div>
+          )}
         </div>
       )}
     </div>

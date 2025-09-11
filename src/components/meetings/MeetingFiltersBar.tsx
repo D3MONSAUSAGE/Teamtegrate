@@ -26,6 +26,8 @@ interface MeetingFiltersBarProps {
     past: number;
     pending: number;
     myMeetings: number;
+    needsResponse?: number;
+    fullyConfirmed?: number;
   };
   onFiltersChange: (filters: Partial<MeetingFilters>) => void;
   onResetFilters: () => void;
@@ -82,7 +84,7 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
 
       {/* Status Filter Tabs */}
       <Tabs value={filters.status} onValueChange={(value: any) => onFiltersChange({ status: value })}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="all" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             All
@@ -103,11 +105,31 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
             )}
           </TabsTrigger>
           
+          <TabsTrigger value="needsResponse" className="flex items-center gap-2">
+            <Clock3 className="h-4 w-4" />
+            Needs Response
+            {(counts.needsResponse || 0) > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-2">
+                {counts.needsResponse}
+              </Badge>
+            )}
+          </TabsTrigger>
+          
+          <TabsTrigger value="fullyConfirmed" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Confirmed
+            {(counts.fullyConfirmed || 0) > 0 && (
+              <Badge className="ml-1 h-5 px-2 bg-success text-success-foreground">
+                {counts.fullyConfirmed}
+              </Badge>
+            )}
+          </TabsTrigger>
+          
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock3 className="h-4 w-4" />
             Pending
             {counts.pending > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 px-2">
+              <Badge variant="secondary" className="ml-1 h-5 px-2">
                 {counts.pending}
               </Badge>
             )}

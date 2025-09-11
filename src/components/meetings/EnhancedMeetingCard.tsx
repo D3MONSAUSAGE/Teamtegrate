@@ -252,12 +252,68 @@ export const EnhancedMeetingCard: React.FC<EnhancedMeetingCardProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Participants Row */}
-          <div className="flex items-center justify-between">
+          {/* Enhanced Participant Status Section */}
+          <div className="space-y-3">
+            {/* Participant Status Summary */}
+            <div className="bg-muted/30 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Participant Responses</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="h-auto p-1 text-xs"
+                >
+                  {showDetails ? 'Hide' : 'View All'}
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                {/* Status breakdown */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {Object.entries(meeting.participants?.reduce((acc, p) => {
+                    const status = p.response_status;
+                    if (!acc[status]) acc[status] = 0;
+                    acc[status]++;
+                    return acc;
+                  }, {} as Record<string, number>) || {}).map(([status, count]) => {
+                    const config = {
+                      accepted: { icon: CheckCircle, label: 'Confirmed', color: 'text-green-600 bg-green-50' },
+                      tentative: { icon: AlertTriangle, label: 'Tentative', color: 'text-yellow-600 bg-yellow-50' },
+                      declined: { icon: XCircle, label: 'Declined', color: 'text-red-600 bg-red-50' },
+                      invited: { icon: Clock, label: 'Pending', color: 'text-gray-600 bg-gray-50' }
+                    }[status] || { icon: Clock, label: 'Unknown', color: 'text-gray-600 bg-gray-50' };
+                    
+                    const Icon = config.icon;
+                    return (
+                      <div key={status} className={cn("flex items-center gap-1 px-2 py-1 rounded text-xs font-medium", config.color)}>
+                        <Icon className="h-3 w-3" />
+                        {count} {config.label}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Progress bar */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full bg-green-500 transition-all duration-500"
+                      style={{ width: `${responseRate}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-gray-600">
+                    {Math.round(responseRate)}% responded
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Participant Avatars */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Participants:</span>
               <div className="flex items-center -space-x-2">
-                {meeting.participants?.slice(0, 5).map((participant) => (
+                {meeting.participants?.slice(0, 8).map((participant) => (
                   <Tooltip key={participant.id}>
                     <TooltipTrigger asChild>
                       <div className="relative">
@@ -267,7 +323,7 @@ export const EnhancedMeetingCard: React.FC<EnhancedMeetingCardProps> = ({
                             {participant.user_name?.split(' ').map(n => n[0]).join('') || '?'}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="absolute -bottom-1 -right-1">
+                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
                           {getParticipantStatusIcon(participant.response_status)}
                         </div>
                       </div>
@@ -276,21 +332,22 @@ export const EnhancedMeetingCard: React.FC<EnhancedMeetingCardProps> = ({
                       <div className="text-center">
                         <div className="font-medium">{participant.user_name}</div>
                         <div className="text-xs text-muted-foreground">{participant.user_email}</div>
-                        <div className="text-xs capitalize">{participant.response_status}</div>
+                        <div className="text-xs capitalize font-medium">{participant.response_status}</div>
+                        {participant.responded_at && (
+                          <div className="text-xs text-muted-foreground">
+                            Responded: {new Date(participant.responded_at).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
                     </TooltipContent>
                   </Tooltip>
                 ))}
-                {participantCount > 5 && (
+                {participantCount > 8 && (
                   <div className="h-8 w-8 rounded-full bg-gray-100 border-2 border-white ring-1 ring-gray-200 flex items-center justify-center">
-                    <span className="text-xs font-medium text-gray-600">+{participantCount - 5}</span>
+                    <span className="text-xs font-medium text-gray-600">+{participantCount - 8}</span>
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="text-xs text-muted-foreground">
-              {Math.round(responseRate)}% responded
             </div>
           </div>
 
