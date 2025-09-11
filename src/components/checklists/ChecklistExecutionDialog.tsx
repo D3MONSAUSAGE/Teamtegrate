@@ -21,9 +21,10 @@ import {
   useCompleteChecklistExecution,
   useStartChecklistExecution,
 } from '@/hooks/useChecklistExecutions';
-import { Clock, CheckCircle, AlertCircle, FileText, Sparkles, Play, Save } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, FileText, Sparkles, Play, Save, Check, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth/AuthProvider';
 
 interface ChecklistExecutionDialogProps {
   execution: ChecklistExecution | null;
@@ -39,6 +40,9 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
   const [notes, setNotes] = useState('');
   const [autoSaving, setAutoSaving] = useState(false);
   const { toast } = useToast();
+  const { user, hasRoleAccess } = useAuth();
+  
+  const isManager = hasRoleAccess('manager');
   
   const { data: items, isLoading, error } = useChecklistExecutionItems(execution?.id || '');
   const startExecution = useStartChecklistExecution();
@@ -148,8 +152,8 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col animate-scale-in">
-        <DialogHeader className="space-y-3">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col animate-scale-in">
+        <DialogHeader className="shrink-0 space-y-3 pb-4">
           <DialogTitle className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
@@ -158,6 +162,11 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
             <Badge variant="outline" className="ml-auto">
               {format(new Date(execution.execution_date), 'MMM d, yyyy')}
             </Badge>
+            {isManager && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                Manager View
+              </Badge>
+            )}
           </DialogTitle>
           {execution.checklist?.description && (
             <DialogDescription className="text-base leading-relaxed">
@@ -170,7 +179,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Progress</span>
               <span className="text-sm text-muted-foreground">
-                {completedItemsCount}/{totalItemsCount} completed
+                {completedItemsCount}/{totalItemsCount} {isManager ? 'executed & verified' : 'completed'}
               </span>
             </div>
             <Progress 
@@ -180,8 +189,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full pr-4">
+        <ScrollArea className="flex-1 px-1">
             <div className="space-y-6">
               {/* Error State */}
               {error && (
@@ -271,6 +279,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                         index={index}
                         onComplete={handleCompleteItem}
                         disabled={execution.status === 'verified' || execution.status === 'pending'}
+                        isManager={isManager}
                       />
                     ))}
                   </div>
@@ -392,8 +401,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                 </div>
               )}
             </div>
-          </ScrollArea>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
@@ -404,6 +412,7 @@ interface ChecklistItemCardProps {
   index: number;
   onComplete: (itemId: string, isCompleted: boolean, notes?: string) => void;
   disabled: boolean;
+  isManager?: boolean;
 }
 
 const ChecklistItemCard: React.FC<ChecklistItemCardProps> = ({
@@ -411,27 +420,96 @@ const ChecklistItemCard: React.FC<ChecklistItemCardProps> = ({
   index,
   onComplete,
   disabled,
+  isManager = false,
 }) => {
   const [itemNotes, setItemNotes] = useState(item.notes || '');
   const [isExpanded, setIsExpanded] = useState(item.is_completed);
+  const [isExecuted, setIsExecuted] = useState(item.is_completed || false);
+  const [isVerified, setIsVerified] = useState(item.is_verified || false);
 
-  const handleCheckChange = (checked: boolean) => {
-    onComplete(item.id, checked, itemNotes);
+  const handleExecuteChange = (checked: boolean) => {
+    setIsExecuted(checked);
+    if (isManager && checked && isVerified) {
+      // If manager checks execute and verify is already checked, complete the item
+      onComplete(item.id, true, itemNotes);
+    } else if (!isManager && checked) {
+      // Regular user - complete item when executed
+      onComplete(item.id, checked, itemNotes);
+    } else if (!checked) {
+      // Unchecking execute should uncheck verify and mark incomplete
+      setIsVerified(false);
+      onComplete(item.id, false, itemNotes);
+    }
     setIsExpanded(checked);
   };
 
+  const handleVerifyChange = (checked: boolean) => {
+    if (!isExecuted && checked) {
+      // Can't verify without executing first
+      return;
+    }
+    setIsVerified(checked);
+    // Complete item if both executed and verified
+    if (isManager && isExecuted && checked) {
+      onComplete(item.id, true, itemNotes);
+    } else if (!checked) {
+      onComplete(item.id, false, itemNotes);
+    }
+  };
+
+  // For manager view, show both statuses
+  const getCardStyle = () => {
+    if (isManager) {
+      if (isExecuted && isVerified) return 'bg-green-50 border-green-200';
+      if (isExecuted) return 'bg-blue-50 border-blue-200';
+      return 'bg-background border-border';
+    }
+    return item.is_completed ? 'bg-green-50 border-green-200' : 'bg-background border-border';
+  };
+
   return (
-    <div className={`border rounded-lg transition-all duration-300 hover-scale ${
-      item.is_completed ? 'bg-green-50 border-green-200' : 'bg-background border-border'
-    }`}>
+    <div className={`border rounded-lg transition-all duration-300 hover-scale ${getCardStyle()}`}>
       <div className="p-4 space-y-3">
         <div className="flex items-start gap-3">
-          <Checkbox
-            checked={item.is_completed}
-            onCheckedChange={handleCheckChange}
-            disabled={disabled}
-            className="mt-1 transition-all duration-200"
-          />
+          {isManager ? (
+            // Manager view: dual checkboxes
+            <div className="flex flex-col gap-2 mt-1">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={isExecuted}
+                  onCheckedChange={handleExecuteChange}
+                  disabled={disabled}
+                  className="transition-all duration-200 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                />
+                <div className="flex items-center gap-1 text-xs text-blue-700 font-medium">
+                  <Check className="h-3 w-3" />
+                  Execute
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={isVerified}
+                  onCheckedChange={handleVerifyChange}
+                  disabled={disabled || !isExecuted}
+                  className="transition-all duration-200 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                />
+                <div className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                  isExecuted ? 'text-green-700' : 'text-muted-foreground'
+                }`}>
+                  <Eye className="h-3 w-3" />
+                  Verify
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Regular user view: single checkbox
+            <Checkbox
+              checked={item.is_completed}
+              onCheckedChange={handleExecuteChange}
+              disabled={disabled}
+              className="mt-1 transition-all duration-200"
+            />
+          )}
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`font-medium transition-colors duration-200 ${
