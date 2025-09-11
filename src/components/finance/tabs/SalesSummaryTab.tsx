@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { MonthWeekPicker } from '@/components/ui/month-week-picker';
+import { CalendarWeekPicker } from '@/components/ui/calendar-week-picker';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Calendar,
   Download,
@@ -14,17 +15,17 @@ import {
   BarChart3
 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { useSalesManager } from '@/hooks/useSalesManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import WeeklySalesTable from '@/components/finance/WeeklySalesTable';
 
-type TimePeriod = 'this-week' | 'last-week' | 'this-month' | 'last-month' | 'custom';
+type ReportType = 'weekly' | 'custom';
 
 const SalesSummaryTab: React.FC = () => {
   const { user } = useAuth();
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('this-week');
+  const [reportType, setReportType] = useState<ReportType>('weekly');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   
@@ -34,47 +35,26 @@ const SalesSummaryTab: React.FC = () => {
     isLoading, 
     selectedTeam, 
     setSelectedTeam, 
-    teams 
+    teams,
+    setSelectedWeek: updateSelectedWeek
   } = useSalesManager();
   
   const isAdmin = hasRoleAccess(user?.role, 'admin');
   const isSuperAdmin = hasRoleAccess(user?.role, 'superadmin');
   const showTeamSelector = isAdmin || isSuperAdmin;
 
-  const handleTimePeriodChange = (period: TimePeriod) => {
-    setTimePeriod(period);
-    
-    const now = new Date();
-    switch (period) {
-      case 'this-week':
-        setSelectedWeek(now);
-        break;
-      case 'last-week':
-        setSelectedWeek(addDays(now, -7));
-        break;
-      case 'this-month':
-        setCustomDateRange({
-          from: startOfMonth(now),
-          to: endOfMonth(now)
-        });
-        break;
-      case 'last-month':
-        const lastMonth = addDays(startOfMonth(now), -1);
-        setCustomDateRange({
-          from: startOfMonth(lastMonth),
-          to: endOfMonth(lastMonth)
-        });
-        break;
-    }
+  const handleWeekChange = (week: Date) => {
+    setSelectedWeek(week);
+    updateSelectedWeek(week);
   };
 
   const handleExport = () => {
     if (!weeklyData) return;
     
     const teamName = teams.find(t => t.id === selectedTeam)?.name || 'All-Teams';
-    const dateStr = timePeriod === 'custom' 
+    const dateStr = reportType === 'custom' 
       ? `${customDateRange?.from?.toISOString().split('T')[0]}-to-${customDateRange?.to?.toISOString().split('T')[0]}`
-      : timePeriod;
+      : `Week-${format(selectedWeek, 'yyyy-MM-dd')}`;
     
     const filename = `Sales-Report_${teamName}_${dateStr}_${new Date().toISOString().split('T')[0]}.csv`;
     
@@ -127,92 +107,106 @@ const SalesSummaryTab: React.FC = () => {
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          {/* Time Period Selection */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Time Period:</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: 'this-week', label: 'This Week' },
-                { value: 'last-week', label: 'Last Week' },
-                { value: 'this-month', label: 'This Month' },
-                { value: 'last-month', label: 'Last Month' },
-                { value: 'custom', label: 'Custom Range' }
-              ].map(option => (
-                <Button
-                  key={option.value}
-                  variant={timePeriod === option.value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleTimePeriodChange(option.value as TimePeriod)}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </div>
+        <CardContent className="space-y-6">
+          {/* Report Type Toggle */}
+          <Tabs value={reportType} onValueChange={(value) => setReportType(value as ReportType)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="weekly">Weekly Report</TabsTrigger>
+              <TabsTrigger value="custom">Custom Date Range</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="weekly" className="space-y-4 mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Team Selector */}
+                {showTeamSelector && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Team Selection
+                    </label>
+                    <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              {team.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-          {/* Date/Week Selectors */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Team Selector */}
-            {showTeamSelector && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Team Selection
-                </label>
-                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          {team.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Week Selector */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Select Week
+                  </label>
+                  <CalendarWeekPicker 
+                    selectedWeek={selectedWeek}
+                    onWeekChange={handleWeekChange}
+                  />
+                </div>
               </div>
-            )}
+            </TabsContent>
+            
+            <TabsContent value="custom" className="space-y-4 mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Team Selector */}
+                {showTeamSelector && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Team Selection
+                    </label>
+                    <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              {team.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            {/* Date Range Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {timePeriod === 'custom' ? 'Custom Date Range' : 'Selected Period'}
-              </label>
-              
-              {(timePeriod === 'this-week' || timePeriod === 'last-week') && (
-                <MonthWeekPicker 
-                  selectedWeek={selectedWeek}
-                  onWeekChange={setSelectedWeek}
-                />
-              )}
-              
-              {(timePeriod === 'this-month' || timePeriod === 'last-month' || timePeriod === 'custom') && (
-                <DatePickerWithRange
-                  date={customDateRange}
-                  onDateChange={setCustomDateRange}
-                />
-              )}
-            </div>
-          </div>
+                {/* Custom Date Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Custom Date Range
+                  </label>
+                  <DatePickerWithRange
+                    date={customDateRange}
+                    onDateChange={setCustomDateRange}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {/* Active Filters Display */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t">
+          <div className="flex flex-wrap gap-2 pt-4 border-t">
             <Badge variant="secondary">
               {teams.find(t => t.id === selectedTeam)?.name || 'All Teams'}
             </Badge>
             <Badge variant="outline">
-              {timePeriod === 'custom' 
-                ? `${customDateRange?.from?.toLocaleDateString()} - ${customDateRange?.to?.toLocaleDateString()}`
-                : timePeriod.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+              {reportType === 'custom' && customDateRange?.from && customDateRange?.to
+                ? `${format(customDateRange.from, 'MMM d')} - ${format(customDateRange.to, 'MMM d, yyyy')}`
+                : `Week of ${format(selectedWeek, 'MMM d, yyyy')}`
               }
             </Badge>
             {salesData && (
