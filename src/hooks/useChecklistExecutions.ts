@@ -184,6 +184,37 @@ export const useCompleteChecklistExecution = () => {
   });
 };
 
+export const useVerifyChecklistItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemId, isVerified, notes }: { 
+      itemId: string; 
+      isVerified: boolean;
+      notes?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('checklist_execution_items')
+        .update({
+          is_verified: isVerified,
+          verified_by: isVerified ? (await supabase.auth.getUser()).data.user?.id : null,
+          verified_at: isVerified ? new Date().toISOString() : null,
+          verification_notes: notes || null,
+        })
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['checklist-execution-items'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist-executions'] });
+    },
+  });
+};
+
 export const useVerifyChecklistExecution = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -224,6 +255,28 @@ export const useVerifyChecklistExecution = () => {
         title: "Verified",
         description: "Checklist execution verified successfully",
       });
+    },
+  });
+};
+
+// Hook to get completed checklists pending verification (for managers)
+export const usePendingChecklistVerifications = () => {
+  return useQuery({
+    queryKey: ['pending-verifications'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('checklist_executions')
+        .select(`
+          *,
+          checklist:checklists(*),
+          assigned_user:users!checklist_executions_user_fk(id, name, email),
+          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+        `)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ChecklistExecution[];
     },
   });
 };

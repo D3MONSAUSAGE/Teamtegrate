@@ -5,7 +5,8 @@ import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { MyChecklistsTab } from '@/components/checklists/MyChecklistsTab';
 import { ChecklistHistoryTab } from '@/components/checklists/ChecklistHistoryTab';
 import { ChecklistManagementTab } from '@/components/checklists/ChecklistManagementTab';
-import { ClipboardList, History, Settings } from 'lucide-react';
+import { ChecklistVerificationTab } from '@/components/checklists/ChecklistVerificationTab';
+import { ClipboardList, History, Settings, ShieldCheck } from 'lucide-react';
 
 const ChecklistsPage: React.FC = () => {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ const ChecklistsPage: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${canManage ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <TabsTrigger value="my-checklists" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
             My Checklists
@@ -35,6 +36,12 @@ const ChecklistsPage: React.FC = () => {
             <History className="h-4 w-4" />
             History
           </TabsTrigger>
+          {canManage && (
+            <TabsTrigger value="verification" className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              Verification
+            </TabsTrigger>
+          )}
           {canManage && (
             <TabsTrigger value="management" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -50,6 +57,12 @@ const ChecklistsPage: React.FC = () => {
         <TabsContent value="history" className="mt-6">
           <ChecklistHistoryTab />
         </TabsContent>
+
+        {canManage && (
+          <TabsContent value="verification" className="mt-6">
+            <ChecklistVerificationTab />
+          </TabsContent>
+        )}
 
         {canManage && (
           <TabsContent value="management" className="mt-6">
