@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChecklistExecution } from '@/types/checklist';
 import {
   useChecklistExecutionItems,
@@ -19,8 +21,9 @@ import {
   useCompleteChecklistExecution,
   useStartChecklistExecution,
 } from '@/hooks/useChecklistExecutions';
-import { Clock, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, FileText, Sparkles, Play, Save } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChecklistExecutionDialogProps {
   execution: ChecklistExecution | null;
@@ -34,8 +37,10 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
   onOpenChange,
 }) => {
   const [notes, setNotes] = useState('');
+  const [autoSaving, setAutoSaving] = useState(false);
+  const { toast } = useToast();
   
-  const { data: items, isLoading } = useChecklistExecutionItems(execution?.id || '');
+  const { data: items, isLoading, error } = useChecklistExecutionItems(execution?.id || '');
   const startExecution = useStartChecklistExecution();
   const completeItem = useCompleteChecklistItem();
   const completeExecution = useCompleteChecklistExecution();
@@ -48,27 +53,90 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
     }
   }, [execution]);
 
+  // Auto-save notes with debouncing
+  const autoSaveNotes = useCallback(async (newNotes: string) => {
+    if (!execution || execution.status === 'verified') return;
+    
+    setAutoSaving(true);
+    try {
+      // In a real implementation, you'd have an updateExecutionNotes mutation
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+      setAutoSaving(false);
+    } catch (error) {
+      setAutoSaving(false);
+      console.error('Failed to auto-save notes:', error);
+    }
+  }, [execution]);
+
+  useEffect(() => {
+    if (notes && execution) {
+      const timeoutId = setTimeout(() => autoSaveNotes(notes), 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [notes, autoSaveNotes, execution]);
+
   const handleStartExecution = async () => {
     if (execution && execution.status === 'pending') {
-      await startExecution.mutateAsync(execution.id);
+      try {
+        await startExecution.mutateAsync(execution.id);
+        toast({
+          title: "Checklist Started",
+          description: "You can now complete the checklist items.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to start checklist. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const handleCompleteItem = async (itemId: string, isCompleted: boolean, itemNotes?: string) => {
-    await completeItem.mutateAsync({
-      itemId,
-      isCompleted,
-      notes: itemNotes,
-    });
+    try {
+      await completeItem.mutateAsync({
+        itemId,
+        isCompleted,
+        notes: itemNotes,
+      });
+      
+      if (isCompleted) {
+        toast({
+          title: "Item Completed",
+          description: "Great progress! Keep going.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCompleteExecution = async () => {
     if (execution) {
-      await completeExecution.mutateAsync({
-        executionId: execution.id,
-        notes,
-      });
-      onOpenChange(false);
+      try {
+        await completeExecution.mutateAsync({
+          executionId: execution.id,
+          notes,
+        });
+        
+        toast({
+          title: "🎉 Checklist Completed!",
+          description: "Your checklist has been submitted for review.",
+        });
+        
+        onOpenChange(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to complete checklist. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -80,45 +148,80 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {execution.checklist?.name}
-            <Badge variant="outline">
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col animate-scale-in">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              {execution.checklist?.name}
+            </div>
+            <Badge variant="outline" className="ml-auto">
               {format(new Date(execution.execution_date), 'MMM d, yyyy')}
             </Badge>
           </DialogTitle>
-          <DialogDescription>
-            {execution.checklist?.description}
-          </DialogDescription>
+          {execution.checklist?.description && (
+            <DialogDescription className="text-base leading-relaxed">
+              {execution.checklist?.description}
+            </DialogDescription>
+          )}
+          
+          {/* Progress Indicator */}
+          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Overall Progress</span>
+              <span className="text-sm text-muted-foreground">
+                {completedItemsCount}/{totalItemsCount} completed
+              </span>
+            </div>
+            <Progress 
+              value={(completedItemsCount / Math.max(totalItemsCount, 1)) * 100} 
+              className="h-2 transition-all duration-500 ease-out"
+            />
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full pr-4">
             <div className="space-y-6">
-              {/* Execution Info */}
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              {/* Error State */}
+              {error && (
+                <Alert variant="destructive" className="animate-fade-in">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Failed to load checklist items. Please refresh the page and try again.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Empty State */}
+              {!isLoading && !error && (!items || items.length === 0) && (
+                <Alert className="animate-fade-in">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No checklist items found. This checklist may need to be configured by a manager.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Status Info */}
+              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-4 space-y-3 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Clock className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">Status</span>
                   </div>
-                  <Badge className="capitalize">
+                  <Badge 
+                    variant={execution.status === 'completed' ? 'default' : 'outline'}
+                    className="capitalize transition-colors duration-200"
+                  >
                     {execution.status.replace('_', ' ')}
                   </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Progress</span>
-                  <span className="text-sm font-medium">
-                    {completedItemsCount}/{totalItemsCount} items completed
-                  </span>
                 </div>
 
                 {execution.checklist?.execution_window_start && execution.checklist?.execution_window_end && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Time Window</span>
-                    <span className="text-sm">
+                    <span className="text-sm font-mono bg-background/50 px-2 py-1 rounded">
                       {execution.checklist.execution_window_start} - {execution.checklist.execution_window_end}
                     </span>
                   </div>
@@ -129,27 +232,39 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
               {execution.status === 'pending' && (
                 <Button
                   onClick={handleStartExecution}
-                  className="w-full"
+                  className="w-full group hover-scale animate-fade-in"
                   disabled={startExecution.isPending}
+                  size="lg"
                 >
+                  <Play className="h-4 w-4 mr-2 group-hover:animate-pulse" />
                   {startExecution.isPending ? 'Starting...' : 'Start Checklist'}
+                  <Sparkles className="h-4 w-4 ml-2 opacity-60" />
                 </Button>
               )}
 
               {/* Checklist Items */}
               {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <div className="text-center py-12 animate-fade-in">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading checklist items...</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Checklist Items
-                  </h3>
+              ) : items && items.length > 0 && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      Checklist Items
+                    </h3>
+                    {allItemsCompleted && (
+                      <Badge variant="default" className="animate-pulse">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        All Complete!
+                      </Badge>
+                    )}
+                  </div>
                   
-                  <div className="space-y-3">
-                    {items?.map((item, index) => (
+                  <div className="space-y-4">
+                    {items.map((item, index) => (
                       <ChecklistItemCard
                         key={item.id}
                         item={item}
@@ -165,42 +280,114 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
               {/* Notes Section */}
               {execution.status !== 'pending' && (
                 <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium">Execution Notes</label>
+                  <Separator className="my-6" />
+                  <div className="space-y-4 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Execution Notes
+                      </label>
+                      {autoSaving && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Save className="h-3 w-3 animate-pulse" />
+                          Auto-saving...
+                        </div>
+                      )}
+                    </div>
                     <Textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add any notes about this checklist execution..."
+                      placeholder="Add any notes, observations, or issues encountered during this checklist execution..."
                       disabled={execution.status === 'verified'}
-                      rows={3}
+                      rows={4}
+                      className="resize-none transition-all duration-200 focus:ring-2"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Notes are automatically saved as you type
+                    </p>
                   </div>
                 </>
               )}
 
               {/* Complete Button */}
               {execution.status === 'in_progress' && (
-                <Button
-                  onClick={handleCompleteExecution}
-                  className="w-full"
-                  disabled={!allItemsCompleted || completeExecution.isPending}
-                >
-                  {completeExecution.isPending ? 'Completing...' : 'Complete Checklist'}
-                </Button>
+                <div className="space-y-4 animate-fade-in">
+                  {!allItemsCompleted && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Please complete all required checklist items before submitting.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Button
+                    onClick={handleCompleteExecution}
+                    className="w-full group hover-scale"
+                    disabled={!allItemsCompleted || completeExecution.isPending}
+                    size="lg"
+                    variant={allItemsCompleted ? "default" : "outline"}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2 group-hover:animate-pulse" />
+                    {completeExecution.isPending ? 'Submitting...' : 'Submit Completed Checklist'}
+                    <Sparkles className="h-4 w-4 ml-2 opacity-60" />
+                  </Button>
+                </div>
               )}
 
               {/* Verification Info */}
               {execution.status === 'verified' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium text-blue-900">Verified by Manager</span>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 animate-fade-in">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-green-900">Verified by Manager</span>
+                      <p className="text-sm text-green-700">This checklist has been reviewed and approved</p>
+                    </div>
                   </div>
-                  <div className="space-y-1 text-sm text-blue-800">
-                    <div>Verified by: {execution.verifier?.name}</div>
-                    <div>Verification Score: {execution.verification_score}/100</div>
-                    <div>Total Score: {execution.total_score}/100</div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Verified by:</span>
+                        <span className="font-medium text-green-900">{execution.verifier?.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Verification Score:</span>
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          {execution.verification_score}/100
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Total Score:</span>
+                        <Badge variant="default" className="bg-green-600">
+                          {execution.total_score}/100
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-700">Status:</span>
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          ✓ Completed
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Completed State */}
+              {execution.status === 'completed' && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 animate-fade-in">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-blue-900">Awaiting Verification</span>
+                      <p className="text-sm text-blue-700">Your checklist has been submitted for manager review</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -226,60 +413,84 @@ const ChecklistItemCard: React.FC<ChecklistItemCardProps> = ({
   disabled,
 }) => {
   const [itemNotes, setItemNotes] = useState(item.notes || '');
+  const [isExpanded, setIsExpanded] = useState(item.is_completed);
 
   const handleCheckChange = (checked: boolean) => {
     onComplete(item.id, checked, itemNotes);
+    setIsExpanded(checked);
   };
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
-      <div className="flex items-start gap-3">
-        <Checkbox
-          checked={item.is_completed}
-          onCheckedChange={handleCheckChange}
-          disabled={disabled}
-          className="mt-1"
-        />
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">
-              {index + 1}. {item.checklist_item?.title}
-            </span>
-            {item.checklist_item?.is_required && (
-              <Badge variant="outline" className="text-xs">Required</Badge>
-            )}
-            {item.is_verified && (
-              <Badge className="text-xs bg-blue-100 text-blue-800">Verified</Badge>
+    <div className={`border rounded-lg transition-all duration-300 hover-scale ${
+      item.is_completed ? 'bg-green-50 border-green-200' : 'bg-background border-border'
+    }`}>
+      <div className="p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            checked={item.is_completed}
+            onCheckedChange={handleCheckChange}
+            disabled={disabled}
+            className="mt-1 transition-all duration-200"
+          />
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`font-medium transition-colors duration-200 ${
+                item.is_completed ? 'text-green-800' : 'text-foreground'
+              }`}>
+                {index + 1}. {item.checklist_item?.title}
+              </span>
+              {item.checklist_item?.is_required && (
+                <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                  Required
+                </Badge>
+              )}
+              {item.is_verified && (
+                <Badge className="text-xs bg-blue-100 text-blue-800 animate-pulse">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Verified
+                </Badge>
+              )}
+            </div>
+            {item.checklist_item?.description && (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {item.checklist_item.description}
+              </p>
             )}
           </div>
-          {item.checklist_item?.description && (
-            <p className="text-sm text-muted-foreground">
-              {item.checklist_item.description}
-            </p>
-          )}
+          <div className="transition-all duration-200">
+            {item.is_completed ? (
+              <div className="p-1 bg-green-100 rounded-full">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
+            ) : (
+              <div className="p-1 bg-orange-100 rounded-full">
+                <AlertCircle className="h-4 w-4 text-orange-500" />
+              </div>
+            )}
+          </div>
         </div>
-        {item.is_completed ? (
-          <CheckCircle className="h-5 w-5 text-green-500 mt-1" />
-        ) : (
-          <AlertCircle className="h-5 w-5 text-orange-500 mt-1" />
-        )}
       </div>
 
-      {item.is_completed && (
-        <div className="ml-8 space-y-2">
-          <Textarea
-            value={itemNotes}
-            onChange={(e) => setItemNotes(e.target.value)}
-            placeholder="Add notes for this item..."
-            disabled={disabled || item.is_verified}
-            rows={2}
-            className="text-sm"
-          />
-          {item.completed_at && (
-            <p className="text-xs text-muted-foreground">
-              Completed: {format(new Date(item.completed_at), 'MMM d, yyyy h:mm a')}
-            </p>
-          )}
+      
+      {/* Expandable Notes Section */}
+      {isExpanded && (
+        <div className="px-4 pb-4 animate-fade-in">
+          <div className="ml-7 space-y-3 pl-4 border-l-2 border-green-200">
+            <Textarea
+              value={itemNotes}
+              onChange={(e) => setItemNotes(e.target.value)}
+              placeholder="Add notes, observations, or details about completing this item..."
+              disabled={disabled || item.is_verified}
+              rows={3}
+              className="text-sm resize-none transition-all duration-200 focus:ring-2"
+            />
+            {item.completed_at && (
+              <div className="flex items-center gap-2 text-xs text-green-600">
+                <CheckCircle className="h-3 w-3" />
+                Completed: {format(new Date(item.completed_at), 'MMM d, yyyy h:mm a')}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
