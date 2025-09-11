@@ -270,6 +270,57 @@ export const useVerifyChecklistExecution = () => {
   });
 };
 
+// Manager hook to complete and verify in one action - skips 'completed' status
+export const useManagerCompleteAndVerify = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ 
+      executionId, 
+      notes,
+      items
+    }: { 
+      executionId: string; 
+      notes?: string;
+      items: any[];
+    }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      // Calculate verification score based on completed items
+      const completedItems = items.filter(item => item.is_completed);
+      const verificationScore = Math.round((completedItems.length / items.length) * 100);
+
+      const { data, error } = await supabase
+        .from('checklist_executions')
+        .update({
+          status: 'verified',
+          completed_at: new Date().toISOString(),
+          verified_at: new Date().toISOString(),
+          verified_by: user.id,
+          verification_score: verificationScore,
+          total_score: verificationScore,
+          notes: notes || null,
+        })
+        .eq('id', executionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-checklist-executions'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist-execution-history'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-verifications'] });
+      toast({
+        title: "Completed & Verified",
+        description: "Checklist has been completed and verified successfully",
+      });
+    },
+  });
+};
+
 // Hook to get completed checklists pending verification (for managers)
 export const usePendingChecklistVerifications = () => {
   return useQuery({

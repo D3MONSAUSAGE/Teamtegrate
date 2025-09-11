@@ -20,11 +20,14 @@ import {
   useCompleteChecklistItem,
   useCompleteChecklistExecution,
   useStartChecklistExecution,
+  useManagerCompleteAndVerify,
+  useVerifyChecklistItem,
 } from '@/hooks/useChecklistExecutions';
 import { Clock, CheckCircle, AlertCircle, FileText, Sparkles, Play, Save, Check, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth/AuthProvider';
+import { ManagerVerifyConfirmDialog } from './ManagerVerifyConfirmDialog';
 
 interface ChecklistExecutionDialogProps {
   execution: ChecklistExecution | null;
@@ -39,6 +42,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 }) => {
   const [notes, setNotes] = useState('');
   const [autoSaving, setAutoSaving] = useState(false);
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const { toast } = useToast();
   const { user, hasRoleAccess } = useAuth();
   
@@ -48,6 +52,8 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
   const startExecution = useStartChecklistExecution();
   const completeItem = useCompleteChecklistItem();
   const completeExecution = useCompleteChecklistExecution();
+  const managerCompleteAndVerify = useManagerCompleteAndVerify();
+  const verifyItem = useVerifyChecklistItem();
 
   useEffect(() => {
     if (execution?.notes) {
@@ -120,6 +126,29 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
     }
   };
 
+  const handleVerifyItem = async (itemId: string, isVerified: boolean, itemNotes?: string) => {
+    try {
+      await verifyItem.mutateAsync({
+        itemId,
+        isVerified,
+        notes: itemNotes,
+      });
+      
+      if (isVerified) {
+        toast({
+          title: "Item Verified",
+          description: "Item verification completed.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to verify item. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCompleteExecution = async () => {
     if (execution) {
       try {
@@ -144,9 +173,37 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
     }
   };
 
+  const handleManagerCompleteAndVerify = async () => {
+    setShowVerifyDialog(false);
+    if (execution && items) {
+      try {
+        await managerCompleteAndVerify.mutateAsync({
+          executionId: execution.id,
+          notes,
+          items,
+        });
+        
+        toast({
+          title: "🎉 Checklist Completed & Verified!",
+          description: "The checklist has been completed and verified successfully.",
+        });
+        
+        onOpenChange(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to complete and verify checklist. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const completedItemsCount = items?.filter(item => item.is_completed).length || 0;
+  const verifiedItemsCount = items?.filter(item => item.is_verified).length || 0;
   const totalItemsCount = items?.length || 0;
   const allItemsCompleted = completedItemsCount === totalItemsCount && totalItemsCount > 0;
+  const allItemsExecutedAndVerified = isManager && completedItemsCount === totalItemsCount && verifiedItemsCount === totalItemsCount && totalItemsCount > 0;
 
   if (!execution) return null;
 
@@ -179,11 +236,11 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Progress</span>
               <span className="text-sm text-muted-foreground">
-                {completedItemsCount}/{totalItemsCount} {isManager ? 'executed & verified' : 'completed'}
+                {isManager ? `${completedItemsCount}/${totalItemsCount} executed, ${verifiedItemsCount}/${totalItemsCount} verified` : `${completedItemsCount}/${totalItemsCount} completed`}
               </span>
             </div>
             <Progress 
-              value={(completedItemsCount / Math.max(totalItemsCount, 1)) * 100} 
+              value={isManager ? (verifiedItemsCount / Math.max(totalItemsCount, 1)) * 100 : (completedItemsCount / Math.max(totalItemsCount, 1)) * 100} 
               className="h-2 transition-all duration-500 ease-out"
             />
           </div>
@@ -263,7 +320,12 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                       <FileText className="h-5 w-5 text-primary" />
                       Checklist Items
                     </h3>
-                    {allItemsCompleted && (
+                    {allItemsExecutedAndVerified ? (
+                      <Badge variant="default" className="animate-pulse bg-green-600">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        All Executed & Verified!
+                      </Badge>
+                    ) : allItemsCompleted && (
                       <Badge variant="default" className="animate-pulse">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         All Complete!
@@ -278,6 +340,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                         item={item}
                         index={index}
                         onComplete={handleCompleteItem}
+                        onVerify={handleVerifyItem}
                         disabled={execution.status === 'verified' || execution.status === 'pending'}
                         isManager={isManager}
                       />
@@ -321,25 +384,53 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
               {/* Complete Button */}
               {execution.status === 'in_progress' && (
                 <div className="space-y-4 animate-fade-in">
-                  {!allItemsCompleted && (
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Please complete all required checklist items before submitting.
-                      </AlertDescription>
-                    </Alert>
+                  {isManager && allItemsExecutedAndVerified ? (
+                    // Manager Complete & Verify Button
+                    <div className="space-y-3">
+                      <Alert className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          All items have been executed and verified. You can now complete and verify this checklist permanently.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        onClick={() => setShowVerifyDialog(true)}
+                        className="w-full group hover-scale bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                        disabled={managerCompleteAndVerify.isPending}
+                        size="lg"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2 group-hover:animate-pulse" />
+                        Complete & Verify Checklist
+                        <Sparkles className="h-4 w-4 ml-2 opacity-60" />
+                      </Button>
+                    </div>
+                  ) : (
+                    // Regular Complete Button
+                    <div className="space-y-3">
+                      {!allItemsCompleted && (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            {isManager 
+                              ? 'Please execute and verify all required checklist items before submitting.'
+                              : 'Please complete all required checklist items before submitting.'
+                            }
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      <Button
+                        onClick={handleCompleteExecution}
+                        className="w-full group hover-scale"
+                        disabled={!allItemsCompleted || completeExecution.isPending}
+                        size="lg"
+                        variant={allItemsCompleted ? "default" : "outline"}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2 group-hover:animate-pulse" />
+                        {completeExecution.isPending ? 'Submitting...' : isManager ? 'Submit for Final Verification' : 'Submit Completed Checklist'}
+                        <Sparkles className="h-4 w-4 ml-2 opacity-60" />
+                      </Button>
+                    </div>
                   )}
-                  <Button
-                    onClick={handleCompleteExecution}
-                    className="w-full group hover-scale"
-                    disabled={!allItemsCompleted || completeExecution.isPending}
-                    size="lg"
-                    variant={allItemsCompleted ? "default" : "outline"}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2 group-hover:animate-pulse" />
-                    {completeExecution.isPending ? 'Submitting...' : 'Submit Completed Checklist'}
-                    <Sparkles className="h-4 w-4 ml-2 opacity-60" />
-                  </Button>
                 </div>
               )}
 
@@ -402,6 +493,17 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
               )}
             </div>
         </ScrollArea>
+
+        {/* Manager Verification Confirmation Dialog */}
+        <ManagerVerifyConfirmDialog
+          open={showVerifyDialog}
+          onOpenChange={setShowVerifyDialog}
+          onConfirm={handleManagerCompleteAndVerify}
+          checklistName={execution?.checklist?.name || 'Checklist'}
+          completedItems={completedItemsCount}
+          totalItems={totalItemsCount}
+          isLoading={managerCompleteAndVerify.isPending}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -411,6 +513,7 @@ interface ChecklistItemCardProps {
   item: any;
   index: number;
   onComplete: (itemId: string, isCompleted: boolean, notes?: string) => void;
+  onVerify: (itemId: string, isVerified: boolean, notes?: string) => void;
   disabled: boolean;
   isManager?: boolean;
 }
@@ -419,6 +522,7 @@ const ChecklistItemCard: React.FC<ChecklistItemCardProps> = ({
   item,
   index,
   onComplete,
+  onVerify,
   disabled,
   isManager = false,
 }) => {
@@ -449,12 +553,8 @@ const ChecklistItemCard: React.FC<ChecklistItemCardProps> = ({
       return;
     }
     setIsVerified(checked);
-    // Complete item if both executed and verified
-    if (isManager && isExecuted && checked) {
-      onComplete(item.id, true, itemNotes);
-    } else if (!checked) {
-      onComplete(item.id, false, itemNotes);
-    }
+    // Call the verify handler directly
+    onVerify(item.id, checked, itemNotes);
   };
 
   // For manager view, show both statuses
