@@ -69,6 +69,8 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
     { id: 'wednesday', label: 'Wednesday' },
     { id: 'thursday', label: 'Thursday' },
     { id: 'friday', label: 'Friday' },
+    { id: 'saturday', label: 'Saturday' },
+    { id: 'sunday', label: 'Sunday' },
   ];
 
   const handleAddItem = () => {
@@ -258,7 +260,7 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
                     <Calendar className="h-4 w-4" />
                     Scheduled Days
                   </Label>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-7 gap-2">
                     {WEEKDAYS.map(day => (
                       <div key={day.id} className="flex items-center space-x-2">
                         <Checkbox
