@@ -55,10 +55,21 @@ export const useChecklistExecutionItems = (executionId: string) => {
           verifier:users!checklist_execution_items_verified_by_fk(id, name, email)
         `)
         .eq('execution_id', executionId)
-        .order('checklist_item.order_index');
+        .order('checklist_item_id');
 
-      if (error) throw error;
-      return data as any[];
+      if (error) {
+        console.error('Error fetching checklist execution items:', error);
+        throw error;
+      }
+      
+      // Sort by the order_index from the joined checklist_item
+      const sortedData = data?.sort((a, b) => {
+        const orderA = a.checklist_item?.order_index || 0;
+        const orderB = b.checklist_item?.order_index || 0;
+        return orderA - orderB;
+      });
+      
+      return sortedData as any[];
     },
     enabled: !!executionId,
   });
