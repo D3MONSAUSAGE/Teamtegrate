@@ -10,16 +10,16 @@ import {
   Database, 
   FileText, 
   BarChart3,
-  Settings
+  Activity
 } from 'lucide-react';
 import ModernPageHeader from '@/components/ui/ModernPageHeader';
 import FinanceDashboardOverview from '@/components/finance/dashboard/FinanceDashboardOverview';
 import SmartUploadCenter from '@/components/finance/dashboard/SmartUploadCenter';
 import DataBrowser from '@/components/finance/dashboard/DataBrowser';
 import ReportGallery from '@/components/finance/dashboard/ReportGallery';
-import DailySalesManager from '@/components/finance/DailySalesManager';
+import AdvancedAnalyticsDashboard from '@/components/finance/analytics/AdvancedAnalyticsDashboard';
 
-type FinanceView = 'dashboard' | 'upload' | 'data' | 'reports' | 'analytics' | 'legacy';
+type FinanceView = 'dashboard' | 'upload' | 'data' | 'reports' | 'analytics';
 
 const FinancePage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -41,37 +41,31 @@ const FinancePage: React.FC = () => {
       id: 'dashboard' as FinanceView,
       label: 'Dashboard',
       icon: LayoutDashboard,
-      description: 'Overview and quick actions'
+      description: 'Overview and key metrics'
+    },
+    {
+      id: 'analytics' as FinanceView,
+      label: 'Analytics',
+      icon: BarChart3,
+      description: 'Advanced insights'
     },
     {
       id: 'upload' as FinanceView,
-      label: 'Upload Center',
+      label: 'Upload Data',
       icon: Upload,
-      description: 'Upload sales data'
-    },
-    {
-      id: 'data' as FinanceView,
-      label: 'Data Browser',
-      icon: Database,
-      description: 'View and manage data'
+      description: 'Add sales reports'
     },
     {
       id: 'reports' as FinanceView,
-      label: 'Report Gallery',
+      label: 'Reports',
       icon: FileText,
       description: 'Generate reports'
     },
     {
-      id: 'analytics' as FinanceView,
-      label: 'Custom Analytics',
-      icon: BarChart3,
-      description: 'Advanced analysis'
-    },
-    {
-      id: 'legacy' as FinanceView,
-      label: 'Legacy View',
-      icon: Settings,
-      description: 'Original interface'
+      id: 'data' as FinanceView,
+      label: 'Browse Data',
+      icon: Database,
+      description: 'View and manage data'
     }
   ];
 
@@ -83,13 +77,13 @@ const FinancePage: React.FC = () => {
             onNavigateToUpload={() => setCurrentView('upload')}
             onNavigateToReports={() => setCurrentView('reports')}
             onNavigateToData={() => setCurrentView('data')}
-            onNavigateToWeekly={() => setCurrentView('analytics')}
+            onNavigateToAnalytics={() => setCurrentView('analytics')}
           />
         );
+      case 'analytics':
+        return <AdvancedAnalyticsDashboard onBackToDashboard={() => setCurrentView('dashboard')} />;
       case 'upload':
         return <SmartUploadCenter onBackToDashboard={() => setCurrentView('dashboard')} />;
-      case 'data':
-        return <DataBrowser onBackToDashboard={() => setCurrentView('dashboard')} />;
       case 'reports':
         return (
           <ReportGallery
@@ -97,46 +91,10 @@ const FinancePage: React.FC = () => {
             onNavigateToAnalytics={() => setCurrentView('analytics')}
           />
         );
-      case 'analytics':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setCurrentView('dashboard')}
-                  className="mb-4 -ml-4"
-                >
-                  ← Back to Dashboard
-                </Button>
-                <h1 className="text-2xl font-bold">Custom Analytics</h1>
-                <p className="text-muted-foreground">Build custom reports and advanced analytics</p>
-              </div>
-            </div>
-            <DailySalesManager />
-          </div>
-        );
-      case 'legacy':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setCurrentView('dashboard')}
-                  className="mb-4 -ml-4"
-                >
-                  ← Back to Dashboard
-                </Button>
-                <h1 className="text-2xl font-bold">Legacy Interface</h1>
-                <p className="text-muted-foreground">Original tabbed interface for advanced users</p>
-              </div>
-            </div>
-            <DailySalesManager />
-          </div>
-        );
+      case 'data':
+        return <DataBrowser onBackToDashboard={() => setCurrentView('dashboard')} />;
       default:
-        return null;
+        return <div>View not found</div>;
     }
   };
 
@@ -186,8 +144,8 @@ const FinancePage: React.FC = () => {
             {/* Navigation Pills - Only show on dashboard */}
             {currentView === 'dashboard' && (
               <div className="animate-fade-in delay-100">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                  {navigationItems.slice(0, -1).map((item) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                  {navigationItems.map((item) => (
                     <Button
                       key={item.id}
                       variant="ghost"
@@ -205,19 +163,6 @@ const FinancePage: React.FC = () => {
                       </div>
                     </Button>
                   ))}
-                </div>
-                
-                {/* Legacy Access Button */}
-                <div className="flex justify-center mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentView('legacy')}
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Access Legacy Interface
-                  </Button>
                 </div>
               </div>
             )}

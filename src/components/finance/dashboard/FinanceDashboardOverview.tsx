@@ -22,14 +22,14 @@ interface FinanceDashboardOverviewProps {
   onNavigateToUpload: () => void;
   onNavigateToReports: () => void;
   onNavigateToData: () => void;
-  onNavigateToWeekly: () => void;
+  onNavigateToAnalytics: () => void;
 }
 
 const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
   onNavigateToUpload,
   onNavigateToReports,
   onNavigateToData,
-  onNavigateToWeekly
+  onNavigateToAnalytics
 }) => {
   const { weeklyData, salesData, isLoading } = useSalesManager();
 
@@ -62,12 +62,32 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
       trend: 'up'
     },
     {
-      title: 'Active Locations',
-      value: weeklyData ? '3' : '0',
-      change: 'All online',
-      icon: Users,
+      title: 'Order Count',
+      value: salesData?.length ? salesData.length.toLocaleString() : '0',
+      change: '+15.3%',
+      icon: Receipt,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
+      trend: 'up'
+    },
+    {
+      title: 'Avg Order Value',
+      value: weeklyData && weeklyData.totals.grossTotal > 0 && salesData?.length ? 
+        `$${(weeklyData.totals.grossTotal / salesData.length).toFixed(2)}` : '$0',
+      change: '+3.2%',
+      icon: BarChart3,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      trend: 'up'
+    },
+    {
+      title: 'Data Quality',
+      value: salesData?.length ? 
+        `${Math.round((salesData.filter(d => d.netSales > 0).length / salesData.length) * 100)}%` : '0%',
+      change: 'Excellent',
+      icon: Activity,
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50',
       trend: 'up'
     }
   ];
@@ -82,19 +102,27 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
       disabled: false
     },
     {
-      title: 'View Reports',
-      description: 'Browse analytics and detailed reports',
+      title: 'Advanced Analytics',
+      description: 'Deep insights and performance analytics',
       icon: BarChart3,
-      onClick: onNavigateToReports,
+      onClick: onNavigateToAnalytics,
       gradient: 'from-blue-500 to-blue-600',
       disabled: false
     },
     {
-      title: 'Manage Data',
-      description: 'Review and organize your financial data',
+      title: 'Generate Reports',
+      description: 'Create comprehensive business reports',
       icon: FileText,
-      onClick: onNavigateToData,
+      onClick: onNavigateToReports,
       gradient: 'from-purple-500 to-purple-600',
+      disabled: false
+    },
+    {
+      title: 'Browse Data',
+      description: 'Review and manage your financial data',
+      icon: Activity,
+      onClick: onNavigateToData,
+      gradient: 'from-amber-500 to-amber-600',
       disabled: false
     }
   ];
@@ -155,7 +183,7 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {kpiCards.map((kpi, index) => (
           <Card key={kpi.title} className="glass-card border-0 shadow-md hover:shadow-lg transition-all duration-300 group">
             <CardContent className="p-6">
@@ -183,36 +211,58 @@ const FinanceDashboardOverview: React.FC<FinanceDashboardOverviewProps> = ({
         ))}
       </div>
 
-      {/* Weekly Sales Access */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <WeeklySalesButton
-            onNavigateToWeekly={onNavigateToWeekly}
-            weeklyStats={{
-              currentWeekSales: weeklyData?.totals.grossTotal || 0,
-              weeklyGrowth: 5.2, // Calculate from analytics service in future
-              daysWithData: weeklyData?.dailySales.length || 0
-            }}
-          />
-        </div>
-        
-        <div className="lg:col-span-2">
-          {/* Future: Additional weekly insights or charts */}
-          <Card className="glass-card border-0 shadow-md h-full">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                Weekly Insights
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground text-sm">
-                Advanced weekly analytics coming soon
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Performance Overview */}
+      <Card className="glass-card border-0 shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Performance Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Quick Stats</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                  <span className="text-sm font-medium">Total Records</span>
+                  <Badge variant="secondary">{salesData?.length || 0}</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                  <span className="text-sm font-medium">Current Week Sales</span>
+                  <span className="font-semibold">${weeklyData?.totals.grossTotal.toLocaleString() || '0'}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                  <span className="text-sm font-medium">Labor Cost %</span>
+                  <Badge variant={weeklyData && (weeklyData.totals.grossTotal > 0) && (weeklyData.totals.expenses / weeklyData.totals.grossTotal * 100) <= 35 ? "default" : "destructive"}>
+                    {weeklyData?.totals.grossTotal > 0 ? `${(weeklyData.totals.expenses / weeklyData.totals.grossTotal * 100).toFixed(1)}%` : '0%'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Recent Activity</h4>
+              <div className="space-y-2">
+                {recentActivity.slice(0, 3).map((activity, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/20">
+                    <div className={`p-1 rounded-full ${
+                      activity.status === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                      activity.status === 'warning' ? 'bg-amber-100 text-amber-600' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      <Activity className="w-3 h-3" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="glass-card border-0 shadow-md">
