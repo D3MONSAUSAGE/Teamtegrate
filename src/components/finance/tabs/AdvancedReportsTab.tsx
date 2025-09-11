@@ -1,7 +1,7 @@
 import React from 'react';
 import AdvancedReportsManager from '@/components/finance/analytics/AdvancedReportsManager';
 
-const ReportsTab: React.FC = () => {
+const AdvancedReportsTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <AdvancedReportsManager />
@@ -9,4 +9,4 @@ const ReportsTab: React.FC = () => {
   );
 };
 
-export default ReportsTab;
+export default AdvancedReportsTab;
