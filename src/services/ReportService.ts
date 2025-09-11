@@ -228,9 +228,20 @@ class ReportService {
   }
 
   private async getSalesData(dateRange: { start: Date; end: Date }, teamId?: string) {
-    // This would typically call your sales data service
-    // For now, return empty array - you'd implement actual data fetching
-    return [];
+    // Import the sales data service to get real data
+    const { salesDataService } = await import('@/services/SalesDataService');
+    
+    try {
+      const data = await salesDataService.fetchSalesData({
+        date_from: dateRange.start.toISOString().split('T')[0],
+        date_to: dateRange.end.toISOString().split('T')[0],
+        team_id: teamId && teamId !== 'all' ? teamId : undefined
+      });
+      return data;
+    } catch (error) {
+      console.error('[ReportService] Error fetching sales data:', error);
+      return [];
+    }
   }
 
   getReportTemplates(): ReportTemplate[] {

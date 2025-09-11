@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/components/ui/sonner';
+import { useSalesManager } from '@/hooks/useSalesManager';
 import { 
   Upload, 
   FileText, 
@@ -24,6 +26,17 @@ interface SmartUploadCenterProps {
 
 const SmartUploadCenter: React.FC<SmartUploadCenterProps> = ({ onBackToDashboard }) => {
   const [uploadMode, setUploadMode] = useState<'quick' | 'enhanced'>('quick');
+  const { addSalesData } = useSalesManager();
+
+  const handleUpload = async (data: any, replaceExisting: boolean = false) => {
+    try {
+      await addSalesData(data, replaceExisting);
+      toast.success('Sales data uploaded successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload sales data. Please try again.');
+    }
+  };
 
   const supportedSystems = [
     { name: 'Brink POS', status: 'active', icon: '🟢' },
@@ -150,17 +163,11 @@ const SmartUploadCenter: React.FC<SmartUploadCenterProps> = ({ onBackToDashboard
         <CardContent>
           {uploadMode === 'quick' ? (
             <SalesUploadManager 
-              onUpload={async (data, replaceExisting) => {
-                // TODO: Implement upload logic or pass through from props
-                console.log('Upload triggered:', data, replaceExisting);
-              }}
+              onUpload={handleUpload}
             />
           ) : (
             <EnhancedSalesUploadManager 
-              onUpload={async (data, replaceExisting) => {
-                // TODO: Implement upload logic or pass through from props
-                console.log('Enhanced upload triggered:', data, replaceExisting);
-              }}
+              onUpload={handleUpload}
             />
           )}
         </CardContent>

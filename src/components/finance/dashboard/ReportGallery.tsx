@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/components/ui/sonner';
+import { ReportPreviewModal } from '@/components/finance/modals/ReportPreviewModal';
+import { reportService, ReportPreview } from '@/services/ReportService';
+import { exportService } from '@/services/ExportService';
 import { 
   FileText, 
   TrendingUp, 
@@ -31,6 +35,12 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [previewModal, setPreviewModal] = useState<{
+    isOpen: boolean;
+    preview: ReportPreview | null;
+    reportId: number | null;
+  }>({ isOpen: false, preview: null, reportId: null });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const reportCategories = [
     { id: 'all', label: 'All Reports', count: 12 },
@@ -134,30 +144,43 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
   });
 
   const handleGenerateReport = async (reportId: number) => {
+    setIsGenerating(true);
     try {
-      const { reportService } = await import('@/services/ReportService');
       const template = reportService.getReportTemplates().find(t => t.id === reportId);
       if (template) {
         const blob = await template.generateFunction();
-        const { exportService } = await import('@/services/ExportService');
         exportService.downloadBlob(blob, exportService.generateFilename(template.title, 'pdf'));
+        toast.success('Report generated successfully!');
       }
     } catch (error) {
       console.error('Error generating report:', error);
+      toast.error('Failed to generate report. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   const handlePreviewReport = async (reportId: number) => {
     try {
-      const { reportService } = await import('@/services/ReportService');
       const template = reportService.getReportTemplates().find(t => t.id === reportId);
       if (template) {
         const preview = await template.previewFunction();
-        console.log('Report preview:', preview);
-        // Show preview modal here
+        setPreviewModal({ isOpen: true, preview, reportId });
       }
     } catch (error) {
       console.error('Error previewing report:', error);
+      toast.error('Failed to preview report. Please try again.');
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewModal({ isOpen: false, preview: null, reportId: null });
+  };
+
+  const handleGenerateFromPreview = async () => {
+    if (previewModal.reportId) {
+      await handleGenerateReport(previewModal.reportId);
+      handleClosePreview();
     }
   };
 
@@ -261,6 +284,7 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
                       onClick={() => handlePreviewReport(report.id)}
                       variant="outline"
                       className="flex-1"
+                      disabled={isGenerating}
                     >
                       <Eye className="w-3 h-3 mr-1" />
                       Preview
@@ -269,9 +293,14 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
                       size="sm" 
                       onClick={() => handleGenerateReport(report.id)}
                       className="flex-1"
+                      disabled={isGenerating}
                     >
-                      <Download className="w-3 h-3 mr-1" />
-                      Generate
+                      {isGenerating ? (
+                        <div className="w-3 h-3 mr-1 animate-spin rounded-full border border-white border-t-transparent" />
+                      ) : (
+                        <Download className="w-3 h-3 mr-1" />
+                      )}
+                      {isGenerating ? 'Generating...' : 'Generate'}
                     </Button>
                   </div>
                 </div>
@@ -323,6 +352,7 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
                       onClick={() => handlePreviewReport(report.id)}
                       variant="outline"
                       className="flex-1"
+                      disabled={isGenerating}
                     >
                       <Eye className="w-3 h-3 mr-1" />
                       Preview
@@ -331,9 +361,14 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
                       size="sm" 
                       onClick={() => handleGenerateReport(report.id)}
                       className="flex-1"
+                      disabled={isGenerating}
                     >
-                      <Download className="w-3 h-3 mr-1" />
-                      Generate
+                      {isGenerating ? (
+                        <div className="w-3 h-3 mr-1 animate-spin rounded-full border border-white border-t-transparent" />
+                      ) : (
+                        <Download className="w-3 h-3 mr-1" />
+                      )}
+                      {isGenerating ? 'Generating...' : 'Generate'}
                     </Button>
                   </div>
                 </div>
@@ -342,6 +377,15 @@ const ReportGallery: React.FC<ReportGalleryProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Report Preview Modal */}
+      <ReportPreviewModal
+        isOpen={previewModal.isOpen}
+        onClose={handleClosePreview}
+        preview={previewModal.preview}
+        onGenerate={handleGenerateFromPreview}
+        isGenerating={isGenerating}
+      />
     </div>
   );
 };

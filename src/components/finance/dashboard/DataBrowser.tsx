@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/components/ui/sonner';
+import { DataViewModal } from '@/components/finance/modals/DataViewModal';
 import { 
   Database, 
   Search, 
@@ -20,6 +22,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useSalesManager } from '@/hooks/useSalesManager';
+import { SalesData } from '@/types/sales';
 import { format } from 'date-fns';
 
 interface DataBrowserProps {
@@ -27,9 +30,14 @@ interface DataBrowserProps {
 }
 
 const DataBrowser: React.FC<DataBrowserProps> = ({ onBackToDashboard }) => {
-  const { salesData, weeklyData, isLoading } = useSalesManager();
+  const { salesData, weeklyData, isLoading, deleteSalesData } = useSalesManager();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>('all');
+  const [viewModal, setViewModal] = useState<{
+    isOpen: boolean;
+    salesData: SalesData | null;
+  }>({ isOpen: false, salesData: null });
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const timeRanges = [
     { id: 'all', label: 'All Time', count: salesData.length },
@@ -55,6 +63,36 @@ const DataBrowser: React.FC<DataBrowserProps> = ({ onBackToDashboard }) => {
     // Add time range filtering logic here if needed
     return matchesSearch;
   });
+
+  const handleViewData = (data: SalesData) => {
+    setViewModal({ isOpen: true, salesData: data });
+  };
+
+  const handleCloseViewModal = () => {
+    setViewModal({ isOpen: false, salesData: null });
+  };
+
+  const handleDeleteData = async (data: SalesData) => {
+    if (!data.id) {
+      toast.error('Cannot delete: Invalid data ID');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the sales data for ${data.location} on ${format(new Date(data.date), 'MMM dd, yyyy')}?`)) {
+      return;
+    }
+
+    setIsDeleting(data.id);
+    try {
+      await deleteSalesData(data.id);
+      toast.success('Sales data deleted successfully');
+    } catch (error) {
+      console.error('Error deleting sales data:', error);
+      toast.error('Failed to delete sales data');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -259,7 +297,8 @@ const DataBrowser: React.FC<DataBrowserProps> = ({ onBackToDashboard }) => {
                             size="sm" 
                             variant="ghost" 
                             className="h-8 w-8 p-0"
-                            onClick={() => console.log('View data:', data)}
+                            onClick={() => handleViewData(data)}
+                            title="View details"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -267,9 +306,15 @@ const DataBrowser: React.FC<DataBrowserProps> = ({ onBackToDashboard }) => {
                             size="sm" 
                             variant="ghost" 
                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            onClick={() => console.log('Delete data:', data)}
+                            onClick={() => handleDeleteData(data)}
+                            disabled={isDeleting === data.id}
+                            title="Delete record"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {isDeleting === data.id ? (
+                              <div className="w-4 h-4 animate-spin rounded-full border border-destructive border-t-transparent" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
                       </td>
@@ -289,6 +334,13 @@ const DataBrowser: React.FC<DataBrowserProps> = ({ onBackToDashboard }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Data View Modal */}
+      <DataViewModal
+        isOpen={viewModal.isOpen}
+        onClose={handleCloseViewModal}
+        salesData={viewModal.salesData}
+      />
     </div>
   );
 };
