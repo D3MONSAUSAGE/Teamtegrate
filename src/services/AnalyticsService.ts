@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Json, Database } from '@/integrations/supabase/types';
 import { SalesData } from '@/types/sales';
 import { startOfMonth, endOfMonth, subMonths, format, parseISO, differenceInDays } from 'date-fns';
 
@@ -299,12 +300,13 @@ class AnalyticsService {
 
       // Group by location/team
       const locationData = new Map<string, SalesData[]>();
-      (data || []).forEach(item => {
-        const key = `${item.location}-${item.team_id || 'unknown'}`;
+      (data || []).forEach((item: any) => {
+        const sale = this.transformDbToSalesData(item);
+        const key = `${sale.location}-${sale.team_id || 'unknown'}`;
         if (!locationData.has(key)) {
           locationData.set(key, []);
         }
-        locationData.get(key)!.push(item);
+        locationData.get(key)!.push(sale);
       });
 
       const performance = Array.from(locationData.entries()).map(([key, salesData]) => {
@@ -345,14 +347,20 @@ class AnalyticsService {
       const kpiMetrics = await this.getKPIMetrics(dateRange, teamId);
       const insights = await this.getPerformanceInsights(dateRange, teamId);
       
+      const { data: orgId, error: orgError } = await supabase.rpc('get_current_user_organization_id');
+      if (orgError) throw orgError;
+      if (!orgId) throw new Error('Organization not found');
+
+      const payload: Database['public']['Tables']['analytics_snapshots']['Insert'] = {
+        snapshot_type: 'kpi_metrics',
+        time_period: `${format(dateRange.start, 'yyyy-MM-dd')}_to_${format(dateRange.end, 'yyyy-MM-dd')}`,
+        organization_id: orgId as string,
+        metrics_data: ({ kpiMetrics, insights } as unknown) as Json
+      };
+
       const { error } = await supabase
         .from('analytics_snapshots')
-        .insert({
-          snapshot_type: 'kpi_metrics',
-          time_period: `${format(dateRange.start, 'yyyy-MM-dd')}_to_${format(dateRange.end, 'yyyy-MM-dd')}`,
-          organization_id: 'current', // Will be set by RLS
-          metrics_data: { kpiMetrics, insights }
-        });
+        .insert(payload);
 
       if (error) throw error;
     } catch (error) {

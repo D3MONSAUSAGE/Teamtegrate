@@ -364,11 +364,13 @@ class ValidationService {
       
       const { data: historicalData } = await query;
       
+      const transformed = ((historicalData || []) as any[]).map(this.transformDbToSalesData);
+      
       // Calculate team averages
-      const teamAverages = this.calculateTeamAverages(historicalData || []);
+      const teamAverages = this.calculateTeamAverages(transformed as SalesData[]);
       
       return {
-        historicalData: historicalData || [],
+        historicalData: transformed as SalesData[],
         teamAverages,
         seasonalPatterns: {}, // Would implement seasonal analysis here
         businessRules: this.businessRules
@@ -455,6 +457,53 @@ class ValidationService {
     };
   }
 
+  private transformDbToSalesData(dbRecord: any): SalesData {
+    return {
+      id: dbRecord.id,
+      date: dbRecord.date,
+      location: dbRecord.location,
+      team_id: dbRecord.team_id,
+      grossSales: dbRecord.gross_sales || 0,
+      netSales: dbRecord.net_sales || 0,
+      orderCount: dbRecord.order_count || 0,
+      orderAverage: dbRecord.order_average || 0,
+      labor: {
+        cost: dbRecord.labor_cost || 0,
+        hours: dbRecord.labor_hours || 0,
+        percentage: dbRecord.labor_percentage || 0,
+        salesPerLaborHour: dbRecord.sales_per_labor_hour || 0
+      },
+      cashManagement: {
+        depositsAccepted: 0,
+        depositsRedeemed: 0,
+        paidIn: 0,
+        paidOut: 0
+      },
+      giftCards: {
+        issueAmount: 0,
+        issueCount: 0,
+        reloadAmount: 0,
+        reloadCount: 0
+      },
+      paymentBreakdown: {
+        nonCash: dbRecord.non_cash || 0,
+        totalCash: dbRecord.total_cash || 0,
+        calculatedCash: dbRecord.calculated_cash || 0,
+        tips: dbRecord.tips || 0
+      },
+      destinations: [],
+      revenueItems: [],
+      tenders: [],
+      discounts: [],
+      promotions: [],
+      taxes: [],
+      voids: dbRecord.voids || 0,
+      refunds: dbRecord.refunds || 0,
+      surcharges: dbRecord.surcharges || 0,
+      expenses: dbRecord.expenses || 0
+    };
+  }
+
   private async logValidationResults(data: SalesData, result: ValidationResult): Promise<void> {
     try {
       // Log significant validation issues
@@ -463,15 +512,17 @@ class ValidationService {
         ...result.warnings.filter(w => w.severity === 'warning')
       ];
       
+      const { data: orgId } = await supabase.rpc('get_current_user_organization_id');
       for (const issue of significantIssues) {
         await supabase.from('data_validation_log').insert({
+          organization_id: (orgId as string),
           sales_data_id: data.id,
           validation_type: issue.category,
           field_name: issue.field,
           severity: issue.severity,
           message: issue.message,
           expected_value: issue.suggestedFix || null,
-          actual_value: String(data[issue.field as keyof SalesData] || ''),
+          actual_value: String(data[issue.field as keyof SalesData] ?? ''),
           is_resolved: false
         });
       }

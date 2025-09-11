@@ -414,8 +414,8 @@ class ExportService {
   }
 
   // Generate filename based on export type and date
-  generateFilename(type: string, format: string, dateRange?: { start: Date; end: Date }): string {
-    const timestamp = format === 'json' ? new Date().toISOString().split('T')[0] : 
+  generateFilename(type: string, fileFormat: string, dateRange?: { start: Date; end: Date }): string {
+    const timestamp = fileFormat === 'json' ? new Date().toISOString().split('T')[0] : 
       new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
     
     let filename = `${type}-${timestamp}`;
@@ -426,7 +426,7 @@ class ExportService {
       filename = `${type}-${startStr}-to-${endStr}`;
     }
     
-    return `${filename}.${format}`;
+    return `${filename}.${fileFormat}`;
   }
 }
 
