@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatMessage } from '@/types/chat';
 import { toast } from 'sonner';
 import { createChatMessageNotification } from '@/contexts/task/operations/assignment/createChatNotification';
+import { useEnhancedChatNotifications } from '@/hooks/useEnhancedChatNotifications';
 
 export function useMessages(roomId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -14,6 +15,7 @@ export function useMessages(roomId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
   const { user } = useAuth();
+  const { sendChatNotification } = useEnhancedChatNotifications();
 
   const MESSAGES_PER_PAGE = 50;
 
@@ -154,6 +156,20 @@ export function useMessages(roomId: string | null) {
       ));
 
       // Create notifications with fallback for missing organizationId
+      // Send FCM notification to other participants
+      if (data) {
+        try {
+          await sendChatNotification(
+            roomId,
+            user.id,
+            content.trim()
+          );
+        } catch (error) {
+          console.error('Error sending FCM chat notification:', error);
+        }
+      }
+
+      // Legacy: Also create database notification for backward compatibility
       const orgId = user.organizationId || user.id;
       try {
         await createChatMessageNotification(

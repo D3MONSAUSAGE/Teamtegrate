@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
-    url: 'https://teamtegrate.com',
+    url: 'https://91cd77c4-34d9-4c9a-a240-33280dceab90.lovableproject.com?forceHideBadge=true',
     cleartext: true,
   },
   plugins: {
@@ -30,10 +30,11 @@ const config: CapacitorConfig = {
     },
     LocalNotifications: {
       smallIcon: 'ic_stat_notification',
-      iconColor: '#488AFF',
+      iconColor: '#6366f1',
       sound: 'notification.wav',
+    },
+    FirebaseMessaging: {
+      deliveryMetrics: true,
     },
   },
 };
-
-export default config;
