@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "584796006988",
+    "project_id": "teamtegrate-mobile",
+    "storage_bucket": "teamtegrate-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584796006988:android:a849a9b070c56f7f5da2e9",
+        "android_client_info": {
+          "package_name": "com.teamtegrate.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvJimzk_C9YenP4sZL4lYyBxcrCukSO4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
