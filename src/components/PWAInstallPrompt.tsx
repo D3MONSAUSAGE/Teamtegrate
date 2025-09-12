@@ -15,7 +15,8 @@ export const PWAInstallPrompt: React.FC = () => {
     showIOSPrompt,
     isIOSDevice,
     installPWA,
-    hideIOSPrompt
+    hideIOSPrompt,
+    hideAndroidPrompt
   } = usePWAPrompt();
 
   // Don't show if already installed as PWA
@@ -39,6 +40,14 @@ export const PWAInstallPrompt: React.FC = () => {
             <div className="flex gap-2">
               <Button onClick={installPWA} size="sm">
                 Install
+              </Button>
+              <Button
+                variant="ghost" 
+                size="sm"
+                onClick={hideAndroidPrompt}
+                className="p-1 h-auto"
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>

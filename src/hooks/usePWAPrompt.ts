@@ -52,6 +52,14 @@ export const usePWAPrompt = () => {
     localStorage.setItem('ios-prompt-dismissed', Date.now().toString());
   }, []);
 
+  // Hide Android/Desktop prompt
+  const hideAndroidPrompt = useCallback(() => {
+    setIsInstallable(false);
+    setDeferredPrompt(null);
+    localStorage.setItem('android-prompt-dismissed', Date.now().toString());
+    toast('Install prompt dismissed');
+  }, []);
+
   // Install PWA (Android/desktop)
   const installPWA = useCallback(async () => {
     if (!deferredPrompt) return false;
@@ -85,6 +93,15 @@ export const usePWAPrompt = () => {
     return daysSinceDismissed > 7; // Show again after 7 days
   }, []);
 
+  // Check if should show Android prompt (not dismissed recently)
+  const shouldShowAndroidPrompt = useCallback(() => {
+    const lastDismissed = localStorage.getItem('android-prompt-dismissed');
+    if (!lastDismissed) return true;
+    
+    const daysSinceDismissed = (Date.now() - parseInt(lastDismissed)) / (1000 * 60 * 60 * 24);
+    return daysSinceDismissed > 7; // Show again after 7 days
+  }, []);
+
   useEffect(() => {
     checkIsPWA();
 
@@ -93,7 +110,10 @@ export const usePWAPrompt = () => {
       e.preventDefault();
       const event = e as BeforeInstallPromptEvent;
       setDeferredPrompt(event);
-      setIsInstallable(true);
+      // Only show if not dismissed recently
+      if (shouldShowAndroidPrompt()) {
+        setIsInstallable(true);
+      }
     };
 
     // Listen for app installed event
@@ -120,7 +140,7 @@ export const usePWAPrompt = () => {
       window.removeEventListener('appinstalled', handleAppInstalled);
       clearTimeout(timer);
     };
-  }, [checkIsPWA, isIOSSafari, isPWA, shouldShowIOSPrompt, showIOSInstallPrompt]);
+  }, [checkIsPWA, isIOSSafari, isPWA, shouldShowIOSPrompt, shouldShowAndroidPrompt, showIOSInstallPrompt]);
 
   return {
     isPWA,
@@ -131,6 +151,7 @@ export const usePWAPrompt = () => {
     installPWA,
     showIOSInstallPrompt,
     hideIOSPrompt,
+    hideAndroidPrompt,
     checkIsPWA
   };
 };
