@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { playNotificationSound, playChatSound, playStatusChangeSound } from '@/utils/sounds';
+import { useFCMTokenManager } from './useFCMTokenManager';
 
 interface NotificationAction {
   id: string;
@@ -20,6 +21,17 @@ export const usePushNotifications = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus['receive']>('prompt');
   const { user } = useAuth();
+  
+  // Integration with FCM Token Manager
+  const { 
+    token: fcmToken, 
+    registerFCMToken, 
+    removeFCMToken, 
+    testFCMNotification,
+    isSupported: fcmSupported,
+    isRegistering: fcmRegistering,
+    error: fcmError 
+  } = useFCMTokenManager();
 
   const initializeNotificationChannels = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
@@ -193,11 +205,20 @@ export const usePushNotifications = () => {
           console.log('Push registration success, token: ' + token.value);
           setPushToken(token.value);
           
-          // Store token in user profile
+          // Store token in user profile for backward compatibility
           await supabase
             .from('users')
             .update({ push_token: token.value })
             .eq('id', user.id);
+          
+          // Register FCM token if supported
+          if (fcmSupported) {
+            try {
+              await registerFCMToken();
+            } catch (error) {
+              console.error('FCM registration failed:', error);
+            }
+          }
           
           setIsRegistered(true);
           toast.success('Push notifications enabled successfully!');
@@ -268,6 +289,11 @@ export const usePushNotifications = () => {
     if (!Capacitor.isNativePlatform()) return;
     
     try {
+      // Remove FCM token first
+      if (fcmSupported && fcmToken) {
+        await removeFCMToken();
+      }
+
       await PushNotifications.removeAllListeners();
       await LocalNotifications.removeAllListeners();
       setIsRegistered(false);
@@ -293,6 +319,15 @@ export const usePushNotifications = () => {
     if (!Capacitor.isNativePlatform()) return;
     
     try {
+      // First try FCM test notification if supported
+      if (fcmSupported && fcmToken) {
+        const success = await testFCMNotification();
+        if (success) {
+          return; // FCM test was successful, no need for local notification
+        }
+      }
+
+      // Fallback to local notification
       await LocalNotifications.schedule({
         notifications: [{
           id: Date.now(),
@@ -313,11 +348,19 @@ export const usePushNotifications = () => {
   };
 
   return {
-    pushToken,
-    isRegistered,
+    pushToken: fcmToken || pushToken, // Prefer FCM token
+    isRegistered: (fcmSupported && fcmToken) ? true : isRegistered,
     permissionStatus,
     unregister,
     testNotification,
     requestPermissions,
+    // FCM-specific properties
+    fcmToken,
+    fcmSupported,
+    fcmRegistering,
+    fcmError,
+    registerFCMToken,
+    removeFCMToken,
+    testFCMNotification
   };
 };

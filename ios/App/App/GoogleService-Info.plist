@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AD_UNIT_ID_FOR_BANNER_TEST</key>
+	<string>ca-app-pub-3940256099942544/2934735716</string>
+	<key>AD_UNIT_ID_FOR_INTERSTITIAL_TEST</key>
+	<string>ca-app-pub-3940256099942544/4411468910</string>
+	<key>CLIENT_ID</key>
+	<string>584796006988-8v3l4m4ng6lr7h8kcfse9p6qmbn0hqfh.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.584796006988-8v3l4m4ng6lr7h8kcfse9p6qmbn0hqfh</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>584796006988-a849a9b070c56f7f5da2e9.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAvJimzk_C9YenP4sZL4lYyBxcrCukSO4M</string>
+	<key>GCM_SENDER_ID</key>
+	<string>584796006988</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.teamtegrate.app</string>
+	<key>PROJECT_ID</key>
+	<string>teamtegrate-mobile</string>
+	<key>STORAGE_BUCKET</key>
+	<string>teamtegrate-mobile.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:584796006988:ios:b8f9c3d4e5a6b7c8d9e0f1</string>
+	<key>DATABASE_URL</key>
+	<string>https://teamtegrate-mobile-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>
