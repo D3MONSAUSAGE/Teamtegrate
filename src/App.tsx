@@ -35,6 +35,7 @@ import NotificationsPage from "@/pages/NotificationsPage";
 import EnhancedRequestsPage from "@/pages/EnhancedRequestsPage";
 import ChecklistsPage from "@/pages/ChecklistsPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
 import TeamDetailPage from "@/pages/TeamDetailPage";
 import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
@@ -95,6 +96,7 @@ function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <NotificationBootstrap />
+            <PWAInstallPrompt />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

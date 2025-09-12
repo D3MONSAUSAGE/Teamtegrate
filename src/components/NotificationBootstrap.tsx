@@ -3,21 +3,37 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
+import { useWebPushNotifications } from '@/hooks/useWebPushNotifications';
+import { usePWAPrompt } from '@/hooks/usePWAPrompt';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * Headless component that initializes comprehensive notification functionality
- * including native notifications, FCM push notifications, haptics, background sync,
- * and system dropdown notifications on mobile platforms.
+ * including native notifications, FCM push notifications, web push notifications,
+ * PWA support, haptics, background sync, and system dropdown notifications.
+ * 
+ * Provides unified cross-platform notification support:
+ * - Native platforms: Capacitor + FCM
+ * - Web browsers: Web Push + PWA + Service Worker
+ * - iPhone Safari: PWA prompts + enhanced web notifications
  */
 export function NotificationBootstrap() {
-  // Initialize notification channels for Android
+  const isNative = Capacitor.isNativePlatform();
+  
+  // Initialize notification channels for Android (native only)
   useNotificationChannels();
   
-  // Initialize Firebase Cloud Messaging for push notifications
+  // Initialize Firebase Cloud Messaging for native push notifications
   useFirebaseMessaging();
   
   // Initialize enhanced system notifications with dropdown support
   useSystemNotifications();
+  
+  // Initialize web push notifications for browsers
+  useWebPushNotifications();
+  
+  // Initialize PWA installation prompts and detection
+  usePWAPrompt();
   
   // Listen for real-time notifications and handle them
   useRealtimeNotifications();
