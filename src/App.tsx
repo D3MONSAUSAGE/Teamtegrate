@@ -41,6 +41,7 @@ import TeamDetailPage from "@/pages/TeamDetailPage";
 import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
 import EmployeeActionsPage from "@/pages/EmployeeActionsPage";
 import RequestTypesPage from "@/pages/RequestTypesPage";
+import SchedulePage from "@/pages/SchedulePage";
 
 const queryClient = new QueryClient();
 
@@ -69,10 +70,11 @@ function App() {
                   <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="documents" element={<DocumentsPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="journal" element={<JournalPage />} />
-                  <Route path="time-tracking" element={<TimeTrackingPage />} />
-                  <Route path="notebook" element={<NotebookPage />} />
+                   <Route path="profile" element={<ProfilePage />} />
+                   <Route path="journal" element={<JournalPage />} />
+                   <Route path="time-tracking" element={<TimeTrackingPage />} />
+                   <Route path="schedule" element={<SchedulePage />} />
+                   <Route path="notebook" element={<NotebookPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="team" element={<TeamPage />} />
                   <Route path="team/:teamId" element={<TeamDetailPage />} />

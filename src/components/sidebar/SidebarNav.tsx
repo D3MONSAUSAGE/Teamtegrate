@@ -10,6 +10,7 @@ import {
   Users,
   Calendar,
   CalendarCheck,
+  CalendarDays,
   Target,
   BarChart3,
   MessageCircle,
@@ -58,6 +59,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     items.push(
       { name: 'Requests', href: '/dashboard/requests', icon: Send },
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+      { name: 'Schedule', href: '/dashboard/schedule', icon: CalendarDays },
       { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
       { name: 'Training', href: '/dashboard/training', icon: GraduationCap },
       { name: 'Checklists', href: '/dashboard/checklists', icon: ClipboardList },
