@@ -290,7 +290,7 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({
                         cy="50%"
                         outerRadius={80}
                         dataKey="orders"
-                        label={({ location, orders }) => `${location}: ${orders}`}
+                        label={({ location, orders }: any) => `${location}: ${orders}`}
                         labelLine={false}
                       >
                         {locationMetrics.slice(0, 6).map((entry, index) => (

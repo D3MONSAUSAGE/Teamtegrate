@@ -185,7 +185,7 @@ export const PerformanceGrid: React.FC<PerformanceGridProps> = ({
                 cy="50%"
                 outerRadius={80}
                 dataKey="value"
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                label={({ name, value, percent }: any) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
               >
                 {taskDistribution.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

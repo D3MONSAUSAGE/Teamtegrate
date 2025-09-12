@@ -264,7 +264,7 @@ const SalesReport: React.FC<SalesReportProps> = ({ data, startDate, endDate }) =
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                         label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(1)}%`}
                       >
                         {destinationData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -377,7 +377,7 @@ const SalesReport: React.FC<SalesReportProps> = ({ data, startDate, endDate }) =
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                        label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(1)}%`}
                       >
                         {paymentMethodData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
