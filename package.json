@@ -11,15 +11,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/android": "^7.2.0",
+    "@capacitor/android": "^7.4.2",
     "@capacitor/cli": "^7.4.2",
-<<<<<<< HEAD
     "@capacitor/core": "^7.4.2",
     "@capacitor/haptics": "^7.0.1",
-=======
-    "@capacitor/core": "^7.2.0",
->>>>>>> bb3c9df1 (FCM setup: google-services.json + Firebase messaging deps)
-    "@capacitor/ios": "^7.2.0",
+    "@capacitor/ios": "^7.4.2",
     "@capacitor/local-notifications": "^7.0.1",
     "@capacitor/push-notifications": "^7.0.1",
     "@hookform/resolvers": "^3.9.0",
