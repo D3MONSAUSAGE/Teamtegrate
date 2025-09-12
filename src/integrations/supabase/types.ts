@@ -1704,6 +1704,42 @@ export type Database = {
           },
         ]
       }
+      fcm_tokens: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
           color: string | null
@@ -7352,6 +7388,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_fcm_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_orphaned_training_assignments: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -7625,6 +7665,10 @@ export type Database = {
       recalculate_attempt_score: {
         Args: { p_quiz_attempt_id: string }
         Returns: undefined
+      }
+      register_fcm_token: {
+        Args: { p_device_info?: Json; p_platform: string; p_token: string }
+        Returns: string
       }
       resume_time_entry: {
         Args: { p_task_id?: string; p_user_id: string }
