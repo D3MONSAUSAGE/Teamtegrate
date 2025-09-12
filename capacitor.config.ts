@@ -1,4 +1,3 @@
-
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -7,8 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
-    url: 'https://91cd77c4-34d9-4c9a-a240-33280dceab90.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    url: 'https://teamtegrate.com',
+    cleartext: true,
   },
   plugins: {
     StatusBar: {
@@ -30,7 +29,7 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     LocalNotifications: {
-      smallIcon: 'ic_notification',
+      smallIcon: 'ic_stat_notification',
       iconColor: '#488AFF',
       sound: 'notification.wav',
     },
