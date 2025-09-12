@@ -36,7 +36,6 @@ import EnhancedRequestsPage from "@/pages/EnhancedRequestsPage";
 import ChecklistsPage from "@/pages/ChecklistsPage";
 import NotificationBootstrap from "@/components/NotificationBootstrap";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-import { SafeAreaProvider } from "@/components/mobile/SafeAreaProvider";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
 import TeamDetailPage from "@/pages/TeamDetailPage";
 import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
@@ -48,12 +47,11 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
             <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
@@ -97,12 +95,11 @@ function App() {
                 {/* Fallback for unmatched routes */}
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-              <NotificationBootstrap />
-              <PWAInstallPrompt />
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </SafeAreaProvider>
+            <NotificationBootstrap />
+            <PWAInstallPrompt />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
