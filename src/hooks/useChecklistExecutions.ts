@@ -29,8 +29,8 @@ export const useMyChecklistExecutions = (date?: string) => {
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_user_fk(id, name, email),
-          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+          assigned_user:users!assigned_to_user_id(id, name, email),
+          verifier:users!verified_by(id, name, email)
         `)
         .eq('assigned_to_user_id', user.id)
         .eq('execution_date', targetDate)
@@ -89,8 +89,8 @@ export const useChecklistExecutionHistory = (userId?: string, limit = 50) => {
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_user_fk(id, name, email),
-          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+          assigned_user:users!assigned_to_user_id(id, name, email),
+          verifier:users!verified_by(id, name, email)
         `)
         .eq('assigned_to_user_id', targetUserId)
         .order('execution_date', { ascending: false })
@@ -331,8 +331,8 @@ export const usePendingChecklistVerifications = () => {
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_user_fk(id, name, email),
-          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+          assigned_user:users!assigned_to_user_id(id, name, email),
+          verifier:users!verified_by(id, name, email)
         `)
         .eq('status', 'completed')
         .order('completed_at', { ascending: false });
@@ -360,8 +360,8 @@ export const useTeamChecklistExecutions = (date?: string) => {
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_user_fk(id, name, email),
-          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+          assigned_user:users!assigned_to_user_id(id, name, email),
+          verifier:users!verified_by(id, name, email)
         `)
         .eq('execution_date', targetDate)
         .order('created_at', { ascending: false });
@@ -411,8 +411,8 @@ export const useTeamChecklistExecutionsForDate = (teamId?: string, date?: string
         .select(`
           *,
           checklist:checklists(*),
-          assigned_user:users!checklist_executions_user_fk(id, name, email),
-          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+          assigned_user:users!assigned_to_user_id(id, name, email),
+          verifier:users!verified_by(id, name, email)
         `)
         .in('assigned_to_user_id', userIds)
         .eq('execution_date', targetDate)

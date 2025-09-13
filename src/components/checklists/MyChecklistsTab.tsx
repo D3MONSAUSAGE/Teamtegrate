@@ -7,7 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMyChecklistExecutions, useTeamChecklistExecutionsForDate } from '@/hooks/useChecklistExecutions';
 import { ChecklistExecutionDialog } from './ChecklistExecutionDialog';
-import { DailyStats } from './DailyStats';
+import { CompactDailyStats } from './CompactDailyStats';
 import { ChecklistExecution } from '@/types/checklist';
 import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -97,29 +97,32 @@ export const MyChecklistsTab: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        {/* Daily Stats */}
-        <DailyStats />
-        
-        {/* Team Selector for Admins */}
-        {isAdmin && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Select Team
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TeamSelect
-                teams={teams}
-                isLoading={teamsLoading}
-                selectedTeam={selectedTeamId}
-                onTeamChange={(teamId) => setSelectedTeamId(teamId === 'all' ? '' : teamId || '')}
-                optional
-              />
-            </CardContent>
-          </Card>
-        )}
+        {/* Top Row: Team Selector (if admin) + Daily Stats */}
+        <div className="flex gap-4">
+          {/* Team Selector for Admins */}
+          {isAdmin && (
+            <Card className="flex-1">
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-sm">Select Team</span>
+                  </div>
+                  <TeamSelect
+                    teams={teams}
+                    isLoading={teamsLoading}
+                    selectedTeam={selectedTeamId}
+                    onTeamChange={(teamId) => setSelectedTeamId(teamId === 'all' ? '' : teamId || '')}
+                    optional
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Daily Stats */}
+          <CompactDailyStats />
+        </div>
         
         {/* Today's Checklists Header */}
         <div className="flex items-center gap-4">
