@@ -5,8 +5,8 @@ import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { MyChecklistsTab } from '@/components/checklists/MyChecklistsTab';
 import { ChecklistHistoryTab } from '@/components/checklists/ChecklistHistoryTab';
 import { ChecklistManagementTab } from '@/components/checklists/ChecklistManagementTab';
-import { ChecklistVerificationTab } from '@/components/checklists/ChecklistVerificationTab';
-import { ClipboardList, History, Settings, ShieldCheck } from 'lucide-react';
+import ChecklistTeamReportsTab from '@/components/checklists/ChecklistTeamReportsTab';
+import { ClipboardList, History, Settings, BarChart3 } from 'lucide-react';
 
 const ChecklistsPage: React.FC = () => {
   const { user } = useAuth();
@@ -37,9 +37,9 @@ const ChecklistsPage: React.FC = () => {
             History
           </TabsTrigger>
           {canManage && (
-            <TabsTrigger value="verification" className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              Verification
+            <TabsTrigger value="team-reports" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Team Reports
             </TabsTrigger>
           )}
           {canManage && (
@@ -59,8 +59,8 @@ const ChecklistsPage: React.FC = () => {
         </TabsContent>
 
         {canManage && (
-          <TabsContent value="verification" className="mt-6">
-            <ChecklistVerificationTab />
+          <TabsContent value="team-reports" className="mt-6">
+            <ChecklistTeamReportsTab />
           </TabsContent>
         )}
 
