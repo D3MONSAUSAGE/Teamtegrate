@@ -8,6 +8,8 @@ import { ChecklistManagementTab } from '@/components/checklists/ChecklistManagem
 import { ChecklistVerificationTab } from '@/components/checklists/ChecklistVerificationTab';
 import { ClipboardList, History, Settings, ShieldCheck, BarChart3 } from 'lucide-react';
 import { DailyTeamDashboard } from '@/components/checklists/DailyTeamDashboard';
+import AdvancedAnalytics from '@/components/checklists/AdvancedAnalytics';
+import PredictiveInsights from '@/components/checklists/PredictiveInsights';
 
 const ChecklistsPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,7 +30,7 @@ const ChecklistsPage: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${canManage ? 'grid-cols-5' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${canManage ? 'grid-cols-7' : 'grid-cols-2'}`}>
           <TabsTrigger value="my-checklists" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
             My Checklists
@@ -47,6 +49,18 @@ const ChecklistsPage: React.FC = () => {
             <TabsTrigger value="verification" className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4" />
               Verification
+            </TabsTrigger>
+          )}
+          {canManage && (
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          )}
+          {canManage && (
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              AI Insights
             </TabsTrigger>
           )}
           {canManage && (
@@ -74,6 +88,18 @@ const ChecklistsPage: React.FC = () => {
         {canManage && (
           <TabsContent value="verification" className="mt-6">
             <ChecklistVerificationTab />
+          </TabsContent>
+        )}
+
+        {canManage && (
+          <TabsContent value="analytics" className="mt-6">
+            <AdvancedAnalytics />
+          </TabsContent>
+        )}
+
+        {canManage && (
+          <TabsContent value="insights" className="mt-6">
+            <PredictiveInsights />
           </TabsContent>
         )}
 
