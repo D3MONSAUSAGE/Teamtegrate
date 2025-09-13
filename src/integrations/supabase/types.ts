@@ -7431,7 +7431,7 @@ export type Database = {
         }[]
       }
       generate_daily_checklist_executions: {
-        Args: { target_date?: string }
+        Args: { target_date: string }
         Returns: undefined
       }
       generate_invite_code: {

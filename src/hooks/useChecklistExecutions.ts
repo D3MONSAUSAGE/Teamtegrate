@@ -20,7 +20,12 @@ export const useMyChecklistExecutions = (date?: string) => {
       });
       
       if (genError) {
-        console.warn('Failed to generate daily executions:', genError);
+        console.error('Failed to generate daily executions:', genError);
+        toast({
+          title: "Generation Error",
+          description: "Failed to generate daily checklist executions. Please refresh the page.",
+          variant: "destructive",
+        });
       }
 
       // Fetch executions for the user
@@ -36,10 +41,17 @@ export const useMyChecklistExecutions = (date?: string) => {
         .eq('execution_date', targetDate)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching checklist executions:', error);
+        throw error;
+      }
+      
+      console.log('Fetched checklist executions:', data);
       return data as any[];
     },
     enabled: !!user,
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
@@ -390,7 +402,12 @@ export const useTeamChecklistExecutionsForDate = (teamId?: string, date?: string
       });
       
       if (genError) {
-        console.warn('Failed to generate daily executions:', genError);
+        console.error('Failed to generate daily executions for team:', genError);
+        toast({
+          title: "Generation Error",
+          description: "Failed to generate team checklist executions. Please try again.",
+          variant: "destructive",
+        });
       }
 
       // First get team members
@@ -399,11 +416,17 @@ export const useTeamChecklistExecutionsForDate = (teamId?: string, date?: string
         .select('user_id')
         .eq('team_id', teamId);
 
-      if (teamError) throw teamError;
+      if (teamError) {
+        console.error('Error fetching team members:', teamError);
+        throw teamError;
+      }
 
       const userIds = teamMembers?.map(member => member.user_id) || [];
       
-      if (userIds.length === 0) return [];
+      if (userIds.length === 0) {
+        console.log('No team members found for team:', teamId);
+        return [];
+      }
 
       // Fetch executions for team members
       const { data, error } = await supabase
@@ -418,9 +441,16 @@ export const useTeamChecklistExecutionsForDate = (teamId?: string, date?: string
         .eq('execution_date', targetDate)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching team checklist executions:', error);
+        throw error;
+      }
+      
+      console.log('Fetched team checklist executions:', data);
       return data as ChecklistExecution[];
     },
     enabled: !!user && !!teamId,
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
