@@ -5,20 +5,36 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useMyChecklistExecutions } from '@/hooks/useChecklistExecutions';
+import { useMyChecklistExecutions, useTeamChecklistExecutionsForDate } from '@/hooks/useChecklistExecutions';
 import { ChecklistExecutionDialog } from './ChecklistExecutionDialog';
 import { DailyStats } from './DailyStats';
 import { ChecklistExecution } from '@/types/checklist';
-import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList } from 'lucide-react';
+import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { hasRoleAccess } from '@/contexts/auth/roleUtils';
+import TeamSelect from '@/components/ui/team-select';
+import { useTeams } from '@/hooks/useTeams';
 
 export const MyChecklistsTab: React.FC = () => {
+  const { user } = useAuth();
   const [selectedExecution, setSelectedExecution] = useState<ChecklistExecution | null>(null);
   const [executionDialogOpen, setExecutionDialogOpen] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
-  // Always show today's checklists
-  const { data: executions, isLoading } = useMyChecklistExecutions();
+  const isAdmin = hasRoleAccess(user?.role, 'admin');
+  const { teams, isLoading: teamsLoading } = useTeams();
+
+  // Use different hooks based on role and team selection
+  const { data: myExecutions, isLoading: myExecutionsLoading } = useMyChecklistExecutions();
+  const { data: teamExecutions, isLoading: teamExecutionsLoading } = useTeamChecklistExecutionsForDate(
+    isAdmin && selectedTeamId && selectedTeamId !== 'all' ? selectedTeamId : undefined
+  );
+
+  // Determine which data to show
+  const executions = isAdmin && selectedTeamId && selectedTeamId !== 'all' ? teamExecutions : myExecutions;
+  const isLoading = isAdmin && selectedTeamId && selectedTeamId !== 'all' ? teamExecutionsLoading : myExecutionsLoading;
 
   const handleStartExecution = (execution: ChecklistExecution) => {
     setSelectedExecution(execution);
@@ -84,11 +100,34 @@ export const MyChecklistsTab: React.FC = () => {
         {/* Daily Stats */}
         <DailyStats />
         
+        {/* Team Selector for Admins */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Select Team
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TeamSelect
+                teams={teams}
+                isLoading={teamsLoading}
+                selectedTeam={selectedTeamId}
+                onTeamChange={(teamId) => setSelectedTeamId(teamId === 'all' ? '' : teamId || '')}
+                optional
+              />
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Today's Checklists Header */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Today's Checklists</h2>
+            <h2 className="text-xl font-semibold">
+              {isAdmin && selectedTeamId && selectedTeamId !== 'all' ? 'Team Checklists' : 'Today\'s Checklists'}
+            </h2>
           </div>
           <div className="text-sm text-muted-foreground">
             {executions?.length || 0} tasks for {format(new Date(), "MMM d, yyyy")}
@@ -119,6 +158,14 @@ export const MyChecklistsTab: React.FC = () => {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {execution.checklist.description}
                   </p>
+                )}
+
+                {/* Show assigned user when admin is viewing team checklists */}
+                {isAdmin && selectedTeamId && selectedTeamId !== 'all' && execution.assigned_user && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-2">
+                    <Users className="h-4 w-4" />
+                    <span>Assigned to: {execution.assigned_user.name || execution.assigned_user.email}</span>
+                  </div>
                 )}
 
                 {/* Progress Bar */}
@@ -171,9 +218,21 @@ export const MyChecklistsTab: React.FC = () => {
           <Card className="text-center py-12">
             <CardContent>
               <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No checklists for today</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {isAdmin && !selectedTeamId 
+                  ? 'Select a team to view checklists' 
+                  : isAdmin && selectedTeamId && selectedTeamId !== 'all'
+                    ? 'No checklists for this team today'
+                    : 'No checklists for today'
+                }
+              </h3>
               <p className="text-muted-foreground">
-                You don't have any checklists scheduled for today. Check back later or ask your manager about available checklists.
+                {isAdmin && !selectedTeamId 
+                  ? 'Choose a team from the dropdown above to see their scheduled checklists.'
+                  : isAdmin && selectedTeamId && selectedTeamId !== 'all'
+                    ? 'This team doesn\'t have any checklists scheduled for today.'
+                    : 'You don\'t have any checklists scheduled for today. Check back later or ask your manager about available checklists.'
+                }
               </p>
             </CardContent>
           </Card>

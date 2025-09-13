@@ -372,3 +372,55 @@ export const useTeamChecklistExecutions = (date?: string) => {
     enabled: !!user,
   });
 };
+
+// Hook to get checklist executions for a specific team (for admins)
+export const useTeamChecklistExecutionsForDate = (teamId?: string, date?: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['team-specific-checklist-executions', teamId, date],
+    queryFn: async () => {
+      if (!user || !teamId) return [];
+
+      const targetDate = date || new Date().toISOString().split('T')[0];
+
+      // Generate daily executions for the target date
+      const { error: genError } = await supabase.rpc('generate_daily_checklist_executions', {
+        target_date: targetDate
+      });
+      
+      if (genError) {
+        console.warn('Failed to generate daily executions:', genError);
+      }
+
+      // First get team members
+      const { data: teamMembers, error: teamError } = await supabase
+        .from('team_memberships')
+        .select('user_id')
+        .eq('team_id', teamId);
+
+      if (teamError) throw teamError;
+
+      const userIds = teamMembers?.map(member => member.user_id) || [];
+      
+      if (userIds.length === 0) return [];
+
+      // Fetch executions for team members
+      const { data, error } = await supabase
+        .from('checklist_executions')
+        .select(`
+          *,
+          checklist:checklists(*),
+          assigned_user:users!checklist_executions_user_fk(id, name, email),
+          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+        `)
+        .in('assigned_to_user_id', userIds)
+        .eq('execution_date', targetDate)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ChecklistExecution[];
+    },
+    enabled: !!user && !!teamId,
+  });
+};
