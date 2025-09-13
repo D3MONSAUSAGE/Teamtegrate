@@ -6,10 +6,7 @@ import { MyChecklistsTab } from '@/components/checklists/MyChecklistsTab';
 import { ChecklistHistoryTab } from '@/components/checklists/ChecklistHistoryTab';
 import { ChecklistManagementTab } from '@/components/checklists/ChecklistManagementTab';
 import { ChecklistVerificationTab } from '@/components/checklists/ChecklistVerificationTab';
-import { ClipboardList, History, Settings, ShieldCheck, BarChart3 } from 'lucide-react';
-import { DailyTeamDashboard } from '@/components/checklists/DailyTeamDashboard';
-import AdvancedAnalytics from '@/components/checklists/AdvancedAnalytics';
-import PredictiveInsights from '@/components/checklists/PredictiveInsights';
+import { ClipboardList, History, Settings, ShieldCheck } from 'lucide-react';
 
 const ChecklistsPage: React.FC = () => {
   const { user } = useAuth();
@@ -30,7 +27,7 @@ const ChecklistsPage: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${canManage ? 'grid-cols-7' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${canManage ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <TabsTrigger value="my-checklists" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
             My Checklists
@@ -40,27 +37,9 @@ const ChecklistsPage: React.FC = () => {
             History
           </TabsTrigger>
           {canManage && (
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Team Dashboard
-            </TabsTrigger>
-          )}
-          {canManage && (
             <TabsTrigger value="verification" className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4" />
               Verification
-            </TabsTrigger>
-          )}
-          {canManage && (
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-          )}
-          {canManage && (
-            <TabsTrigger value="insights" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              AI Insights
             </TabsTrigger>
           )}
           {canManage && (
@@ -80,26 +59,8 @@ const ChecklistsPage: React.FC = () => {
         </TabsContent>
 
         {canManage && (
-          <TabsContent value="dashboard" className="mt-6">
-            <DailyTeamDashboard />
-          </TabsContent>
-        )}
-
-        {canManage && (
           <TabsContent value="verification" className="mt-6">
             <ChecklistVerificationTab />
-          </TabsContent>
-        )}
-
-        {canManage && (
-          <TabsContent value="analytics" className="mt-6">
-            <AdvancedAnalytics />
-          </TabsContent>
-        )}
-
-        {canManage && (
-          <TabsContent value="insights" className="mt-6">
-            <PredictiveInsights />
           </TabsContent>
         )}
 

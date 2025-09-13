@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { usePendingChecklistVerifications } from '@/hooks/useChecklistExecutions';
 import { ChecklistVerificationDialog } from './ChecklistVerificationDialog';
+import { ManagerDailyStats } from './ManagerDailyStats';
 import { ChecklistExecution } from '@/types/checklist';
 import { ShieldCheck, Search, User, Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -52,6 +53,9 @@ export const ChecklistVerificationTab: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
+        {/* Manager Daily Stats */}
+        <ManagerDailyStats />
+        
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMyChecklistExecutions } from '@/hooks/useChecklistExecutions';
 import { ChecklistExecutionDialog } from './ChecklistExecutionDialog';
+import { DailyStats } from './DailyStats';
 import { ChecklistExecution } from '@/types/checklist';
 import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
@@ -80,6 +81,9 @@ export const MyChecklistsTab: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
+        {/* Daily Stats */}
+        <DailyStats />
+        
         {/* Today's Checklists Header */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">

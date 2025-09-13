@@ -28,6 +28,8 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 import { ManagerVerifyConfirmDialog } from './ManagerVerifyConfirmDialog';
+import { SimpleChecklistItemCard } from './SimpleChecklistItemCard';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChecklistExecutionDialogProps {
   execution: ChecklistExecution | null;
@@ -157,10 +159,10 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
           notes,
         });
         
-        toast({
-          title: "🎉 Checklist Completed!",
-          description: "Your checklist has been submitted for review.",
-        });
+                        toast({
+                          title: "🎉 Checklist Completed!",
+                          description: isManager ? "Checklist completed successfully." : "Your checklist has been submitted for manager review.",
+                        });
         
         onOpenChange(false);
       } catch (error) {
@@ -335,7 +337,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                   
                   <div className="space-y-4">
                     {items.map((item, index) => (
-                      <ChecklistItemCard
+                      <SimpleChecklistItemCard
                         key={item.id}
                         item={item}
                         index={index}
