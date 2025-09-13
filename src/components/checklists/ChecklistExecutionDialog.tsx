@@ -23,13 +23,17 @@ import {
   useManagerCompleteAndVerify,
   useVerifyChecklistItem,
 } from '@/hooks/useChecklistExecutions';
-import { Clock, CheckCircle, AlertCircle, FileText, Sparkles, Play, Save, Check, Eye } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, FileText, Sparkles, Play, Save, Check, Eye, Lock, Timer } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 import { ManagerVerifyConfirmDialog } from './ManagerVerifyConfirmDialog';
 import { SimpleChecklistItemCard } from './SimpleChecklistItemCard';
+import ChecklistTimeStatusBadge from './ChecklistTimeStatusBadge';
+import ChecklistCountdownTimer from './ChecklistCountdownTimer';
 import { supabase } from '@/integrations/supabase/client';
+import { canStartChecklistExecution, formatTimeWindow } from '@/utils/checklistTimeUtils';
+import { useChecklistTimeWindow } from '@/hooks/useChecklistTimeWindow';
 
 interface ChecklistExecutionDialogProps {
   execution: ChecklistExecution | null;
@@ -49,6 +53,12 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
   const { user, hasRoleAccess } = useAuth();
   
   const isManager = hasRoleAccess('manager');
+  
+  // Get real-time time window status
+  const timeWindowStatus = useChecklistTimeWindow(
+    execution?.checklist, 
+    execution?.execution_date
+  );
   
   const { data: items, isLoading, error } = useChecklistExecutionItems(execution?.id || '');
   const startExecution = useStartChecklistExecution();
@@ -89,11 +99,23 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 
   const handleStartExecution = async () => {
     if (execution && execution.status === 'pending') {
+      // Check time window restrictions (allow managers to override)
+      const { canStart, reason } = canStartChecklistExecution(execution, !isManager);
+      
+      if (!canStart && !isManager) {
+        toast({
+          title: "Cannot Start Checklist",
+          description: reason,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       try {
         await startExecution.mutateAsync(execution.id);
         toast({
           title: "Checklist Started",
-          description: "You can now complete the checklist items.",
+          description: isManager && !canStart ? "Started with manager override." : "You can now complete the checklist items.",
         });
       } catch (error) {
         toast({
@@ -285,28 +307,96 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                   </Badge>
                 </div>
 
-                {execution.checklist?.execution_window_start && execution.checklist?.execution_window_end && (
+                {/* Time Window Status */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Time Window</span>
+                  <span className="text-sm font-mono bg-background/50 px-2 py-1 rounded">
+                    {formatTimeWindow(execution.checklist?.execution_window_start, execution.checklist?.execution_window_end)}
+                  </span>
+                </div>
+
+                {/* Real-time time status */}
+                {timeWindowStatus.status !== 'no-window' && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Time Window</span>
-                    <span className="text-sm font-mono bg-background/50 px-2 py-1 rounded">
-                      {execution.checklist.execution_window_start} - {execution.checklist.execution_window_end}
-                    </span>
+                    <ChecklistTimeStatusBadge
+                      checklist={execution.checklist}
+                      executionDate={execution.execution_date}
+                      size="sm"
+                      showCountdown={false}
+                    />
+                    {timeWindowStatus.countdown && (
+                      <span className="text-xs font-mono text-muted-foreground">
+                        {timeWindowStatus.isInWindow ? `Expires in ${timeWindowStatus.countdown}` : timeWindowStatus.countdown}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Cutoff time warning */}
+                {execution.checklist?.cutoff_time && timeWindowStatus.isInWindow && (
+                  <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 rounded-md p-2">
+                    <Timer className="h-4 w-4" />
+                    <span>Cutoff time: {execution.checklist.cutoff_time}</span>
                   </div>
                 )}
               </div>
 
               {/* Start Button */}
               {execution.status === 'pending' && (
-                <Button
-                  onClick={handleStartExecution}
-                  className="w-full group hover-scale animate-fade-in"
-                  disabled={startExecution.isPending}
-                  size="lg"
-                >
-                  <Play className="h-4 w-4 mr-2 group-hover:animate-pulse" />
-                  {startExecution.isPending ? 'Starting...' : 'Start Checklist'}
-                  <Sparkles className="h-4 w-4 ml-2 opacity-60" />
-                </Button>
+                <>
+                  {/* Time Window Restriction Alert */}
+                  {!timeWindowStatus.isInWindow && !isManager && (
+                    <Alert variant="destructive" className="animate-fade-in">
+                      <Lock className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {timeWindowStatus.status === 'upcoming' ? 'Checklist Not Yet Available' : 'Checklist Time Window Expired'}
+                          </div>
+                          <div className="text-sm">{timeWindowStatus.message}</div>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Manager Override Warning */}
+                  {!timeWindowStatus.isInWindow && isManager && (
+                    <Alert className="animate-fade-in border-orange-200 bg-orange-50">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800">
+                        <div className="space-y-1">
+                          <div className="font-medium">Manager Override Available</div>
+                          <div className="text-sm">
+                            This checklist is outside its normal time window, but you can start it as a manager.
+                          </div>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button
+                    onClick={handleStartExecution}
+                    className="w-full group hover-scale animate-fade-in"
+                    disabled={startExecution.isPending || (!timeWindowStatus.isInWindow && !isManager)}
+                    size="lg"
+                    variant={!timeWindowStatus.isInWindow && !isManager ? "outline" : "default"}
+                  >
+                    {!timeWindowStatus.isInWindow && !isManager ? (
+                      <>
+                        <Lock className="h-4 w-4 mr-2" />
+                        {timeWindowStatus.status === 'upcoming' ? 'Not Available Yet' : 'Time Expired'}
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2 group-hover:animate-pulse" />
+                        {startExecution.isPending ? 'Starting...' : 
+                         !timeWindowStatus.isInWindow && isManager ? 'Start with Override' :
+                         'Start Checklist'}
+                        <Sparkles className="h-4 w-4 ml-2 opacity-60" />
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
 
               {/* Checklist Items */}

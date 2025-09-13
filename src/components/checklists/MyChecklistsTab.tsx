@@ -8,14 +8,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useMyChecklistExecutions, useTeamChecklistExecutionsForDate } from '@/hooks/useChecklistExecutions';
 import { ChecklistExecutionDialog } from './ChecklistExecutionDialog';
 import { CompactDailyStats } from './CompactDailyStats';
+import ChecklistTimeStatusBadge from './ChecklistTimeStatusBadge';
+import ChecklistCountdownTimer from './ChecklistCountdownTimer';
 import { ChecklistExecution } from '@/types/checklist';
-import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList, Users } from 'lucide-react';
+import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList, Users, Timer, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import TeamSelect from '@/components/ui/team-select';
 import { useTeams } from '@/hooks/useTeams';
+import { canStartChecklistExecution, formatTimeWindow, getTimeStatusStyling } from '@/utils/checklistTimeUtils';
+import { useMultipleChecklistTimeWindows } from '@/hooks/useChecklistTimeWindow';
 
 export const MyChecklistsTab: React.FC = () => {
   const { user } = useAuth();
@@ -36,7 +40,34 @@ export const MyChecklistsTab: React.FC = () => {
   const executions = isAdmin && selectedTeamId && selectedTeamId !== 'all' ? teamExecutions : myExecutions;
   const isLoading = isAdmin && selectedTeamId && selectedTeamId !== 'all' ? teamExecutionsLoading : myExecutionsLoading;
 
+  // Get time window statuses for all executions
+  const timeWindowStatuses = useMultipleChecklistTimeWindows(executions || []);
+
+  // Sort executions by availability and priority
+  const sortedExecutions = executions?.slice().sort((a, b) => {
+    const aStatus = timeWindowStatuses[a.id];
+    const bStatus = timeWindowStatuses[b.id];
+    
+    // Available checklists first
+    if (aStatus?.isInWindow && !bStatus?.isInWindow) return -1;
+    if (!aStatus?.isInWindow && bStatus?.isInWindow) return 1;
+    
+    // Then by priority
+    const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    const aPriority = priorityOrder[a.checklist?.priority as keyof typeof priorityOrder] || 2;
+    const bPriority = priorityOrder[b.checklist?.priority as keyof typeof priorityOrder] || 2;
+    
+    return aPriority - bPriority;
+  });
+
   const handleStartExecution = (execution: ChecklistExecution) => {
+    const { canStart, reason } = canStartChecklistExecution(execution, true);
+    
+    if (!canStart && reason) {
+      // Show a toast or alert about why it can't be started
+      return;
+    }
+    
     setSelectedExecution(execution);
     setExecutionDialogOpen(true);
   };
@@ -133,91 +164,168 @@ export const MyChecklistsTab: React.FC = () => {
             </h2>
           </div>
           <div className="text-sm text-muted-foreground">
-            {executions?.length || 0} tasks for {format(new Date(), "MMM d, yyyy")}
+            {sortedExecutions?.length || 0} tasks for {format(new Date(), "MMM d, yyyy")}
           </div>
         </div>
 
         {/* Checklists Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {executions?.map((execution) => (
-            <Card key={execution.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold truncate">
-                    {execution.checklist?.name}
-                  </CardTitle>
-                  <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
-                    {execution.checklist?.priority}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {getStatusIcon(execution.status)}
-                  <span className="capitalize">{execution.status.replace('_', ' ')}</span>
-                </div>
-              </CardHeader>
+          {sortedExecutions?.map((execution) => {
+            const timeStatus = timeWindowStatuses[execution.id];
+            const { canStart, reason } = canStartChecklistExecution(execution, true);
+            const styling = timeStatus ? getTimeStatusStyling(timeStatus.status) : null;
+            
+            return (
+              <Card 
+                key={execution.id} 
+                className={cn(
+                  "hover:shadow-md transition-all duration-200 relative overflow-hidden",
+                  timeStatus?.isInWindow && "ring-2 ring-green-200 shadow-lg",
+                  !canStart && execution.status === 'pending' && "opacity-75"
+                )}
+              >
+                {/* Time status indicator bar */}
+                {timeStatus && timeStatus.status !== 'no-window' && (
+                  <div 
+                    className={cn(
+                      "absolute top-0 left-0 right-0 h-1",
+                      timeStatus.status === 'available' && "bg-green-500",
+                      timeStatus.status === 'upcoming' && "bg-blue-500", 
+                      timeStatus.status === 'expired' && "bg-red-500"
+                    )}
+                  />
+                )}
+                
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold truncate">
+                      {execution.checklist?.name}
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
+                        {execution.checklist?.priority}
+                      </Badge>
+                      {!canStart && execution.status === 'pending' && (
+                        <Lock className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {getStatusIcon(execution.status)}
+                    <span className="capitalize">{execution.status.replace('_', ' ')}</span>
+                  </div>
+                </CardHeader>
               
-              <CardContent className="space-y-4">
-                {execution.checklist?.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {execution.checklist.description}
-                  </p>
-                )}
+                <CardContent className="space-y-4">
+                  {execution.checklist?.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {execution.checklist.description}
+                    </p>
+                  )}
 
-                {/* Show assigned user when admin is viewing team checklists */}
-                {isAdmin && selectedTeamId && selectedTeamId !== 'all' && execution.assigned_user && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-2">
-                    <Users className="h-4 w-4" />
-                    <span>Assigned to: {execution.assigned_user.name || execution.assigned_user.email}</span>
+                  {/* Time Window Status */}
+                  {timeStatus && timeStatus.status !== 'no-window' && (
+                    <ChecklistTimeStatusBadge
+                      checklist={execution.checklist}
+                      executionDate={execution.execution_date}
+                      showCountdown={true}
+                      className="self-start"
+                    />
+                  )}
+
+                  {/* Show assigned user when admin is viewing team checklists */}
+                  {isAdmin && selectedTeamId && selectedTeamId !== 'all' && execution.assigned_user && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-2">
+                      <Users className="h-4 w-4" />
+                      <span>Assigned to: {execution.assigned_user.name || execution.assigned_user.email}</span>
+                    </div>
+                  )}
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Progress</span>
+                      <span>{execution.execution_score}%</span>
+                    </div>
+                    <Progress value={execution.execution_score} className="h-2" />
                   </div>
-                )}
 
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span>{execution.execution_score}%</span>
-                  </div>
-                  <Progress value={execution.execution_score} className="h-2" />
-                </div>
+                  {/* Enhanced Timing Info */}
+                  {execution.checklist?.execution_window_start && execution.checklist?.execution_window_end ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatTimeWindow(execution.checklist.execution_window_start, execution.checklist.execution_window_end)}</span>
+                      </div>
+                      {timeStatus && timeStatus.status !== 'no-window' && (
+                        <ChecklistCountdownTimer
+                          checklist={execution.checklist}
+                          executionDate={execution.execution_date}
+                          variant="minimal"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>Available anytime</span>
+                    </div>
+                  )}
 
-                {/* Timing Info */}
-                {execution.checklist?.execution_window_start && execution.checklist?.execution_window_end && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>
-                      {execution.checklist.execution_window_start} - {execution.checklist.execution_window_end}
-                    </span>
-                  </div>
-                )}
+                  {/* Cutoff Time Warning */}
+                  {execution.checklist?.cutoff_time && timeStatus?.isInWindow && (
+                    <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 rounded-md p-2">
+                      <Timer className="h-3 w-3" />
+                      <span>Cutoff: {execution.checklist.cutoff_time}</span>
+                    </div>
+                  )}
 
-                {/* Score Display */}
-                {execution.status === 'verified' && (
-                  <div className="flex justify-between text-sm">
-                    <span>Total Score:</span>
-                    <span className="font-semibold text-blue-600">
-                      {execution.total_score}/100
-                    </span>
-                  </div>
-                )}
+                  {/* Score Display */}
+                  {execution.status === 'verified' && (
+                    <div className="flex justify-between text-sm">
+                      <span>Total Score:</span>
+                      <span className="font-semibold text-blue-600">
+                        {execution.total_score}/100
+                      </span>
+                    </div>
+                  )}
 
-                {/* Action Button */}
-                <Button
-                  onClick={() => handleStartExecution(execution)}
-                  className="w-full"
-                  variant={execution.status === 'pending' ? 'default' : 'outline'}
-                  disabled={execution.status === 'verified'}
-                >
-                  {execution.status === 'pending' && 'Start Checklist'}
-                  {execution.status === 'in_progress' && 'Continue'}
-                  {execution.status === 'completed' && 'Review'}
-                  {execution.status === 'verified' && 'Verified ✓'}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  {/* Action Button */}
+                  <Button
+                    onClick={() => handleStartExecution(execution)}
+                    className={cn(
+                      "w-full transition-all duration-200",
+                      timeStatus?.isInWindow && execution.status === 'pending' && "shadow-md hover:shadow-lg"
+                    )}
+                    variant={execution.status === 'pending' && canStart ? 'default' : 'outline'}
+                    disabled={execution.status === 'verified' || (execution.status === 'pending' && !canStart)}
+                    title={!canStart ? reason : undefined}
+                  >
+                    {execution.status === 'pending' && canStart && 'Start Checklist'}
+                    {execution.status === 'pending' && !canStart && (
+                      <span className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        {timeStatus?.status === 'upcoming' ? 'Not Available Yet' : 'Time Expired'}
+                      </span>
+                    )}
+                    {execution.status === 'in_progress' && 'Continue'}
+                    {execution.status === 'completed' && 'Review'}
+                    {execution.status === 'verified' && 'Verified ✓'}
+                  </Button>
 
-        {executions?.length === 0 && (
+                  {/* Time restriction message */}
+                  {!canStart && reason && execution.status === 'pending' && (
+                    <p className="text-xs text-muted-foreground text-center italic">
+                      {reason}
+                    </p>
+                  )}
+                 </CardContent>
+               </Card>
+             );
+           })}
+         </div>
+
+        {sortedExecutions?.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
