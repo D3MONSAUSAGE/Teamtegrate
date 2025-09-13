@@ -342,3 +342,33 @@ export const usePendingChecklistVerifications = () => {
     },
   });
 };
+
+// Hook to get team checklist executions for dashboard (for managers)
+export const useTeamChecklistExecutions = (date?: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['team-checklist-executions', date],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const targetDate = date || new Date().toISOString().split('T')[0];
+
+      // Fetch all executions in the organization for the target date
+      const { data, error } = await supabase
+        .from('checklist_executions')
+        .select(`
+          *,
+          checklist:checklists(*),
+          assigned_user:users!checklist_executions_user_fk(id, name, email),
+          verifier:users!checklist_executions_verified_by_fk(id, name, email)
+        `)
+        .eq('execution_date', targetDate)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ChecklistExecution[];
+    },
+    enabled: !!user,
+  });
+};
