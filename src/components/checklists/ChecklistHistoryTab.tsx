@@ -2,26 +2,28 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useChecklistExecutionHistory } from '@/hooks/useChecklistExecutions';
-import { ChecklistExecution } from '@/types/checklist';
-import { Calendar, Clock, CheckCircle, AlertCircle, Search, Filter } from 'lucide-react';
+import { useAdvancedChecklistHistory } from '@/hooks/useAdvancedChecklistHistory';
+import { ChecklistHistoryFilters } from './ChecklistHistoryFilters';
+import { ChecklistExecutionDetailDialog } from './ChecklistExecutionDetailDialog';
+import { Calendar, Clock, CheckCircle, AlertCircle, Eye, User, Users } from 'lucide-react';
 import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
 export const ChecklistHistoryTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [limit, setLimit] = useState(50);
+  const [selectedExecution, setSelectedExecution] = useState<any>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
-  const { data: executions, isLoading } = useChecklistExecutionHistory(undefined, limit);
-
-  const filteredExecutions = executions?.filter(execution => {
-    const matchesSearch = execution.checklist?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         execution.assigned_user?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || execution.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const { data: executions, isLoading } = useAdvancedChecklistHistory({
+    dateRange,
+    teamId: selectedTeam === 'all' ? undefined : selectedTeam,
+    searchTerm,
+    status: statusFilter,
+  }, limit);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -53,6 +55,16 @@ export const ChecklistHistoryTab: React.FC = () => {
     }
   };
 
+  const getUserTeams = (user: any) => {
+    if (!user?.team_memberships) return [];
+    return user.team_memberships.map((tm: any) => tm.teams).filter(Boolean);
+  };
+
+  const handleViewDetails = (execution: any) => {
+    setSelectedExecution(execution);
+    setDetailDialogOpen(true);
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'critical':
@@ -78,76 +90,83 @@ export const ChecklistHistoryTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search checklists or users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="verified">Verified</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="25">25 items</SelectItem>
-            <SelectItem value="50">50 items</SelectItem>
-            <SelectItem value="100">100 items</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Enhanced Filters */}
+      <ChecklistHistoryFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        selectedTeam={selectedTeam}
+        onTeamChange={setSelectedTeam}
+        limit={limit}
+        onLimitChange={setLimit}
+      />
 
       {/* Results Count */}
       <div className="text-sm text-muted-foreground">
-        Showing {filteredExecutions?.length || 0} of {executions?.length || 0} executions
+        Showing {executions?.length || 0} executions
+        {dateRange?.from && (
+          <span className="ml-2">
+            from {format(dateRange.from, 'MMM d, yyyy')}
+            {dateRange.to && ` to ${format(dateRange.to, 'MMM d, yyyy')}`}
+          </span>
+        )}
+        {selectedTeam !== 'all' && (
+          <span className="ml-2">• Team filtered</span>
+        )}
       </div>
 
       {/* History List */}
       <div className="space-y-4">
-        {filteredExecutions?.map((execution) => (
-          <Card key={execution.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <h3 className="font-semibold text-lg">{execution.checklist?.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(execution.execution_date), 'MMM d, yyyy')}
-                    </p>
+        {executions?.map((execution) => {
+          const executorTeams = getUserTeams(execution.assigned_user);
+          
+          return (
+            <Card key={execution.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <h3 className="font-semibold text-lg">{execution.checklist?.name}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{format(new Date(execution.execution_date), 'MMM d, yyyy')}</span>
+                        <span>•</span>
+                        <span>by {execution.assigned_user?.name}</span>
+                      </div>
+                      {executorTeams.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {executorTeams.map((team: any) => (
+                            <Badge key={team.id} variant="secondary" className="text-xs">
+                              {team.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(execution)}
+                      className="flex items-center gap-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </Button>
+                    <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
+                      {execution.checklist?.priority}
+                    </Badge>
+                    <Badge className={getStatusColor(execution.status)}>
+                      {getStatusIcon(execution.status)}
+                      <span className="ml-1 capitalize">{execution.status.replace('_', ' ')}</span>
+                    </Badge>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
-                    {execution.checklist?.priority}
-                  </Badge>
-                  <Badge className={getStatusColor(execution.status)}>
-                    {getStatusIcon(execution.status)}
-                    <span className="ml-1 capitalize">{execution.status.replace('_', ' ')}</span>
-                  </Badge>
-                </div>
-              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
@@ -199,27 +218,28 @@ export const ChecklistHistoryTab: React.FC = () => {
                 </div>
               )}
 
-              {execution.status === 'verified' && execution.verifier && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-blue-500" />
-                  <span>
-                    Verified by {execution.verifier.name} on{' '}
-                    {format(new Date(execution.verified_at!), 'MMM d, yyyy h:mm a')}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                {execution.status === 'verified' && execution.verifier && (
+                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-blue-500" />
+                    <span>
+                      Verified by {execution.verifier.name} on{' '}
+                      {format(new Date(execution.verified_at!), 'MMM d, yyyy h:mm a')}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {filteredExecutions?.length === 0 && (
+      {executions?.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No execution history found</h3>
             <p className="text-muted-foreground">
-              {searchTerm || statusFilter !== 'all' 
+              {searchTerm || statusFilter !== 'all' || dateRange?.from || selectedTeam !== 'all'
                 ? 'Try adjusting your search or filter criteria.'
                 : 'Start completing checklists to see your execution history here.'
               }
@@ -227,6 +247,13 @@ export const ChecklistHistoryTab: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Detail Dialog */}
+      <ChecklistExecutionDetailDialog
+        execution={selectedExecution}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+      />
     </div>
   );
 };
