@@ -72,9 +72,14 @@ export const useAdvancedChecklistHistory = (filters: ChecklistHistoryFilters = {
         }
       }
 
-      // Status filtering
-      if (filters.status && filters.status !== 'all') {
+      // Status filtering - exclude pending by default, only show actual work done
+      if (filters.status === 'completed_verified') {
+        query = query.in('status', ['completed', 'verified']);
+      } else if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status as any);
+      } else {
+        // Default: only show executions that have been started (exclude pending assignments)
+        query = query.not('status', 'eq', 'pending');
       }
 
       // Execute query

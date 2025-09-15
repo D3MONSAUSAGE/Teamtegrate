@@ -53,12 +53,10 @@ export const ChecklistHistoryFilters: React.FC<ChecklistHistoryFiltersProps> = (
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="completed_verified">Completed & Verified</SelectItem>
+            <SelectItem value="completed">Completed Only</SelectItem>
+            <SelectItem value="verified">Verified Only</SelectItem>
             <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="verified">Verified</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
           </SelectContent>
         </Select>
 

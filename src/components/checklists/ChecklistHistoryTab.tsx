@@ -11,7 +11,7 @@ import { DateRange } from 'react-day-picker';
 
 export const ChecklistHistoryTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('completed_verified');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [limit, setLimit] = useState(50);
