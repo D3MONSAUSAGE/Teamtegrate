@@ -83,6 +83,11 @@ export const addTask = async (
       updated_at: now.toISOString(),
       cost: newTask.cost || 0,
       organization_id: user.organizationId,
+      // Recurring task fields
+      is_recurring: newTask.is_recurring || false,
+      recurrence_pattern: newTask.recurrence_pattern || null,
+      next_due_date: newTask.is_recurring ? deadlineIso : null,
+      warning_period_hours: newTask.warning_period_hours || null,
       ...assignmentData,
     };
 

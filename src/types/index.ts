@@ -64,6 +64,17 @@ export interface Task {
   organizationId: string;
   projectTitle?: string;
   warning_period_hours?: number;
+  // Recurring task fields
+  is_recurring?: boolean;
+  recurrence_pattern?: {
+    frequency: 'daily' | 'weekly' | 'monthly';
+    interval: number;
+    daysOfWeek?: number[]; // 0=Sun, 1=Mon, etc. Only for weekly
+  };
+  next_due_date?: Date;
+  recurrence_parent_id?: string;
+  recurrence_end_date?: Date;
+  recurrence_count?: number;
 }
 
 export type ProjectStatus = 'To Do' | 'In Progress' | 'Completed';

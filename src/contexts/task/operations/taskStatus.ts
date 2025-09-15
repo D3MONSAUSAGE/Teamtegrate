@@ -93,9 +93,13 @@ export const updateTaskStatus = async (
           organization_id_param: user.organizationId
         });
         if (genErr) {
-          console.warn('⚠️ Failed to generate next recurring occurrence', genErr);
+          console.error('❌ Failed to generate next recurring occurrence:', genErr);
+          toast.error('Failed to create next recurring task occurrence');
+        } else if (genData) {
+          console.log('✅ Next recurring occurrence generated:', genData);
+          toast.success('Next recurring task created successfully');
         } else {
-          console.log('✅ Next recurring occurrence generated', genData);
+          console.log('ℹ️ Recurring task series ended (reached end date/limit)');
         }
       }
     }
