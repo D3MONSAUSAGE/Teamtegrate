@@ -1837,6 +1837,70 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_sync_preferences: {
+        Row: {
+          calendar_id: string | null
+          conflict_resolution_strategy: string | null
+          created_at: string | null
+          id: string
+          import_enabled: boolean | null
+          organization_id: string
+          sync_enabled: boolean | null
+          sync_frequency_minutes: number | null
+          two_way_sync_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          calendar_id?: string | null
+          conflict_resolution_strategy?: string | null
+          created_at?: string | null
+          id?: string
+          import_enabled?: boolean | null
+          organization_id: string
+          sync_enabled?: boolean | null
+          sync_frequency_minutes?: number | null
+          two_way_sync_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string | null
+          conflict_resolution_strategy?: string | null
+          created_at?: string | null
+          id?: string
+          import_enabled?: boolean | null
+          organization_id?: string
+          sync_enabled?: boolean | null
+          sync_frequency_minutes?: number | null
+          two_way_sync_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_google_sync_org"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_google_sync_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_google_sync_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           branch: string
@@ -6899,6 +6963,7 @@ export type Database = {
           expertise_tags: string[] | null
           google_calendar_sync_enabled: boolean | null
           google_calendar_token: string | null
+          google_calendar_webhook_id: string | null
           google_refresh_token: string | null
           hire_date: string | null
           id: string
@@ -6927,6 +6992,7 @@ export type Database = {
           expertise_tags?: string[] | null
           google_calendar_sync_enabled?: boolean | null
           google_calendar_token?: string | null
+          google_calendar_webhook_id?: string | null
           google_refresh_token?: string | null
           hire_date?: string | null
           id: string
@@ -6955,6 +7021,7 @@ export type Database = {
           expertise_tags?: string[] | null
           google_calendar_sync_enabled?: boolean | null
           google_calendar_token?: string | null
+          google_calendar_webhook_id?: string | null
           google_refresh_token?: string | null
           hire_date?: string | null
           id?: string
