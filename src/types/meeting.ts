@@ -10,6 +10,10 @@ export interface MeetingRequest {
   status: 'pending' | 'confirmed' | 'cancelled';
   created_at: string;
   updated_at: string;
+  // Google Calendar integration fields
+  google_event_id?: string;
+  google_meet_url?: string;
+  sync_status?: 'pending' | 'synced' | 'failed' | 'not_synced';
 }
 
 export interface MeetingParticipant {
@@ -28,4 +32,23 @@ export interface MeetingParticipant {
 export interface MeetingRequestWithParticipants extends MeetingRequest {
   participants: MeetingParticipant[];
   organizer_name?: string;
+}
+
+export interface GoogleCalendarTokens {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+}
+
+export interface CalendarSyncLog {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  meeting_request_id?: string;
+  sync_type: 'export_to_google' | 'import_from_google' | 'update_google' | 'delete_google';
+  google_event_id?: string;
+  status: 'pending' | 'success' | 'failed';
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
 }

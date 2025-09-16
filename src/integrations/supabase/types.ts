@@ -364,6 +364,67 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_sync_log: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          google_event_id: string | null
+          id: string
+          meeting_request_id: string | null
+          organization_id: string
+          status: string
+          sync_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          google_event_id?: string | null
+          id?: string
+          meeting_request_id?: string | null
+          organization_id: string
+          status?: string
+          sync_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          google_event_id?: string | null
+          id?: string
+          meeting_request_id?: string | null
+          organization_id?: string
+          status?: string
+          sync_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sync_log_meeting_request_id_fkey"
+            columns: ["meeting_request_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_attachments: {
         Row: {
           created_at: string
@@ -2230,12 +2291,15 @@ export type Database = {
           created_at: string
           description: string | null
           end_time: string
+          google_event_id: string | null
+          google_meet_url: string | null
           id: string
           location: string | null
           organization_id: string
           organizer_id: string
           start_time: string
           status: string
+          sync_status: string | null
           title: string
           updated_at: string
         }
@@ -2243,12 +2307,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_time: string
+          google_event_id?: string | null
+          google_meet_url?: string | null
           id?: string
           location?: string | null
           organization_id: string
           organizer_id: string
           start_time: string
           status?: string
+          sync_status?: string | null
           title: string
           updated_at?: string
         }
@@ -2256,12 +2323,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_time?: string
+          google_event_id?: string | null
+          google_meet_url?: string | null
           id?: string
           location?: string | null
           organization_id?: string
           organizer_id?: string
           start_time?: string
           status?: string
+          sync_status?: string | null
           title?: string
           updated_at?: string
         }
@@ -6827,6 +6897,9 @@ export type Database = {
           emergency_contact_needed: boolean | null
           employee_id: string | null
           expertise_tags: string[] | null
+          google_calendar_sync_enabled: boolean | null
+          google_calendar_token: string | null
+          google_refresh_token: string | null
           hire_date: string | null
           id: string
           job_title: string | null
@@ -6852,6 +6925,9 @@ export type Database = {
           emergency_contact_needed?: boolean | null
           employee_id?: string | null
           expertise_tags?: string[] | null
+          google_calendar_sync_enabled?: boolean | null
+          google_calendar_token?: string | null
+          google_refresh_token?: string | null
           hire_date?: string | null
           id: string
           job_title?: string | null
@@ -6877,6 +6953,9 @@ export type Database = {
           emergency_contact_needed?: boolean | null
           employee_id?: string | null
           expertise_tags?: string[] | null
+          google_calendar_sync_enabled?: boolean | null
+          google_calendar_token?: string | null
+          google_refresh_token?: string | null
           hire_date?: string | null
           id?: string
           job_title?: string | null
