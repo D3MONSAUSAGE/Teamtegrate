@@ -24,7 +24,6 @@ const meetingSchema = z.object({
   end_date: z.date(),
   end_time: z.string(),
   location: z.string().optional(),
-  sync_to_google: z.boolean().default(false),
 });
 
 type MeetingFormData = z.infer<typeof meetingSchema>;
@@ -52,7 +51,6 @@ const EnhancedMeetingForm: React.FC<EnhancedMeetingFormProps> = ({
       start_date: new Date(),
       end_date: new Date(),
       location: '',
-      sync_to_google: googleCalendarConnected,
     },
   });
 
@@ -89,26 +87,8 @@ const EnhancedMeetingForm: React.FC<EnhancedMeetingFormProps> = ({
         throw meetingError;
       }
 
-      // Sync to Google Calendar if enabled
-      if (data.sync_to_google && googleCalendarConnected) {
-        try {
-          const { error: syncError } = await supabase.functions.invoke('sync-meeting-to-google', {
-            body: { meetingId: meeting.id, action: 'create' }
-          });
-
-          if (syncError) {
-            console.error('Google Calendar sync failed:', syncError);
-            toast.error('Meeting created but Google Calendar sync failed');
-          } else {
-            toast.success('Meeting created and synced to Google Calendar!');
-          }
-        } catch (syncError) {
-          console.error('Google Calendar sync error:', syncError);
-          toast.error('Meeting created but Google Calendar sync failed');
-        }
-      } else {
-        toast.success('Meeting created successfully!');
-      }
+      // Meeting will automatically sync via database trigger if user has Google Calendar connected
+      toast.success('Meeting created successfully!');
 
       await onSubmit(meeting);
       form.reset();
@@ -214,33 +194,19 @@ const EnhancedMeetingForm: React.FC<EnhancedMeetingFormProps> = ({
             />
 
             {googleCalendarConnected && (
-              <FormField
-                control={form.control}
-                name="sync_to_google"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="flex items-center gap-2">
-                        <RefreshCw className="h-4 w-4" />
-                        Sync to Google Calendar
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          <Video className="h-3 w-3 mr-1" />
-                          Google Meet
-                        </Badge>
-                      </FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Automatically create a Google Calendar event with Google Meet link
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950">
+                <div className="flex items-center gap-2 text-sm text-green-800 dark:text-green-200">
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="font-medium">Auto-sync enabled</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                    <Video className="h-3 w-3 mr-1" />
+                    Google Meet
+                  </Badge>
+                </div>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                  This meeting will automatically sync to your Google Calendar with a Google Meet link.
+                </p>
+              </div>
             )}
 
             <div className="flex justify-end gap-3">

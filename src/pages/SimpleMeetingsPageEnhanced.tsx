@@ -6,7 +6,10 @@ import { Calendar, Clock, Users, Plus, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import GoogleCalendarConnect from '@/components/meetings/GoogleCalendarConnect';
+import GoogleCalendarSyncPreferences from '@/components/meetings/GoogleCalendarSyncPreferences';
+import CalendarSyncDashboard from '@/components/meetings/CalendarSyncDashboard';
 import EnhancedMeetingForm from '@/components/meetings/EnhancedMeetingForm';
+import { useEnhancedGoogleCalendar } from '@/hooks/useEnhancedGoogleCalendar';
 import { toast } from 'sonner';
 
 const SimpleMeetingsPageEnhanced: React.FC = () => {
