@@ -1,5 +1,6 @@
 import { Task, Project, TaskComment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { createTaskAssignmentNotification, createMultipleTaskAssignmentNotifications } from '../operations/assignment/createNotification';
 
 export const fetchTasks = async (organizationId: string): Promise<Task[]> => {
   const { data, error } = await supabase
@@ -29,7 +30,7 @@ export const fetchTasks = async (organizationId: string): Promise<Task[]> => {
   }));
 };
 
-export const createTask = async (task: any): Promise<Task> => {
+export const createTask = async (task: any, createdBy?: string): Promise<Task> => {
   const now = new Date();
   const taskId = crypto.randomUUID();
   
@@ -62,7 +63,7 @@ export const createTask = async (task: any): Promise<Task> => {
 
   if (error) throw error;
   
-  return {
+  const newTask: Task = {
     id: data.id,
     title: data.title,
     description: data.description,
@@ -79,6 +80,13 @@ export const createTask = async (task: any): Promise<Task> => {
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at)
   };
+
+  // Send notifications for task assignments if createdBy is provided
+  if (createdBy && task.organizationId) {
+    await sendAPITaskCreationNotifications(newTask, createdBy, task.organizationId);
+  }
+
+  return newTask;
 };
 
 export const updateTask = async (taskId: string, updates: any): Promise<void> => {
@@ -256,4 +264,53 @@ export const fetchTeamPerformance = async (): Promise<any[]> => {
 export const fetchTeamMemberPerformance = async (userId: string): Promise<any> => {
   // Mock implementation for now
   return null;
+};
+
+/**
+ * Send notifications for newly created tasks via API with assignments
+ */
+const sendAPITaskCreationNotifications = async (task: Task, creatorId: string, organizationId: string): Promise<void> => {
+  try {
+    console.log('📬 sendAPITaskCreationNotifications: Checking for assignments in task:', task.id);
+    
+    // Check if task has any assignments
+    const hasAssignments = task.assignedToId || (task.assignedToIds && task.assignedToIds.length > 0);
+    
+    if (!hasAssignments) {
+      console.log('📬 No assignments found, skipping notifications');
+      return;
+    }
+
+    // Handle single assignment
+    if (task.assignedToId && task.assignedToId !== creatorId) {
+      console.log('📬 Sending notification for single assignment to:', task.assignedToId);
+      await createTaskAssignmentNotification(
+        task.assignedToId,
+        task.title,
+        false, // Not self-assigned since creator is different
+        organizationId
+      );
+    }
+
+    // Handle multiple assignments
+    if (task.assignedToIds && task.assignedToIds.length > 0) {
+      // Filter out the creator from notifications to avoid self-notification
+      const assignedUsers = task.assignedToIds.filter(userId => userId !== creatorId);
+      
+      if (assignedUsers.length > 0) {
+        console.log('📬 Sending notifications for multiple assignments to:', assignedUsers);
+        await createMultipleTaskAssignmentNotifications(
+          assignedUsers,
+          task.title,
+          creatorId,
+          organizationId
+        );
+      }
+    }
+
+    console.log('✅ API task creation notifications sent successfully');
+  } catch (error) {
+    console.error('❌ Failed to send API task creation notifications:', error);
+    // Don't throw error - task creation was successful, notification failure shouldn't block it
+  }
 };

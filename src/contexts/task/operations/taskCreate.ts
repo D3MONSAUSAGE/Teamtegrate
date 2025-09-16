@@ -4,6 +4,7 @@ import { SimpleUser } from '@/types/simplified';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { sanitizeTaskAssignment, validateTaskAssignment } from '@/utils/taskValidation';
+import { createTaskAssignmentNotification, createMultipleTaskAssignmentNotifications } from './assignment/createNotification';
 
 export const createTask = async (
   taskData: Partial<Task>,
@@ -122,6 +123,9 @@ export const createTask = async (
     const updatedTasks = [...tasks, newTask];
     setTasks(updatedTasks);
 
+    // Send notifications for task assignments (if any exist and not self-assigned)
+    await sendTaskCreationNotifications(newTask, user);
+
     console.log('🎉 createTask: Task creation completed successfully');
     
   } catch (error: any) {
@@ -150,5 +154,55 @@ export const createTask = async (
     
     // Always rethrow to ensure error propagates up the chain
     throw error;
+  }
+};
+
+/**
+ * Send notifications for newly created tasks with assignments
+ */
+const sendTaskCreationNotifications = async (task: Task, creator: SimpleUser): Promise<void> => {
+  try {
+    console.log('📬 sendTaskCreationNotifications: Checking for assignments in task:', task.id);
+    
+    // Check if task has any assignments
+    const hasAssignments = task.assignedToId || (task.assignedToIds && task.assignedToIds.length > 0);
+    
+    if (!hasAssignments) {
+      console.log('📬 No assignments found, skipping notifications');
+      return;
+    }
+
+    // Handle single assignment
+    if (task.assignedToId && task.assignedToId !== creator.id) {
+      console.log('📬 Sending notification for single assignment to:', task.assignedToId);
+      await createTaskAssignmentNotification(
+        task.assignedToId,
+        task.title,
+        false, // Not self-assigned since creator is different
+        creator.organization_id
+      );
+    }
+
+    // Handle multiple assignments
+    if (task.assignedToIds && task.assignedToIds.length > 0) {
+      // Filter out the creator from notifications to avoid self-notification
+      const assignedUsers = task.assignedToIds.filter(userId => userId !== creator.id);
+      
+      if (assignedUsers.length > 0) {
+        console.log('📬 Sending notifications for multiple assignments to:', assignedUsers);
+        await createMultipleTaskAssignmentNotifications(
+          assignedUsers,
+          task.title,
+          creator.id,
+          creator.organization_id
+        );
+      }
+    }
+
+    console.log('✅ Task creation notifications sent successfully');
+  } catch (error) {
+    console.error('❌ Failed to send task creation notifications:', error);
+    // Don't show user error message for notification failures - task creation was successful
+    // The notification system already handles its own error logging
   }
 };

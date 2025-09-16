@@ -105,7 +105,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     setLoading(true);
     try {
-      const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' });
+      const newTask = await createTaskAPI({ ...task, organizationId: user.organizationId || '' }, user.id);
       setTasks(prevTasks => [...prevTasks, newTask]);
       
       // Invalidate all task-related caches
