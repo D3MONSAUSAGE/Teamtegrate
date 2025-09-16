@@ -29,12 +29,22 @@ const GoogleCalendarConnect: React.FC<GoogleCalendarConnectProps> = ({
     setIsConnecting(true);
     
     try {
-      // Generate Google OAuth URL
+      // Fetch Google client configuration
+      const { data: config, error: configError } = await supabase.functions.invoke('get-google-config');
+      
+      if (configError) {
+        console.error('Failed to get Google config:', configError);
+        toast.error('Failed to get Google configuration');
+        setIsConnecting(false);
+        return;
+      }
+      
+      // Generate Google OAuth URL with minimal required scopes
       const params = new URLSearchParams({
-        client_id: 'YOUR_GOOGLE_CLIENT_ID', // This will be configured via secrets
+        client_id: config.clientId,
         redirect_uri: `${window.location.origin}/auth/google/callback`,
         response_type: 'code',
-        scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
+        scope: 'openid email profile https://www.googleapis.com/auth/calendar',
         access_type: 'offline',
         prompt: 'consent',
         state: user.id, // Pass user ID as state parameter

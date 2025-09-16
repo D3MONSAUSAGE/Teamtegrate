@@ -12,6 +12,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('get-google-config called from origin:', req.headers.get('origin'));
+    
     const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
     
     if (!googleClientId) {
@@ -27,10 +29,15 @@ serve(async (req) => {
       );
     }
 
+    const origin = req.headers.get('origin') || 'https://zlfpiovyodiyecdueiig.supabase.co';
+    const redirectUri = `${origin}/auth/google/callback`;
+    
+    console.log('Returning Google config:', { clientId: googleClientId.substring(0, 20) + '...', redirectUri });
+
     return new Response(
       JSON.stringify({ 
         clientId: googleClientId,
-        redirectUri: `${req.headers.get('origin') || 'https://zlfpiovyodiyecdueiig.supabase.co'}/auth/google/callback`
+        redirectUri
       }),
       { 
         status: 200, 
