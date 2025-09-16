@@ -60,9 +60,19 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
     setIsLoading(true);
     
     try {
-      // Generate Google OAuth URL
+      // Get Google config from edge function
+      const { data: config, error: configError } = await supabase.functions.invoke('get-google-config');
+      
+      if (configError || !config?.clientId) {
+        console.error('Failed to get Google config:', configError);
+        toast.error('Google Calendar configuration not available. Please contact support.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Generate Google OAuth URL with real client ID
       const params = new URLSearchParams({
-        client_id: 'YOUR_GOOGLE_CLIENT_ID', // This will be configured via secrets
+        client_id: config.clientId,
         redirect_uri: `${window.location.origin}/auth/google/callback`,
         response_type: 'code',
         scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
@@ -94,19 +104,28 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
             });
 
             if (error) {
-              throw error;
+              console.error('Google Calendar auth error:', error);
+              throw new Error(error.message || 'Failed to authenticate with Google Calendar');
             }
 
             toast.success('Google Calendar connected successfully!');
             setIsConnected(true);
             popup?.close();
             
+            // Refresh connection status
+            await checkConnection();
+            
           } catch (error) {
             console.error('Token exchange failed:', error);
-            toast.error('Failed to connect Google Calendar');
+            const errorMessage = error instanceof Error 
+              ? error.message 
+              : 'Failed to connect Google Calendar. Please try again.';
+            toast.error(errorMessage);
           }
         } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-          toast.error('Google Calendar connection cancelled');
+          const errorMsg = event.data.error || 'Google Calendar connection cancelled';
+          console.error('Google auth error:', errorMsg);
+          toast.error(errorMsg);
         }
         
         window.removeEventListener('message', messageListener);

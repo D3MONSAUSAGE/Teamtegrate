@@ -53,6 +53,15 @@ verify_jwt = false
 [functions.admin-update-role]
 verify_jwt = false
 
+[functions.get-google-config]
+verify_jwt = true
+
+[functions.google-calendar-auth]
+verify_jwt = false
+
+[functions.sync-meeting-to-google]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325
