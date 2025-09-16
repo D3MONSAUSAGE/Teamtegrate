@@ -70,12 +70,12 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
         return;
       }
       
-      // Generate Google OAuth URL with real client ID
+      // Generate Google OAuth URL with minimal required scopes
       const params = new URLSearchParams({
         client_id: config.clientId,
         redirect_uri: `${window.location.origin}/auth/google/callback`,
         response_type: 'code',
-        scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
+        scope: 'openid email profile https://www.googleapis.com/auth/calendar',
         access_type: 'offline',
         prompt: 'consent',
         state: user.id, // Pass user ID as state parameter
