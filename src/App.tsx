@@ -42,6 +42,7 @@ import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
 import EmployeeActionsPage from "@/pages/EmployeeActionsPage";
 import RequestTypesPage from "@/pages/RequestTypesPage";
 import SchedulePage from "@/pages/SchedulePage";
+import GoogleCalendarCallback from "@/components/auth/GoogleCalendarCallback";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/landing" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/auth/google/callback" element={<GoogleCalendarCallback />} />
                 
                 {/* Protected Dashboard Routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
