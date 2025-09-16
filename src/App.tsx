@@ -29,7 +29,7 @@ import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
 import FinancePage from "@/pages/FinancePage";
-import MeetingsPage from "@/pages/MeetingsPage";
+import SimpleMeetingsPageEnhanced from "@/pages/SimpleMeetingsPageEnhanced";
 import TrainingPage from "@/pages/TrainingPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import EnhancedRequestsPage from "@/pages/EnhancedRequestsPage";
@@ -91,7 +91,7 @@ function App() {
                   <Route path="focus" element={<FocusZonePage />} />
                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
                   <Route path="finance" element={<FinancePage />} />
-                   <Route path="meetings" element={<MeetingsPage />} />
+                   <Route path="meetings" element={<SimpleMeetingsPageEnhanced />} />
                    <Route path="training" element={<TrainingPage />} />
                    <Route path="checklists" element={<ChecklistsPage />} />
                 </Route>
