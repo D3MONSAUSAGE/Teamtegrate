@@ -14,10 +14,13 @@ import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useTask } from '@/contexts/task';
 import TaskProviderErrorBoundary from '@/components/ui/TaskProviderErrorBoundary';
 import { useAuth } from '@/contexts/auth/AuthProvider';
+import GoogleCalendarConnect from '@/components/meetings/GoogleCalendarConnect';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 
 const CalendarPage = () => {
   const { tasks, isLoading } = useCalendarTasks();
   const { user } = useAuth();
+  const { isConnected: isGoogleCalendarConnected } = useGoogleCalendar();
   
   // Conditionally use task context only when available  
   let updateTask: ((taskId: string, updates: Partial<Task>) => Promise<void>) | undefined;
@@ -198,6 +201,22 @@ const CalendarPage = () => {
                     <span className="font-medium text-orange-600">{pendingInvitationsCount}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Google Calendar Integration */}
+              <div className="border-t pt-4">
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Google Calendar</h3>
+                  <GoogleCalendarConnect 
+                    isConnected={isGoogleCalendarConnected}
+                  />
+                  {isGoogleCalendarConnected && (
+                    <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      Calendar synced
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
