@@ -231,19 +231,26 @@ const SimpleMeetingsPageEnhanced: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="calendar">
-          <Card>
-            <CardHeader>
-              <CardTitle>Calendar View</CardTitle>
-              <CardDescription>
-                Calendar integration coming soon - view all your meetings in one place
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-96">
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Calendar view will be implemented in the next phase
-              </div>
-            </CardContent>
-          </Card>
+          {isGoogleConnected ? (
+            <CalendarSyncDashboard />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Calendar View</CardTitle>
+                <CardDescription>
+                  Connect your Google Calendar to view sync dashboard
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-96">
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <GoogleCalendarConnect 
+                    isConnected={isGoogleConnected}
+                    onConnectionChange={handleGoogleConnectionChange}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="settings">
@@ -253,19 +260,12 @@ const SimpleMeetingsPageEnhanced: React.FC = () => {
               onConnectionChange={handleGoogleConnectionChange}
             />
             
-            <Card>
-              <CardHeader>
-                <CardTitle>Meeting Preferences</CardTitle>
-                <CardDescription>
-                  Configure your default meeting settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Meeting preferences configuration coming soon
-                </div>
-              </CardContent>
-            </Card>
+            {isGoogleConnected && (
+              <>
+                <GoogleCalendarSyncPreferences isConnected={isGoogleConnected} />
+                <CalendarSyncDashboard />
+              </>
+            )}
           </div>
         </TabsContent>
       </Tabs>
