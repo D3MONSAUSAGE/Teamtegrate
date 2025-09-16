@@ -11,6 +11,7 @@ import {
   Sun, 
   Calendar, 
   User, 
+  Users,
   Search,
   Download,
   RefreshCw,
@@ -181,16 +182,20 @@ export const ModernReportsHeader: React.FC<ModernReportsHeaderProps> = ({
             <div className="flex flex-wrap items-center gap-4">
               {/* Tab Navigation */}
               <Tabs value={activeTab} onValueChange={onTabChange}>
-                <TabsList className="grid w-fit grid-cols-2">
-                  <TabsTrigger value="individual" className="flex items-center space-x-2">
-                    <User className="h-4 w-4" />
-                    <span>Individual</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="team" className="flex items-center space-x-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Team Analytics</span>
-                  </TabsTrigger>
-                </TabsList>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="individual" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Comprehensive
+              </TabsTrigger>
+              <TabsTrigger value="legacy" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Legacy View
+              </TabsTrigger>
+              <TabsTrigger value="team" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Team Analytics
+              </TabsTrigger>
+            </TabsList>
               </Tabs>
 
               {/* Time Range Selector */}

@@ -7491,6 +7491,30 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: number
       }
+      get_comprehensive_employee_report: {
+        Args: {
+          end_date: string
+          report_granularity?: string
+          start_date: string
+          target_user_id: string
+        }
+        Returns: {
+          avg_task_time: number
+          completed_tasks: number
+          completion_rate: number
+          efficiency_rating: number
+          in_progress_tasks: number
+          overdue_tasks: number
+          overtime_minutes: number
+          period_date: string
+          period_label: string
+          productivity_score: number
+          projects_data: Json
+          sessions_count: number
+          total_minutes_worked: number
+          total_tasks: number
+        }[]
+      }
       get_current_user_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -7502,6 +7526,20 @@ export type Database = {
       get_daily_task_summary: {
         Args: { target_date?: string; target_user_id: string }
         Returns: Json
+      }
+      get_employee_daily_task_completion: {
+        Args: { end_date: string; start_date: string; target_user_id: string }
+        Returns: {
+          avg_time_per_task: number
+          completed_tasks: number
+          completion_date: string
+          completion_rate: number
+          day_name: string
+          overdue_tasks: number
+          pending_tasks: number
+          total_tasks: number
+          total_time_minutes: number
+        }[]
       }
       get_employee_detailed_tasks: {
         Args: { end_date: string; start_date: string; target_user_id: string }

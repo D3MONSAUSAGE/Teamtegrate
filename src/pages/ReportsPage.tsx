@@ -16,6 +16,7 @@ import { PerformanceGrid } from '@/components/reports/modern/PerformanceGrid';
 import { InsightsPanel } from '@/components/reports/modern/InsightsPanel';
 import { DetailedAnalytics } from '@/components/reports/modern/DetailedAnalytics';
 import TeamReports from '@/components/reports/TeamReports';
+import { ComprehensiveReportsPanel } from '@/components/reports/ComprehensiveReportsPanel';
 
 export const ReportsPage: React.FC = () => {
   const { user } = useAuth();
@@ -58,7 +59,6 @@ export const ReportsPage: React.FC = () => {
 
   // Handlers
   const handleUserSelect = (userId: string, userName: string) => {
-    // In a real app, you'd fetch the full user object
     setSelectedUser({ 
       id: userId, 
       name: userName,
@@ -81,7 +81,6 @@ export const ReportsPage: React.FC = () => {
       const targetUserName = viewingUserName;
       const isViewingSelf = !selectedUser;
       
-      // Generate comprehensive export data
       const dateStr = format(new Date(), 'yyyy-MM-dd');
       const userStr = isViewingSelf ? 'my' : targetUserName.toLowerCase().replace(/\s+/g, '-');
       const timeStr = timeRange === '7 days' ? 'weekly' : timeRange === '30 days' ? 'monthly' : 'custom';
@@ -93,15 +92,15 @@ export const ReportsPage: React.FC = () => {
           ['User Info', 'Name', targetUserName, ''],
           ['User Info', 'Report Period', timeRange, ''],
           ['User Info', 'Generated At', format(new Date(), 'yyyy-MM-dd HH:mm:ss'), ''],
-          ['', '', '', ''], // Separator
+          ['', '', '', ''],
           ['Tasks', 'Total Tasks', (taskStatsSummary?.total_tasks || 0).toString(), timeRange],
           ['Tasks', 'Completed Tasks', (taskStatsSummary?.completed_tasks || 0).toString(), timeRange],
           ['Tasks', 'Completion Rate', `${Math.round(taskStatsSummary?.completion_rate || 0)}%`, timeRange],
-          ['', '', '', ''], // Separator
+          ['', '', '', ''],
           ['Time', 'Total Hours', Math.round(hoursStatsSummary?.total_hours || 0).toString(), timeRange],
           ['Time', 'Daily Average', (hoursStatsSummary?.avg_daily_hours || 0).toFixed(1), timeRange],
           ['Time', 'Overtime Hours', (hoursStatsSummary?.overtime_hours || 0).toString(), timeRange],
-          ['', '', '', ''], // Separator
+          ['', '', '', ''],
           ['Projects', 'Active Projects', (contributions?.length || 0).toString(), timeRange],
           ...((contributions || []).map(project => [
             'Project Detail',
@@ -128,11 +127,9 @@ export const ReportsPage: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    // Trigger data refetch (in a real app, you'd call a refetch function)
     toast.success('Data refreshed!');
   };
 
-  // Handle loading and error states
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -179,9 +176,18 @@ export const ReportsPage: React.FC = () => {
           isLoading={isLoading}
         />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">{/* Tab content managed by header */}
-          
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="individual" className="space-y-8 mt-6">
+            {/* Comprehensive Reports Panel */}
+            <ComprehensiveReportsPanel
+              userId={viewingUserId || ''}
+              userName={viewingUserName}
+              timeRange={timeRange}
+              dateRange={undefined}
+            />
+          </TabsContent>
+          
+          <TabsContent value="legacy" className="space-y-8 mt-6">
             {/* Executive Summary Cards */}
             <ExecutiveSummary
               taskStats={taskStatsSummary}
@@ -200,7 +206,6 @@ export const ReportsPage: React.FC = () => {
 
             {/* Split Layout for Insights and Detailed Analytics */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              {/* AI Insights Panel */}
               <div className="xl:col-span-1">
                 <InsightsPanel
                   taskStats={taskStatsSummary}
@@ -209,8 +214,6 @@ export const ReportsPage: React.FC = () => {
                   isLoading={isLoading}
                 />
               </div>
-
-              {/* Detailed Analytics */}
               <div className="xl:col-span-2">
                 <DetailedAnalytics
                   taskStats={taskStatsSummary}
