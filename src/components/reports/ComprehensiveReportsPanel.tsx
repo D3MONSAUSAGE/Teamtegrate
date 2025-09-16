@@ -18,7 +18,8 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { useComprehensiveReports, ReportGranularity } from '@/hooks/useComprehensiveReports';
 import { DailyCompletionChart } from '@/components/reports/weekly/DailyCompletionChart';
-import WeeklyTimeTrackingChart from '@/components/dashboard/WeeklyTimeTrackingChart';
+// Temporarily commented out to debug import issue
+// import WeeklyTimeTrackingChart from '@/components/dashboard/WeeklyTimeTrackingChart';
 import { downloadCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 
@@ -316,7 +317,16 @@ export const ComprehensiveReportsPanel: React.FC<ComprehensiveReportsPanelProps>
         </TabsContent>
 
         <TabsContent value="time" className="space-y-6">
-          <WeeklyTimeTrackingChart data={weeklyTimeData} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Time Trend</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              <div className="text-center text-muted-foreground py-8">
+                Time tracking chart temporarily disabled for debugging
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-6">
