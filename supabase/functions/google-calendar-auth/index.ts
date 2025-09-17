@@ -18,13 +18,21 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    console.log('🔄 Processing Google Calendar auth request');
     const { code, userId } = await req.json();
 
+    console.log('📥 Request data:', { 
+      hasCode: !!code, 
+      userId, 
+      codeLength: code?.length 
+    });
+
     if (!code || !userId) {
+      console.error('❌ Missing required parameters:', { hasCode: !!code, hasUserId: !!userId });
       throw new Error('Missing authorization code or user ID');
     }
 
-    console.log('Exchanging Google OAuth code for tokens');
+    console.log('🔄 Exchanging Google OAuth code for tokens');
 
     // Exchange authorization code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {

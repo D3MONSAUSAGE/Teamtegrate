@@ -21,7 +21,9 @@ const GoogleCalendarConnect: React.FC<GoogleCalendarConnectProps> = ({
   const { user } = useAuth();
 
   const handleConnect = async () => {
+    console.log('🔗 Starting Google Calendar connection...');
     if (!user) {
+      console.error('❌ No user found');
       toast.error('Please sign in to connect Google Calendar');
       return;
     }
@@ -29,15 +31,18 @@ const GoogleCalendarConnect: React.FC<GoogleCalendarConnectProps> = ({
     setIsConnecting(true);
     
     try {
+      console.log('📡 Fetching Google config...');
       // Fetch Google client configuration
       const { data: config, error: configError } = await supabase.functions.invoke('get-google-config');
       
       if (configError) {
-        console.error('Failed to get Google config:', configError);
+        console.error('❌ Failed to get Google config:', configError);
         toast.error('Failed to get Google configuration');
         setIsConnecting(false);
         return;
       }
+      
+      console.log('✅ Got Google config:', { clientId: config?.clientId?.substring(0, 20) + '...', redirectUri: `${window.location.origin}/auth/google/callback` });
       
       // Generate Google OAuth URL with minimal required scopes
       const params = new URLSearchParams({
@@ -52,39 +57,58 @@ const GoogleCalendarConnect: React.FC<GoogleCalendarConnectProps> = ({
 
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
       
+      console.log('🚀 Opening Google OAuth popup:', authUrl);
+      
       // Open Google OAuth in new window
       const popup = window.open(
         authUrl,
         'google-calendar-auth',
         'width=500,height=600,scrollbars=yes,resizable=yes'
       );
+      
+      if (!popup) {
+        console.error('❌ Popup blocked by browser');
+        toast.error('Please allow popups for this site and try again.');
+        setIsConnecting(false);
+        return;
+      }
 
       // Listen for the authorization code
       const messageListener = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
+        console.log('📨 Received message:', { type: event.data?.type, origin: event.origin });
+        
+        if (event.origin !== window.location.origin) {
+          console.log('🚫 Message from wrong origin, ignoring');
+          return;
+        }
         
         if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+          console.log('✅ Received authorization code:', event.data.code?.substring(0, 10) + '...');
           const { code } = event.data;
           
           try {
+            console.log('🔄 Exchanging code for tokens...');
             // Exchange code for tokens via edge function
             const { error } = await supabase.functions.invoke('google-calendar-auth', {
               body: { code, userId: user.id }
             });
 
             if (error) {
+              console.error('❌ Token exchange failed:', error);
               throw error;
             }
 
+            console.log('🎉 Google Calendar connected successfully!');
             toast.success('Google Calendar connected successfully!');
             onConnectionChange?.(true);
             popup?.close();
             
           } catch (error) {
-            console.error('Token exchange failed:', error);
+            console.error('❌ Token exchange failed:', error);
             toast.error('Failed to connect Google Calendar');
           }
         } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+          console.error('❌ Google auth error:', event.data.error);
           toast.error('Google Calendar connection cancelled');
         }
         
@@ -92,11 +116,13 @@ const GoogleCalendarConnect: React.FC<GoogleCalendarConnectProps> = ({
         setIsConnecting(false);
       };
 
+      console.log('👂 Setting up message listener...');
       window.addEventListener('message', messageListener);
 
       // Handle popup closed manually
       const checkClosed = setInterval(() => {
         if (popup?.closed) {
+          console.log('🔴 Popup closed manually');
           clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
           setIsConnecting(false);
@@ -104,7 +130,7 @@ const GoogleCalendarConnect: React.FC<GoogleCalendarConnectProps> = ({
       }, 1000);
 
     } catch (error) {
-      console.error('Failed to initiate Google Calendar connection:', error);
+      console.error('❌ Failed to initiate Google Calendar connection:', error);
       toast.error('Failed to connect Google Calendar');
       setIsConnecting(false);
     }

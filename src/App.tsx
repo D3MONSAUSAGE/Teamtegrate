@@ -43,6 +43,10 @@ import EmployeeActionsPage from "@/pages/EmployeeActionsPage";
 import RequestTypesPage from "@/pages/RequestTypesPage";
 import SchedulePage from "@/pages/SchedulePage";
 import GoogleCalendarCallback from "@/components/auth/GoogleCalendarCallback";
+import PrivacyPage from "@/pages/PrivacyPage";
+import TermsPage from "@/pages/TermsPage";
+import CookiePolicyPage from "@/pages/CookiePolicyPage";
+import SecurityPage from "@/pages/SecurityPage";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +64,10 @@ function App() {
                 <Route path="/landing" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/auth/google/callback" element={<GoogleCalendarCallback />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/cookies" element={<CookiePolicyPage />} />
+                <Route path="/security" element={<SecurityPage />} />
                 
                 {/* Protected Dashboard Routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
