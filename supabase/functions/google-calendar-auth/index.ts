@@ -34,23 +34,31 @@ serve(async (req) => {
 
     console.log('🔄 Exchanging Google OAuth code for tokens');
 
-    // Get environment variables
+    // Get environment variables with detailed logging
     const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
     const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
     const googleRedirectUri = Deno.env.get('GOOGLE_REDIRECT_URI');
 
-    console.log('🔍 Environment check:', {
+    console.log('🔍 Environment variables check:', {
       hasClientId: !!googleClientId,
       hasClientSecret: !!googleClientSecret,
       hasRedirectUri: !!googleRedirectUri,
       clientIdPrefix: googleClientId?.substring(0, 20),
-      redirectUri: googleRedirectUri
+      clientIdLength: googleClientId?.length,
+      secretLength: googleClientSecret?.length,
+      redirectUri: googleRedirectUri,
+      allEnvVars: Object.keys(Deno.env.toObject()).filter(key => key.includes('GOOGLE'))
     });
 
     if (!googleClientId || !googleClientSecret || !googleRedirectUri) {
       console.error('❌ Missing Google OAuth environment variables');
-      throw new Error('Google OAuth configuration not found');
+      const availableVars = Object.keys(Deno.env.toObject());
+      console.error('📋 Available environment variables:', availableVars);
+      throw new Error('Google OAuth configuration not found - check Supabase secrets configuration');
     }
+
+    // Force redeployment trigger - enhanced logging version
+    console.log('🚀 Google Calendar Auth v2.1 - Enhanced debugging');
 
     // Exchange authorization code for tokens
     const tokenParams = new URLSearchParams({
