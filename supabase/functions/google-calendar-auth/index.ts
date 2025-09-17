@@ -15,7 +15,16 @@ function json(status: number, body: unknown, extra: Record<string, string> = {})
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return json(204, { ok: true });
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "access-control-allow-origin": "*",
+        "access-control-allow-headers": "content-type, authorization",
+        "access-control-allow-methods": "POST, OPTIONS",
+      },
+    });
+  }
 
   try {
     const { code, userId } = await req.json().catch(() => ({}));
