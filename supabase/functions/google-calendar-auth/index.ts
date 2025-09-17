@@ -20,7 +20,7 @@ serve(async (req) => {
       status: 204,
       headers: {
         "access-control-allow-origin": "*",
-        "access-control-allow-headers": "content-type, authorization",
+        "access-control-allow-headers": "content-type, authorization, x-application-name, apikey, x-client-info, x-requested-with, accept, origin, user-agent",
         "access-control-allow-methods": "POST, OPTIONS",
       },
     });
