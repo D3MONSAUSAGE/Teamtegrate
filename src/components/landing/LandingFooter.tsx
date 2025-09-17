@@ -140,7 +140,7 @@ const LandingFooter: React.FC = () => {
             <div className="flex space-x-6 text-sm">
               {[
                 { label: 'Privacy Policy', href: '/privacy' },
-                { label: 'Terms of Service', href: '/login' },
+                { label: 'Terms of Service', href: '/terms' },
                 { label: 'Cookie Policy', href: '/login' },
                 { label: 'Security', href: '/login' }
               ].map(({ label, href }) => (
