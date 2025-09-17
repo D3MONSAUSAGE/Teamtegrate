@@ -22,6 +22,8 @@ const SignupPage = lazy(() => import('@/pages/SignupPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('@/pages/TermsOfServicePage'));
+const CookiePolicyPage = lazy(() => import('@/pages/CookiePolicyPage'));
+const SecurityPage = lazy(() => import('@/pages/SecurityPage'));
 
 // Dashboard pages with individual suspense boundaries
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
@@ -159,9 +161,14 @@ const OptimizedRouter = () => {
               <PrivacyPolicyPage />
             </PageWrapper>
           } />
-          <Route path="/terms" element={
+          <Route path="/cookies" element={
             <PageWrapper>
-              <TermsOfServicePage />
+              <CookiePolicyPage />
+            </PageWrapper>
+          } />
+          <Route path="/security" element={
+            <PageWrapper>
+              <SecurityPage />
             </PageWrapper>
           } />
           
