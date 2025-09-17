@@ -34,25 +34,64 @@ serve(async (req) => {
 
     console.log('🔄 Exchanging Google OAuth code for tokens');
 
+    // Get environment variables
+    const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
+    const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+    const googleRedirectUri = Deno.env.get('GOOGLE_REDIRECT_URI');
+
+    console.log('🔍 Environment check:', {
+      hasClientId: !!googleClientId,
+      hasClientSecret: !!googleClientSecret,
+      hasRedirectUri: !!googleRedirectUri,
+      clientIdPrefix: googleClientId?.substring(0, 20),
+      redirectUri: googleRedirectUri
+    });
+
+    if (!googleClientId || !googleClientSecret || !googleRedirectUri) {
+      console.error('❌ Missing Google OAuth environment variables');
+      throw new Error('Google OAuth configuration not found');
+    }
+
     // Exchange authorization code for tokens
+    const tokenParams = new URLSearchParams({
+      client_id: googleClientId,
+      client_secret: googleClientSecret,
+      code: code,
+      grant_type: 'authorization_code',
+      redirect_uri: googleRedirectUri,
+    });
+
+    console.log('📤 Token request params:', {
+      client_id: googleClientId.substring(0, 20) + '...',
+      redirect_uri: googleRedirectUri,
+      code_length: code.length,
+      grant_type: 'authorization_code'
+    });
+
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        client_id: Deno.env.get('GOOGLE_CLIENT_ID')!,
-        client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET')!,
-        code: code,
-        grant_type: 'authorization_code',
-        redirect_uri: Deno.env.get('GOOGLE_REDIRECT_URI')!,
-      }),
+      body: tokenParams,
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      console.error('Token exchange failed:', error);
-      throw new Error('Failed to exchange authorization code');
+      const errorText = await tokenResponse.text();
+      console.error('❌ Token exchange failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: errorText
+      });
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('📋 Parsed error:', errorJson);
+      } catch (e) {
+        console.error('📋 Raw error response:', errorText);
+      }
+      
+      throw new Error(`Failed to exchange authorization code: ${errorText}`);
     }
 
     const tokens = await tokenResponse.json();

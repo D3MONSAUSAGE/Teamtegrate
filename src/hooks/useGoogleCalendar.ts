@@ -75,7 +75,7 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
         client_id: config.clientId,
         redirect_uri: `${window.location.origin}/auth/google/callback`,
         response_type: 'code',
-        scope: 'openid email profile https://www.googleapis.com/auth/calendar',
+        scope: 'openid email profile https://www.googleapis.com/auth/calendar.events',
         access_type: 'offline',
         prompt: 'consent',
         state: user.id, // Pass user ID as state parameter
