@@ -7,7 +7,7 @@ function json(status: number, body: unknown, extra: Record<string, string> = {})
     headers: {
       "content-type": "application/json",
       "access-control-allow-origin": "*",
-      "access-control-allow-headers": "content-type, authorization",
+      "access-control-allow-headers": "content-type, authorization, x-application-name, apikey, x-client-info, x-requested-with, accept, origin, user-agent",
       "access-control-allow-methods": "POST, OPTIONS",
       ...extra,
     },
@@ -39,7 +39,8 @@ serve(async (req) => {
       GOOGLE_CLIENT_ID: !!client_id,
       GOOGLE_CLIENT_SECRET: !!client_secret,
       GOOGLE_REDIRECT_URI: !!redirect_uri,
-      redirect_uri_value: redirect_uri
+      redirect_uri_value: redirect_uri,
+      client_id_preview: client_id ? client_id.substring(0, 20) + '...' : '[MISSING]'
     });
 
     if (!client_id || !client_secret || !redirect_uri) {
