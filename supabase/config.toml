@@ -62,6 +62,9 @@ verify_jwt = false
 [functions.sync-meeting-to-google]
 verify_jwt = true
 
+[functions.sync-tasks-to-google]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325

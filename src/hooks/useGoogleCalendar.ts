@@ -204,6 +204,30 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
     }
   };
 
+  const syncTask = async (taskId: string, action: 'create' | 'update' | 'delete' = 'create', syncType: 'deadline' | 'focus_time' | 'reminder' = 'deadline') => {
+    if (!user || !isConnected) {
+      toast.error('Google Calendar not connected');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('sync-tasks-to-google', {
+        body: { taskId, action, syncType }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const actionText = action === 'delete' ? 'removed from' : `${action}d in`;
+      toast.success(`Task ${actionText} Google Calendar`);
+      
+    } catch (error) {
+      console.error('Failed to sync task:', error);
+      toast.error(`Failed to ${action} task in Google Calendar`);
+    }
+  };
+
   return {
     isConnected,
     isLoading,
