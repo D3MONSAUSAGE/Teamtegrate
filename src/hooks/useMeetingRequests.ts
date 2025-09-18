@@ -528,7 +528,54 @@ const fetchMeetingRequests = async () => {
     }
   };
 
-  useEffect(() => {
+  const manualSyncMeeting = async (meetingId: string, action: 'create' | 'update' | 'delete' = 'create') => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "Please sign in to sync meetings",
+        variant: "destructive",
+      });
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('manual_sync_meeting_to_google', {
+        meeting_id_param: meetingId,
+        action_param: action
+      });
+
+      if (error) {
+        console.error('Error initiating manual sync:', error);
+        toast({
+          title: "Sync Failed",
+          description: error.message || 'Failed to initiate sync. Please try again.',
+          variant: "destructive",
+        });
+        return { success: false, error: error.message };
+      }
+
+      if (!data.success) {
+        toast({
+          title: "Sync Failed", 
+          description: data.error || 'Failed to initiate sync',
+          variant: "destructive",
+        });
+        return { success: false, error: data.error };
+      }
+
+      // Refresh meetings to show updated sync status
+      fetchMeetingRequests();
+      return { success: true, message: 'Sync initiated successfully' };
+    } catch (error: any) {
+      console.error('Error with manual sync:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to initiate sync. Please try again.",
+        variant: "destructive",
+      });
+      return { success: false, error: error.message };
+    }
+  };
     fetchMeetingRequests();
 
     // Subscribe to real-time updates only if user has valid organizationId
@@ -580,5 +627,6 @@ const fetchMeetingRequests = async () => {
     respondToMeeting,
     fetchMeetingRequests,
     syncMeetingToGoogle,
+    manualSyncMeeting,
   };
 };

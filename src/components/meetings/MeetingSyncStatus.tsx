@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { 
   CheckCircle, 
   Clock, 
-  XCircle, 
-  RefreshCw, 
+  XCircle,
+  RefreshCw,
   Calendar, 
   AlertTriangle,
   ExternalLink
@@ -33,18 +33,26 @@ export const MeetingSyncStatus: React.FC<MeetingSyncStatusProps> = ({
   showActions = true
 }) => {
   const { isConnected } = useGoogleCalendar();
-  const { syncMeetingToGoogle } = useMeetingRequests();
+  const { manualSyncMeeting } = useMeetingRequests();
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleManualSync = async () => {
     if (!isConnected) {
-      toast.error('Please connect Google Calendar first');
+      toast.error('Google Calendar not connected');
       return;
     }
 
     setIsSyncing(true);
     try {
-      await syncMeetingToGoogle(meetingId, 'create');
+      const result = await manualSyncMeeting(meetingId, 'create');
+      if (result.success) {
+        toast.success('Meeting sync initiated successfully');
+      } else {
+        toast.error(result.error || 'Failed to initiate sync');
+      }
+    } catch (error) {
+      console.error('Manual sync failed:', error);
+      toast.error('Failed to sync meeting');
     } finally {
       setIsSyncing(false);
     }
@@ -52,13 +60,21 @@ export const MeetingSyncStatus: React.FC<MeetingSyncStatusProps> = ({
 
   const handleRetrySync = async () => {
     if (!isConnected) {
-      toast.error('Please connect Google Calendar first');
+      toast.error('Google Calendar not connected');
       return;
     }
 
     setIsSyncing(true);
     try {
-      await syncMeetingToGoogle(meetingId, 'update');
+      const result = await manualSyncMeeting(meetingId, googleEventId ? 'update' : 'create');
+      if (result.success) {
+        toast.success('Sync retry initiated successfully');
+      } else {
+        toast.error(result.error || 'Failed to initiate retry');
+      }
+    } catch (error) {
+      console.error('Retry sync failed:', error);
+      toast.error('Retry failed');
     } finally {
       setIsSyncing(false);
     }

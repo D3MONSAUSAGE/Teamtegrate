@@ -7909,6 +7909,10 @@ export type Database = {
           | { operation: string; table_name: string; user_id: string }
         Returns: undefined
       }
+      manual_sync_meeting_to_google: {
+        Args: { action_param?: string; meeting_id_param: string }
+        Returns: Json
+      }
       migrate_legacy_folders_to_database: {
         Args: { target_organization_id: string }
         Returns: Json
@@ -7916,6 +7920,10 @@ export type Database = {
       pause_time_entry: {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
+      }
+      process_calendar_sync_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       purge_sales_data: {
         Args: { p_date_from?: string; p_date_to?: string; p_location?: string }
