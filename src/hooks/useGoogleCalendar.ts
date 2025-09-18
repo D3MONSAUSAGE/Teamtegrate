@@ -9,6 +9,7 @@ export interface GoogleCalendarHook {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   syncMeeting: (meetingId: string, action?: 'create' | 'update' | 'delete') => Promise<void>;
+  syncTask: (taskId: string, action?: 'create' | 'update' | 'delete', syncType?: 'deadline' | 'focus_time' | 'reminder') => Promise<void>;
   checkConnection: () => Promise<void>;
 }
 
@@ -234,6 +235,7 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
     connect,
     disconnect,
     syncMeeting,
+    syncTask,
     checkConnection,
   };
 };

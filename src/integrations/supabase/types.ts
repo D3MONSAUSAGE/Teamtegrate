@@ -1842,11 +1842,17 @@ export type Database = {
           calendar_id: string | null
           conflict_resolution_strategy: string | null
           created_at: string | null
+          focus_time_advance_days: number | null
+          focus_time_duration: number | null
           id: string
           import_enabled: boolean | null
           organization_id: string
           sync_enabled: boolean | null
+          sync_focus_time: boolean | null
           sync_frequency_minutes: number | null
+          sync_task_deadlines: boolean | null
+          sync_task_reminders: boolean | null
+          sync_tasks: boolean | null
           two_way_sync_enabled: boolean | null
           updated_at: string | null
           user_id: string
@@ -1855,11 +1861,17 @@ export type Database = {
           calendar_id?: string | null
           conflict_resolution_strategy?: string | null
           created_at?: string | null
+          focus_time_advance_days?: number | null
+          focus_time_duration?: number | null
           id?: string
           import_enabled?: boolean | null
           organization_id: string
           sync_enabled?: boolean | null
+          sync_focus_time?: boolean | null
           sync_frequency_minutes?: number | null
+          sync_task_deadlines?: boolean | null
+          sync_task_reminders?: boolean | null
+          sync_tasks?: boolean | null
           two_way_sync_enabled?: boolean | null
           updated_at?: string | null
           user_id: string
@@ -1868,11 +1880,17 @@ export type Database = {
           calendar_id?: string | null
           conflict_resolution_strategy?: string | null
           created_at?: string | null
+          focus_time_advance_days?: number | null
+          focus_time_duration?: number | null
           id?: string
           import_enabled?: boolean | null
           organization_id?: string
           sync_enabled?: boolean | null
+          sync_focus_time?: boolean | null
           sync_frequency_minutes?: number | null
+          sync_task_deadlines?: boolean | null
+          sync_task_reminders?: boolean | null
+          sync_tasks?: boolean | null
           two_way_sync_enabled?: boolean | null
           updated_at?: string | null
           user_id?: string
@@ -5611,6 +5629,9 @@ export type Database = {
           created_at: string | null
           deadline: string | null
           description: string | null
+          google_event_id_deadline: string | null
+          google_event_id_focus_time: string | null
+          google_event_id_reminder: string | null
           id: string
           is_archived: boolean | null
           is_recurring: boolean | null
@@ -5641,6 +5662,9 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           description?: string | null
+          google_event_id_deadline?: string | null
+          google_event_id_focus_time?: string | null
+          google_event_id_reminder?: string | null
           id: string
           is_archived?: boolean | null
           is_recurring?: boolean | null
@@ -5671,6 +5695,9 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           description?: string | null
+          google_event_id_deadline?: string | null
+          google_event_id_focus_time?: string | null
+          google_event_id_reminder?: string | null
           id?: string
           is_archived?: boolean | null
           is_recurring?: boolean | null
@@ -7747,22 +7774,22 @@ export type Database = {
           | { organization_id_param: string; quiz_id_param: string }
           | { quiz_id_param: string }
         Returns: {
-          adjusted_passed: boolean
-          adjusted_score: number
           answers: Json
           attempt_number: number
           completed_at: string
           email: string
+          final_passed: boolean
+          final_score: number
           has_overrides: boolean
           id: string
           max_score: number
           name: string
           organization_id: string
+          original_passed: boolean
+          original_score: number
           override_count: number
-          passed: boolean
           quiz_id: string
           role: string
-          score: number
           started_at: string
           total_adjustment: number
           user_id: string

@@ -8,35 +8,59 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { RefreshCw, Settings, Clock, ArrowLeftRight, Download, Upload } from 'lucide-react';
+import { RefreshCw, Settings, Clock, ArrowLeftRight, Download, Upload, Calendar, CheckSquare } from 'lucide-react';
+import GoogleCalendarConnect from './GoogleCalendarConnect';
 
 interface SyncPreferences {
-  id?: string;
-  sync_enabled: boolean;
-  import_enabled: boolean;
-  two_way_sync_enabled: boolean;
-  calendar_id: string;
-  sync_frequency_minutes: number;
-  conflict_resolution_strategy: string;
+  sync_meetings: boolean;
+  sync_bidirectional: boolean;
+  default_meeting_duration: number;
+  auto_create_meet_links: boolean;
+  sync_meeting_participants: boolean;
+  import_external_events: boolean;
+  sync_frequency: 'realtime' | 'hourly' | 'daily';
+  notification_preferences: {
+    sync_success: boolean;
+    sync_errors: boolean;
+  };
+  // Task sync preferences
+  sync_tasks: boolean;
+  sync_task_deadlines: boolean;
+  sync_focus_time: boolean;
+  sync_task_reminders: boolean;
+  focus_time_duration: number;
+  focus_time_advance_days: number;
 }
 
 interface GoogleCalendarSyncPreferencesProps {
   isConnected: boolean;
-  onImportCalendar?: () => void;
+  onConnectionChange?: (connected: boolean) => void;
 }
 
 const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps> = ({
   isConnected,
-  onImportCalendar
+  onConnectionChange
 }) => {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<SyncPreferences>({
-    sync_enabled: true,
-    import_enabled: true,
-    two_way_sync_enabled: true,
-    calendar_id: 'primary',
-    sync_frequency_minutes: 15,
-    conflict_resolution_strategy: 'latest_wins'
+    sync_meetings: true,
+    sync_bidirectional: false,
+    default_meeting_duration: 60,
+    auto_create_meet_links: true,
+    sync_meeting_participants: true,
+    import_external_events: false,
+    sync_frequency: 'realtime',
+    notification_preferences: {
+      sync_success: true,
+      sync_errors: true,
+    },
+    // Task sync defaults
+    sync_tasks: false,
+    sync_task_deadlines: true,
+    sync_focus_time: false,
+    sync_task_reminders: false,
+    focus_time_duration: 120,
+    focus_time_advance_days: 2,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,10 +85,7 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
       }
 
       if (data) {
-        setPreferences(data);
-      } else {
-        // Create default preferences
-        await savePreferences(preferences);
+        setPreferences(prev => ({ ...prev, ...data }));
       }
     } catch (error) {
       console.error('Error loading sync preferences:', error);
@@ -79,20 +100,15 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
     setSaving(true);
 
     try {
-      const upsertData = {
-        user_id: user?.id,
-        organization_id: user?.organizationId,
-        ...prefsToSave
-      };
-
       const { error } = await supabase
         .from('google_calendar_sync_preferences')
-        .upsert(upsertData);
+        .upsert({
+          user_id: user?.id,
+          organization_id: user?.organizationId,
+          ...prefsToSave
+        });
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       toast.success('Sync preferences saved');
     } catch (error) {
       console.error('Error saving sync preferences:', error);
@@ -103,31 +119,13 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
   };
 
   const handleImportCalendar = async () => {
-    if (!isConnected) {
-      toast.error('Please connect Google Calendar first');
-      return;
-    }
-
     setImporting(true);
-
     try {
-      const { data, error } = await supabase.functions.invoke('import-from-google-calendar', {
-        body: {
-          userId: user?.id,
-          calendarId: preferences.calendar_id
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      const { imported = 0, updated = 0, total = 0 } = data;
-      toast.success(`Import complete: ${imported} new meetings, ${updated} updated, ${total} total events processed`);
+      const { data, error } = await supabase.functions.invoke('process-calendar-sync-queue');
       
-      if (onImportCalendar) {
-        onImportCalendar();
-      }
+      if (error) throw error;
+      
+      toast.success('Calendar import initiated');
     } catch (error) {
       console.error('Error importing calendar:', error);
       toast.error('Failed to import Google Calendar events');
@@ -142,7 +140,7 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
     savePreferences(updatedPreferences);
   };
 
-  if (loading) {
+  if (loading && isConnected) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -168,9 +166,10 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-4">
             Please connect your Google Calendar first to configure sync preferences.
           </p>
+          <GoogleCalendarConnect onConnectionChange={onConnectionChange} />
         </CardContent>
       </Card>
     );
@@ -188,106 +187,271 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Sync Controls */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                Export to Google Calendar
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Automatically sync Teamtegrate meetings to Google Calendar
-              </p>
+        <div className="space-y-6">
+          {/* Meeting Sync Section */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-primary flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Meeting Synchronization
+            </h4>
+            
+            <div className="space-y-4 ml-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Meeting Sync</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Sync meetings between your calendar and Google Calendar
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.sync_meetings}
+                  onCheckedChange={(checked) => updatePreference('sync_meetings', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Bidirectional Sync</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Keep both calendars in sync automatically
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.sync_bidirectional}
+                  onCheckedChange={(checked) => updatePreference('sync_bidirectional', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Auto-create Google Meet Links</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Automatically add Google Meet links to synced meetings
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.auto_create_meet_links}
+                  onCheckedChange={(checked) => updatePreference('auto_create_meet_links', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Sync Meeting Participants</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Include meeting participants as Google Calendar attendees
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.sync_meeting_participants}
+                  onCheckedChange={(checked) => updatePreference('sync_meeting_participants', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Import External Events</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Import events from your Google Calendar to this app
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.import_external_events}
+                  onCheckedChange={(checked) => updatePreference('import_external_events', checked)}
+                />
+              </div>
             </div>
-            <Switch
-              checked={preferences.sync_enabled}
-              onCheckedChange={(checked) => updatePreference('sync_enabled', checked)}
-              disabled={saving}
-            />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Import from Google Calendar
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Import Google Calendar events into Teamtegrate
-              </p>
+          {/* Task Sync Section */}
+          <div className="space-y-4 border-t pt-6">
+            <h4 className="font-medium text-primary flex items-center gap-2">
+              <CheckSquare className="h-4 w-4" />
+              Task Synchronization
+            </h4>
+            
+            <div className="space-y-4 ml-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Task Sync</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Sync tasks to Google Calendar as events
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.sync_tasks}
+                  onCheckedChange={(checked) => updatePreference('sync_tasks', checked)}
+                />
+              </div>
+
+              {preferences.sync_tasks && (
+                <div className="space-y-4 ml-4 border-l-2 border-muted pl-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Task Deadlines</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Create calendar events for task deadlines
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.sync_task_deadlines}
+                      onCheckedChange={(checked) => updatePreference('sync_task_deadlines', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Focus Time Blocks</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Schedule focus time blocks for high-priority tasks
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.sync_focus_time}
+                      onCheckedChange={(checked) => updatePreference('sync_focus_time', checked)}
+                    />
+                  </div>
+
+                  {preferences.sync_focus_time && (
+                    <div className="space-y-3 ml-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Focus Block Duration</Label>
+                        <Select
+                          value={preferences.focus_time_duration.toString()}
+                          onValueChange={(value) => updatePreference('focus_time_duration', parseInt(value))}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="60">1 hour</SelectItem>
+                            <SelectItem value="90">1.5 hours</SelectItem>
+                            <SelectItem value="120">2 hours</SelectItem>
+                            <SelectItem value="180">3 hours</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs">Schedule In Advance</Label>
+                        <Select
+                          value={preferences.focus_time_advance_days.toString()}
+                          onValueChange={(value) => updatePreference('focus_time_advance_days', parseInt(value))}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 day before</SelectItem>
+                            <SelectItem value="2">2 days before</SelectItem>
+                            <SelectItem value="3">3 days before</SelectItem>
+                            <SelectItem value="7">1 week before</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Task Reminders</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Create reminder events before task deadlines
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.sync_task_reminders}
+                      onCheckedChange={(checked) => updatePreference('sync_task_reminders', checked)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-            <Switch
-              checked={preferences.import_enabled}
-              onCheckedChange={(checked) => updatePreference('import_enabled', checked)}
-              disabled={saving}
-            />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="flex items-center gap-2">
-                <ArrowLeftRight className="h-4 w-4" />
-                Two-way sync
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Keep both calendars in sync automatically
-              </p>
+          {/* Settings Section */}
+          <div className="space-y-4 border-t pt-6">
+            <h4 className="font-medium text-primary flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              General Settings
+            </h4>
+            
+            <div className="space-y-4 ml-6">
+              <div className="space-y-3">
+                <Label className="text-base">Default Meeting Duration</Label>
+                <Select
+                  value={preferences.default_meeting_duration.toString()}
+                  onValueChange={(value) => updatePreference('default_meeting_duration', parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                    <SelectItem value="45">45 minutes</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="90">1.5 hours</SelectItem>
+                    <SelectItem value="120">2 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-base">Sync Frequency</Label>
+                <Select
+                  value={preferences.sync_frequency}
+                  onValueChange={(value) => updatePreference('sync_frequency', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="realtime">Real-time</SelectItem>
+                    <SelectItem value="hourly">Every hour</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base">Notification Preferences</Label>
+                
+                <div className="space-y-3 ml-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Sync Success Notifications</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Get notified when sync completes successfully
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.notification_preferences.sync_success}
+                      onCheckedChange={(checked) => updatePreference('notification_preferences', {
+                        ...preferences.notification_preferences,
+                        sync_success: checked
+                      })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Sync Error Notifications</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Get notified when sync encounters errors
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences.notification_preferences.sync_errors}
+                      onCheckedChange={(checked) => updatePreference('notification_preferences', {
+                        ...preferences.notification_preferences,
+                        sync_errors: checked
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <Switch
-              checked={preferences.two_way_sync_enabled}
-              onCheckedChange={(checked) => updatePreference('two_way_sync_enabled', checked)}
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Sync Settings */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Sync Frequency
-            </Label>
-            <Select 
-              value={preferences.sync_frequency_minutes.toString()} 
-              onValueChange={(value) => updatePreference('sync_frequency_minutes', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">Every 5 minutes</SelectItem>
-                <SelectItem value="15">Every 15 minutes</SelectItem>
-                <SelectItem value="30">Every 30 minutes</SelectItem>
-                <SelectItem value="60">Every hour</SelectItem>
-                <SelectItem value="240">Every 4 hours</SelectItem>
-                <SelectItem value="1440">Daily</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Conflict Resolution</Label>
-            <Select 
-              value={preferences.conflict_resolution_strategy} 
-              onValueChange={(value: any) => updatePreference('conflict_resolution_strategy', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="latest_wins">Latest change wins</SelectItem>
-                <SelectItem value="teamtegrate_wins">Teamtegrate wins</SelectItem>
-                <SelectItem value="google_wins">Google Calendar wins</SelectItem>
-                <SelectItem value="manual">Manual resolution</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              How to handle conflicts when the same event is modified in both systems
-            </p>
           </div>
         </div>
 
@@ -299,7 +463,7 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
             <div>
               <Label>Import Google Calendar Events</Label>
               <p className="text-sm text-muted-foreground">
-                Import your existing Google Calendar events into Teamtegrate
+                Import your existing Google Calendar events into the app
               </p>
             </div>
             <Button 
