@@ -39,11 +39,13 @@ export const getUserRole = (user: any): UserRole => {
 };
 
 export const hasPermission = (userRole: UserRole, requiredRole: UserRole): boolean => {
+  // Use centralized role hierarchy for consistency
   const roleHierarchy = {
     'user': 1,
-    'manager': 2,
-    'admin': 3,
-    'superadmin': 4
+    'team_leader': 2,
+    'manager': 3,
+    'admin': 4,
+    'superadmin': 5
   };
 
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];

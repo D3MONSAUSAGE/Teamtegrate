@@ -24,7 +24,117 @@ Deno.serve(async (req) => {
     
     console.log(`Updating user ${userId} role to ${newRole}`)
     
-    // Directly update the user role using service role key
+    // SECURITY: Get the requesting user's info from the JWT token
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !requestingUser) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // Get requesting user's details
+    const { data: requesterData, error: requesterError } = await supabase
+      .from('users')
+      .select('role, organization_id')
+      .eq('id', requestingUser.id)
+      .single()
+      
+    if (requesterError || !requesterData) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Requester not found' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // Get target user's details
+    const { data: targetData, error: targetError } = await supabase
+      .from('users')
+      .select('role, organization_id')
+      .eq('id', userId)
+      .single()
+      
+    if (targetError || !targetData) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Target user not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // SECURITY: Validate role change permissions using centralized hierarchy
+    const roleHierarchy = {
+      'user': 1,
+      'team_leader': 2,
+      'manager': 3,
+      'admin': 4,
+      'superadmin': 5
+    }
+    
+    const requesterLevel = roleHierarchy[requesterData.role] || 0
+    const targetLevel = roleHierarchy[targetData.role] || 0  
+    const newRoleLevel = roleHierarchy[newRole] || 0
+    
+    // Validation rules:
+    // 1. Must be in same organization
+    if (requesterData.organization_id !== targetData.organization_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Cross-organization role changes not allowed' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // 2. Requester must have higher level than target
+    if (requesterLevel <= targetLevel) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Insufficient privileges to change this user\'s role' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // 3. Requester must have higher level than new role (can't promote above themselves)
+    if (requesterLevel <= newRoleLevel) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Cannot assign role higher than or equal to your own' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // 4. Only superadmins can change superadmin roles
+    if ((targetData.role === 'superadmin' || newRole === 'superadmin') && requesterData.role !== 'superadmin') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Only superadmins can manage superadmin roles' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // 5. Prevent demoting last superadmin
+    if (targetData.role === 'superadmin' && newRole !== 'superadmin') {
+      const { data: superadminCount } = await supabase
+        .from('users')
+        .select('id', { count: 'exact' })
+        .eq('organization_id', targetData.organization_id)
+        .eq('role', 'superadmin')
+        .neq('id', userId)
+        
+      if (!superadminCount || superadminCount.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cannot demote the last superadmin in organization' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+    
+    // All security checks passed - proceed with role update
     const { data, error } = await supabase
       .from('users')
       .update({ role: newRole })

@@ -1,12 +1,13 @@
 
 import { UserRole } from '@/types';
 
+// Centralized role hierarchy - single source of truth
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  'superadmin': 4,
-  'admin': 3,
-  'manager': 2,
-  'team_leader': 2.5,
-  'user': 1
+  'user': 1,
+  'team_leader': 2,
+  'manager': 3,
+  'admin': 4,
+  'superadmin': 5
 };
 
 export const hasRoleAccess = (userRole: UserRole | undefined, requiredRole: UserRole): boolean => {
