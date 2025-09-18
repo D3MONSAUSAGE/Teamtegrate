@@ -104,28 +104,82 @@ export const updateUserProfile = async (data: { name?: string; email?: string })
     const { data: currentUser } = await supabase.auth.getUser();
     if (!currentUser.user) throw new Error('No authenticated user');
 
+    const originalEmail = currentUser.user.email;
+    const isEmailChange = data.email && data.email !== originalEmail;
+    let authUpdateSucceeded = false;
+    let dbUpdateSucceeded = false;
+
+    // Step 1: Update auth user (this triggers email confirmation flow)
     const updateData: any = {};
     
-    // Add name to user metadata if provided
     if (data.name) {
       updateData.data = { name: data.name };
     }
     
-    // Add email if provided and different from current
-    if (data.email && data.email !== currentUser.user.email) {
+    if (isEmailChange) {
       updateData.email = data.email;
     }
 
-    const { error } = await supabase.auth.updateUser(updateData);
+    if (Object.keys(updateData).length > 0) {
+      const { error } = await supabase.auth.updateUser(updateData);
 
-    if (error) {
-      console.error('Profile update error:', error);
-      toast.error('Failed to update profile');
-      throw error;
+      if (error) {
+        console.error('Profile update error:', error);
+        toast.error(`Failed to update profile: ${error.message}`);
+        throw error;
+      }
+      authUpdateSucceeded = true;
+      
+      if (isEmailChange) {
+        toast.info('Email confirmation sent. Please check your new email to confirm the change.');
+      }
     }
 
-    // Invalidate Google Calendar tokens when email changes
-    if (data.email && data.email !== currentUser.user.email) {
+    // Step 2: Update database table with retry logic
+    const updateFields: any = {};
+    if (data.name) updateFields.name = data.name;
+    
+    // For email changes, we'll only update the database after confirmation
+    // But we'll update the name immediately if provided
+    if (data.name && Object.keys(updateFields).length > 0) {
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries && !dbUpdateSucceeded) {
+        try {
+          const { error: dbError } = await supabase
+            .from('users')
+            .update(updateFields)
+            .eq('id', currentUser.user.id);
+
+          if (dbError) {
+            console.error(`Database update attempt ${retryCount + 1} failed:`, dbError);
+            retryCount++;
+            
+            if (retryCount >= maxRetries) {
+              toast.error('Database update failed after retries. Your changes may not be fully saved.');
+              console.error('Final database update error:', dbError);
+            } else {
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
+          } else {
+            dbUpdateSucceeded = true;
+            console.log('✅ Database update successful');
+          }
+        } catch (err) {
+          console.error(`Database update attempt ${retryCount + 1} exception:`, err);
+          retryCount++;
+          
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
+      }
+    }
+
+    // Step 3: Invalidate Google Calendar tokens when email changes
+    if (isEmailChange) {
       try {
         const { data: invalidateResult, error: invalidateError } = await supabase.functions.invoke('invalidate-google-calendar-tokens', {
           body: { 
@@ -137,37 +191,83 @@ export const updateUserProfile = async (data: { name?: string; email?: string })
 
         if (invalidateError) {
           console.error('⚠️ Failed to invalidate Google Calendar tokens:', invalidateError);
-          // Don't fail the email update for this - just log the warning
         } else {
           console.log('✅ Google Calendar tokens invalidated due to email change');
         }
       } catch (tokenError) {
         console.error('⚠️ Error calling token invalidation function:', tokenError);
-        // Don't fail the email update for this
       }
     }
 
-    // Also update the users table
-    const updateFields: any = {};
-    if (data.name) updateFields.name = data.name;
-    if (data.email) updateFields.email = data.email;
-
-    if (Object.keys(updateFields).length > 0) {
-      const { error: dbError } = await supabase
-        .from('users')
-        .update(updateFields)
-        .eq('id', currentUser.user.id);
-
-      if (dbError) {
-        console.error('Database profile update error:', dbError);
-        toast.error('Failed to update profile in database');
-        throw dbError;
-      }
+    // Success message
+    if (isEmailChange) {
+      toast.success('Profile update initiated. Please confirm your new email to complete the process.');
+    } else {
+      toast.success('Profile updated successfully');
     }
 
-    toast.success('Profile updated successfully');
   } catch (error) {
     console.error('Profile update failed:', error);
+    throw error;
+  }
+};
+
+// New function to manually sync profile data between auth and database
+export const syncProfileData = async () => {
+  try {
+    const { data: currentUser } = await supabase.auth.getUser();
+    if (!currentUser.user) throw new Error('No authenticated user');
+
+    console.log('🔄 Syncing profile data...');
+    
+    // Get current auth user data
+    const authEmail = currentUser.user.email;
+    const authName = currentUser.user.user_metadata?.name;
+    
+    // Get current database data
+    const { data: dbProfile, error: fetchError } = await supabase
+      .from('users')
+      .select('email, name')
+      .eq('id', currentUser.user.id)
+      .single();
+      
+    if (fetchError) {
+      console.error('Failed to fetch current profile:', fetchError);
+      throw fetchError;
+    }
+    
+    console.log('Auth data:', { email: authEmail, name: authName });
+    console.log('DB data:', { email: dbProfile.email, name: dbProfile.name });
+    
+    // Update database to match auth
+    const updates: any = {};
+    if (authEmail && authEmail !== dbProfile.email) {
+      updates.email = authEmail;
+    }
+    if (authName && authName !== dbProfile.name) {
+      updates.name = authName;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', currentUser.user.id);
+        
+      if (updateError) {
+        console.error('Failed to sync profile:', updateError);
+        throw updateError;
+      }
+      
+      console.log('✅ Profile synced successfully:', updates);
+      toast.success('Profile data synced successfully');
+    } else {
+      toast.info('Profile data is already in sync');
+    }
+    
+  } catch (error) {
+    console.error('Profile sync failed:', error);
+    toast.error('Failed to sync profile data');
     throw error;
   }
 };

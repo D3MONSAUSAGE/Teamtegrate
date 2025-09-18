@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from '@/components/ui/sonner';
 import ProfileInfoForm from "./ProfileInfoForm";
 import ProfileAvatar from "./ProfileAvatar";
+import ProfileSyncButton from "./ProfileSyncButton";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ const ProfileSection = () => {
   const [email, setEmail] = useState<string>(user?.email || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [dbProfile, setDbProfile] = useState<{ email?: string; name?: string } | null>(null);
 
   // Update local state when user changes
   useEffect(() => {
@@ -23,32 +25,33 @@ const ProfileSection = () => {
     }
   }, [user]);
 
-  // Fetch the user's avatar URL when component mounts
+  // Fetch the user's profile data from database
   useEffect(() => {
-    const fetchAvatar = async () => {
+    const fetchProfileData = async () => {
       if (!user) return;
       
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('avatar_url')
+          .select('avatar_url, email, name')
           .eq('id', user.id)
           .maybeSingle();
         
         if (error) {
-          console.error("Error fetching avatar:", error);
+          console.error("Error fetching profile:", error);
           return;
         }
         
-        if (data?.avatar_url) {
+        if (data) {
           setAvatarUrl(data.avatar_url);
+          setDbProfile({ email: data.email, name: data.name });
         }
       } catch (error) {
-        console.error("Error fetching avatar:", error);
+        console.error("Error fetching profile:", error);
       }
     };
     
-    fetchAvatar();
+    fetchProfileData();
   }, [user]);
 
   const handleSave = async () => {
@@ -67,7 +70,7 @@ const ProfileSection = () => {
       
       if (email !== user.email) {
         updates.email = email;
-        toast.info("Email change may require Google Calendar re-authentication");
+        toast.info("Email confirmation will be sent. Check both old and new email addresses.");
       }
 
       if (Object.keys(updates).length > 0) {
@@ -97,6 +100,13 @@ const ProfileSection = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 bg-white/50 dark:bg-[#1f2133]/70 rounded-b-lg p-6">
+        {/* Profile sync button for inconsistencies */}
+        <ProfileSyncButton 
+          hasInconsistency={user.email !== dbProfile?.email}
+          authEmail={user.email}
+          dbEmail={dbProfile?.email}
+        />
+        
         <div className="flex flex-col md:flex-row md:items-start gap-8 animate-fade-in">
           <ProfileAvatar 
             user={{ 

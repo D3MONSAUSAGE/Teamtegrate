@@ -42,10 +42,11 @@ export const useAuthSession = () => {
     // Fetch complete profile from database
     const profileData = await fetchUserProfile(authUser.id);
 
-    // Merge data, prioritizing database values over metadata
+    // For email, prioritize auth session (handles pending confirmations)
+    // For other fields, prioritize database values
     const user: User = {
       id: authUser.id,
-      email: authUser.email || '',
+      email: authUser.email || profileData?.email || '',
       name: profileData?.name || metadata.name || 'User',
       role: (profileData?.role as UserRole) || (metadata.role as UserRole) || 'user',
       organizationId: profileData?.organization_id || metadata.organization_id || null,
@@ -53,6 +54,15 @@ export const useAuthSession = () => {
       timezone: metadata.timezone || profileData?.timezone || null,
       createdAt: new Date(authUser.created_at),
     };
+    
+    // Check for data inconsistency and log it
+    if (authUser.email && profileData?.email && authUser.email !== profileData.email) {
+      console.warn('⚠️ Email inconsistency detected:', {
+        authEmail: authUser.email,
+        dbEmail: profileData.email,
+        usingAuthEmail: true
+      });
+    }
 
     console.log('AuthSession: Created user object:', {
       id: user.id,

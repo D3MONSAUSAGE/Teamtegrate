@@ -16,4 +16,5 @@ export interface AuthContextType {
   hasRoleAccess: (requiredRole: string) => boolean;
   canManageUser: (targetUser: User) => boolean;
   refreshUserSession: () => Promise<void>;
+  syncProfileData: () => Promise<void>;
 }

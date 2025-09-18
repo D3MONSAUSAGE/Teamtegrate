@@ -4,6 +4,7 @@ import { AuthContextType } from './types';
 import { useAuthOperations } from './hooks/useAuthOperations';
 import { useAuthState } from './hooks/useAuthState';
 import { useRoleAccess } from './hooks/useRoleAccess';
+import { syncProfileData } from './authOperations';
 
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,7 +90,8 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
     updateUserProfile,
     hasRoleAccess,
     canManageUser: (targetUser) => canManageUser(targetUser.role),
-    refreshUserSession
+    refreshUserSession,
+    syncProfileData
   };
 
   return (
