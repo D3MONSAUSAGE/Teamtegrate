@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock, MapPin, Users, Send } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, MapPin, Users, Send, Video, AlertTriangle } from 'lucide-react';
 import { useMeetingRequests } from '@/hooks/useMeetingRequests';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useToast } from '@/hooks/use-toast';
 import { format, parse, isValid } from 'date-fns';
 
@@ -25,6 +27,7 @@ export const SimpleMeetingDialog: React.FC<SimpleMeetingDialogProps> = ({
 }) => {
   const { createMeetingRequest } = useMeetingRequests();
   const { users } = useOrganizationUsers();
+  const { isConnected: isGoogleCalendarConnected } = useGoogleCalendar();
   const { toast } = useToast();
   
   const [internalOpen, setInternalOpen] = useState(false);
@@ -270,6 +273,30 @@ export const SimpleMeetingDialog: React.FC<SimpleMeetingDialogProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Google Calendar Status */}
+          <div className="rounded-lg border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Google Calendar Integration</Label>
+              {isGoogleCalendarConnected ? (
+                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <Video className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Not Connected
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isGoogleCalendarConnected 
+                ? "This meeting will automatically sync to Google Calendar with a Google Meet link, and participants will receive calendar invites."
+                : "Connect Google Calendar in Settings to automatically send calendar invites to participants with Google Meet links."
+              }
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

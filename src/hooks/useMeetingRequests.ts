@@ -154,6 +154,15 @@ const fetchMeetingRequests = async () => {
     }
 
     try {
+      // Check if user has Google Calendar connected for enhanced feedback
+      const { data: userData } = await supabase
+        .from('users')
+        .select('google_calendar_sync_enabled, google_refresh_token')
+        .eq('id', user.id)
+        .single();
+
+      const hasGoogleCalendar = userData?.google_calendar_sync_enabled && userData?.google_refresh_token;
+
       const { data: meeting, error: meetingError } = await supabase
         .from('meeting_requests')
         .insert({
@@ -194,9 +203,14 @@ const fetchMeetingRequests = async () => {
 
       await supabase.from('notifications').insert(notifications);
 
+      // Enhanced success message based on Google Calendar status
+      const successMessage = hasGoogleCalendar 
+        ? "Meeting created and syncing to Google Calendar. Participants will receive Google Calendar invites."
+        : "Meeting request sent successfully. Connect Google Calendar to automatically send calendar invites.";
+
       toast({
         title: "Success",
-        description: "Meeting request sent successfully",
+        description: successMessage,
       });
 
       fetchMeetingRequests();
@@ -209,6 +223,44 @@ const fetchMeetingRequests = async () => {
         variant: "destructive",
       });
       return null;
+    }
+  };
+
+  const syncMeetingToGoogle = async (meetingId: string, action: 'create' | 'update' | 'delete' = 'create') => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please sign in to sync meetings",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('sync-meeting-to-google', {
+        body: { meetingId, action }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Meeting synced to Google Calendar successfully",
+      });
+
+      // Refresh meetings to show updated sync status
+      fetchMeetingRequests();
+      return true;
+    } catch (error) {
+      console.error('Error syncing meeting to Google:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync meeting to Google Calendar. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -527,5 +579,6 @@ const fetchMeetingRequests = async () => {
     updateMeeting,
     respondToMeeting,
     fetchMeetingRequests,
+    syncMeetingToGoogle,
   };
 };
