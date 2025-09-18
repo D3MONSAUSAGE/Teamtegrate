@@ -101,6 +101,9 @@ export const logout = async (hasSession: boolean) => {
 
 export const updateUserProfile = async (data: { name?: string; email?: string }) => {
   try {
+    const { data: currentUser } = await supabase.auth.getUser();
+    if (!currentUser.user) throw new Error('No authenticated user');
+
     const updateData: any = {};
     
     // Add name to user metadata if provided
@@ -108,8 +111,8 @@ export const updateUserProfile = async (data: { name?: string; email?: string })
       updateData.data = { name: data.name };
     }
     
-    // Add email if provided
-    if (data.email) {
+    // Add email if provided and different from current
+    if (data.email && data.email !== currentUser.user.email) {
       updateData.email = data.email;
     }
 
@@ -121,6 +124,29 @@ export const updateUserProfile = async (data: { name?: string; email?: string })
       throw error;
     }
 
+    // Invalidate Google Calendar tokens when email changes
+    if (data.email && data.email !== currentUser.user.email) {
+      try {
+        const { data: invalidateResult, error: invalidateError } = await supabase.functions.invoke('invalidate-google-calendar-tokens', {
+          body: { 
+            userId: currentUser.user.id, 
+            newEmail: data.email, 
+            reason: 'email_change' 
+          }
+        });
+
+        if (invalidateError) {
+          console.error('⚠️ Failed to invalidate Google Calendar tokens:', invalidateError);
+          // Don't fail the email update for this - just log the warning
+        } else {
+          console.log('✅ Google Calendar tokens invalidated due to email change');
+        }
+      } catch (tokenError) {
+        console.error('⚠️ Error calling token invalidation function:', tokenError);
+        // Don't fail the email update for this
+      }
+    }
+
     // Also update the users table
     const updateFields: any = {};
     if (data.name) updateFields.name = data.name;
@@ -130,7 +156,7 @@ export const updateUserProfile = async (data: { name?: string; email?: string })
       const { error: dbError } = await supabase
         .from('users')
         .update(updateFields)
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('id', currentUser.user.id);
 
       if (dbError) {
         console.error('Database profile update error:', dbError);

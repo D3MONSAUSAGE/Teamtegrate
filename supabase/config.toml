@@ -74,6 +74,9 @@ verify_jwt = false
 [functions.sync-tasks-bidirectional]
 verify_jwt = false
 
+[functions.invalidate-google-calendar-tokens]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325
