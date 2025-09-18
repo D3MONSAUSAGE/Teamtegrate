@@ -14,8 +14,16 @@ export function useProjects() {
   const { user } = useAuth();
 
   const fetchProjects = async () => {
-    if (!user?.organizationId) {
-      console.log('useProjects: No user or organization ID, skipping fetch');
+    // Enhanced authentication guards to prevent race conditions
+    if (!user) {
+      console.log('useProjects: No user, skipping fetch');
+      setLoading(false);
+      setProjects([]);
+      return;
+    }
+
+    if (!user.organizationId || user.organizationId.trim() === '') {
+      console.log('useProjects: No valid organization ID, skipping fetch');
       setLoading(false);
       setProjects([]);
       return;
@@ -318,12 +326,16 @@ export function useProjects() {
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, [user]);
+    // Only fetch when user is fully loaded with organization
+    if (user && user.organizationId) {
+      fetchProjects();
+    }
+  }, [user?.id, user?.organizationId]);
 
   // Subscribe to real-time updates with proper filtering
   useEffect(() => {
-    if (!user) return;
+    // Only setup subscription when user and org are fully loaded
+    if (!user || !user.organizationId) return;
 
     console.log('useProjects: Setting up real-time subscription for projects');
     const channel = supabase
@@ -341,7 +353,7 @@ export function useProjects() {
       console.log('useProjects: Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user?.id, user?.organizationId]);
 
   return {
     projects,
