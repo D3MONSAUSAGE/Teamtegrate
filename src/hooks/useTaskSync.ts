@@ -6,7 +6,7 @@ import { Task } from '@/types';
 
 export const useTaskSync = () => {
   const { user } = useAuth();
-  const { isConnected, syncTask } = useGoogleCalendar();
+  const { isConnected, syncTask, exportTaskToGoogleTasks } = useGoogleCalendar();
 
   // Auto-sync tasks when they are created or updated
   const syncTaskToCalendar = async (task: Task, action: 'create' | 'update' | 'delete' = 'create') => {
@@ -16,31 +16,39 @@ export const useTaskSync = () => {
       // Get user's sync preferences
       const { data: preferences } = await supabase
         .from('google_calendar_sync_preferences')
-        .select('sync_tasks, sync_task_deadlines, sync_focus_time, sync_task_reminders')
+        .select('sync_tasks, sync_task_deadlines, sync_focus_time, sync_task_reminders, export_to_google_tasks')
         .eq('user_id', user.id)
         .single();
 
-      if (!preferences?.sync_tasks) return;
+      if (!preferences) return;
 
-      // Sync different types based on preferences
-      const syncPromises = [];
+      // Sync to Google Calendar if enabled
+      if (preferences.sync_tasks) {
+        const syncPromises = [];
 
-      if (preferences.sync_task_deadlines && task.deadline) {
-        syncPromises.push(syncTask(task.id, action, 'deadline'));
+        if (preferences.sync_task_deadlines && task.deadline) {
+          syncPromises.push(syncTask(task.id, action, 'deadline'));
+        }
+
+        if (preferences.sync_focus_time && task.priority === 'High') {
+          syncPromises.push(syncTask(task.id, action, 'focus_time'));
+        }
+
+        if (preferences.sync_task_reminders && task.deadline) {
+          syncPromises.push(syncTask(task.id, action, 'reminder'));
+        }
+
+        // Execute all Calendar syncs
+        await Promise.allSettled(syncPromises);
       }
 
-      if (preferences.sync_focus_time && task.priority === 'High') {
-        syncPromises.push(syncTask(task.id, action, 'focus_time'));
+      // Sync to Google Tasks if enabled (and task isn't from Google Tasks to prevent loops)
+      if (preferences.export_to_google_tasks && (task as any).source !== 'google_tasks') {
+        await exportTaskToGoogleTasks(task.id, action);
       }
 
-      if (preferences.sync_task_reminders && task.deadline) {
-        syncPromises.push(syncTask(task.id, action, 'reminder'));
-      }
-
-      // Execute all syncs
-      await Promise.allSettled(syncPromises);
     } catch (error) {
-      console.error('Failed to sync task to Google Calendar:', error);
+      console.error('Failed to sync task:', error);
     }
   };
 
@@ -103,7 +111,7 @@ export const useTaskSync = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, isConnected, syncTask]);
+  }, [user, isConnected, syncTask, exportTaskToGoogleTasks]);
 
   return {
     syncTaskToCalendar,

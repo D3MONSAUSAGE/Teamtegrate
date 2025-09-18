@@ -1842,14 +1842,17 @@ export type Database = {
           calendar_id: string | null
           conflict_resolution_strategy: string | null
           created_at: string | null
+          export_to_google_tasks: boolean | null
           focus_time_advance_days: number | null
           focus_time_duration: number | null
           id: string
           import_enabled: boolean | null
+          import_google_tasks: boolean | null
           organization_id: string
           sync_enabled: boolean | null
           sync_focus_time: boolean | null
           sync_frequency_minutes: number | null
+          sync_google_tasks: boolean | null
           sync_task_deadlines: boolean | null
           sync_task_reminders: boolean | null
           sync_tasks: boolean | null
@@ -1861,14 +1864,17 @@ export type Database = {
           calendar_id?: string | null
           conflict_resolution_strategy?: string | null
           created_at?: string | null
+          export_to_google_tasks?: boolean | null
           focus_time_advance_days?: number | null
           focus_time_duration?: number | null
           id?: string
           import_enabled?: boolean | null
+          import_google_tasks?: boolean | null
           organization_id: string
           sync_enabled?: boolean | null
           sync_focus_time?: boolean | null
           sync_frequency_minutes?: number | null
+          sync_google_tasks?: boolean | null
           sync_task_deadlines?: boolean | null
           sync_task_reminders?: boolean | null
           sync_tasks?: boolean | null
@@ -1880,14 +1886,17 @@ export type Database = {
           calendar_id?: string | null
           conflict_resolution_strategy?: string | null
           created_at?: string | null
+          export_to_google_tasks?: boolean | null
           focus_time_advance_days?: number | null
           focus_time_duration?: number | null
           id?: string
           import_enabled?: boolean | null
+          import_google_tasks?: boolean | null
           organization_id?: string
           sync_enabled?: boolean | null
           sync_focus_time?: boolean | null
           sync_frequency_minutes?: number | null
+          sync_google_tasks?: boolean | null
           sync_task_deadlines?: boolean | null
           sync_task_reminders?: boolean | null
           sync_tasks?: boolean | null
@@ -5632,9 +5641,11 @@ export type Database = {
           google_event_id_deadline: string | null
           google_event_id_focus_time: string | null
           google_event_id_reminder: string | null
+          google_tasks_id: string | null
           id: string
           is_archived: boolean | null
           is_recurring: boolean | null
+          last_synced_at: string | null
           next_due_date: string | null
           organization_id: string
           priority: string | null
@@ -5645,6 +5656,7 @@ export type Database = {
           recurrence_pattern: Json | null
           scheduled_end: string | null
           scheduled_start: string | null
+          source: string | null
           status: string | null
           team_id: string | null
           title: string | null
@@ -5665,9 +5677,11 @@ export type Database = {
           google_event_id_deadline?: string | null
           google_event_id_focus_time?: string | null
           google_event_id_reminder?: string | null
+          google_tasks_id?: string | null
           id: string
           is_archived?: boolean | null
           is_recurring?: boolean | null
+          last_synced_at?: string | null
           next_due_date?: string | null
           organization_id: string
           priority?: string | null
@@ -5678,6 +5692,7 @@ export type Database = {
           recurrence_pattern?: Json | null
           scheduled_end?: string | null
           scheduled_start?: string | null
+          source?: string | null
           status?: string | null
           team_id?: string | null
           title?: string | null
@@ -5698,9 +5713,11 @@ export type Database = {
           google_event_id_deadline?: string | null
           google_event_id_focus_time?: string | null
           google_event_id_reminder?: string | null
+          google_tasks_id?: string | null
           id?: string
           is_archived?: boolean | null
           is_recurring?: boolean | null
+          last_synced_at?: string | null
           next_due_date?: string | null
           organization_id?: string
           priority?: string | null
@@ -5711,6 +5728,7 @@ export type Database = {
           recurrence_pattern?: Json | null
           scheduled_end?: string | null
           scheduled_start?: string | null
+          source?: string | null
           status?: string | null
           team_id?: string | null
           title?: string | null
@@ -6992,6 +7010,8 @@ export type Database = {
           google_calendar_token: string | null
           google_calendar_webhook_id: string | null
           google_refresh_token: string | null
+          google_tasks_enabled: boolean | null
+          google_tasks_token: string | null
           hire_date: string | null
           id: string
           job_title: string | null
@@ -7021,6 +7041,8 @@ export type Database = {
           google_calendar_token?: string | null
           google_calendar_webhook_id?: string | null
           google_refresh_token?: string | null
+          google_tasks_enabled?: boolean | null
+          google_tasks_token?: string | null
           hire_date?: string | null
           id: string
           job_title?: string | null
@@ -7050,6 +7072,8 @@ export type Database = {
           google_calendar_token?: string | null
           google_calendar_webhook_id?: string | null
           google_refresh_token?: string | null
+          google_tasks_enabled?: boolean | null
+          google_tasks_token?: string | null
           hire_date?: string | null
           id?: string
           job_title?: string | null

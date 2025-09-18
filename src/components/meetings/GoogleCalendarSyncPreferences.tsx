@@ -30,6 +30,10 @@ interface SyncPreferences {
   sync_task_reminders: boolean;
   focus_time_duration: number;
   focus_time_advance_days: number;
+  // Google Tasks integration
+  sync_google_tasks: boolean;
+  import_google_tasks: boolean;
+  export_to_google_tasks: boolean;
 }
 
 interface GoogleCalendarSyncPreferencesProps {
@@ -61,6 +65,10 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
     sync_task_reminders: false,
     focus_time_duration: 120,
     focus_time_advance_days: 2,
+    // Google Tasks defaults
+    sync_google_tasks: false,
+    import_google_tasks: false,
+    export_to_google_tasks: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -369,7 +377,54 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
             </div>
           </div>
 
-          {/* Settings Section */}
+            {/* Google Tasks Integration */}
+            <div className="space-y-4 border-t pt-6">
+              <h4 className="font-medium text-primary flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                Google Tasks Integration
+              </h4>
+              
+              <div className="space-y-4 ml-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Import from Google Tasks</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Automatically import tasks from Google Tasks
+                    </div>
+                  </div>
+                  <Switch
+                    checked={preferences.import_google_tasks}
+                    onCheckedChange={(checked) => updatePreference('import_google_tasks', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Export to Google Tasks</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Create Google Tasks from your local tasks
+                    </div>
+                  </div>
+                  <Switch
+                    checked={preferences.export_to_google_tasks}
+                    onCheckedChange={(checked) => updatePreference('export_to_google_tasks', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Bidirectional Sync</Label>
+                    <div className="text-sm text-muted-foreground">
+                      Keep Google Tasks and local tasks in sync
+                    </div>
+                  </div>
+                  <Switch
+                    checked={preferences.sync_google_tasks}
+                    onCheckedChange={(checked) => updatePreference('sync_google_tasks', checked)}
+                  />
+                </div>
+              </div>
+            </div>
           <div className="space-y-4 border-t pt-6">
             <h4 className="font-medium text-primary flex items-center gap-2">
               <Settings className="h-4 w-4" />

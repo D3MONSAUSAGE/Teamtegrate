@@ -11,6 +11,10 @@ export interface GoogleCalendarHook {
   syncMeeting: (meetingId: string, action?: 'create' | 'update' | 'delete') => Promise<void>;
   syncTask: (taskId: string, action?: 'create' | 'update' | 'delete', syncType?: 'deadline' | 'focus_time' | 'reminder') => Promise<void>;
   checkConnection: () => Promise<void>;
+  // Google Tasks integration
+  importGoogleTasks: () => Promise<void>;
+  exportTaskToGoogleTasks: (taskId: string, action?: 'create' | 'update' | 'delete') => Promise<void>;
+  syncTasksBidirectional: () => Promise<void>;
 }
 
 export const useGoogleCalendar = (): GoogleCalendarHook => {
@@ -229,6 +233,92 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
     }
   };
 
+  // Google Tasks integration methods
+  const importGoogleTasks = async () => {
+    if (!user) {
+      toast.error('Please sign in to import Google Tasks');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('import-google-tasks', {
+        body: { userId: user.id }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const imported = data?.inserted || 0;
+      const updated = data?.updated || 0;
+      
+      if (imported > 0 || updated > 0) {
+        toast.success(`Imported ${imported} new tasks and updated ${updated} existing tasks from Google Tasks`);
+      } else {
+        toast.info('No new tasks to import from Google Tasks');
+      }
+      
+    } catch (error) {
+      console.error('Failed to import Google Tasks:', error);
+      toast.error('Failed to import Google Tasks');
+    }
+  };
+
+  const exportTaskToGoogleTasks = async (taskId: string, action: 'create' | 'update' | 'delete' = 'create') => {
+    if (!user) {
+      toast.error('Please sign in to export tasks');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('export-tasks-to-google-tasks', {
+        body: { taskId, action }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const actionText = action === 'delete' ? 'removed from' : `${action}d in`;
+      toast.success(`Task ${actionText} Google Tasks`);
+      
+    } catch (error) {
+      console.error('Failed to export task to Google Tasks:', error);
+      toast.error(`Failed to ${action} task in Google Tasks`);
+    }
+  };
+
+  const syncTasksBidirectional = async () => {
+    if (!user) {
+      toast.error('Please sign in to sync tasks');
+      return;
+    }
+
+    try {
+      toast.info('Starting bidirectional sync...');
+      
+      const { data, error } = await supabase.functions.invoke('sync-tasks-bidirectional', {
+        body: { userId: user.id, direction: 'both' }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const summary = data?.summary;
+      if (summary) {
+        const message = `Sync completed: ${summary.imported} imported, ${summary.updated_from_google} updated from Google, ${summary.exported} exported`;
+        toast.success(message);
+      } else {
+        toast.success('Tasks synchronized successfully');
+      }
+      
+    } catch (error) {
+      console.error('Failed to sync tasks bidirectionally:', error);
+      toast.error('Failed to sync tasks');
+    }
+  };
+
   return {
     isConnected,
     isLoading,
@@ -237,5 +327,9 @@ export const useGoogleCalendar = (): GoogleCalendarHook => {
     syncMeeting,
     syncTask,
     checkConnection,
+    // Google Tasks integration
+    importGoogleTasks,
+    exportTaskToGoogleTasks,
+    syncTasksBidirectional,
   };
 };
