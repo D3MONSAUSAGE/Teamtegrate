@@ -67,7 +67,7 @@ export const useAuthOperations = (
     }
   };
   
-  const updateUserProfile = async (data: { name?: string }) => {
+  const updateUserProfile = async (data: { name?: string; email?: string }) => {
     try {
       console.log('AuthOperations: Updating user profile:', data);
       await updateProfile(data);
@@ -77,6 +77,7 @@ export const useAuthOperations = (
         setUser({
           ...user,
           name: data.name || user.name,
+          email: data.email || user.email,
         });
       }
       console.log('AuthOperations: Profile update successful');

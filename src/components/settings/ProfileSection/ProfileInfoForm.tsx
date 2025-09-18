@@ -10,6 +10,8 @@ interface ProfileInfoFormProps {
   user: { id: string; name: string; email: string; role: string };
   name: string;
   setName: (val: string) => void;
+  email: string;
+  setEmail: (val: string) => void;
   onSave: () => Promise<void>;
   isLoading: boolean;
   targetUserId?: string; // For when editing another user's profile
@@ -19,6 +21,8 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
   user,
   name,
   setName,
+  email,
+  setEmail,
   onSave,
   isLoading,
   targetUserId
@@ -48,9 +52,13 @@ const ProfileInfoForm: React.FC<ProfileInfoFormProps> = ({
         <Label htmlFor="email">Email Address</Label>
         <Input
           id="email"
-          defaultValue={user.email}
-          readOnly
-          className="bg-background dark:bg-[#181928]/70 w-full text-ellipsis opacity-60 cursor-not-allowed"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          readOnly={!canEdit}
+          className={`bg-background dark:bg-[#181928]/70 w-full text-ellipsis ${
+            !canEdit ? 'opacity-60 cursor-not-allowed' : ''
+          }`}
+          placeholder="Enter your email address"
         />
       </div>
       <div className="space-y-2">

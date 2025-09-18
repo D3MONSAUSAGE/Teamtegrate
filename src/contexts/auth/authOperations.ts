@@ -99,11 +99,21 @@ export const logout = async (hasSession: boolean) => {
   }
 };
 
-export const updateUserProfile = async (data: { name?: string }) => {
+export const updateUserProfile = async (data: { name?: string; email?: string }) => {
   try {
-    const { error } = await supabase.auth.updateUser({
-      data
-    });
+    const updateData: any = {};
+    
+    // Add name to user metadata if provided
+    if (data.name) {
+      updateData.data = { name: data.name };
+    }
+    
+    // Add email if provided
+    if (data.email) {
+      updateData.email = data.email;
+    }
+
+    const { error } = await supabase.auth.updateUser(updateData);
 
     if (error) {
       console.error('Profile update error:', error);
@@ -112,15 +122,21 @@ export const updateUserProfile = async (data: { name?: string }) => {
     }
 
     // Also update the users table
-    const { error: dbError } = await supabase
-      .from('users')
-      .update({ name: data.name })
-      .eq('id', (await supabase.auth.getUser()).data.user?.id);
+    const updateFields: any = {};
+    if (data.name) updateFields.name = data.name;
+    if (data.email) updateFields.email = data.email;
 
-    if (dbError) {
-      console.error('Database profile update error:', dbError);
-      toast.error('Failed to update profile in database');
-      throw dbError;
+    if (Object.keys(updateFields).length > 0) {
+      const { error: dbError } = await supabase
+        .from('users')
+        .update(updateFields)
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (dbError) {
+        console.error('Database profile update error:', dbError);
+        toast.error('Failed to update profile in database');
+        throw dbError;
+      }
     }
 
     toast.success('Profile updated successfully');

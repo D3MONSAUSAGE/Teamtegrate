@@ -9,10 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "lucide-react";
 
 const ProfileSection = () => {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [name, setName] = useState<string>(user?.name || user?.email || "");
+  const [email, setEmail] = useState<string>(user?.email || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update local state when user changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || user.email || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
 
   // Fetch the user's avatar URL when component mounts
   useEffect(() => {
@@ -50,15 +59,23 @@ const ProfileSection = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { name }
-      });
-
-      if (error) {
-        throw error;
+      const updates: { name?: string; email?: string } = {};
+      
+      if (name !== user.name) {
+        updates.name = name;
+      }
+      
+      if (email !== user.email) {
+        updates.email = email;
+        toast.info("Email change may require Google Calendar re-authentication");
       }
 
-      toast.success("Profile updated successfully!");
+      if (Object.keys(updates).length > 0) {
+        await updateUserProfile(updates);
+        toast.success("Profile updated successfully!");
+      } else {
+        toast.info("No changes to save");
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -99,6 +116,8 @@ const ProfileSection = () => {
             }}
             name={name}
             setName={setName}
+            email={email}
+            setEmail={setEmail}
             onSave={handleSave}
             isLoading={isLoading}
           />

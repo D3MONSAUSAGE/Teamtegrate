@@ -15,12 +15,21 @@ import { UserRole, getRoleDisplayName } from '@/types';
 import { cn } from "@/lib/utils";
 
 const ProfessionalProfileHeader = () => {
-  const { user, refreshUserSession } = useAuth();
+  const { user, refreshUserSession, updateUserProfile } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState<string>(user?.name || user?.email || "");
+  const [email, setEmail] = useState<string>(user?.email || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Update local state when user changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || user.email || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchAvatar = async () => {
@@ -57,15 +66,23 @@ const ProfessionalProfileHeader = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { name }
-      });
-
-      if (error) {
-        throw error;
+      const updates: { name?: string; email?: string } = {};
+      
+      if (name !== user.name) {
+        updates.name = name;
+      }
+      
+      if (email !== user.email) {
+        updates.email = email;
+        toast.info("Email change may require Google Calendar re-authentication");
       }
 
-      toast.success("Profile updated successfully!");
+      if (Object.keys(updates).length > 0) {
+        await updateUserProfile(updates);
+        toast.success("Profile updated successfully!");
+      } else {
+        toast.info("No changes to save");
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -167,6 +184,8 @@ const ProfessionalProfileHeader = () => {
                 }}
                 name={name}
                 setName={setName}
+                email={email}
+                setEmail={setEmail}
                 onSave={handleSave}
                 isLoading={isLoading}
               />
