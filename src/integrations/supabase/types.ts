@@ -7578,7 +7578,9 @@ export type Database = {
         Returns: Json
       }
       can_manage_user_role: {
-        Args: { manager_role: string; target_role: string }
+        Args:
+          | { manager_role: string; target_role: string }
+          | { new_role: string; requester_role: string; target_role: string }
         Returns: boolean
       }
       can_user_access_project: {
@@ -7822,25 +7824,32 @@ export type Database = {
           | { organization_id_param: string; quiz_id_param: string }
           | { quiz_id_param: string }
         Returns: {
+          adjusted_passed: boolean
+          adjusted_score: number
           answers: Json
           attempt_number: number
           completed_at: string
           email: string
-          final_passed: boolean
-          final_score: number
           has_overrides: boolean
           id: string
           max_score: number
           name: string
           organization_id: string
-          original_passed: boolean
-          original_score: number
           override_count: number
+          passed: boolean
           quiz_id: string
           role: string
+          score: number
           started_at: string
           total_adjustment: number
           user_id: string
+        }[]
+      }
+      get_role_hierarchy: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hierarchy_level: number
+          role_name: string
         }[]
       }
       get_team_stats: {
