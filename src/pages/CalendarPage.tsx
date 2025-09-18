@@ -16,6 +16,7 @@ import TaskProviderErrorBoundary from '@/components/ui/TaskProviderErrorBoundary
 import { useAuth } from '@/contexts/auth/AuthProvider';
 import GoogleCalendarConnect from '@/components/meetings/GoogleCalendarConnect';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 
 const CalendarPage = () => {
   const { tasks, isLoading } = useCalendarTasks();
@@ -209,10 +210,17 @@ const CalendarPage = () => {
                   <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Google Calendar</h3>
                   <GoogleCalendarConnect />
                   {isGoogleCalendarConnected && (
-                    <div className="flex items-center text-xs text-green-600 dark:text-green-400">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                      Calendar synced
-                    </div>
+                    <>
+                      <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        Calendar synced
+                      </div>
+                      <ImportFromGoogleCalendar 
+                        variant="compact" 
+                        importType="all"
+                        showStats={true}
+                      />
+                    </>
                   )}
                 </div>
               </div>

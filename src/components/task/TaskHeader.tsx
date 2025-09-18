@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Calendar, Clock, ListOrdered } from 'lucide-react';
+import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 
 interface TaskHeaderProps {
   onNewTask: () => void;
@@ -37,6 +38,11 @@ const TaskHeader = ({ onNewTask, sortBy, onSortChange }: TaskHeaderProps) => {
       </div>
       
       <div className="flex items-center gap-4">
+        <ImportFromGoogleCalendar 
+          variant="button" 
+          importType="tasks"
+        />
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 

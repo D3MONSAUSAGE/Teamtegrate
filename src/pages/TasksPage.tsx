@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task, TaskStatus } from '@/types';

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { EnhancedMeetingDashboard } from '@/components/meetings/EnhancedMeetingDashboard';
 import { EnhancedMeetingCard } from '@/components/meetings/EnhancedMeetingCard';
@@ -55,7 +56,13 @@ const FreshMeetingsPage = () => {
           </p>
         </div>
         
-        <SimpleMeetingDialog />
+        <div className="flex items-center gap-3">
+          <ImportFromGoogleCalendar 
+            variant="button" 
+            importType="meetings"
+          />
+          <SimpleMeetingDialog />
+        </div>
       </div>
 
       {/* Filters and Search */}

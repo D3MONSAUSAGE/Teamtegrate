@@ -1,5 +1,7 @@
 
 import React, { useState } from 'react';
+import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
+import { GoogleSyncStatus } from '@/components/google-sync/GoogleSyncStatus';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import SettingsLayout from '@/components/settings/SettingsLayout';
@@ -49,8 +51,22 @@ const SettingsPage = () => {
             onConnectionChange={setGoogleConnected}
           />
           {googleConnected && (
-            <div className="mt-6">
+            <div className="mt-6 space-y-6">
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Quick Import Actions</h3>
+                <p className="text-muted-foreground mb-4">
+                  Import your Google Calendar events and tasks directly into the app.
+                </p>
+                <ImportFromGoogleCalendar 
+                  variant="card" 
+                  importType="all"
+                  showStats={true}
+                />
+              </div>
+              
               <GoogleTasksSyncButtons />
+              
+              <GoogleSyncStatus isConnected={googleConnected} />
             </div>
           )}
         </div>
