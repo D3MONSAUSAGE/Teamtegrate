@@ -106,11 +106,6 @@ export const SimpleMeetingDialog: React.FC<SimpleMeetingDialogProps> = ({
         formData.location || undefined
       );
 
-      toast({
-        title: "Meeting scheduled",
-        description: "Meeting invitations have been sent to participants.",
-      });
-
       resetForm();
       onOpenChange(false);
     } catch (error) {
