@@ -7910,7 +7910,9 @@ export type Database = {
         Returns: undefined
       }
       manual_sync_meeting_to_google: {
-        Args: { action_param?: string; meeting_id_param: string }
+        Args:
+          | { action_param?: string; meeting_id_param: string }
+          | { force_sync?: boolean; meeting_id: string }
         Returns: Json
       }
       migrate_legacy_folders_to_database: {
@@ -7939,6 +7941,10 @@ export type Database = {
       }
       resume_time_entry: {
         Args: { p_task_id?: string; p_user_id: string }
+        Returns: Json
+      }
+      retry_failed_sync_operations: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       send_daily_emails_and_reminders: {
