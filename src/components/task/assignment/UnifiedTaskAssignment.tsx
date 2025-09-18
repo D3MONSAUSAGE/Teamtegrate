@@ -362,20 +362,25 @@ const UnifiedTaskAssignment: React.FC<UnifiedTaskAssignmentProps> = ({
                   {currentSelection.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-2 rounded-lg border bg-primary/5"
+                      className="flex items-center justify-between p-3 rounded-lg border bg-primary/5 min-h-[60px]"
+                      title={`${user.name || user.email} - ${user.email}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
                           <AvatarImage src={user.avatar_url || undefined} />
                           <AvatarFallback className="text-xs">
                             {(user.name || user.email).substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <span className="text-sm font-medium">{user.name || user.email}</span>
-                          <div className="text-xs text-muted-foreground">{user.email}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate" title={user.name || user.email}>
+                            {user.name || user.email}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate" title={user.email}>
+                            {user.email}
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           {user.role}
                         </Badge>
                       </div>
@@ -384,7 +389,7 @@ const UnifiedTaskAssignment: React.FC<UnifiedTaskAssignmentProps> = ({
                         size="sm"
                         onClick={() => handleRemoveUser(user.id)}
                         disabled={disabled || isAssigning}
-                        className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        className="h-7 w-7 p-0 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0 ml-2"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -402,20 +407,25 @@ const UnifiedTaskAssignment: React.FC<UnifiedTaskAssignmentProps> = ({
                   {availableFilteredUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-2 rounded-lg border hover:bg-muted/50 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors min-h-[60px]"
+                      title={`${user.name || user.email} - ${user.email}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar className="h-8 w-8 flex-shrink-0">
                           <AvatarImage src={user.avatar_url || undefined} />
                           <AvatarFallback className="text-xs">
                             {(user.name || user.email).substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <span className="text-sm">{user.name || user.email}</span>
-                          <div className="text-xs text-muted-foreground">{user.email}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate" title={user.name || user.email}>
+                            {user.name || user.email}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate" title={user.email}>
+                            {user.email}
+                          </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           {user.role}
                         </Badge>
                       </div>
@@ -424,9 +434,9 @@ const UnifiedTaskAssignment: React.FC<UnifiedTaskAssignmentProps> = ({
                         size="sm" 
                         onClick={() => handleAddUser(user)}
                         disabled={disabled || isAssigning}
-                        className="h-7 w-7 p-0"
+                        className="h-8 w-8 p-0 flex-shrink-0 ml-2"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
