@@ -1,6 +1,7 @@
 
 import { User, UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { ROLE_HIERARCHY } from '../constants';
 
 export const createUserProfile = async (authUser: any, organizationId: string): Promise<User> => {
   const userData: User = {
@@ -39,14 +40,5 @@ export const getUserRole = (user: any): UserRole => {
 };
 
 export const hasPermission = (userRole: UserRole, requiredRole: UserRole): boolean => {
-  // Use centralized role hierarchy for consistency
-  const roleHierarchy = {
-    'user': 1,
-    'team_leader': 2,
-    'manager': 3,
-    'admin': 4,
-    'superadmin': 5
-  };
-
-  return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 };
