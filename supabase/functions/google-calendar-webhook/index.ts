@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-goog-channel-id, x-goog-channel-token, x-goog-resource-state',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name, x-goog-channel-id, x-goog-channel-token, x-goog-resource-state',
 };
 
 serve(async (req) => {
