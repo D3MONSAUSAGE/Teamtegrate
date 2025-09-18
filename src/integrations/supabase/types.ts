@@ -7619,14 +7619,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
-      create_get_all_projects_function: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      create_get_all_tasks_function: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       create_user_admin: {
         Args: {
           email: string
@@ -7688,27 +7680,6 @@ export type Database = {
       generate_ticket_number: {
         Args: Record<PropertyKey, never>
         Returns: string
-      }
-      get_all_projects: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          budget: number | null
-          budget_spent: number | null
-          created_at: string | null
-          description: string | null
-          end_date: string | null
-          id: string
-          is_completed: boolean | null
-          manager_id: string | null
-          organization_id: string
-          start_date: string | null
-          status: string | null
-          tags: string[] | null
-          tasks_count: number | null
-          team_members: string[] | null
-          title: string | null
-          updated_at: string | null
-        }[]
       }
       get_archive_threshold_days: {
         Args: { user_id_param: string }
@@ -7855,6 +7826,27 @@ export type Database = {
       get_team_stats: {
         Args: { org_id: string }
         Returns: Json
+      }
+      get_user_accessible_projects: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          budget: number | null
+          budget_spent: number | null
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_completed: boolean | null
+          manager_id: string | null
+          organization_id: string
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          tasks_count: number | null
+          team_members: string[] | null
+          title: string | null
+          updated_at: string | null
+        }[]
       }
       get_user_deletion_impact: {
         Args: { target_user_id: string }
