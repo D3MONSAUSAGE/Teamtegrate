@@ -7549,6 +7549,10 @@ export type Database = {
         Args: { new_role: string; target_user_id: string }
         Returns: Json
       }
+      admin_update_user_role: {
+        Args: { new_role: string; target_user_id: string }
+        Returns: Json
+      }
       audit_organization_data: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -7693,18 +7697,14 @@ export type Database = {
           target_user_id: string
         }
         Returns: {
-          avg_task_time: number
           completed_tasks: number
           completion_rate: number
-          efficiency_rating: number
           in_progress_tasks: number
           overdue_tasks: number
           overtime_minutes: number
           period_date: string
           period_label: string
-          productivity_score: number
-          projects_data: Json
-          sessions_count: number
+          session_count: number
           total_minutes_worked: number
           total_tasks: number
         }[]
@@ -7724,15 +7724,10 @@ export type Database = {
       get_employee_daily_task_completion: {
         Args: { end_date: string; start_date: string; target_user_id: string }
         Returns: {
-          avg_time_per_task: number
-          completed_tasks: number
           completion_date: string
           completion_rate: number
-          day_name: string
-          overdue_tasks: number
-          pending_tasks: number
-          total_tasks: number
-          total_time_minutes: number
+          tasks_completed: number
+          tasks_created: number
         }[]
       }
       get_employee_detailed_tasks: {
