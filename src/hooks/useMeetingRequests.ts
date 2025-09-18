@@ -554,13 +554,16 @@ const fetchMeetingRequests = async () => {
         return { success: false, error: error.message };
       }
 
-      if (!data.success) {
+      // Cast data to expected type
+      const result = data as { success: boolean; error?: string; message?: string };
+
+      if (!result.success) {
         toast({
           title: "Sync Failed", 
-          description: data.error || 'Failed to initiate sync',
+          description: result.error || 'Failed to initiate sync',
           variant: "destructive",
         });
-        return { success: false, error: data.error };
+        return { success: false, error: result.error };
       }
 
       // Refresh meetings to show updated sync status
@@ -576,6 +579,8 @@ const fetchMeetingRequests = async () => {
       return { success: false, error: error.message };
     }
   };
+
+  useEffect(() => {
     fetchMeetingRequests();
 
     // Subscribe to real-time updates only if user has valid organizationId
