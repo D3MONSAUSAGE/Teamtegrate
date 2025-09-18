@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 import { GoogleSyncStatus } from '@/components/google-sync/GoogleSyncStatus';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,10 @@ const SettingsPage = () => {
   const { user, isLoading } = useAuth();
   const { isConnected } = useGoogleCalendar();
   const [googleConnected, setGoogleConnected] = useState(isConnected);
+
+  useEffect(() => {
+    setGoogleConnected(isConnected);
+  }, [isConnected]);
 
   if (isLoading) {
     return (

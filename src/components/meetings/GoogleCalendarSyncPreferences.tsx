@@ -93,7 +93,34 @@ const GoogleCalendarSyncPreferences: React.FC<GoogleCalendarSyncPreferencesProps
       }
 
       if (data) {
-        setPreferences(prev => ({ ...prev, ...data }));
+        // Map database fields to SyncPreferences, ensuring types are correct
+        const mappedData: Partial<SyncPreferences> = {
+          sync_meetings: data.sync_meetings,
+          sync_bidirectional: data.sync_bidirectional,
+          default_meeting_duration: data.default_meeting_duration,
+          auto_create_meet_links: data.auto_create_meet_links,
+          sync_meeting_participants: data.sync_meeting_participants,
+          import_external_events: data.import_external_events,
+          sync_frequency: ['realtime', 'hourly', 'daily'].includes(data.sync_frequency) 
+            ? data.sync_frequency as 'realtime' | 'hourly' | 'daily'
+            : 'realtime',
+          notification_preferences: (typeof data.notification_preferences === 'object' && 
+            data.notification_preferences !== null &&
+            'sync_success' in data.notification_preferences &&
+            'sync_errors' in data.notification_preferences)
+            ? data.notification_preferences as { sync_success: boolean; sync_errors: boolean; }
+            : { sync_success: true, sync_errors: true },
+          sync_tasks: data.sync_tasks,
+          sync_task_deadlines: data.sync_task_deadlines,
+          sync_focus_time: data.sync_focus_time,
+          sync_task_reminders: data.sync_task_reminders,
+          focus_time_duration: data.focus_time_duration,
+          focus_time_advance_days: data.focus_time_advance_days,
+          sync_google_tasks: data.sync_google_tasks,
+          import_google_tasks: data.import_google_tasks,
+          export_to_google_tasks: data.export_to_google_tasks,
+        };
+        setPreferences(prev => ({ ...prev, ...mappedData }));
       } else {
         // Initialize preferences for new users
         await savePreferences(preferences);
