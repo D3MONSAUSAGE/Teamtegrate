@@ -7550,7 +7550,9 @@ export type Database = {
         Returns: Json
       }
       admin_update_user_role: {
-        Args: { new_role: string; target_user_id: string }
+        Args:
+          | { admin_user_id?: string; new_role: string; target_user_id: string }
+          | { new_role: string; target_user_id: string }
         Returns: Json
       }
       audit_organization_data: {
