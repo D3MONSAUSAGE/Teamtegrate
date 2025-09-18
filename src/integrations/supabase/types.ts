@@ -1839,20 +1839,28 @@ export type Database = {
       }
       google_calendar_sync_preferences: {
         Row: {
+          auto_create_meet_links: boolean | null
           calendar_id: string | null
           conflict_resolution_strategy: string | null
           created_at: string | null
+          default_meeting_duration: number | null
           export_to_google_tasks: boolean | null
           focus_time_advance_days: number | null
           focus_time_duration: number | null
           id: string
           import_enabled: boolean | null
+          import_external_events: boolean | null
           import_google_tasks: boolean | null
+          notification_preferences: Json | null
           organization_id: string
+          sync_bidirectional: boolean | null
           sync_enabled: boolean | null
           sync_focus_time: boolean | null
+          sync_frequency: string | null
           sync_frequency_minutes: number | null
           sync_google_tasks: boolean | null
+          sync_meeting_participants: boolean | null
+          sync_meetings: boolean | null
           sync_task_deadlines: boolean | null
           sync_task_reminders: boolean | null
           sync_tasks: boolean | null
@@ -1861,20 +1869,28 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_create_meet_links?: boolean | null
           calendar_id?: string | null
           conflict_resolution_strategy?: string | null
           created_at?: string | null
+          default_meeting_duration?: number | null
           export_to_google_tasks?: boolean | null
           focus_time_advance_days?: number | null
           focus_time_duration?: number | null
           id?: string
           import_enabled?: boolean | null
+          import_external_events?: boolean | null
           import_google_tasks?: boolean | null
+          notification_preferences?: Json | null
           organization_id: string
+          sync_bidirectional?: boolean | null
           sync_enabled?: boolean | null
           sync_focus_time?: boolean | null
+          sync_frequency?: string | null
           sync_frequency_minutes?: number | null
           sync_google_tasks?: boolean | null
+          sync_meeting_participants?: boolean | null
+          sync_meetings?: boolean | null
           sync_task_deadlines?: boolean | null
           sync_task_reminders?: boolean | null
           sync_tasks?: boolean | null
@@ -1883,20 +1899,28 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_create_meet_links?: boolean | null
           calendar_id?: string | null
           conflict_resolution_strategy?: string | null
           created_at?: string | null
+          default_meeting_duration?: number | null
           export_to_google_tasks?: boolean | null
           focus_time_advance_days?: number | null
           focus_time_duration?: number | null
           id?: string
           import_enabled?: boolean | null
+          import_external_events?: boolean | null
           import_google_tasks?: boolean | null
+          notification_preferences?: Json | null
           organization_id?: string
+          sync_bidirectional?: boolean | null
           sync_enabled?: boolean | null
           sync_focus_time?: boolean | null
+          sync_frequency?: string | null
           sync_frequency_minutes?: number | null
           sync_google_tasks?: boolean | null
+          sync_meeting_participants?: boolean | null
+          sync_meetings?: boolean | null
           sync_task_deadlines?: boolean | null
           sync_task_reminders?: boolean | null
           sync_tasks?: boolean | null
