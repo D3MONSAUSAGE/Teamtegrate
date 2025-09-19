@@ -19,13 +19,22 @@ export function useProjects() {
       console.log('useProjects: No user, skipping fetch');
       setLoading(false);
       setProjects([]);
+      setError(null);
       return;
     }
 
-    if (!user.organizationId || user.organizationId.trim() === '') {
-      console.log('useProjects: No valid organization ID, skipping fetch');
+    // Enhanced organization ID validation
+    if (!user.organizationId || 
+        user.organizationId.trim() === '' ||
+        user.organizationId === 'undefined' ||
+        user.organizationId === 'null') {
+      console.log('useProjects: No valid organization ID, skipping fetch', {
+        orgId: user.organizationId,
+        userId: user.id
+      });
       setLoading(false);
       setProjects([]);
+      setError('Organization not configured. Please contact support.');
       return;
     }
     
@@ -89,6 +98,7 @@ export function useProjects() {
         if (error) {
           console.error('useProjects: Error fetching projects:', error);
           
+          // Handle specific error cases
           if (error.message?.includes('Failed to fetch') || 
               error.message?.includes('Network Error') ||
               error.message?.includes('timeout')) {
@@ -96,8 +106,14 @@ export function useProjects() {
           }
           
           if (error.message?.includes('permission') || 
-              error.message?.includes('unauthorized')) {
+              error.message?.includes('unauthorized') ||
+              error.message?.includes('row-level security')) {
             throw new Error('You do not have permission to access these projects.');
+          }
+
+          if (error.message?.includes('invalid input syntax') ||
+              error.message?.includes('organization_id')) {
+            throw new Error('Invalid organization configuration. Please refresh the page or contact support.');
           }
           
           throw error;
@@ -326,9 +342,16 @@ export function useProjects() {
   };
 
   useEffect(() => {
-    // Only fetch when user is fully loaded with organization
-    if (user && user.organizationId) {
+    // Only fetch when user is fully loaded with valid organization
+    if (user && user.organizationId && user.organizationId.trim() !== '' && user.organizationId !== 'undefined') {
       fetchProjects();
+    } else if (user && (!user.organizationId || user.organizationId.trim() === '')) {
+      console.warn('useProjects: User loaded but missing organization ID', {
+        userId: user.id,
+        orgId: user.organizationId
+      });
+      setError('Organization not configured. Please contact support.');
+      setLoading(false);
     }
   }, [user?.id, user?.organizationId]);
 
