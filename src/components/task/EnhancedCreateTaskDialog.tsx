@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Target } from 'lucide-react';
 import { format } from "date-fns";
 import { Task, User, Project, TaskPriority, UserRole } from '@/types';
@@ -202,9 +202,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   };
 
   const confirmClose = () => {
+    // Clear all state first
     setShowCloseConfirm(false);
     setPendingClose(false);
-    onOpenChange(false);
+    
+    // Then close the main dialog
+    setTimeout(() => {
+      onOpenChange(false);
+    }, 0);
   };
 
   const cancelClose = () => {
@@ -323,6 +328,9 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
               </span>
             )}
           </DialogTitle>
+          <DialogDescription>
+            {editingTask ? 'Modify the task details below' : 'Fill in the details to create a new task'}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
@@ -383,7 +391,11 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       </DialogContent>
     </Dialog>
 
-    <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+    <AlertDialog open={showCloseConfirm} onOpenChange={(open) => {
+      if (!open) {
+        cancelClose();
+      }
+    }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
@@ -395,7 +407,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
           <AlertDialogCancel onClick={cancelClose}>
             Continue Editing
           </AlertDialogCancel>
-          <AlertDialogAction onClick={confirmClose}>
+          <AlertDialogAction onClick={confirmClose} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Close
           </AlertDialogAction>
         </AlertDialogFooter>
