@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { edgeFunctionManager } from '@/utils/edgeFunctionManager';
+import { userManagementService } from '@/services/userManagementService';
 
 interface EdgeFunctionResponse {
   success?: boolean;
@@ -23,7 +23,8 @@ export const useEnhancedUserOperations = (refetchUsers: () => void) => {
     
     try {
       setConnectionStatus('unknown');
-      const isConnected = await edgeFunctionManager.validateConnection(supabase);
+      const { data, error } = await supabase.functions.invoke('health-check');
+      const isConnected = !error && data?.status === 'ok';
       setConnectionStatus(isConnected ? 'connected' : 'disconnected');
       return isConnected;
     } catch (error) {
@@ -38,73 +39,48 @@ export const useEnhancedUserOperations = (refetchUsers: () => void) => {
       throw new Error('Organization ID required');
     }
 
-    // Check if trying to create superadmin when one already exists
+    // Check if there are already superadmins in the organization
+    const existingSuperadmins = users?.filter(user => user.role === 'superadmin').length || 0;
+    
     if (role === 'superadmin') {
-      const existingSuperadmin = users?.find(u => u.role === 'superadmin');
-      if (existingSuperadmin) {
-        throw new Error('Cannot create another superadmin. Only one superadmin is allowed per organization.');
+      if (existingSuperadmins >= 1) {
+        throw new Error('Only one superadmin is allowed per organization');
       }
+    }
+
+    // Test connection before proceeding
+    try {
+      await testConnection();
+    } catch (error: any) {
+      throw new Error(`Connection test failed: ${error.message}`);
     }
 
     setIsLoading(true);
     try {
-      console.log('EnhancedUserOperations: Creating user via Edge Function:', { email, name, role });
+      const userData = {
+        email,
+        name,
+        role,
+        temporaryPassword
+      };
 
-      // Test connection first
-      const isConnected = await testConnection();
-      if (!isConnected) {
-        throw new Error('Cannot connect to user creation service. Please check your connection.');
-      }
+      const user = await userManagementService.createUser(userData);
 
-      // Call the Edge Function with enhanced error handling
-      const result = await edgeFunctionManager.invoke(
-        supabase,
-        'admin-create-user',
-        {
-          email,
-          name,
-          role,
-          temporaryPassword
-        },
-        {
-          timeout: 45000, // 45 seconds for user creation
-          maxRetries: 2
-        }
+      // Log the user creation action
+      await logUserAction(
+        'create',
+        user?.id || 'unknown',
+        email,
+        name,
+        {},
+        { email, name, role }
       );
 
-      if (result.error) {
-        console.error('EnhancedUserOperations: Edge Function error:', result.error);
-        throw result.error;
-      }
-
-      const responseData = result.data as EdgeFunctionResponse;
-      
-      if (!responseData?.success) {
-        console.error('EnhancedUserOperations: Edge Function returned failure:', responseData);
-        throw new Error(responseData?.error || 'Failed to create user');
-      }
-
-      console.log('EnhancedUserOperations: User created successfully:', responseData);
-
       await refetchUsers();
-      toast.success(`User ${name} created successfully`);
-      return responseData.user;
+      return user;
     } catch (error: any) {
-      console.error('EnhancedUserOperations: Error creating user:', error);
-      
-      // Enhanced error messaging
-      let errorMessage = error.message || 'Failed to create user';
-      
-      if (errorMessage.includes('timeout')) {
-        errorMessage = 'User creation timed out. Please try again.';
-      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Network connection issue. Please check your connection and try again.';
-      } else if (errorMessage.includes('Edge Function')) {
-        errorMessage = 'User creation service error. Please try again.';
-      }
-      
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
+      console.error('Error creating user:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -114,24 +90,23 @@ export const useEnhancedUserOperations = (refetchUsers: () => void) => {
     setIsLoading(true);
     try {
       const oldUser = users?.find(u => u.id === userId);
-      
-      const { error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', userId)
-        .eq('organization_id', currentUser?.organizationId);
+      const oldValues = { name: oldUser?.name, email: oldUser?.email };
 
-      if (error) throw error;
+      await userManagementService.updateUserProfile(userId, updates);
 
-      // Log audit trail
-      await logUserAction('update', userId, oldUser?.email || '', oldUser?.name || '', 
-        { name: oldUser?.name, email: oldUser?.email }, updates);
+      // Log the update action
+      await logUserAction(
+        'update',
+        userId,
+        oldUser?.email || updates.email || '',
+        oldUser?.name || updates.name || '',
+        oldValues,
+        updates
+      );
 
       await refetchUsers();
-      toast.success('User updated successfully');
     } catch (error) {
-      console.error('EnhancedUserOperations: Error updating user:', error);
-      toast.error('Failed to update user');
+      console.error('Error updating user:', error);
       throw error;
     } finally {
       setIsLoading(false);

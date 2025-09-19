@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { toast } from '@/components/ui/sonner';
+import { userManagementService } from '@/services/userManagementService';
 import { RoleChangeValidation, SuperadminTransferData, TransferResponse } from './types';
 
 export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
@@ -79,31 +80,16 @@ export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
         };
       }
 
-      // Proceed with normal role change
+      // Proceed with normal role change using central service
       const oldUser = users?.find(u => u.id === userId);
 
-      // Use Edge Function to perform the role update with service role privileges
-      const { data, error } = await supabase.functions.invoke('admin-update-role', {
-        body: {
-          userId,
-          newRole
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to update role');
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Role update failed');
-      }
+      await userManagementService.changeUserRole(userId, newRole);
 
       // Log audit trail
       await logUserAction('role_change', userId, oldUser?.email || '', oldUser?.name || '', 
         { role: oldUser?.role }, { role: newRole });
 
       await refetchUsers();
-      toast.success(`User role updated to ${newRole}`);
       return { success: true };
     } catch (error) {
       console.error('Error changing role:', error);
