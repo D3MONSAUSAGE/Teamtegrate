@@ -7550,9 +7550,11 @@ export type Database = {
         Returns: Json
       }
       admin_update_user_role: {
-        Args:
-          | { admin_user_id?: string; new_role: string; target_user_id: string }
-          | { new_role: string; target_user_id: string }
+        Args: {
+          admin_user_id?: string
+          new_role: string
+          target_user_id: string
+        }
         Returns: Json
       }
       audit_organization_data: {
@@ -7792,22 +7794,22 @@ export type Database = {
           | { organization_id_param: string; quiz_id_param: string }
           | { quiz_id_param: string }
         Returns: {
-          adjusted_passed: boolean
-          adjusted_score: number
           answers: Json
           attempt_number: number
           completed_at: string
           email: string
+          final_passed: boolean
+          final_score: number
           has_overrides: boolean
           id: string
           max_score: number
           name: string
           organization_id: string
+          original_passed: boolean
+          original_score: number
           override_count: number
-          passed: boolean
           quiz_id: string
           role: string
-          score: number
           started_at: string
           total_adjustment: number
           user_id: string
@@ -7968,6 +7970,10 @@ export type Database = {
       }
       send_timezone_aware_reminders: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      sync_user_profile_across_tables: {
+        Args: { user_id_param: string }
         Returns: undefined
       }
       transfer_superadmin_role: {
