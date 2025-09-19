@@ -56,6 +56,11 @@ export interface Task {
   assignedToName?: string;
   assignedToIds?: string[];
   assignedToNames?: string[];
+  // Enhanced assignment fields
+  assignedToTeamId?: string;
+  assignedToTeamName?: string;
+  assignmentType?: 'individual' | 'multiple' | 'team' | 'project_team';
+  assignmentSource?: 'manual' | 'project_inherited' | 'team_inherited';
   completedById?: string;
   completedByName?: string;
   tags?: string[];

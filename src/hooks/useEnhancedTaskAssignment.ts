@@ -1,115 +1,107 @@
-
 import { useState, useEffect } from 'react';
 import { User, Task } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { EnhancedTaskAssignmentService, AssignmentOptions } from '@/services/EnhancedTaskAssignmentService';
 import { toast } from '@/components/ui/sonner';
 
 interface UseEnhancedTaskAssignmentProps {
-  editingTask?: Task;
+  task?: Task;
   users: User[];
+  organizationId: string;
+  onAssignmentComplete?: () => void;
 }
 
-export const useEnhancedTaskAssignment = ({ editingTask, users }: UseEnhancedTaskAssignmentProps) => {
-  const [selectedMember, setSelectedMember] = useState<string | undefined>("unassigned");
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [multiAssignMode, setMultiAssignMode] = useState(false);
+export const useEnhancedTaskAssignment = ({
+  task,
+  users,
+  organizationId,
+  onAssignmentComplete
+}: UseEnhancedTaskAssignmentProps) => {
+  const { user: currentUser } = useAuth();
+  const [assignmentType, setAssignmentType] = useState<'individual' | 'multiple' | 'team'>('individual');
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [selectedTeamName, setSelectedTeamName] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Initialize assignment state based on editing task
+  // Initialize state based on existing task assignment
   useEffect(() => {
-    if (editingTask) {
-      const hasMultipleAssignees = editingTask.assignedToIds && editingTask.assignedToIds.length > 1;
+    if (task) {
+      if (task.assignedToTeamId) {
+        setAssignmentType('team');
+        setSelectedTeamId(task.assignedToTeamId);
+        setSelectedTeamName(task.assignedToTeamName || '');
+        setSelectedUserIds([]);
+      } else if (task.assignedToIds && task.assignedToIds.length > 1) {
+        setAssignmentType('multiple');
+        setSelectedUserIds(task.assignedToIds);
+        setSelectedTeamId('');
+        setSelectedTeamName('');
+      } else if (task.assignedToId) {
+        setAssignmentType('individual');
+        setSelectedUserIds([task.assignedToId]);
+        setSelectedTeamId('');
+        setSelectedTeamName('');
+      } else {
+        setAssignmentType('individual');
+        setSelectedUserIds([]);
+        setSelectedTeamId('');
+        setSelectedTeamName('');
+      }
+    }
+  }, [task]);
+
+  const getSelectedUsers = (): User[] => {
+    return users.filter(user => selectedUserIds.includes(user.id));
+  };
+
+  const assignTask = async (): Promise<boolean> => {
+    if (!task || !currentUser) return false;
+
+    setIsProcessing(true);
+    try {
+      const selectedUsers = getSelectedUsers();
+      const userNames = selectedUsers.map(u => u.name || u.email);
       
-      setMultiAssignMode(hasMultipleAssignees);
+      const options: AssignmentOptions = {
+        taskId: task.id,
+        assignmentType: assignmentType === 'team' ? 'team' : (selectedUserIds.length > 1 ? 'multiple' : 'individual'),
+        assignmentSource: 'manual',
+        userIds: assignmentType === 'team' ? undefined : selectedUserIds,
+        userNames: assignmentType === 'team' ? undefined : userNames,
+        teamId: assignmentType === 'team' ? selectedTeamId : undefined,
+        teamName: assignmentType === 'team' ? selectedTeamName : undefined,
+        organizationId,
+        assignedBy: currentUser.id,
+        notes: `Manual assignment by ${currentUser.name || currentUser.email}`
+      };
+
+      const success = await EnhancedTaskAssignmentService.assignTask(options);
       
-      if (editingTask.assignedToIds && editingTask.assignedToIds.length > 0) {
-        setSelectedMembers(editingTask.assignedToIds);
-        if (editingTask.assignedToIds.length === 1) {
-          setSelectedMember(editingTask.assignedToIds[0]);
-        }
-      } else if (editingTask.assignedToId) {
-        setSelectedMember(editingTask.assignedToId);
-        setSelectedMembers([editingTask.assignedToId]);
+      if (success && onAssignmentComplete) {
+        onAssignmentComplete();
       }
-    } else {
-      // Reset for new task
-      setSelectedMember("unassigned");
-      setSelectedMembers([]);
-      setMultiAssignMode(false);
-    }
-  }, [editingTask]);
-
-  const handleAssignmentToggle = (enabled: boolean) => {
-    setMultiAssignMode(enabled);
-    
-    if (enabled) {
-      // Switch to multi-assign mode
-      if (selectedMember && selectedMember !== "unassigned") {
-        setSelectedMembers([selectedMember]);
-      }
-      setSelectedMember("unassigned");
-    } else {
-      // Switch to single assign mode
-      if (selectedMembers.length > 0) {
-        setSelectedMember(selectedMembers[0]);
-        setSelectedMembers([]);
-      }
-    }
-  };
-
-  const handleSingleAssign = (userId: string) => {
-    setSelectedMember(userId);
-    // Clear multi-assignment when single assigning
-    if (multiAssignMode) {
-      setSelectedMembers(userId === "unassigned" ? [] : [userId]);
-    }
-  };
-
-  const handleMultipleAssign = (memberIds: string[]) => {
-    setSelectedMembers(memberIds);
-    // Update single assignment for consistency
-    if (memberIds.length === 1) {
-      setSelectedMember(memberIds[0]);
-    } else if (memberIds.length === 0) {
-      setSelectedMember("unassigned");
-    }
-  };
-
-  const getAssignedUsers = (): User[] => {
-    if (multiAssignMode) {
-      return users.filter(user => selectedMembers.includes(user.id));
-    } else if (selectedMember && selectedMember !== "unassigned") {
-      const user = users.find(u => u.id === selectedMember);
-      return user ? [user] : [];
-    }
-    return [];
-  };
-
-  const validateAssignment = (): boolean => {
-    if (multiAssignMode && selectedMembers.length === 0) {
-      toast.error('Please assign at least one team member for collaborative tasks');
+      
+      return success;
+    } catch (error) {
+      toast.error('Failed to assign task');
       return false;
+    } finally {
+      setIsProcessing(false);
     }
-    return true;
-  };
-
-  const getAssignmentSummary = (): string => {
-    const assignedUsers = getAssignedUsers();
-    if (assignedUsers.length === 0) return 'Unassigned';
-    if (assignedUsers.length === 1) return assignedUsers[0].name || assignedUsers[0].email;
-    if (assignedUsers.length <= 3) {
-      return assignedUsers.map(u => u.name || u.email).join(', ');
-    }
-    return `${assignedUsers[0].name || assignedUsers[0].email} and ${assignedUsers.length - 1} others`;
   };
 
   return {
-    selectedMember,
-    selectedMembers,
-    multiAssignMode,
-    handleAssignmentToggle,
-    handleSingleAssign,
-    handleMultipleAssign,
-    getAssignedUsers,
-    validateAssignment,
-    getAssignmentSummary
+    assignmentType,
+    selectedUserIds,
+    selectedTeamId,
+    selectedTeamName,
+    isProcessing,
+    selectedUsers: getSelectedUsers(),
+    assignTask,
+    setAssignmentType,
+    setSelectedUserIds,
+    setSelectedTeamId,
+    setSelectedTeamName
   };
 };
