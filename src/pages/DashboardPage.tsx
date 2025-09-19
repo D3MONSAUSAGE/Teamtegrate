@@ -41,8 +41,19 @@ const DashboardPage = () => {
   const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError } = usePersonalTasks();
   const { projects, isLoading: projectsLoading, refreshProjects, error: projectsError } = useProjects();
   
-  // Get task context for status updates
-  const { updateTaskStatus, createTask, updateTask } = useTask();
+  // Get task context for status updates - with error handling
+  let updateTaskStatus: any, createTask: any, updateTask: any;
+  try {
+    const taskContext = useTask();
+    updateTaskStatus = taskContext.updateTaskStatus;
+    createTask = taskContext.createTask;
+    updateTask = taskContext.updateTask;
+  } catch (error) {
+    console.warn('TaskProvider not available, disabling task operations');
+    updateTaskStatus = undefined;
+    createTask = undefined;
+    updateTask = undefined;
+  }
   
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
@@ -183,6 +194,11 @@ const DashboardPage = () => {
 
   // Fixed task status change handler
   const onStatusChange = async (taskId: string, status: string): Promise<void> => {
+    if (!updateTaskStatus) {
+      toast.error('Task operations are not available. Please refresh the page.');
+      return;
+    }
+    
     try {
       setIsUpdatingStatus(taskId);
       console.log(`Changing task ${taskId} status to ${status}`);
