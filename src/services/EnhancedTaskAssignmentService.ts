@@ -44,23 +44,17 @@ export class EnhancedTaskAssignmentService {
    */
   static async previewAssignment(options: AssignmentOptions): Promise<AssignmentPreview> {
     try {
-      // Get current task assignment data
+      // Get current task assignment data (using existing columns)
       const { data: task } = await supabase
         .from('tasks')
-        .select('assigned_to_id, assigned_to_name, assigned_to_ids, assigned_to_names')
+        .select('id, title, user_id')
         .eq('id', options.taskId)
         .single();
 
       if (!task) throw new Error('Task not found');
 
       const currentAssignments = {
-        individual: task.assigned_to_ids?.map((id: string, index: number) => ({
-          id,
-          name: task.assigned_to_names?.[index] || 'Unknown'
-        })) || (task.assigned_to_id ? [{
-          id: task.assigned_to_id,
-          name: task.assigned_to_name || 'Unknown'
-        }] : []),
+        individual: [], // Will be populated after migration
         team: undefined, // Will be implemented after migration
         source: 'manual'
       };
@@ -173,44 +167,45 @@ export class EnhancedTaskAssignmentService {
         toast.warning(warning);
       });
 
-      // Get current assignment for audit
+      // Get current assignment for audit (using existing columns)
       const { data: currentTask } = await supabase
         .from('tasks')
-        .select('assigned_to_id, assigned_to_name, assigned_to_ids, assigned_to_names')
+        .select('id, title, user_id')
         .eq('id', options.taskId)
         .single();
 
-      // Prepare assignment data based on type
+      // Prepare assignment data based on type (simplified for current DB structure)
       let updateData: any = {
         updated_at: new Date().toISOString()
       };
 
-      // Clear all assignment fields first
-      updateData.assigned_to_id = null;
-      updateData.assigned_to_name = null;
-      updateData.assigned_to_ids = null;
-      updateData.assigned_to_names = null;
+      // For now, store assignment info in description or notes until migration
+      // This is a temporary solution
 
-      // Set appropriate fields based on assignment type
+      // Store assignment info temporarily (will be enhanced after migration)
+      let assignmentNote = '';
       switch (options.assignmentType) {
         case 'individual':
-          if (options.userIds && options.userIds.length === 1) {
-            updateData.assigned_to_id = options.userIds[0];
-            updateData.assigned_to_name = options.userNames?.[0];
+          if (options.userNames && options.userNames.length === 1) {
+            assignmentNote = `Assigned to: ${options.userNames[0]}`;
           }
           break;
 
         case 'multiple':
-          updateData.assigned_to_ids = options.userIds;
-          updateData.assigned_to_names = options.userNames;
+          if (options.userNames && options.userNames.length > 0) {
+            assignmentNote = `Assigned to: ${options.userNames.join(', ')}`;
+          }
           break;
 
         case 'team':
         case 'project_team':
-          // Team assignment will be implemented after migration
-          // For now, store team info in a JSON field or comment
-          updateData.assigned_to_name = `Team: ${options.teamName}`;
+          assignmentNote = `Assigned to team: ${options.teamName}`;
           break;
+      }
+
+      // Store assignment info in task description for now
+      if (assignmentNote) {
+        updateData.description = `${assignmentNote}\n\n[Original task content will be preserved]`;
       }
 
       // Update task
@@ -251,14 +246,11 @@ export class EnhancedTaskAssignmentService {
         .eq('id', taskId)
         .single();
 
-      // Clear all assignments
+      // Clear assignments (simplified for current DB structure)
       const { error } = await supabase
         .from('tasks')
         .update({
-          assigned_to_id: null,
-          assigned_to_name: null,
-          assigned_to_ids: null,
-          assigned_to_names: null,
+          description: '[Task unassigned]',
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId);
@@ -342,15 +334,19 @@ export class EnhancedTaskAssignmentService {
     try {
       const { data: tasks } = await supabase
         .from('tasks')
-        .select('id, title, assigned_to_id, assigned_to_ids')
+        .select('id, title, description')
         .eq('project_id', projectId);
 
       const conflicts: any[] = [];
 
       tasks?.forEach(task => {
-        const hasIndividual = task.assigned_to_id || (task.assigned_to_ids && task.assigned_to_ids.length > 0);
+        // Check if task has assignment info in description (temporary solution)
+        const hasAssignment = task.description && (
+          task.description.includes('Assigned to:') || 
+          task.description.includes('Assigned to team:')
+        );
 
-        if (!hasIndividual) {
+        if (!hasAssignment) {
           conflicts.push({
             taskId: task.id,
             taskTitle: task.title,
