@@ -8,18 +8,10 @@ import { Task, Project } from '@/types';
 import { Plus, Sparkles, TrendingUp, Calendar } from 'lucide-react';
 import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog';
 import { format } from 'date-fns';
-import DailyTasksSection from '@/components/dashboard/DailyTasksSection';
-import UpcomingTasksStandalone from '@/components/dashboard/UpcomingTasksStandalone';
-import OverdueTasksStandalone from '@/components/dashboard/OverdueTasksStandalone';
-import RecentProjects from '@/components/dashboard/RecentProjects';
-import TeamManagement from '@/components/dashboard/TeamManagement';
 import { useIsMobile } from '@/hooks/use-mobile';
-import EnhancedTimeTracking from '@/components/dashboard/EnhancedTimeTracking';
 import { useTask } from '@/contexts/task';
 import ModernPageHeader from '@/components/ui/ModernPageHeader';
-import InteractiveStatsGrid from '@/components/dashboard/InteractiveStatsGrid';
-import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
-import QuickActionsPanel from '@/components/dashboard/QuickActionsPanel';
+import CompactDashboardLayout from '@/components/dashboard/compact/CompactDashboardLayout';
 import { Clock, FileText, Users, Target, AlertTriangle } from 'lucide-react';
 import { isTaskOverdue } from '@/utils/taskUtils';
 import { calculateDailyScore } from '@/contexts/task/taskMetrics';
@@ -220,151 +212,45 @@ const DashboardPage = () => {
   return (
     <PullToRefresh onRefresh={handlePullToRefresh}>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background scrollbar-hide">
-        <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
-          {/* Enhanced Welcome Header with proper spacing */}
+        <div className="relative pt-4 px-4 md:px-6 lg:px-8 space-y-6 scrollbar-hide">
+          {/* Compact Welcome Header */}
           <div className="animate-fade-in">
-            <ModernPageHeader
-              title={`Welcome back, ${user?.name || 'User'}!`}
-              subtitle="Stay productive today and manage your tasks"
-              icon={Sparkles}
-              actionButton={{
-                label: 'Create New Task',
-                onClick: () => handleCreateTask(),
-                disabled: isLoading,
-                icon: Plus
-              }}
-              stats={[
-                { label: "Today's Tasks", value: headerStats.todaysCount, color: 'text-primary' },
-                { label: 'Upcoming', value: headerStats.upcomingCount, color: 'text-emerald-600' },
-                { label: 'Projects', value: headerStats.projectsCount, color: 'text-amber-600' }
-              ]}
-              badges={[
-                { label: 'Live Updates', variant: 'default' }
-              ]}
-            />
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  Welcome back, {user?.name || 'User'}! 👋
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(), 'EEEE, MMMM d, yyyy')} • Stay productive today
+                </p>
+              </div>
+              <Button 
+                onClick={() => handleCreateTask()}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New Task
+              </Button>
+            </div>
           </div>
           
-          {/* Interactive Stats Grid */}
-          <div className="animate-fade-in delay-100">
-            <InteractiveStatsGrid 
-              dailyScore={personalDailyScore.percentage}
-              todaysTasks={todaysTasks}
-              upcomingTasks={upcomingTasks}
-              overdueTasks={overdueTasks}
-            />
-          </div>
-
-          {/* Quick Actions Panel */}
-          <div className="animate-fade-in delay-200">
-            <ModernSectionCard
-              title="Quick Actions"
-              subtitle="Fast access to common tasks"
-              icon={Target}
-              noPadding
-            >
-              <div className="p-6">
-                <QuickActionsPanel
-                  userRole={user?.role || 'user'}
-                />
-              </div>
-            </ModernSectionCard>
-          </div>
-
-          {/* Enhanced Time Tracking Section */}
-          <div className="animate-fade-in delay-300">
-            <ModernSectionCard
-              title="Time Tracking"
-              subtitle="Track your work hours with break management and compliance monitoring"
-              icon={Clock}
-              noPadding
-            >
-              <div className="p-6">
-                <EnhancedTimeTracking />
-              </div>
-            </ModernSectionCard>
-          </div>
-          
-          {/* Tasks Sections with enhanced mobile interactions */}
+          {/* Compact Dashboard Layout */}
           {isLoading ? (
             <LoadingSkeleton />
           ) : (
-            <div className="space-y-8 animate-fade-in delay-500 stagger-fade-in">
-              <ModernSectionCard
-                title="Today's Focus"
-                subtitle="Tasks scheduled for today"
-                icon={Target}
-                noPadding
-              >
-                <div className="p-1">
-                  {isMobile ? (
-                    <div className="space-y-3">
-                      {todaysTasks.map((task) => (
-                        <SwipeableTaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEditTask}
-                          onStatusChange={onStatusChange}
-                          onDelete={() => {}}
-                          onClick={() => {}}
-                          isUpdating={isUpdatingStatus === task.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <DailyTasksSection 
-                      tasks={todaysTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
-                  )}
-                </div>
-              </ModernSectionCard>
-              
-              {/* Upcoming Tasks */}
-              <UpcomingTasksStandalone 
-                tasks={upcomingTasks}
-                onCreateTask={() => handleCreateTask()}
-                onEditTask={handleEditTask}
-                onStatusChange={onStatusChange}
-              />
-
-              {/* Overdue Tasks Section */}
-              <OverdueTasksStandalone 
-                tasks={overdueTasks}
-                onCreateTask={() => handleCreateTask()}
-                onEditTask={handleEditTask}
-                onStatusChange={onStatusChange}
-              />
-            </div>
-          )}
-          
-          {/* Manager-only sections */}
-          {user?.role === 'manager' && (
-            <div className="space-y-8 animate-fade-in delay-600">
-              <ModernSectionCard
-                title="Active Projects"
-                subtitle="Your recent projects and progress"
-                icon={FileText}
-                noPadding
-              >
-                <div className="p-1">
-                  <RecentProjects 
-                    projects={recentProjects}
-                    onViewTasks={handleViewTasks}
-                    onCreateTask={handleCreateTaskForProject}
-                    onRefresh={refreshProjects}
-                  />
-                </div>
-              </ModernSectionCard>
-              
-              <ModernSectionCard
-                title="Team Management"
-                subtitle="Manage your team and assignments"
-                icon={Users}
-              >
-                <TeamManagement />
-              </ModernSectionCard>
-            </div>
+            <CompactDashboardLayout
+              dailyScore={personalDailyScore.percentage}
+              tasks={tasks}
+              projects={flatProjects}
+              userRole={user?.role || 'user'}
+              onCreateTask={() => handleCreateTask()}
+              onEditTask={handleEditTask}
+              onCreateProject={user?.role === 'manager' ? () => {
+                // Navigate to projects page to create
+                navigate('/dashboard/projects');
+              } : undefined}
+            />
           )}
           
           {/* Add bottom padding for FAB */}
