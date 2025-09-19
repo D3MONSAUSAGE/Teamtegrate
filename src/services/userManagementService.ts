@@ -114,7 +114,9 @@ class UserManagementService {
       });
 
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to change role');
+      
+      const result = data as any;
+      if (!result?.success) throw new Error(result?.error || 'Failed to change role');
 
       // Trigger comprehensive sync after role change
       await this.syncProfileAcrossAllTables(userId);
@@ -222,9 +224,10 @@ class UserManagementService {
    * Private method: Sync profile across all database tables
    */
   private async syncProfileAcrossAllTables(userId: string): Promise<void> {
-    const { error } = await supabase.rpc('sync_user_profile_across_tables', {
-      user_id: userId
-    });
+    const { error } = await supabase.rpc(
+      'sync_user_profile_across_tables' as any,
+      { user_id: userId }
+    );
 
     if (error) {
       console.error('Failed to sync profile across tables:', error);
