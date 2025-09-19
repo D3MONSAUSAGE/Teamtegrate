@@ -44,19 +44,26 @@ export class EnhancedTaskAssignmentService {
    */
   static async previewAssignment(options: AssignmentOptions): Promise<AssignmentPreview> {
     try {
-      // Get current task assignment data (using existing columns)
+      // Get current task assignment data using the new columns
       const { data: task } = await supabase
         .from('tasks')
-        .select('id, title, user_id')
+        .select('id, title, assigned_to_ids, assigned_to_names, team_id, assignment_type, assignment_source')
         .eq('id', options.taskId)
         .single();
 
       if (!task) throw new Error('Task not found');
 
       const currentAssignments = {
-        individual: [], // Will be populated after migration
-        team: undefined, // Will be implemented after migration
-        source: 'manual'
+        individual: task.assigned_to_ids && task.assigned_to_names ? 
+          task.assigned_to_ids.map((id, index) => ({
+            id,
+            name: task.assigned_to_names[index] || 'Unknown'
+          })) : [],
+        team: task.team_id ? {
+          id: task.team_id,
+          name: 'Team' // Could be enhanced with team name lookup
+        } : undefined,
+        source: task.assignment_source || 'manual'
       };
 
       const proposedAssignments = {
@@ -167,45 +174,24 @@ export class EnhancedTaskAssignmentService {
         toast.warning(warning);
       });
 
-      // Get current assignment for audit (using existing columns)
-      const { data: currentTask } = await supabase
-        .from('tasks')
-        .select('id, title, user_id')
-        .eq('id', options.taskId)
-        .single();
-
-      // Prepare assignment data based on type (simplified for current DB structure)
-      let updateData: any = {
+      // Prepare assignment data using the new database columns
+      const updateData: any = {
+        assigned_to_ids: options.userIds || null,
+        assigned_to_names: options.userNames || null,
+        assignment_type: options.assignmentType,
+        assignment_source: options.assignmentSource,
+        team_id: options.teamId || null,
+        assignment_notes: options.notes || null,
         updated_at: new Date().toISOString()
       };
 
-      // For now, store assignment info in description or notes until migration
-      // This is a temporary solution
-
-      // Store assignment info temporarily (will be enhanced after migration)
-      let assignmentNote = '';
-      switch (options.assignmentType) {
-        case 'individual':
-          if (options.userNames && options.userNames.length === 1) {
-            assignmentNote = `Assigned to: ${options.userNames[0]}`;
-          }
-          break;
-
-        case 'multiple':
-          if (options.userNames && options.userNames.length > 0) {
-            assignmentNote = `Assigned to: ${options.userNames.join(', ')}`;
-          }
-          break;
-
-        case 'team':
-        case 'project_team':
-          assignmentNote = `Assigned to team: ${options.teamName}`;
-          break;
-      }
-
-      // Store assignment info in task description for now
-      if (assignmentNote) {
-        updateData.description = `${assignmentNote}\n\n[Original task content will be preserved]`;
+      // Set single assignment fields for backward compatibility
+      if (options.userIds && options.userIds.length > 0) {
+        updateData.assigned_to_id = options.userIds[0];
+        updateData.assigned_to_name = options.userNames?.[0] || null;
+      } else {
+        updateData.assigned_to_id = null;
+        updateData.assigned_to_name = null;
       }
 
       // Update task
@@ -215,15 +201,6 @@ export class EnhancedTaskAssignmentService {
         .eq('id', options.taskId);
 
       if (updateError) throw updateError;
-
-      // Create audit record (simplified for now)
-      console.log('Assignment updated:', {
-        taskId: options.taskId,
-        assignedBy: options.assignedBy,
-        oldAssignment: currentTask,
-        newAssignment: updateData,
-        assignmentType: options.assignmentType
-      });
 
       toast.success('Task assignment updated successfully');
       return true;
@@ -239,30 +216,23 @@ export class EnhancedTaskAssignmentService {
    */
   static async unassignTask(taskId: string, organizationId: string, unassignedBy: string): Promise<boolean> {
     try {
-      // Get current assignment for audit
-      const { data: currentTask } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', taskId)
-        .single();
-
-      // Clear assignments (simplified for current DB structure)
+      // Clear all assignment fields
       const { error } = await supabase
         .from('tasks')
         .update({
-          description: '[Task unassigned]',
+          assigned_to_id: null,
+          assigned_to_name: null,
+          assigned_to_ids: null,
+          assigned_to_names: null,
+          assignment_type: 'individual',
+          assignment_source: 'manual',
+          team_id: null,
+          assignment_notes: null,
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId);
 
       if (error) throw error;
-
-      // Log unassignment (simplified for now)
-      console.log('Task unassigned:', {
-        taskId,
-        unassignedBy,
-        oldAssignment: currentTask
-      });
 
       toast.success('Task unassigned successfully');
       return true;
@@ -278,17 +248,32 @@ export class EnhancedTaskAssignmentService {
    */
   static async getAssignmentHistory(taskId: string): Promise<any[]> {
     try {
-      // Simplified history - will be enhanced after audit table is created
-      return [
-        {
-          id: '1',
-          created_at: new Date().toISOString(),
-          assignment_type: 'manual',
-          assignment_source: 'manual',
-          assigned_by_user: { name: 'Current User', email: 'user@example.com' },
-          notes: 'Assignment history will be available after database migration'
+      const { data, error } = await supabase
+        .from('task_assignment_audit')
+        .select(`
+          *,
+          users!changed_by(name, email)
+        `)
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching assignment history:', error);
+        return [];
+      }
+
+      return data?.map((entry: any) => ({
+        id: entry.id,
+        created_at: entry.created_at,
+        change_type: entry.change_type,
+        old_assignment: entry.old_assignment,
+        new_assignment: entry.new_assignment,
+        change_reason: entry.change_reason,
+        assigned_by_user: {
+          name: entry.users?.name || 'Unknown',
+          email: entry.users?.email || 'unknown@example.com'
         }
-      ];
+      })) || [];
     } catch (error) {
       console.error('Error fetching assignment history:', error);
       return [];
@@ -312,14 +297,21 @@ export class EnhancedTaskAssignmentService {
    * Get assignment display text for a task
    */
   static getAssignmentDisplay(task: Task): string {
-    if (task.assignedToTeamName) {
+    // Use new assignment fields
+    if (task.assignedToNames && task.assignedToNames.length > 0) {
+      if (task.assignedToNames.length === 1) {
+        return task.assignedToNames[0];
+      } else {
+        return `${task.assignedToNames.length} members: ${task.assignedToNames.slice(0, 2).join(', ')}${task.assignedToNames.length > 2 ? '...' : ''}`;
+      }
+    }
+    
+    // Check for team assignment
+    if (task.assignedToTeamId && task.assignedToTeamName) {
       return `Team: ${task.assignedToTeamName}`;
     }
     
-    if (task.assignedToNames && task.assignedToNames.length > 1) {
-      return `${task.assignedToNames.length} members: ${task.assignedToNames.slice(0, 2).join(', ')}${task.assignedToNames.length > 2 ? '...' : ''}`;
-    }
-    
+    // Fallback to single assignment field for backward compatibility
     if (task.assignedToName) {
       return task.assignedToName;
     }
