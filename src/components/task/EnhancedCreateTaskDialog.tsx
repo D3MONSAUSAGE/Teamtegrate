@@ -13,7 +13,7 @@ import { useTaskSubmission } from '@/hooks/useTaskSubmission';
 import { useAuth } from '@/contexts/AuthContext';
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
-import { useTaskFormPersistence } from '@/hooks/useTaskFormPersistence';
+
 import TaskDetailsCard from './TaskDetailsCard';
 import EnhancedTaskAssignment from './form/assignment/EnhancedTaskAssignment';
 import TaskScheduleSection from './form/TaskScheduleSection';
@@ -84,37 +84,14 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     }
   });
 
-  // Form persistence hook
-  const { hasDraft, isDraftRestored, restoreDraft, clearDraft } = useTaskFormPersistence(
-    form,
-    selectedMember,
-    selectedMembers,
-    deadlineDate,
-    timeInput,
-    scheduledStartDate,
-    scheduledEndDate,
-    scheduledStartTime,
-    scheduledEndTime,
-    warningPeriodHours,
-    isRecurring,
-    recurrenceFrequency,
-    recurrenceInterval,
-    recurrenceDays,
-    editingTask
-  );
 
   // Force refresh users when dialog opens to ensure latest data
   useEffect(() => {
     if (open) {
       devLog.taskOperation('Dialog opened, refreshing users');
       refetchUsers();
-      
-      // Check for draft restoration if not editing an existing task
-      if (!editingTask && hasDraft) {
-        toast.info('Draft found. Click "Restore Draft" to continue where you left off.');
-      }
     }
-  }, [open, refetchUsers, editingTask, hasDraft]);
+  }, [open, refetchUsers]);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -152,23 +129,21 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         setSelectedMembers([editingTask.assignedToId]);
       }
     } else if (!editingTask && open) {
-      // Reset form for new task (only if no draft to restore)
-      if (!hasDraft) {
-        form.reset();
-        setSelectedMember("unassigned");
-        setSelectedMembers([]);
-        setDeadlineDate(undefined);
-        setTimeInput('09:00');
-        setScheduledStartDate(undefined);
-        setScheduledEndDate(undefined);
-        setScheduledStartTime('');
-        setScheduledEndTime('');
-        // Reset recurrence defaults
-        setIsRecurring(false);
-        setRecurrenceFrequency('weekly');
-        setRecurrenceInterval(1);
-        setRecurrenceDays([1]);
-      }
+      // Reset form for new task
+      form.reset();
+      setSelectedMember("unassigned");
+      setSelectedMembers([]);
+      setDeadlineDate(undefined);
+      setTimeInput('09:00');
+      setScheduledStartDate(undefined);
+      setScheduledEndDate(undefined);
+      setScheduledStartTime('');
+      setScheduledEndTime('');
+      // Reset recurrence defaults
+      setIsRecurring(false);
+      setRecurrenceFrequency('weekly');
+      setRecurrenceInterval(1);
+      setRecurrenceDays([1]);
     }
   }, [editingTask, open, users, form, currentProjectId]);
 
@@ -205,27 +180,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
     setScheduledEndTime(time);
   };
 
-  const handleRestoreDraft = () => {
-    const restored = restoreDraft(
-      setSelectedMember,
-      setSelectedMembers,
-      setDeadlineDate,
-      setTimeInput,
-      setScheduledStartDate,
-      setScheduledEndDate,
-      setScheduledStartTime,
-      setScheduledEndTime,
-      setWarningPeriodHours,
-      setIsRecurring,
-      setRecurrenceFrequency,
-      setRecurrenceInterval,
-      setRecurrenceDays
-    );
-    
-    if (restored) {
-      toast.success('Draft restored successfully!');
-    }
-  };
 
   const hasFormData = () => {
     const formValues = form.getValues();
@@ -243,15 +197,11 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
       setShowCloseConfirm(true);
       setPendingClose(true);
     } else {
-      if (!newOpen) {
-        clearDraft();
-      }
       onOpenChange(newOpen);
     }
   };
 
   const confirmClose = () => {
-    clearDraft();
     setShowCloseConfirm(false);
     setPendingClose(false);
     onOpenChange(false);
@@ -340,7 +290,6 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         () => {
           devLog.taskOperation('Task submission success callback');
           logger.userAction('Task created/updated successfully');
-          clearDraft(); // Clear draft on successful submission
           onOpenChange(false);
           onTaskComplete?.();
         }
@@ -373,32 +322,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
                 ({currentUser.role} view)
               </span>
             )}
-            {isDraftRestored && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                Draft Restored
-              </span>
-            )}
           </DialogTitle>
-          {!editingTask && hasDraft && (
-            <div className="flex items-center gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRestoreDraft}
-                className="text-xs"
-              >
-                Restore Draft
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearDraft}
-                className="text-xs text-muted-foreground"
-              >
-                Clear Draft
-              </Button>
-            </div>
-          )}
         </DialogHeader>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
@@ -464,8 +388,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
           <AlertDialogDescription>
-            You have unsaved changes that will be lost if you close this dialog. 
-            Your progress will be saved as a draft for next time.
+            You have unsaved changes that will be lost if you close this dialog.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -473,7 +396,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
             Continue Editing
           </AlertDialogCancel>
           <AlertDialogAction onClick={confirmClose}>
-            Close & Save Draft
+            Close
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
