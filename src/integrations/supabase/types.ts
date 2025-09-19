@@ -5651,12 +5651,51 @@ export type Database = {
           },
         ]
       }
+      task_assignment_audit: {
+        Row: {
+          change_reason: string | null
+          change_type: string
+          changed_by: string
+          created_at: string
+          id: string
+          new_assignment: Json | null
+          old_assignment: Json | null
+          organization_id: string
+          task_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          change_type: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          new_assignment?: Json | null
+          old_assignment?: Json | null
+          organization_id: string
+          task_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          change_type?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          new_assignment?: Json | null
+          old_assignment?: Json | null
+          organization_id?: string
+          task_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           archived_at: string | null
           assigned_to_id: string | null
           assigned_to_ids: string[] | null
           assigned_to_names: string[] | null
+          assignment_notes: string | null
+          assignment_source: string | null
+          assignment_type: string | null
           completed_at: string | null
           cost: number | null
           created_at: string | null
@@ -5693,6 +5732,9 @@ export type Database = {
           assigned_to_id?: string | null
           assigned_to_ids?: string[] | null
           assigned_to_names?: string[] | null
+          assignment_notes?: string | null
+          assignment_source?: string | null
+          assignment_type?: string | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string | null
@@ -5729,6 +5771,9 @@ export type Database = {
           assigned_to_id?: string | null
           assigned_to_ids?: string[] | null
           assigned_to_names?: string[] | null
+          assignment_notes?: string | null
+          assignment_source?: string | null
+          assignment_type?: string | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string | null
