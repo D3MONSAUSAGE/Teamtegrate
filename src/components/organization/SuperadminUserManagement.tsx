@@ -12,6 +12,8 @@ import EditUserDialog from './EditUserDialog';
 import SimpleDeleteUserDialog from './SimpleDeleteUserDialog';
 import SuperadminTransferDialog from './SuperadminTransferDialog';
 import ResetPasswordDialog from './ResetPasswordDialog';
+import { BulkUserRoleUpdate } from './BulkUserRoleUpdate';
+import { AdminAuditLog } from './AdminAuditLog';
 import ConnectionStatusIndicator from './ConnectionStatusIndicator';
 
 const SuperadminUserManagement: React.FC = () => {
@@ -146,7 +148,13 @@ const SuperadminUserManagement: React.FC = () => {
           )}
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Bulk Role Update */}
+            <BulkUserRoleUpdate />
+            
+            {/* Audit Log */}
+            <AdminAuditLog />
+            
             <UserManagementFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}

@@ -7,6 +7,7 @@ import { RefreshCw, Users, AlertTriangle } from 'lucide-react';
 import { useOrganizationTeamMembers } from '@/hooks/useOrganizationTeamMembers';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useAuth } from '@/contexts/AuthContext';
+import { userManagementService } from '@/services/userManagementService';
 import { useDataSync } from '@/hooks/useDataSync';
 import PaginatedUserList from './user-management/PaginatedUserList';
 import OrganizationUserManagementHeader from './user-management/OrganizationUserManagementHeader';
@@ -123,46 +124,9 @@ const SimplifiedOrganizationUserManagement = () => {
     try {
       devLog.userOperation('Role change initiated', { userId, newRole });
 
-      const { data, error } = await supabase.functions.invoke('admin-update-role', {
-        body: {
-          userId: userId,
-          newRole: newRole
-        }
-      });
-
-      devLog.debug('Edge function response', { data, error });
-
-      if (error) {
-        logger.error('Edge function error', error);
-        
-        let userMessage = 'Failed to update role';
-        if (error.message?.includes('Failed to fetch')) {
-          userMessage = 'Connection error. Please check your internet connection and try again.';
-        } else if (error.message?.includes('Unauthorized')) {
-          userMessage = 'You do not have permission to change this user\'s role.';
-        } else if (error.message?.includes('not found')) {
-          userMessage = 'User not found. They may have been deleted.';
-        } else if (error.message) {
-          userMessage = error.message;
-        }
-        
-        throw new Error(userMessage);
-      }
-
-      const responseData = data as RoleChangeResponse;
+      await userManagementService.changeUserRole(userId, newRole);
       
-      if (responseData?.error) {
-        logger.error('Edge function returned error', responseData.error);
-        throw new Error(responseData.error);
-      }
-
-      if (!responseData?.success) {
-        logger.error('Edge function did not return success');
-        throw new Error('Role update failed - please try again');
-      }
-
       logger.userAction('Role update successful', { userId, newRole });
-      toast.success(responseData?.message || `Role updated to ${newRole} successfully`);
       await refetch();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
