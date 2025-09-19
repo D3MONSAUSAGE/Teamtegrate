@@ -239,18 +239,21 @@ const DashboardPage = () => {
           {isLoading ? (
             <LoadingSkeleton />
           ) : (
-            <CompactDashboardLayout
-              dailyScore={personalDailyScore.percentage}
-              tasks={tasks}
-              projects={flatProjects}
-              userRole={user?.role || 'user'}
-              onCreateTask={() => handleCreateTask()}
-              onEditTask={handleEditTask}
-              onCreateProject={user?.role === 'manager' ? () => {
-                // Navigate to projects page to create
-                navigate('/dashboard/projects');
-              } : undefined}
-            />
+            <>
+              <div>Debug: user role = {user?.role || 'undefined'}</div>
+              <CompactDashboardLayout
+                dailyScore={personalDailyScore.percentage}
+                tasks={tasks}
+                projects={flatProjects}
+                userRole={user?.role || 'user'}
+                onCreateTask={() => handleCreateTask()}
+                onEditTask={handleEditTask}
+                onCreateProject={user?.role === 'manager' ? () => {
+                  // Navigate to projects page to create
+                  navigate('/dashboard/projects');
+                } : undefined}
+              />
+            </>
           )}
           
           {/* Add bottom padding for FAB */}
