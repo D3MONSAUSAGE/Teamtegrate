@@ -34,6 +34,17 @@ export const createTask = async (task: any, createdBy?: string): Promise<Task> =
   const now = new Date();
   const taskId = crypto.randomUUID();
   
+  // Validate and sanitize UUID fields - convert empty strings to null
+  const sanitizeUUID = (value: any): string | null => {
+    if (!value || value === '' || value === 'undefined') return null;
+    return value;
+  };
+  
+  const sanitizeUUIDArray = (arr: any[]): string[] => {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(id => id && id !== '' && id !== 'undefined');
+  };
+  
   const { data, error } = await supabase
     .from('tasks')
     .insert({
@@ -43,10 +54,10 @@ export const createTask = async (task: any, createdBy?: string): Promise<Task> =
       priority: task.priority,
       status: task.status || 'To Do',
       deadline: task.deadline ? task.deadline.toISOString() : null,
-      user_id: task.userId,
-      project_id: task.projectId,
-      assigned_to_id: task.assignedToId,
-      assigned_to_ids: task.assignedToIds || [],
+      user_id: sanitizeUUID(task.userId),
+      project_id: sanitizeUUID(task.projectId),
+      assigned_to_id: sanitizeUUID(task.assignedToId),
+      assigned_to_ids: sanitizeUUIDArray(task.assignedToIds || []),
       assigned_to_names: task.assignedToNames || [],
       cost: task.cost || 0,
       organization_id: task.organizationId,
@@ -90,6 +101,17 @@ export const createTask = async (task: any, createdBy?: string): Promise<Task> =
 };
 
 export const updateTask = async (taskId: string, updates: any): Promise<void> => {
+  // Validate and sanitize UUID fields - convert empty strings to null
+  const sanitizeUUID = (value: any): string | null => {
+    if (!value || value === '' || value === 'undefined') return null;
+    return value;
+  };
+  
+  const sanitizeUUIDArray = (arr: any[]): string[] => {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(id => id && id !== '' && id !== 'undefined');
+  };
+  
   const updateData: any = {
     updated_at: new Date().toISOString()
   };
@@ -101,8 +123,8 @@ export const updateTask = async (taskId: string, updates: any): Promise<void> =>
   if (updates.deadline !== undefined) {
     updateData.deadline = updates.deadline ? updates.deadline.toISOString() : null;
   }
-  if (updates.assignedToId !== undefined) updateData.assigned_to_id = updates.assignedToId;
-  if (updates.assignedToIds !== undefined) updateData.assigned_to_ids = updates.assignedToIds;
+  if (updates.assignedToId !== undefined) updateData.assigned_to_id = sanitizeUUID(updates.assignedToId);
+  if (updates.assignedToIds !== undefined) updateData.assigned_to_ids = sanitizeUUIDArray(updates.assignedToIds);
   if (updates.assignedToNames !== undefined) updateData.assigned_to_names = updates.assignedToNames;
   if (updates.cost !== undefined) updateData.cost = updates.cost;
   if (updates.is_recurring !== undefined) updateData.is_recurring = updates.is_recurring;
@@ -128,12 +150,18 @@ export const deleteTask = async (taskId: string): Promise<void> => {
 };
 
 export const assignTaskToUser = async (taskId: string, userId: string, userName: string): Promise<void> => {
+  // Validate and sanitize UUID fields
+  const sanitizeUUID = (value: any): string | null => {
+    if (!value || value === '' || value === 'undefined') return null;
+    return value;
+  };
+  
   const { error } = await supabase
     .from('tasks')
     .update({
-      assigned_to_id: userId,
-      assigned_to_ids: [userId],
-      assigned_to_names: [userName],
+      assigned_to_id: sanitizeUUID(userId),
+      assigned_to_ids: userId && userId !== '' ? [userId] : [],
+      assigned_to_names: userName && userName !== '' ? [userName] : [],
       updated_at: new Date().toISOString()
     })
     .eq('id', taskId);

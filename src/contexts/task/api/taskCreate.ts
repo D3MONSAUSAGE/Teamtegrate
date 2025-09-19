@@ -45,16 +45,28 @@ export const addTask = async (
     let assignmentData = {};
     
     if (newTask.assignedToIds && newTask.assignedToIds.length > 0) {
-      // We have multi-assignment data
-      const isSingleAssignment = newTask.assignedToIds.length === 1;
+      // We have multi-assignment data - filter out empty strings
+      const validIds = newTask.assignedToIds.filter(id => id && id !== '' && id !== 'undefined');
+      const validNames = newTask.assignedToNames ? newTask.assignedToNames.slice(0, validIds.length) : [];
       
-      assignmentData = {
-        assigned_to_ids: newTask.assignedToIds,
-        assigned_to_names: newTask.assignedToNames || [],
-        // For single assignment, also populate single field for backward compatibility
-        assigned_to_id: isSingleAssignment ? newTask.assignedToIds[0] : null,
-      };
-    } else if (newTask.assignedToId) {
+      if (validIds.length > 0) {
+        const isSingleAssignment = validIds.length === 1;
+        
+        assignmentData = {
+          assigned_to_ids: validIds,
+          assigned_to_names: validNames,
+          // For single assignment, also populate single field for backward compatibility
+          assigned_to_id: isSingleAssignment ? validIds[0] : null,
+        };
+      } else {
+        // All IDs were empty/invalid
+        assignmentData = {
+          assigned_to_id: null,
+          assigned_to_ids: [],
+          assigned_to_names: [],
+        };
+      }
+    } else if (newTask.assignedToId && newTask.assignedToId !== '' && newTask.assignedToId !== 'undefined') {
       // Legacy single assignment - normalize to both formats
       assignmentData = {
         assigned_to_id: newTask.assignedToId,
@@ -62,7 +74,7 @@ export const addTask = async (
         assigned_to_names: newTask.assignedToName ? [newTask.assignedToName] : [],
       };
     } else {
-      // No assignment
+      // No assignment or empty assignment
       assignmentData = {
         assigned_to_id: null,
         assigned_to_ids: [],
@@ -72,7 +84,7 @@ export const addTask = async (
     
     const insertData = {
       id: newTask.id,
-      user_id: newTask.userId,
+      user_id: newTask.userId || null,  // Ensure null instead of undefined
       project_id: newTask.projectId || null,
       title: newTask.title,
       description: newTask.description,

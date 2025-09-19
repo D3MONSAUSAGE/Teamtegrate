@@ -66,18 +66,18 @@ export const useTaskSubmission = ({ createTask, updateTask }: UseTaskSubmissionP
 
       console.log('📅 submitTask: Final deadline:', finalDeadline);
 
-      // Prepare assignment data
+      // Prepare assignment data with proper null handling for UUID fields
       const assignmentData = selectedUsers.length > 0 ? {
         assignedToIds: selectedUsers.map(user => user.id),
         assignedToNames: selectedUsers.map(user => user.name || user.email),
-        // For backward compatibility with single assignment
-        assignedToId: selectedUsers.length === 1 ? selectedUsers[0].id : undefined,
-        assignedToName: selectedUsers.length === 1 ? (selectedUsers[0].name || selectedUsers[0].email) : undefined
+        // For backward compatibility with single assignment - use null for UUID fields when unassigned
+        assignedToId: selectedUsers.length === 1 ? selectedUsers[0].id : null,
+        assignedToName: selectedUsers.length === 1 ? (selectedUsers[0].name || selectedUsers[0].email) : null
       } : {
         assignedToIds: [],
         assignedToNames: [],
-        assignedToId: undefined,
-        assignedToName: undefined
+        assignedToId: null,  // Use null instead of undefined for UUID field
+        assignedToName: null
       };
 
       console.log('👥 submitTask: Assignment data prepared:', assignmentData);

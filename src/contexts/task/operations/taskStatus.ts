@@ -19,15 +19,23 @@ export const updateTaskStatus = async (
       throw new Error('Authentication required');
     }
 
-    // Debug: Check auth status before attempting update
-    console.log('🔍 updateTaskStatus: Checking auth status...');
-    const { data: authStatus, error: authError } = await supabase.rpc('debug_auth_status');
+    // Validate task exists and user has access
+    console.log('🔍 updateTaskStatus: Validating task access...');
+    const { data: taskExists, error: taskCheckError } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('id', taskId)
+      .eq('organization_id', user.organizationId)
+      .single();
     
-    if (authError) {
-      console.error('❌ updateTaskStatus: Auth status check failed', authError);
-    } else {
-      console.log('🔍 updateTaskStatus: Auth status', authStatus);
+    if (taskCheckError || !taskExists) {
+      console.error('❌ updateTaskStatus: Task access validation failed', taskCheckError);
+      toast.error('Task not found or access denied');
+      playErrorSound();
+      throw new Error('Task not found or access denied');
     }
+    
+    console.log('✅ updateTaskStatus: Task access validated');
 
     const updatedTask: Partial<Task> = { 
       status,
