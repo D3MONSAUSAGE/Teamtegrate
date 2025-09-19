@@ -18,7 +18,6 @@ interface CompactQuickActionsProps {
 }
 
 const CompactQuickActions: React.FC<CompactQuickActionsProps> = ({ userRole }) => {
-  console.log('CompactQuickActions userRole:', userRole);
   const quickActions = [
     {
       label: 'New Task',

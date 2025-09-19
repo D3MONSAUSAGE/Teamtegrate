@@ -26,7 +26,6 @@ const CompactDashboardLayout: React.FC<CompactDashboardLayoutProps> = ({
   onEditTask,
   onCreateProject
 }) => {
-  console.log('CompactDashboardLayout userRole:', userRole);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
