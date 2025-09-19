@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { userManagementService } from '@/services/userManagementService';
 import { toast } from '@/components/ui/sonner';
 import RoleDisplay from './RoleDisplay';
 import RoleSelector from './RoleSelector';
@@ -101,32 +101,10 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
     
     // Check if this requires superadmin transfer
     if (role === 'superadmin' && currentTargetRole !== 'superadmin') {
-      try {
-        console.log('Checking if superadmin transfer is required');
-        const { data, error } = await supabase.rpc('can_change_user_role', {
-          requester_id: currentUser?.id,
-          target_user_id: targetUser.id,
-          new_role: role
-        });
-
-        if (error) {
-          console.error('Error checking role change requirements:', error);
-          throw error;
-        }
-
-        console.log('Role change validation result:', data);
-        const validation = data as unknown as RoleChangeValidation;
-
-        if (validation?.requires_transfer) {
-          setRequiresTransfer(true);
-          setCurrentSuperadminName(validation.current_superadmin_name || 'Current Superadmin');
-          console.log('Transfer required, current superadmin:', validation.current_superadmin_name);
-        }
-      } catch (error) {
-        console.error('Error checking role change requirements:', error);
-        toast.error('Failed to validate role change');
-        return;
-      }
+      // For now, we'll let the userManagementService handle the validation
+      // This could be enhanced in the future to check requirements beforehand
+      setRequiresTransfer(false);
+      console.log('Superadmin role assignment - will be validated by service');
     }
     
     setConfirmDialogOpen(true);
@@ -146,43 +124,9 @@ const WorkingRoleManagement: React.FC<WorkingRoleManagementProps> = ({
         requiresTransfer
       });
 
-      const { data, error } = await supabase.functions.invoke('admin-update-role', {
-        body: {
-          userId: targetUser.id,
-          newRole: newRole
-        }
-      });
-
-      console.log('Edge function response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        
-        let userMessage = 'Failed to update role';
-        if (error.message?.includes('Failed to fetch')) {
-          userMessage = 'Connection error. Please check your internet connection and try again.';
-        } else if (error.message?.includes('Unauthorized')) {
-          userMessage = 'You do not have permission to change this user\'s role.';
-        } else if (error.message?.includes('not found')) {
-          userMessage = 'User not found. They may have been deleted.';
-        } else if (error.message) {
-          userMessage = error.message;
-        }
-        
-        throw new Error(userMessage);
-      }
-
-      if (data?.error) {
-        console.error('Edge function returned error:', data.error);
-        throw new Error(data.error);
-      }
-
-      if (!data?.success) {
-        console.error('Edge function did not return success');
-        throw new Error('Role update failed - please try again');
-      }
-
-      console.log('Role update successful:', data);
+      await userManagementService.changeUserRole(targetUser.id, newRole);
+      
+      console.log('Role change successful via userManagementService');
       
       let successMessage = `Role updated to ${newRole} successfully`;
       if (requiresTransfer) {

@@ -67,14 +67,17 @@ const SimplifiedOrganizationUserManagement = () => {
     (async () => {
       isFixingRef.current = true;
       try {
-        devLog.userOperation('Auto-fix: Demoting Josue via admin-update-role', { josueId });
-        const { data, error } = await supabase.functions.invoke('admin-update-role', {
-          body: { userId: josueId, newRole: 'admin' as UserRole },
-        });
-
-        devLog.debug('Auto-fix primary response (admin-update-role)', { data, error });
-
-        let success = !error && (data as any)?.success;
+        devLog.userOperation('Auto-fix: Demoting Josue via userManagementService', { josueId });
+        let success = false;
+        
+        try {
+          await userManagementService.changeUserRole(josueId, 'admin' as UserRole);
+          devLog.debug('Auto-fix primary response (userManagementService)', { success: true });
+          success = true;
+        } catch (error) {
+          devLog.debug('Auto-fix primary response (userManagementService)', { error });
+          success = false;
+        }
 
         if (!success) {
           // Fallback: try the authenticated function with org/permission checks

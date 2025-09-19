@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
+import { userManagementValidator } from './userManagementValidator';
 
 export interface UserUpdateData {
   name?: string;
@@ -35,6 +36,9 @@ class UserManagementService {
   async updateUserProfile(userId: string, updates: UserUpdateData): Promise<void> {
     try {
       console.log('🔄 UserManagementService: Starting profile update for:', userId, updates);
+      
+      // Validate request
+      userManagementValidator.validateUserUpdate(userId, updates, 'userManagementService');
       
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('No authenticated user');
@@ -78,6 +82,14 @@ class UserManagementService {
     try {
       console.log('🔄 UserManagementService: Creating user:', userData.email);
 
+      // Validate request
+      userManagementValidator.validateUserCreation(
+        userData.email, 
+        userData.name, 
+        userData.role, 
+        'userManagementService'
+      );
+
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: userData
       });
@@ -108,6 +120,9 @@ class UserManagementService {
     try {
       console.log('🔄 UserManagementService: Changing user role:', userId, newRole);
 
+      // Validate request
+      userManagementValidator.validateRoleChange(userId, newRole, 'userManagementService');
+
       const { data, error } = await supabase.rpc('admin_update_user_role', {
         target_user_id: userId,
         new_role: newRole
@@ -137,6 +152,9 @@ class UserManagementService {
   async deleteUser(userId: string, reason: string = 'Admin deletion'): Promise<void> {
     try {
       console.log('🔄 UserManagementService: Deleting user:', userId);
+
+      // Validate request
+      userManagementValidator.validateUserDeletion(userId, 'userManagementService');
 
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: {

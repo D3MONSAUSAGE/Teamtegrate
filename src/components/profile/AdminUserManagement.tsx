@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { userManagementService } from '@/services/userManagementService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import {
@@ -92,20 +93,17 @@ const AdminUserManagement: React.FC = () => {
     try {
       setIsCreating(true);
 
-      // Create a new user in Supabase Auth using the admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create a new user using the centralized service
+      const userData = {
         email: newUserEmail,
-        password: 'defaultpassword123!', // Generate a secure default password
-        user_metadata: {
-          organization_id: user.organizationId,
-          role: newUserRole,
-          name: newUserEmail.split('@')[0] // Use email prefix as default name
-        }
-      });
+        name: newUserEmail.split('@')[0], // Use email prefix as default name
+        role: newUserRole,
+        temporaryPassword: 'defaultpassword123!' // Generate a secure default password
+      };
 
-      if (authError) throw authError;
-
-      // The handle_new_user trigger will automatically create the user profile
+      const createdUser = await userManagementService.createUser(userData);
+      
+      // Clear form and refresh list
       setNewUserEmail('');
       setNewUserRole('user');
       await fetchUsers(); // Refresh the list

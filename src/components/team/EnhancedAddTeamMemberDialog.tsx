@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
+import { userManagementService } from '@/services/userManagementService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -59,34 +60,22 @@ const EnhancedAddTeamMemberDialog: React.FC<EnhancedAddTeamMemberDialogProps> = 
     try {
       // For superadmins, create a new user in the organization
       if (isSuperadmin) {
-        const { data, error } = await supabase.functions.invoke('admin-create-user', {
-          body: {
-            email: formData.email.toLowerCase(),
-            name: formData.name,
-            role: formData.organizationRole,
-            temporaryPassword: formData.temporaryPassword,
-            organizationId: user.organizationId
-          }
-        });
+        const userData = {
+          email: formData.email.toLowerCase(),
+          name: formData.name,
+          role: formData.organizationRole,
+          temporaryPassword: formData.temporaryPassword
+        };
 
-        if (error) {
-          console.error('Error creating user:', error);
-          toast.error('Failed to create user: ' + error.message);
-          return;
-        }
-
-        if (!data?.success) {
-          toast.error(data?.error || 'Failed to create user');
-          return;
-        }
+        const createdUser = await userManagementService.createUser(userData);
 
         // If a team ID is provided, add the user to the team
-        if (teamId && data.user?.id) {
+        if (teamId && createdUser?.id) {
           const { error: teamError } = await supabase
             .from('team_memberships')
             .insert({
               team_id: teamId,
-              user_id: data.user.id,
+              user_id: createdUser.id,
               role: 'member'
             });
 

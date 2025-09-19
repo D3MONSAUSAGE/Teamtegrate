@@ -46,7 +46,7 @@ import {
 import { User as UserType, Project, UserRole, getRoleDisplayName } from '@/types';
 import { useUsers } from '@/hooks/useUsers';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { userManagementService } from '@/services/userManagementService';
 import { toast } from '@/components/ui/sonner';
 import OrganizationRoleChangeDialog from '@/components/team/OrganizationRoleChangeDialog';
 import OrganizationRoleSelector from '@/components/team/OrganizationRoleSelector';
@@ -160,26 +160,15 @@ const TeamManagementDialog: React.FC<TeamManagementDialogProps> = ({
 
     setIsChangingOrgRole(true);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-update-role', {
-        body: {
-          userId: orgRoleChangeData.userId,
-          newRole: orgRoleChangeData.newRole
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to update role');
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Role update failed');
-      }
-
+      await userManagementService.changeUserRole(orgRoleChangeData.userId, orgRoleChangeData.newRole);
+      
+      console.log('Role change successful via userManagementService');
+      
       toast.success(`Organization role updated to ${getRoleDisplayName(orgRoleChangeData.newRole)}`);
       setOrgRoleChangeData(null);
       
-      // Refresh the team members list
-      window.location.reload(); // Simple refresh to update roles
+      // Simple refresh to update roles
+      window.location.reload();
     } catch (error) {
       console.error('Error changing organization role:', error);
       toast.error('Failed to change organization role');

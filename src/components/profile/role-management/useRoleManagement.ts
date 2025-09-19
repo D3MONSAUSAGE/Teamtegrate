@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { UserRole } from '@/types';
 import { hasRoleAccess, canManageUser } from '@/contexts/auth/roleUtils';
-import { supabase } from '@/integrations/supabase/client';
+import { userManagementService } from '@/services/userManagementService';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -73,46 +73,11 @@ export const useRoleManagement = ({ targetUser, onRoleChanged }: UseRoleManageme
         newRole: newRole
       });
 
-      // Call the edge function to update the role
-      const { data, error } = await supabase.functions.invoke('admin-update-role', {
-        body: {
-          userId: targetUser.id,
-          newRole: newRole
-        }
-      });
-
-      console.log('Edge function response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        
-        // Provide more specific error messages based on the error
-        let userMessage = 'Failed to update role';
-        if (error.message?.includes('Failed to fetch')) {
-          userMessage = 'Connection error. Please check your internet connection and try again.';
-        } else if (error.message?.includes('Unauthorized')) {
-          userMessage = 'You do not have permission to change this user\'s role.';
-        } else if (error.message?.includes('not found')) {
-          userMessage = 'User not found. They may have been deleted.';
-        } else if (error.message) {
-          userMessage = error.message;
-        }
-        
-        throw new Error(userMessage);
-      }
-
-      if (data?.error) {
-        console.error('Edge function returned error:', data.error);
-        throw new Error(data.error);
-      }
-
-      if (!data?.success) {
-        console.error('Edge function did not return success');
-        throw new Error('Role update failed - please try again');
-      }
-
-      console.log('Role update successful:', data);
-      toast.success(data?.message || `Role updated to ${newRole} successfully`);
+      await userManagementService.changeUserRole(targetUser.id, newRole);
+      
+      console.log('Role change successful via userManagementService');
+      
+      toast.success(`Role updated to ${newRole} successfully`);
       onRoleChanged();
       setConfirmDialogOpen(false);
       setNewRole(null);
