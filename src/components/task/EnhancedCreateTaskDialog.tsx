@@ -193,26 +193,26 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
   };
 
   const handleDialogClose = (newOpen: boolean) => {
-    if (!newOpen && !editingTask && hasFormData()) {
+    console.log('handleDialogClose called with:', newOpen);
+    if (!newOpen && !editingTask && hasFormData() && !showCloseConfirm) {
+      console.log('Showing close confirmation');
       setShowCloseConfirm(true);
       setPendingClose(true);
     } else {
+      console.log('Closing dialog directly');
       onOpenChange(newOpen);
     }
   };
 
   const confirmClose = () => {
-    // Clear all state first
+    console.log('confirmClose called');
     setShowCloseConfirm(false);
     setPendingClose(false);
-    
-    // Then close the main dialog
-    setTimeout(() => {
-      onOpenChange(false);
-    }, 0);
+    onOpenChange(false);
   };
 
   const cancelClose = () => {
+    console.log('cancelClose called');
     setShowCloseConfirm(false);
     setPendingClose(false);
   };
@@ -316,7 +316,7 @@ const EnhancedCreateTaskDialog: React.FC<EnhancedCreateTaskDialogProps> = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleDialogClose}>
+      <Dialog open={open && !showCloseConfirm} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

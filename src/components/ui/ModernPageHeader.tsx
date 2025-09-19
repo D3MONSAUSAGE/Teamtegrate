@@ -81,7 +81,7 @@ const ModernPageHeader: React.FC<ModernPageHeaderProps> = ({
             {stats && stats.length > 0 && (
               <div className="flex items-center gap-6 pt-2">
                 {stats.map((stat, index) => (
-                  <React.Fragment key={index}>
+                  <div key={index} className="flex items-center gap-6">
                     <div className="group cursor-pointer">
                       <div className={`text-xl md:text-2xl font-bold ${stat.color || 'text-primary'} group-hover:scale-110 transition-transform`}>
                         {stat.value}
@@ -89,7 +89,7 @@ const ModernPageHeader: React.FC<ModernPageHeaderProps> = ({
                       <div className="text-xs text-muted-foreground">{stat.label}</div>
                     </div>
                     {index < stats.length - 1 && <div className="w-px h-8 bg-border" />}
-                  </React.Fragment>
+                  </div>
                 ))}
               </div>
             )}
