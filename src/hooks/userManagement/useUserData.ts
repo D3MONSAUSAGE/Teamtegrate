@@ -1,6 +1,6 @@
 
-import { useResilientUserData } from './useResilientUserData';
+import { useOptimizedUserData } from './useOptimizedUserData';
 
 export const useUserData = () => {
-  return useResilientUserData();
+  return useOptimizedUserData();
 };

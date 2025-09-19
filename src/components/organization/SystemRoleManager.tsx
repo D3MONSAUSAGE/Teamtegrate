@@ -328,7 +328,7 @@ export const SystemRoleManager: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString()}
+                      {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       {user.id !== currentUser?.id && isAdmin ? (

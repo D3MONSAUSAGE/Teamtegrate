@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { UserRole } from '@/types';
 import { userManagementValidator } from './userManagementValidator';
+import { userManagementCache } from './userManagementCache';
 
 export interface UserUpdateData {
   name?: string;
@@ -39,6 +40,9 @@ class UserManagementService {
       
       // Validate request
       userManagementValidator.validateUserUpdate(userId, updates, 'userManagementService');
+      
+      // Invalidate cache immediately
+      userManagementCache.invalidateUser(userId);
       
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) throw new Error('No authenticated user');
