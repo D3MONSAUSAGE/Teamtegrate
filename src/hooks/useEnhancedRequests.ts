@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEnhancedNotifications } from './useEnhancedNotifications';
+import { useRequestNotifications } from './useRequestNotifications';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useRequestsRealtime } from './useRequestsRealtime';
 import type { Request, RequestType } from '@/types/requests';
@@ -11,7 +11,7 @@ import type { Request, RequestType } from '@/types/requests';
  */
 export function useEnhancedRequests() {
   const { user } = useAuth();
-  const { notifyRequestSubmission, notifyRequestStatusChange } = useEnhancedNotifications();
+  const { notifyRequestCreated, notifyStatusChanged } = useRequestNotifications();
   const [requests, setRequests] = useState<Request[]>([]);
   const [requestTypes, setRequestTypes] = useState<RequestType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,6 +160,15 @@ export function useEnhancedRequests() {
       // Auto-assign approvers based on request type and user's team hierarchy
       await autoAssignApprovers(requestRecord.id, requestRecord.request_type?.name || '');
 
+      // Send email notification for request creation
+      try {
+        await notifyRequestCreated(requestRecord.id);
+        console.log('Email notification sent for request creation');
+      } catch (emailError) {
+        console.warn('Failed to send email notification:', emailError);
+        // Don't fail the request creation if email fails
+      }
+
       await fetchRequests();
       enhancedNotifications.success('Request created successfully');
       return requestRecord;
@@ -243,13 +252,13 @@ export function useEnhancedRequests() {
 
       if (error) throw error;
 
-      // Send notifications to approvers
-      await notifyRequestSubmission(
-        requestId,
-        requestRecord.title,
-        requestRecord.request_type?.name || 'Request',
-        requestRecord.requested_by
-      );
+      // Send email notifications for request submission (status change from draft to submitted)
+      try {
+        await notifyStatusChanged(requestId, 'draft', 'submitted');
+        console.log('Email notification sent for request submission');
+      } catch (emailError) {
+        console.warn('Failed to send email notification:', emailError);
+      }
 
       await fetchRequests();
       enhancedNotifications.success('Request submitted successfully');
@@ -267,6 +276,16 @@ export function useEnhancedRequests() {
   ) => {
     try {
       if (!user?.id) throw new Error('User not authenticated');
+
+      // Get the current request first to capture old status
+      const { data: currentRequest, error: fetchError } = await supabase
+        .from('requests')
+        .select('status')
+        .eq('id', requestId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      const oldStatus = currentRequest?.status;
 
       const { data: requestRecord, error: updateError } = await supabase
         .from('requests')
@@ -297,14 +316,13 @@ export function useEnhancedRequests() {
         }
       }
 
-      // Notify the requester
-      await notifyRequestStatusChange(
-        requestId,
-        requestRecord.title,
-        newStatus,
-        requestRecord.requested_by,
-        user.name
-      );
+      // Send email notifications for status change
+      try {
+        await notifyStatusChanged(requestId, oldStatus, newStatus);
+        console.log('Email notification sent for status change');
+      } catch (emailError) {
+        console.warn('Failed to send email notification:', emailError);
+      }
 
       await fetchRequests();
       enhancedNotifications.success(`Request ${newStatus} successfully`);
