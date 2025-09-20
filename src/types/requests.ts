@@ -13,7 +13,7 @@ export interface RequestType {
   created_by: string;
   created_at: string;
   updated_at: string;
-  required_permissions?: Array<{ module_id: string; action_id: string }>;
+  required_permissions?: Array<{ module_id: string; action_id: string }> | null;
   creator_role_restrictions?: string[];
   viewer_role_restrictions?: string[];
   permission_metadata?: Record<string, any>;
@@ -42,7 +42,7 @@ export interface Request {
   description?: string;
   form_data: Record<string, any>;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'draft' | 'submitted' | 'under_review' | 'pending_acceptance' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
   due_date?: string;
   submitted_at?: string;
   completed_at?: string;
@@ -51,6 +51,9 @@ export interface Request {
   ticket_number?: string;
   assigned_to?: string;
   assigned_at?: string;
+  accepted_by?: string;
+  accepted_at?: string;
+  completion_notes?: string;
   request_type?: RequestType;
   requested_by_user?: {
     id: string;
@@ -58,6 +61,11 @@ export interface Request {
     email: string;
   };
   assigned_to_user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  accepted_by_user?: {
     id: string;
     name: string;
     email: string;
@@ -128,9 +136,29 @@ export const STATUS_COLORS = {
   draft: 'bg-gray-100 text-gray-800',
   submitted: 'bg-blue-100 text-blue-800',
   under_review: 'bg-yellow-100 text-yellow-800',
+  pending_acceptance: 'bg-orange-100 text-orange-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
   in_progress: 'bg-purple-100 text-purple-800',
   completed: 'bg-green-100 text-green-800',
   cancelled: 'bg-gray-100 text-gray-800'
 } as const;
+
+export interface RequestUpdate {
+  id: string;
+  organization_id: string;
+  request_id: string;
+  user_id: string;
+  update_type: 'progress' | 'status_change' | 'assignment';
+  title: string;
+  content?: string;
+  old_status?: string;
+  new_status?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    name: string;
+  };
+}

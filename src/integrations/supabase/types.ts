@@ -4945,13 +4945,16 @@ export type Database = {
           creator_role_restrictions: string[] | null
           default_job_roles: string[] | null
           description: string | null
+          display_order: number | null
           expertise_tags: string[] | null
           form_schema: Json | null
           id: string
           is_active: boolean | null
+          is_subcategory: boolean | null
           name: string
           organization_id: string
           parent_category_id: string | null
+          parent_id: string | null
           permission_metadata: Json | null
           required_permissions: Json | null
           requires_approval: boolean | null
@@ -4968,13 +4971,16 @@ export type Database = {
           creator_role_restrictions?: string[] | null
           default_job_roles?: string[] | null
           description?: string | null
+          display_order?: number | null
           expertise_tags?: string[] | null
           form_schema?: Json | null
           id?: string
           is_active?: boolean | null
+          is_subcategory?: boolean | null
           name: string
           organization_id: string
           parent_category_id?: string | null
+          parent_id?: string | null
           permission_metadata?: Json | null
           required_permissions?: Json | null
           requires_approval?: boolean | null
@@ -4991,13 +4997,16 @@ export type Database = {
           creator_role_restrictions?: string[] | null
           default_job_roles?: string[] | null
           description?: string | null
+          display_order?: number | null
           expertise_tags?: string[] | null
           form_schema?: Json | null
           id?: string
           is_active?: boolean | null
+          is_subcategory?: boolean | null
           name?: string
           organization_id?: string
           parent_category_id?: string | null
+          parent_id?: string | null
           permission_metadata?: Json | null
           required_permissions?: Json | null
           requires_approval?: boolean | null
@@ -5014,10 +5023,72 @@ export type Database = {
             referencedRelation: "request_types"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "request_types_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "request_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_updates: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          old_status: string | null
+          organization_id: string
+          request_id: string
+          title: string
+          update_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          old_status?: string | null
+          organization_id: string
+          request_id: string
+          title: string
+          update_type?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          old_status?: string | null
+          organization_id?: string
+          request_id?: string
+          title?: string
+          update_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_updates_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
         ]
       }
       requests: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
           actual_processing_time: number | null
           assigned_at: string | null
           assigned_to: string | null
@@ -5026,6 +5097,7 @@ export type Database = {
           automation_rule_ids: string[] | null
           comments_count: number | null
           completed_at: string | null
+          completion_notes: string | null
           created_at: string
           description: string | null
           due_date: string | null
@@ -5046,6 +5118,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           actual_processing_time?: number | null
           assigned_at?: string | null
           assigned_to?: string | null
@@ -5054,6 +5128,7 @@ export type Database = {
           automation_rule_ids?: string[] | null
           comments_count?: number | null
           completed_at?: string | null
+          completion_notes?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
@@ -5074,6 +5149,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
           actual_processing_time?: number | null
           assigned_at?: string | null
           assigned_to?: string | null
@@ -5082,6 +5159,7 @@ export type Database = {
           automation_rule_ids?: string[] | null
           comments_count?: number | null
           completed_at?: string | null
+          completion_notes?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null

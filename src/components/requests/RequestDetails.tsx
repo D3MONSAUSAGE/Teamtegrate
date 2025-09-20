@@ -9,12 +9,16 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Request, PRIORITY_COLORS, STATUS_COLORS, REQUEST_CATEGORIES } from '@/types/requests';
 import { useRequestComments } from '@/hooks/useRequestComments';
+import RequestAcceptanceButton from './RequestAcceptanceButton';
+import RequestCompletionDialog from './RequestCompletionDialog';
+import RequestUpdatesSection from './RequestUpdatesSection';
 
 interface RequestDetailsProps {
   request: Request;
+  onRequestUpdated?: () => void;
 }
 
-export default function RequestDetails({ request }: RequestDetailsProps) {
+export default function RequestDetails({ request, onRequestUpdated }: RequestDetailsProps) {
   const { comments, loading, addComment } = useRequestComments(request.id);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -67,7 +71,7 @@ export default function RequestDetails({ request }: RequestDetailsProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold">{request.title}</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className={STATUS_COLORS[request.status]}>
                 {request.status.replace('_', ' ')}
               </Badge>
@@ -80,6 +84,16 @@ export default function RequestDetails({ request }: RequestDetailsProps) {
                 </Badge>
               )}
             </div>
+          </div>
+          <div className="flex gap-2">
+            <RequestAcceptanceButton 
+              request={request} 
+              onRequestUpdated={onRequestUpdated || (() => {})} 
+            />
+            <RequestCompletionDialog 
+              request={request} 
+              onRequestUpdated={onRequestUpdated || (() => {})} 
+            />
           </div>
         </div>
 
@@ -100,6 +114,12 @@ export default function RequestDetails({ request }: RequestDetailsProps) {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               <span>Due {format(new Date(request.due_date), 'MMM d, yyyy')}</span>
+            </div>
+          )}
+          {request.accepted_by && request.accepted_at && (
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span>Accepted by {request.accepted_by_user?.name || 'Someone'} on {format(new Date(request.accepted_at), 'MMM d, yyyy')}</span>
             </div>
           )}
         </div>
@@ -166,6 +186,9 @@ export default function RequestDetails({ request }: RequestDetailsProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Request Updates */}
+      <RequestUpdatesSection requestId={request.id} requestStatus={request.status} />
 
       {/* Comments */}
       <Card>

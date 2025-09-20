@@ -24,6 +24,11 @@ interface SimpleRequestType {
   name: string;
   description?: string;
   requires_approval: boolean;
+  category?: string;
+  subcategory?: string;
+  parent_id?: string;
+  is_subcategory?: boolean;
+  display_order?: number;
 }
 
 interface SimpleRequestFormProps {
@@ -76,9 +81,13 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
       setLoadingTypes(true);
       const { data, error } = await supabase
         .from('request_types')
-        .select('id, name, description, requires_approval')
+        .select(`
+          id, name, description, requires_approval, category, subcategory,
+          parent_id, is_subcategory, display_order
+        `)
         .eq('organization_id', user.organizationId)
         .eq('is_active', true)
+        .order('display_order', { ascending: true })
         .order('name');
 
       if (error) throw error;
@@ -218,21 +227,45 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
             <SelectValue placeholder="Select a request type" />
           </SelectTrigger>
           <SelectContent>
-            {requestTypes.map((type) => (
-              <SelectItem key={type.id} value={type.id}>
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <div className="font-medium">{type.name}</div>
-                    {type.description && (
-                      <div className="text-sm text-muted-foreground">{type.description}</div>
-                    )}
+            {requestTypes
+              .filter(type => !type.is_subcategory) // Show only parent categories
+              .map((parentType) => {
+                const subcategories = requestTypes.filter(type => type.parent_id === parentType.id);
+                
+                return (
+                  <div key={parentType.id}>
+                    <SelectItem value={parentType.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <div>
+                          <div className="font-medium">{parentType.name}</div>
+                          {parentType.description && (
+                            <div className="text-sm text-muted-foreground">{parentType.description}</div>
+                          )}
+                        </div>
+                        {parentType.requires_approval && (
+                          <Badge variant="outline" className="ml-2">Requires Approval</Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                    
+                    {subcategories.map((subType) => (
+                      <SelectItem key={subType.id} value={subType.id}>
+                        <div className="flex items-center justify-between w-full pl-4">
+                          <div>
+                            <div className="font-medium text-sm">↳ {subType.name}</div>
+                            {subType.description && (
+                              <div className="text-xs text-muted-foreground">{subType.description}</div>
+                            )}
+                          </div>
+                          {subType.requires_approval && (
+                            <Badge variant="outline" className="ml-2 text-xs">Requires Approval</Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </div>
-                  {type.requires_approval && (
-                    <Badge variant="outline" className="ml-2">Requires Approval</Badge>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
+                );
+              })}
           </SelectContent>
         </Select>
         {form.formState.errors.request_type_id && (

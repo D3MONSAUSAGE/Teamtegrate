@@ -25,7 +25,14 @@ export function useRequests() {
         approval_roles: item.approval_roles || [],
         description: item.description || undefined,
         is_active: item.is_active ?? true,
-        requires_approval: item.requires_approval ?? true
+        requires_approval: item.requires_approval ?? true,
+        required_permissions: item.required_permissions as Array<{ module_id: string; action_id: string }> | null || null,
+        creator_role_restrictions: item.creator_role_restrictions || null,
+        viewer_role_restrictions: item.viewer_role_restrictions || null,
+        permission_metadata: item.permission_metadata as Record<string, any> || null,
+        default_job_roles: item.default_job_roles || [],
+        selected_user_ids: item.selected_user_ids || [],
+        expertise_tags: item.expertise_tags || []
       })) as RequestType[]);
     } catch (err) {
       console.error('Error fetching request types:', err);
