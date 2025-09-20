@@ -80,6 +80,9 @@ verify_jwt = true
 [functions.process-calendar-sync-queue]
 verify_jwt = false
 
+[functions.send-ticket-notifications]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325
