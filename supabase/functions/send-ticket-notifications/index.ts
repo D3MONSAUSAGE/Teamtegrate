@@ -1,10 +1,11 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
-import { Resend } from 'npm:resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Vary': 'Origin',
 };
 
 interface TicketNotificationRequest {
@@ -98,8 +99,67 @@ async function loadEmailTemplate(templateName: string, variables: Record<string,
   }
 }
 
+// Direct Resend API call function
+async function sendViaResend(options: {
+  apiKey: string;
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    console.log('[Email Delivery] Sending via Resend API:', {
+      to: options.to,
+      subject: options.subject,
+      from: options.from
+    });
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${options.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: options.from,
+        to: Array.isArray(options.to) ? options.to : [options.to],
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Email Delivery] Resend API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        result
+      });
+      return {
+        success: false,
+        error: `Resend API error ${response.status}: ${result?.message || response.statusText}`
+      };
+    }
+
+    console.log('[Email Delivery] Email sent successfully:', result?.id);
+    return {
+      success: true,
+      id: result?.id
+    };
+  } catch (error) {
+    console.error('[Email Delivery] Network error:', error);
+    return {
+      success: false,
+      error: `Network error: ${error.message}`
+    };
+  }
+}
+
 // Enhanced notification delivery with retry logic and structured logging
-async function sendEmailWithRetry(resend: any, emailOptions: any, context: string): Promise<boolean> {
+async function sendEmailWithRetry(apiKey: string, fromEmail: string, emailOptions: any, context: string): Promise<boolean> {
   const retryCount = 3;
   
   for (let attempt = 1; attempt <= retryCount; attempt++) {
@@ -109,10 +169,14 @@ async function sendEmailWithRetry(resend: any, emailOptions: any, context: strin
         subject: emailOptions.subject
       });
       
-      const { error } = await resend.emails.send(emailOptions);
+      const result = await sendViaResend({
+        apiKey,
+        from: fromEmail,
+        ...emailOptions
+      });
       
-      if (error) {
-        throw new Error(error.message || 'Unknown Resend error');
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown Resend error');
       }
       
       console.log(`[Email Delivery] Successfully sent ${context}`);
@@ -173,26 +237,55 @@ async function sendPushWithRetry(supabase: any, pushOptions: any, context: strin
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log('[CORS] Handling OPTIONS preflight request');
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
+    console.log('[Request] Processing notification request...');
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const resend = resendApiKey ? new Resend(resendApiKey) : null;
-    
+    if (!resendApiKey) {
+      console.error('[Config] RESEND_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Email service not configured' 
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
     const requestData: TicketNotificationRequest = await req.json();
     const { type, ticket, user, assignee, actor, oldStatus, newStatus, message, resolution } = requestData;
 
     console.log(`[Notification Processing] Starting ${type} notification for ticket ${ticket.id}`);
 
+    // Get configuration from environment variables
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://teamtegrate.com';
-    const brandName = Deno.env.get('BRAND_NAME') || 'Teamtegrate';
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate Support <support@requests.teamtegrate.com>';
+    const brandName = 'Teamtegrate';
     const ticketUrl = `${appBaseUrl}/dashboard/requests/${ticket.id}`;
+
+    console.log('[Config] Using configuration:', {
+      appBaseUrl,
+      fromEmail,
+      ticketUrl
+    });
 
     let emailsSent = 0;
     let pushNotificationsSent = 0;
@@ -204,23 +297,20 @@ const handler = async (req: Request): Promise<Response> => {
       case 'ticket_created':
         if (user) {
           // Send confirmation email to requester
-          if (resend) {
-            const success = await sendEmailWithRetry(resend, {
-              from: `${brandName} <notifications@teamtegrate.com>`,
-              to: user.email,
-              subject: `✅ Ticket #${ticket.id} received - ${ticket.title}`,
-              html: await loadEmailTemplate('ticket-created-user.html', {
-                userName: user.name || user.email,
-                ticketId: ticket.id,
-                ticketTitle: ticket.title,
-                ticketDescription: ticket.description || '',
-                ticketUrl,
-                brandName
-              })
-            }, 'user confirmation email');
+          const userEmailSuccess = await sendEmailWithRetry(resendApiKey, fromEmail, {
+            to: user.email,
+            subject: `✅ Ticket #${ticket.id} received - ${ticket.title}`,
+            html: await loadEmailTemplate('ticket-created-user.html', {
+              userName: user.name || user.email,
+              ticketId: ticket.id,
+              ticketTitle: ticket.title,
+              ticketDescription: ticket.description || '',
+              ticketUrl,
+              brandName
+            })
+          }, 'user confirmation email');
 
-            if (success) emailsSent++; else emailErrors++;
-          }
+          if (userEmailSuccess) emailsSent++; else emailErrors++;
 
           // Get admins and send notifications
           const { data: admins } = await supabase
@@ -231,24 +321,21 @@ const handler = async (req: Request): Promise<Response> => {
 
           if (admins && admins.length > 0) {
             // Send email to admins
-            if (resend) {
-              const success = await sendEmailWithRetry(resend, {
-                from: `${brandName} <notifications@teamtegrate.com>`,
-                to: admins.map(admin => admin.email),
-                subject: `📩 New Ticket #${ticket.id} needs review`,
-                html: await loadEmailTemplate('ticket-created-admin.html', {
-                  adminName: 'Admin',
-                  ticketId: ticket.id,
-                  ticketTitle: ticket.title,
-                  requesterName: user.name || user.email,
-                  requesterEmail: user.email,
-                  ticketUrl,
-                  brandName
-                })
-              }, 'admin notification email');
+            const adminEmailSuccess = await sendEmailWithRetry(resendApiKey, fromEmail, {
+              to: admins.map(admin => admin.email),
+              subject: `📩 New Ticket #${ticket.id} needs review`,
+              html: await loadEmailTemplate('ticket-created-admin.html', {
+                adminName: 'Admin',
+                ticketId: ticket.id,
+                ticketTitle: ticket.title,
+                requesterName: user.name || user.email,
+                requesterEmail: user.email,
+                ticketUrl,
+                brandName
+              })
+            }, 'admin notification email');
 
-              if (success) emailsSent++; else emailErrors++;
-            }
+            if (adminEmailSuccess) emailsSent++; else emailErrors++;
 
             // Send push notifications to admins with FCM tokens
             const adminTokens = admins.filter(admin => admin.push_token).map(admin => admin.push_token);
@@ -276,26 +363,23 @@ const handler = async (req: Request): Promise<Response> => {
       case 'ticket_assigned':
         if (assignee && actor) {
           // Send email to assignee
-          if (resend) {
-            const success = await sendEmailWithRetry(resend, {
-              from: `${brandName} <notifications@teamtegrate.com>`,
-              to: assignee.email,
-              subject: `📋 Ticket #${ticket.id} assigned to you - ${ticket.title}`,
-              html: await loadEmailTemplate('ticket-assigned.html', {
-                assigneeName: assignee.name || assignee.email,
-                ticketId: ticket.id,
-                ticketTitle: ticket.title,
-                actorName: actor.name || actor.email,
-                ticketUrl,
-                brandName
-              })
-            }, 'assignment email');
+          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+            to: assignee.email,
+            subject: `📋 Ticket #${ticket.id} assigned to you - ${ticket.title}`,
+            html: await loadEmailTemplate('ticket-assigned.html', {
+              assigneeName: assignee.name || assignee.email,
+              ticketId: ticket.id,
+              ticketTitle: ticket.title,
+              actorName: actor.name || actor.email,
+              ticketUrl,
+              brandName
+            })
+          }, 'assignment email');
 
-            if (success) emailsSent++; else emailErrors++;
-          }
+          if (success) emailsSent++; else emailErrors++;
 
           // Send push notification to assignee
-          const success = await sendPushWithRetry(supabase, {
+          const pushSuccess = await sendPushWithRetry(supabase, {
             user_id: assignee.id,
             title: 'Ticket Assigned to You',
             content: `${ticket.title} - assigned by ${actor.name || actor.email}`,
@@ -307,7 +391,7 @@ const handler = async (req: Request): Promise<Response> => {
             send_push: true
           }, 'assignment push notification');
 
-          if (success) pushNotificationsSent++; else pushErrors++;
+          if (pushSuccess) pushNotificationsSent++; else pushErrors++;
         }
         break;
 
@@ -340,30 +424,27 @@ const handler = async (req: Request): Promise<Response> => {
 
             for (const recipient of recipients) {
               // Send email
-              if (resend) {
-                const success = await sendEmailWithRetry(resend, {
-                  from: `${brandName} <notifications@teamtegrate.com>`,
-                  to: recipient.email,
-                  subject: `🔄 Ticket #${ticket.id} status updated - ${newStatus}`,
-                  html: await loadEmailTemplate('ticket-updated.html', {
-                    recipientName: recipient.name || recipient.email,
-                    ticketId: ticket.id,
-                    ticketTitle: ticket.title,
-                    oldStatus,
-                    newStatus,
-                    actorName: actor.name || actor.email,
-                    message: message || '',
-                    ticketUrl,
-                    brandName
-                  })
-                }, 'update email');
+              const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+                to: recipient.email,
+                subject: `🔄 Ticket #${ticket.id} status updated - ${newStatus}`,
+                html: await loadEmailTemplate('ticket-updated.html', {
+                  recipientName: recipient.name || recipient.email,
+                  ticketId: ticket.id,
+                  ticketTitle: ticket.title,
+                  oldStatus,
+                  newStatus,
+                  actorName: actor.name || actor.email,
+                  message: message || '',
+                  ticketUrl,
+                  brandName
+                })
+              }, 'update email');
 
-                if (success) emailsSent++; else emailErrors++;
-              }
+              if (success) emailsSent++; else emailErrors++;
 
               // Send push notification
               if (recipient.push_token) {
-                const success = await sendPushWithRetry(supabase, {
+                const pushSuccess = await sendPushWithRetry(supabase, {
                   user_id: recipient.id,
                   title: 'Ticket Status Updated',
                   content: `${ticket.title} is now ${newStatus}`,
@@ -375,7 +456,7 @@ const handler = async (req: Request): Promise<Response> => {
                   send_push: true
                 }, 'update push notification');
 
-                if (success) pushNotificationsSent++; else pushErrors++;
+                if (pushSuccess) pushNotificationsSent++; else pushErrors++;
               }
             }
           }
@@ -398,28 +479,25 @@ const handler = async (req: Request): Promise<Response> => {
             const requester = ticketData.users_requested_by[0];
 
             // Send email to requester
-            if (resend) {
-              const success = await sendEmailWithRetry(resend, {
-                from: `${brandName} <notifications@teamtegrate.com>`,
-                to: requester.email,
-                subject: `✅ Ticket #${ticket.id} resolved - ${ticket.title}`,
-                html: await loadEmailTemplate('ticket-closed.html', {
-                  requesterName: requester.name || requester.email,
-                  ticketId: ticket.id,
-                  ticketTitle: ticket.title,
-                  resolution,
-                  actorName: actor.name || actor.email,
-                  ticketUrl,
-                  brandName
-                })
-              }, 'resolution email');
+            const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+              to: requester.email,
+              subject: `✅ Ticket #${ticket.id} resolved - ${ticket.title}`,
+              html: await loadEmailTemplate('ticket-closed.html', {
+                requesterName: requester.name || requester.email,
+                ticketId: ticket.id,
+                ticketTitle: ticket.title,
+                resolution,
+                actorName: actor.name || actor.email,
+                ticketUrl,
+                brandName
+              })
+            }, 'resolution email');
 
-              if (success) emailsSent++; else emailErrors++;
-            }
+            if (success) emailsSent++; else emailErrors++;
 
             // Send push notification to requester
             if (requester.push_token) {
-              const success = await sendPushWithRetry(supabase, {
+              const pushSuccess = await sendPushWithRetry(supabase, {
                 user_id: requester.id,
                 title: 'Ticket Resolved',
                 content: `${ticket.title} has been resolved`,
@@ -431,11 +509,27 @@ const handler = async (req: Request): Promise<Response> => {
                 send_push: true
               }, 'resolution push notification');
 
-              if (success) pushNotificationsSent++; else pushErrors++;
+              if (pushSuccess) pushNotificationsSent++; else pushErrors++;
             }
           }
         }
         break;
+
+      default:
+        console.warn(`[Notification Processing] Unknown notification type: ${type}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `Unknown notification type: ${type}` 
+          }),
+          {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+              ...corsHeaders,
+            },
+          }
+        );
     }
 
     // Log notification delivery metrics
@@ -467,17 +561,18 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error('[Notification Error] Failed to process notification:', error);
+    console.error('[Notification Processing] Unexpected error:', error);
     return new Response(
       JSON.stringify({
+        success: false,
         error: error.message || 'Internal server error',
-        success: false
+        details: error.stack || 'No stack trace available'
       }),
       {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders
+          ...corsHeaders,
         },
       }
     );

@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Request, PRIORITY_COLORS, STATUS_COLORS, REQUEST_CATEGORIES } from '@/types/requests';
 import RequestForm from '@/components/requests/RequestForm';
 import EnhancedRequestDetails from '@/components/requests/EnhancedRequestDetails';
+import { EmailTestTool } from '@/components/admin/EmailTestTool';
 import { format } from 'date-fns';
 
 export default function RequestsPage() {
@@ -127,6 +128,13 @@ export default function RequestsPage() {
           </Dialog>
         </div>
       </div>
+
+      {/* Admin Email Test Tool */}
+      {(user?.role === 'admin' || user?.role === 'superadmin') && (
+        <div className="flex justify-end">
+          <EmailTestTool />
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
