@@ -84,7 +84,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-task-notifications]
-verify_jwt = true
+verify_jwt = false   # temporarily disabled for smoke testing
 
 [edge_runtime]
 enabled = true

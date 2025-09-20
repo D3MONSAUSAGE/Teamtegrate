@@ -150,42 +150,76 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering task assigned notifications: ${task.id} to ${assignees.length} user(s)`);
 
-      // Send notification to each assignee individually
-      for (const assignee of assignees) {
+      // Validate all assignees have email addresses
+      const validAssignees = assignees.filter(assignee => {
         if (!assignee.email) {
           console.error('[Notifications] Missing assignee email for:', assignee);
-          continue;
+          return false;
         }
+        return true;
+      });
 
+      if (validAssignees.length === 0) {
+        throw new Error('No valid assignees with email addresses');
+      }
+
+      // Send notification to each assignee individually and await all
+      const notificationPromises = validAssignees.map(async (assignee) => {
         console.log(`[Notifications] Sending task assignment email to: ${assignee.email}`);
 
-        const { data, error } = await supabase.functions.invoke('send-task-notifications', {
-          body: {
-            kind: 'task_assigned',
-            to: assignee.email,
-            task: {
-              id: task.id,
-              title: task.title,
-              description: task.description,
-              due_at: task.deadline,
-              priority: task.priority
-            },
-            actor: {
-              id: actor.id,
-              email: actor.email,
-              name: actor.name
+        try {
+          const { data, error } = await supabase.functions.invoke('send-task-notifications', {
+            body: {
+              kind: 'task_assigned',
+              to: assignee.email,
+              task: {
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                due_at: task.deadline,
+                priority: task.priority
+              },
+              actor: {
+                id: actor.id,
+                email: actor.email,
+                name: actor.name
+              }
             }
-          }
-        });
+          });
 
-        if (error) {
-          console.error(`[Notifications] Failed to send task assigned notification to ${assignee.email}:`, error);
-        } else {
-          console.log(`[Notifications] Task assigned notification sent successfully to ${assignee.email}:`, data);
+          console.log(`[Notifications] Result for ${assignee.email}:`, { to: assignee.email, data, error });
+          
+          if (error) {
+            throw error;
+          }
+          
+          return { to: assignee.email, data, error: null };
+        } catch (err) {
+          console.error(`[Notifications] Failed to send task assigned notification to ${assignee.email}:`, err);
+          return { to: assignee.email, data: null, error: err };
         }
-      }
+      });
+
+      const results = await Promise.allSettled(notificationPromises);
+      
+      // Log comprehensive results
+      const successful = results.filter(result => result.status === 'fulfilled' && !result.value.error).length;
+      const failed = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value.error)).length;
+      
+      console.log(`[Notifications] Task assignment email results: ${successful} successful, ${failed} failed out of ${validAssignees.length} total`);
+      
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const { to, data, error } = result.value;
+          console.log(`[Notifications] Email ${index + 1} - to: ${to}, data:`, data, 'error:', error);
+        } else {
+          console.error(`[Notifications] Email ${index + 1} - Promise rejected:`, result.reason);
+        }
+      });
+
     } catch (error) {
       console.error('[Notifications] Error in notifyTaskAssigned:', error);
+      throw error;
     }
   },
 
