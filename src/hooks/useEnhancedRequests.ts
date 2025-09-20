@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRequestNotifications } from './useRequestNotifications';
+import { notifications } from '@/lib/notifications';
 import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { useRequestsRealtime } from './useRequestsRealtime';
 import type { Request, RequestType } from '@/types/requests';
@@ -11,7 +11,6 @@ import type { Request, RequestType } from '@/types/requests';
  */
 export function useEnhancedRequests() {
   const { user } = useAuth();
-  const { notifyRequestCreated, notifyStatusChanged } = useRequestNotifications();
   const [requests, setRequests] = useState<Request[]>([]);
   const [requestTypes, setRequestTypes] = useState<RequestType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,13 +159,28 @@ export function useEnhancedRequests() {
       // Auto-assign approvers based on request type and user's team hierarchy
       await autoAssignApprovers(requestRecord.id, requestRecord.request_type?.name || '');
 
-      // Send email notification for request creation
+      // Send centralized notifications for request creation
       try {
-        await notifyRequestCreated(requestRecord.id);
-        console.log('Email notification sent for request creation');
-      } catch (emailError) {
-        console.warn('Failed to send email notification:', emailError);
-        // Don't fail the request creation if email fails
+        await notifications.notifyTicketCreated(
+          {
+            id: requestRecord.id,
+            title: requestRecord.title,
+            description: requestRecord.description,
+            status: requestRecord.status,
+            priority: requestRecord.priority,
+            created_at: requestRecord.created_at,
+            organization_id: requestRecord.organization_id
+          },
+          {
+            id: user.id,
+            email: user.email || '',
+            name: user.name
+          }
+        );
+        console.log('Centralized notifications sent for request creation');
+      } catch (notificationError) {
+        console.warn('Failed to send notifications:', notificationError);
+        // Don't fail the request creation if notifications fail
       }
 
       await fetchRequests();
@@ -252,12 +266,29 @@ export function useEnhancedRequests() {
 
       if (error) throw error;
 
-      // Send email notifications for request submission (status change from draft to submitted)
+      // Send centralized notifications for request submission (status change from draft to submitted)
       try {
-        await notifyStatusChanged(requestId, 'draft', 'submitted');
-        console.log('Email notification sent for request submission');
-      } catch (emailError) {
-        console.warn('Failed to send email notification:', emailError);
+        await notifications.notifyTicketUpdated(
+          {
+            id: requestRecord.id,
+            title: requestRecord.title,
+            description: requestRecord.description,
+            status: requestRecord.status,
+            priority: requestRecord.priority || 'medium',
+            created_at: requestRecord.created_at,
+            organization_id: requestRecord.organization_id
+          },
+          'draft',
+          'submitted',
+          {
+            id: user.id,
+            email: user.email || '',
+            name: user.name
+          }
+        );
+        console.log('Centralized notifications sent for request submission');
+      } catch (notificationError) {
+        console.warn('Failed to send notifications:', notificationError);
       }
 
       await fetchRequests();
@@ -316,12 +347,52 @@ export function useEnhancedRequests() {
         }
       }
 
-      // Send email notifications for status change
+      // Send centralized notifications for status change
       try {
-        await notifyStatusChanged(requestId, oldStatus, newStatus);
-        console.log('Email notification sent for status change');
-      } catch (emailError) {
-        console.warn('Failed to send email notification:', emailError);
+        await notifications.notifyTicketUpdated(
+          {
+            id: requestRecord.id,
+            title: requestRecord.title,
+            description: requestRecord.description,
+            status: requestRecord.status,
+            priority: requestRecord.priority || 'medium',
+            created_at: requestRecord.created_at,
+            organization_id: requestRecord.organization_id
+          },
+          oldStatus,
+          newStatus,
+          {
+            id: user.id,
+            email: user.email || '',
+            name: user.name
+          },
+          comments
+        );
+        
+        // Special handling for ticket closed
+        if (newStatus === 'completed') {
+          await notifications.notifyTicketClosed(
+            {
+              id: requestRecord.id,
+              title: requestRecord.title,
+              description: requestRecord.description,
+              status: requestRecord.status,
+              priority: requestRecord.priority || 'medium',
+              created_at: requestRecord.created_at,
+              organization_id: requestRecord.organization_id
+            },
+            comments || 'Ticket has been resolved.',
+            {
+              id: user.id,
+              email: user.email || '',
+              name: user.name
+            }
+          );
+        }
+        
+        console.log('Centralized notifications sent for status change');
+      } catch (notificationError) {
+        console.warn('Failed to send notifications:', notificationError);
       }
 
       await fetchRequests();
