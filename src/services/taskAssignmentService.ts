@@ -77,6 +77,8 @@ export class TaskAssignmentService {
 
       // Send email notifications
       if (taskData && usersData && actorData) {
+        console.log('[TaskAssignmentService] Preparing email notifications for task:', taskData.id);
+        
         const taskNotification = {
           id: taskData.id,
           title: taskData.title,
@@ -101,7 +103,15 @@ export class TaskAssignmentService {
           name: actorData.name || actorData.email
         };
 
+        console.log('[TaskAssignmentService] Sending notifications to:', assignees.map(a => a.email));
         await notifications.notifyTaskAssigned(taskNotification, assignees, actor);
+        console.log('[TaskAssignmentService] Email notifications sent');
+      } else {
+        console.warn('[TaskAssignmentService] Missing data for email notifications:', {
+          hasTask: !!taskData,
+          hasUsers: !!usersData,
+          hasActor: !!actorData
+        });
       }
 
       toast.success(`Task assigned to ${userNamesText}`);

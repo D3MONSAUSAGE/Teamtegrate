@@ -1,35 +1,28 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Vary': 'Origin',
-};
+// Dynamic CORS function matching the working ticket function
+function cors(req: Request) {
+  const requested = req.headers.get("Access-Control-Request-Headers") ??
+    "authorization, x-client-info, apikey, content-type, x-application-name, x-supabase-api-version";
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": requested,
+    "Vary": "Origin, Access-Control-Request-Headers",
+    "Content-Type": "application/json",
+  };
+}
 
 interface TaskNotificationRequest {
-  type: 'task_assigned' | 'task_reassigned' | 'task_status_changed';
+  kind: 'task_assigned' | 'task_status_changed';
+  to: string;
   task: {
     id: string;
     title: string;
     description?: string;
-    status: string;
+    due_at?: string;
     priority?: string;
-    deadline?: string;
-    created_at: string;
-    organization_id: string;
-    project_id?: string;
-  };
-  assignee?: {
-    id: string;
-    email: string;
-    name?: string;
-  };
-  previousAssignee?: {
-    id: string;
-    email: string;
-    name?: string;
   };
   actor?: {
     id: string;
@@ -38,7 +31,6 @@ interface TaskNotificationRequest {
   };
   oldStatus?: string;
   newStatus?: string;
-  timestamp: string;
 }
 
 // Email template loader function with retry logic and structured logging
@@ -198,51 +190,13 @@ async function sendEmailWithRetry(apiKey: string, fromEmail: string, emailOption
   return false;
 }
 
-// Enhanced push notification with retry logic and structured logging  
-async function sendPushWithRetry(supabase: any, pushOptions: any, context: string): Promise<boolean> {
-  const retryCount = 3;
-  
-  for (let attempt = 1; attempt <= retryCount; attempt++) {
-    try {
-      console.log(`[Push Delivery] Sending ${context}, attempt ${attempt}/${retryCount}`, {
-        user_id: pushOptions.user_id,
-        title: pushOptions.title
-      });
-      
-      const { error } = await supabase.functions.invoke('send-push-notification', {
-        body: pushOptions
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      console.log(`[Push Delivery] Successfully sent ${context}`);
-      return true;
-    } catch (error) {
-      console.error(`[Push Delivery] Attempt ${attempt}/${retryCount} failed for ${context}:`, error);
-      
-      if (attempt === retryCount) {
-        console.error(`[Push Delivery] All attempts failed for ${context}`);
-        return false;
-      }
-      
-      // Wait before retry (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-    }
-  }
-  
-  return false;
-}
-
 const handler = async (req: Request): Promise<Response> => {
+  const CORS = cors(req);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log('[CORS] Handling OPTIONS preflight request');
-    return new Response(null, { 
-      status: 200,
-      headers: corsHeaders 
-    });
+    return new Response("ok", { headers: CORS });
   }
 
   try {
@@ -263,26 +217,21 @@ const handler = async (req: Request): Promise<Response> => {
         }),
         {
           status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
+          headers: CORS,
         }
       );
     }
 
     const requestData: TaskNotificationRequest = await req.json();
-    const { type, task, assignee, previousAssignee, actor, oldStatus, newStatus } = requestData;
+    const { kind, to, task, actor, oldStatus, newStatus } = requestData;
 
-    console.log(`[Notification Processing] Starting ${type} notification for task ${task.id}`);
+    console.log(`[Notification Processing] Starting ${kind} notification for task ${task.id} to ${to}`);
 
     // Get configuration from environment variables
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://teamtegrate.com';
     const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
     const brandName = 'Teamtegrate';
-    const taskUrl = task.project_id 
-      ? `${appBaseUrl}/dashboard/projects/${task.project_id}?task=${task.id}`
-      : `${appBaseUrl}/dashboard/tasks?task=${task.id}`;
+    const taskUrl = `${appBaseUrl}/dashboard/tasks?task=${task.id}`;
 
     console.log('[Config] Using configuration:', {
       appBaseUrl,
@@ -291,29 +240,27 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     let emailsSent = 0;
-    let pushNotificationsSent = 0;
     let emailErrors = 0;
-    let pushErrors = 0;
-
-    // Format deadline for display
-    const formattedDeadline = task.deadline 
-      ? new Date(task.deadline).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })
-      : '';
 
     // Handle different notification types
-    switch (type) {
+    switch (kind) {
       case 'task_assigned':
-        if (assignee && actor) {
+        if (to && actor) {
+          // Format deadline for display
+          const formattedDeadline = task.due_at 
+            ? new Date(task.due_at).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })
+            : '';
+
           // Send email to assignee
           const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
-            to: assignee.email,
+            to,
             subject: `📋 New Task Assignment: ${task.title}`,
             html: await loadEmailTemplate('task-assigned.html', {
-              assigneeName: assignee.name || assignee.email,
+              assigneeName: to,
               taskId: task.id,
               taskTitle: task.title,
               taskDescription: task.description || '',
@@ -326,190 +273,45 @@ const handler = async (req: Request): Promise<Response> => {
           }, 'task assignment email');
 
           if (success) emailsSent++; else emailErrors++;
-
-          // Send push notification to assignee
-          const pushSuccess = await sendPushWithRetry(supabase, {
-            user_id: assignee.id,
-            title: 'New Task Assignment',
-            content: `${task.title} - assigned by ${actor.name || actor.email}`,
-            type: 'task_assigned',
-            metadata: {
-              taskId: task.id,
-              route: task.project_id ? `/dashboard/projects/${task.project_id}` : '/dashboard/tasks'
-            },
-            send_push: true
-          }, 'task assignment push notification');
-
-          if (pushSuccess) pushNotificationsSent++; else pushErrors++;
-        }
-        break;
-
-      case 'task_reassigned':
-        if (assignee && previousAssignee && actor) {
-          // Send email to new assignee
-          const newAssigneeSuccess = await sendEmailWithRetry(resendApiKey, fromEmail, {
-            to: assignee.email,
-            subject: `📋 Task Reassigned to You: ${task.title}`,
-            html: await loadEmailTemplate('task-assigned.html', {
-              assigneeName: assignee.name || assignee.email,
-              taskId: task.id,
-              taskTitle: task.title,
-              taskDescription: task.description || '',
-              priority: task.priority || 'Medium',
-              deadline: formattedDeadline,
-              actorName: actor.name || actor.email,
-              taskUrl,
-              brandName
-            })
-          }, 'task reassignment email (new assignee)');
-
-          if (newAssigneeSuccess) emailsSent++; else emailErrors++;
-
-          // Send email to previous assignee
-          const prevAssigneeSuccess = await sendEmailWithRetry(resendApiKey, fromEmail, {
-            to: previousAssignee.email,
-            subject: `🔄 Task Reassigned: ${task.title}`,
-            html: await loadEmailTemplate('task-reassigned.html', {
-              previousAssigneeName: previousAssignee.name || previousAssignee.email,
-              newAssigneeName: assignee.name || assignee.email,
-              taskId: task.id,
-              taskTitle: task.title,
-              actorName: actor.name || actor.email,
-              taskUrl,
-              brandName
-            })
-          }, 'task reassignment email (previous assignee)');
-
-          if (prevAssigneeSuccess) emailsSent++; else emailErrors++;
-
-          // Send push notifications
-          const newAssigneePushSuccess = await sendPushWithRetry(supabase, {
-            user_id: assignee.id,
-            title: 'Task Reassigned to You',
-            content: `${task.title} - reassigned by ${actor.name || actor.email}`,
-            type: 'task_reassigned',
-            metadata: {
-              taskId: task.id,
-              route: task.project_id ? `/dashboard/projects/${task.project_id}` : '/dashboard/tasks'
-            },
-            send_push: true
-          }, 'task reassignment push (new assignee)');
-
-          if (newAssigneePushSuccess) pushNotificationsSent++; else pushErrors++;
-
-          const prevAssigneePushSuccess = await sendPushWithRetry(supabase, {
-            user_id: previousAssignee.id,
-            title: 'Task Reassigned',
-            content: `${task.title} has been reassigned to ${assignee.name || assignee.email}`,
-            type: 'task_reassigned',
-            metadata: {
-              taskId: task.id,
-              route: task.project_id ? `/dashboard/projects/${task.project_id}` : '/dashboard/tasks'
-            },
-            send_push: true
-          }, 'task reassignment push (previous assignee)');
-
-          if (prevAssigneePushSuccess) pushNotificationsSent++; else pushErrors++;
+          console.log(`[Email Status] Task assignment email result: ${success ? 'SUCCESS' : 'FAILED'}`);
         }
         break;
 
       case 'task_status_changed':
-        if (actor && oldStatus && newStatus) {
-          // Get task creator and current assignee
-          const { data: taskData } = await supabase
-            .from('tasks')
-            .select(`
-              created_by,
-              assigned_to_id,
-              users_creator:users!tasks_created_by_fkey(id, email, name, push_token),
-              users_assignee:users!tasks_assigned_to_id_fkey(id, email, name, push_token)
-            `)
-            .eq('id', task.id)
-            .single();
+        if (to && actor && oldStatus && newStatus) {
+          // Send email for status change
+          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+            to,
+            subject: `🔄 Task Status Updated: ${task.title}`,
+            html: await loadEmailTemplate('task-status-changed.html', {
+              recipientName: to,
+              taskId: task.id,
+              taskTitle: task.title,
+              oldStatus,
+              newStatus,
+              actorName: actor.name || actor.email,
+              taskUrl,
+              brandName
+            })
+          }, 'task status update email');
 
-          if (taskData) {
-            const recipients = [];
-            
-            // Add task creator if exists
-            if (taskData.users_creator && Array.isArray(taskData.users_creator) && taskData.users_creator.length > 0) {
-              recipients.push(taskData.users_creator[0]);
-            }
-            
-            // Add current assignee if exists and different from creator
-            if (taskData.users_assignee && Array.isArray(taskData.users_assignee) && taskData.users_assignee.length > 0) {
-              const assigneeUser = taskData.users_assignee[0];
-              const creator = recipients[0];
-              if (!creator || assigneeUser.id !== creator.id) {
-                recipients.push(assigneeUser);
-              }
-            }
-
-            for (const recipient of recipients) {
-              // Send email
-              const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
-                to: recipient.email,
-                subject: `🔄 Task Status Updated: ${task.title}`,
-                html: await loadEmailTemplate('task-status-changed.html', {
-                  recipientName: recipient.name || recipient.email,
-                  taskId: task.id,
-                  taskTitle: task.title,
-                  oldStatus,
-                  newStatus,
-                  actorName: actor.name || actor.email,
-                  taskUrl,
-                  brandName
-                })
-              }, 'task status update email');
-
-              if (success) emailsSent++; else emailErrors++;
-
-              // Send push notification
-              if (recipient.push_token) {
-                const pushSuccess = await sendPushWithRetry(supabase, {
-                  user_id: recipient.id,
-                  title: 'Task Status Updated',
-                  content: `${task.title} is now ${newStatus}`,
-                  type: 'task_status_changed',
-                  metadata: {
-                    taskId: task.id,
-                    route: task.project_id ? `/dashboard/projects/${task.project_id}` : '/dashboard/tasks'
-                  },
-                  send_push: true
-                }, 'task status update push notification');
-
-                if (pushSuccess) pushNotificationsSent++; else pushErrors++;
-              }
-            }
-          }
+          if (success) emailsSent++; else emailErrors++;
+          console.log(`[Email Status] Task status update email result: ${success ? 'SUCCESS' : 'FAILED'}`);
         }
         break;
 
       default:
-        console.error(`[Notification Processing] Unknown notification type: ${type}`);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: `Unknown notification type: ${type}` 
-          }),
-          {
-            status: 400,
-            headers: {
-              'Content-Type': 'application/json',
-              ...corsHeaders,
-            },
-          }
-        );
+        console.warn(`[Notification Processing] Unknown notification kind: ${kind}`);
+        break;
     }
 
     const summary = {
       emailsSent,
-      pushNotificationsSent,
       emailErrors,
-      pushErrors,
-      totalAttempts: emailsSent + emailErrors + pushNotificationsSent + pushErrors
+      totalAttempts: emailsSent + emailErrors
     };
 
-    console.log(`[Notification Summary] Type: ${type}, Task: ${task.id}`, summary);
+    console.log(`[Notification Summary] Kind: ${kind}, Task: ${task.id}`, summary);
 
     return new Response(
       JSON.stringify({ 
@@ -518,10 +320,7 @@ const handler = async (req: Request): Promise<Response> => {
       }),
       {
         status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
+        headers: CORS,
       }
     );
   } catch (error: any) {
@@ -533,10 +332,7 @@ const handler = async (req: Request): Promise<Response> => {
       }),
       {
         status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
+        headers: CORS,
       }
     );
   }
