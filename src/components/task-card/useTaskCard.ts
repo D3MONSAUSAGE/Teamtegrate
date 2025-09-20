@@ -1,12 +1,12 @@
 
 import { useState } from "react";
 import { Task, TaskStatus } from "@/types";
-import { useTask } from "@/contexts/task";
+import { useTaskSafe } from "@/hooks/useTaskSafe";
 import { toast } from "@/components/ui/sonner";
 import { isTaskOverdue, isTaskInWarningPeriod } from '@/utils/taskUtils';
 
 export const useTaskCard = (task: Task) => {
-  const { updateTaskStatus, deleteTask } = useTask();
+  const taskContext = useTaskSafe();
   const [showDrawer, setShowDrawer] = useState(false);
 
   const getPriorityBackground = (priority: string) => {
@@ -31,9 +31,14 @@ export const useTaskCard = (task: Task) => {
   };
 
   const handleStatusChange = async (newStatus: TaskStatus): Promise<void> => {
+    if (!taskContext?.updateTaskStatus) {
+      toast.error('Task operations are not available. Please refresh the page.');
+      return;
+    }
+
     try {
       console.log(`🎯 useTaskCard: Changing status to ${newStatus} for task ${task.id}`);
-      await updateTaskStatus(task.id, newStatus);
+      await taskContext.updateTaskStatus(task.id, newStatus);
       console.log('✅ useTaskCard: Status change successful');
     } catch (error) {
       console.error('❌ useTaskCard: Error updating task status:', error);
@@ -43,9 +48,14 @@ export const useTaskCard = (task: Task) => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!taskContext?.deleteTask) {
+      toast.error('Task operations are not available. Please refresh the page.');
+      return;
+    }
+
     try {
       console.log('🎯 useTaskCard: Deleting task', taskId);
-      await deleteTask(taskId);
+      await taskContext.deleteTask(taskId);
       // Toast is handled in the deleteTask function
     } catch (error) {
       console.error('❌ useTaskCard: Error deleting task:', error);
