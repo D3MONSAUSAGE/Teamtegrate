@@ -1,6 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { resendAdapter } from './email/resend';
-import { fcmAdapter } from './push/fcm';
 import { toast } from '@/components/ui/sonner';
 
 interface NotificationRecipient {
@@ -135,9 +133,6 @@ export const notifications = {
     }
   },
 
-  // Direct adapter methods for advanced use cases
-  resend: resendAdapter,
-  fcm: fcmAdapter,
   
   // Simple success/error notifications for UI feedback
   success: (message: string) => toast.success(message),
