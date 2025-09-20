@@ -67,10 +67,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setViewerRoles([]);
       setDefaultJobRoles([]);
       setExpertiseTags([]);
-      setGeographicScope('any');
-      setWorkloadBalancing(true);
       setSelectedUserIds([]);
-      setAssignmentStrategy('first_available');
     }
   }, [initial, open]);
 
