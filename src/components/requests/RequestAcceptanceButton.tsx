@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Check, Clock, User } from 'lucide-react';
+import { Check, Clock, User, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -16,6 +15,7 @@ interface RequestAcceptanceButtonProps {
 export default function RequestAcceptanceButton({ request, onRequestUpdated }: RequestAcceptanceButtonProps) {
   const { user } = useAuth();
   const [isAccepting, setIsAccepting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const isAssignedToCurrentUser = request.assigned_to && 
     (request.assigned_to === user?.id || 
@@ -80,33 +80,52 @@ export default function RequestAcceptanceButton({ request, onRequestUpdated }: R
   }
 
   if (canAcceptRequest) {
-    return (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="default" className="gap-2">
-            <Clock className="h-4 w-4" />
-            Accept Request
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Accept Request</AlertDialogTitle>
-            <AlertDialogDescription>
-              By accepting this request, you will become the primary assignee and the request status will change to "In Progress". 
-              Other assigned users will be removed from this request.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleAcceptRequest}
+    if (showConfirm) {
+      return (
+        <div className="flex flex-col gap-2 p-3 border rounded-lg bg-background">
+          <p className="text-sm font-medium">Accept Request</p>
+          <p className="text-xs text-muted-foreground">
+            By accepting this request, you will become the primary assignee and the request status will change to "In Progress". 
+            Other assigned users will be removed from this request.
+          </p>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowConfirm(false)}
               disabled={isAccepting}
+              className="gap-1"
             >
-              {isAccepting ? 'Accepting...' : 'Accept Request'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <X className="h-3 w-3" />
+              Cancel
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => {
+                handleAcceptRequest();
+                setShowConfirm(false);
+              }}
+              disabled={isAccepting}
+              className="gap-1"
+            >
+              <Check className="h-3 w-3" />
+              {isAccepting ? 'Accepting...' : 'Accept'}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <Button 
+        variant="default" 
+        className="gap-2"
+        onClick={() => setShowConfirm(true)}
+      >
+        <Clock className="h-4 w-4" />
+        Accept Request
+      </Button>
     );
   }
 
