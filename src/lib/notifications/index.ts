@@ -176,9 +176,19 @@ export const notifications = {
       if (!ticketData) return;
 
       const recipients: NotificationRecipient[] = [];
-      if (ticketData.users_requested_by) recipients.push(ticketData.users_requested_by as NotificationRecipient);
-      if (ticketData.users_assigned_to && ticketData.users_assigned_to.id !== ticketData.users_requested_by?.id) {
-        recipients.push(ticketData.users_assigned_to as NotificationRecipient);
+      // Handle Supabase relationship arrays - these come as arrays even for single relationships
+      if (ticketData.users_requested_by && Array.isArray(ticketData.users_requested_by) && ticketData.users_requested_by.length > 0) {
+        recipients.push(ticketData.users_requested_by[0] as NotificationRecipient);
+      }
+      if (ticketData.users_assigned_to && Array.isArray(ticketData.users_assigned_to) && ticketData.users_assigned_to.length > 0) {
+        const assignee = ticketData.users_assigned_to[0] as NotificationRecipient;
+        // Only add if different from requester
+        const requester = ticketData.users_requested_by && Array.isArray(ticketData.users_requested_by) && ticketData.users_requested_by.length > 0 
+          ? ticketData.users_requested_by[0] as NotificationRecipient 
+          : null;
+        if (!requester || assignee.id !== requester.id) {
+          recipients.push(assignee);
+        }
       }
 
       for (const recipient of recipients) {
@@ -241,9 +251,9 @@ export const notifications = {
         .eq('id', ticket.id)
         .single();
 
-      if (!ticketData?.users_requested_by) return;
+      if (!ticketData?.users_requested_by || !Array.isArray(ticketData.users_requested_by) || ticketData.users_requested_by.length === 0) return;
 
-      const requester = ticketData.users_requested_by as NotificationRecipient;
+      const requester = ticketData.users_requested_by[0] as NotificationRecipient;
 
       // Send email to requester
       await sendEmail({
