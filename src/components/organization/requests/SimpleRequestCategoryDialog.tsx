@@ -50,6 +50,9 @@ const categorySchema = z.object({
   default_job_roles: z.array(z.string()).optional(),
   expertise_tags: z.array(z.string()).optional(),
   assigned_user_ids: z.array(z.string()).optional(),
+  // Dual creation mode fields
+  create_subcategory: z.boolean().optional(),
+  subcategory_name: z.string().optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -84,6 +87,8 @@ export default function SimpleRequestCategoryDialog({
       default_job_roles: category?.default_job_roles || [],
       expertise_tags: category?.expertise_tags || [],
       assigned_user_ids: category?.assigned_user_ids || [],
+      create_subcategory: false,
+      subcategory_name: '',
     },
   });
 
@@ -132,24 +137,24 @@ export default function SimpleRequestCategoryDialog({
 
     setLoading(true);
     try {
-      const categoryData = {
-        organization_id: user.organizationId,
-        name: data.name,
-        description: data.description || null,
-        subcategory: data.subcategory || null,
-        parent_category_id: data.parent_category_id || null,
-        category: data.parent_category_id ? 'subcategory' : 'custom',
-        requires_approval: data.requires_approval,
-        approval_roles: data.approval_roles,
-        is_active: data.is_active,
-        form_schema: [], // Empty form schema for simplified approach
-        created_by: user.id,
-        default_job_roles: data.default_job_roles || [],
-        expertise_tags: data.expertise_tags || [],
-      };
-
       if (category?.id) {
-        // Update existing
+        // Update existing category
+        const categoryData = {
+          organization_id: user.organizationId,
+          name: data.name,
+          description: data.description || null,
+          subcategory: data.subcategory || null,
+          parent_category_id: data.parent_category_id || null,
+          category: data.parent_category_id ? 'subcategory' : 'custom',
+          requires_approval: data.requires_approval,
+          approval_roles: data.approval_roles,
+          is_active: data.is_active,
+          form_schema: [],
+          created_by: user.id,
+          default_job_roles: data.default_job_roles || [],
+          expertise_tags: data.expertise_tags || [],
+        };
+
         const { error } = await supabase
           .from('request_types')
           .update(categoryData)
@@ -158,13 +163,59 @@ export default function SimpleRequestCategoryDialog({
         if (error) throw error;
         toast.success('Category updated successfully');
       } else {
-        // Create new
-        const { error } = await supabase
-          .from('request_types')
-          .insert(categoryData);
+        // Create new category(ies)
+        const mainCategoryData = {
+          organization_id: user.organizationId,
+          name: data.name,
+          description: data.description || null,
+          subcategory: data.subcategory || null,
+          parent_category_id: data.parent_category_id || null,
+          category: data.parent_category_id ? 'subcategory' : 'custom',
+          requires_approval: data.requires_approval,
+          approval_roles: data.approval_roles,
+          is_active: data.is_active,
+          form_schema: [],
+          created_by: user.id,
+          default_job_roles: data.default_job_roles || [],
+          expertise_tags: data.expertise_tags || [],
+        };
 
-        if (error) throw error;
-        toast.success('Category created successfully');
+        // First create the main category
+        const { data: createdCategory, error: mainError } = await supabase
+          .from('request_types')
+          .insert(mainCategoryData)
+          .select('id')
+          .single();
+
+        if (mainError) throw mainError;
+
+        // If dual creation mode is enabled, create the subcategory
+        if (data.create_subcategory && data.subcategory_name?.trim()) {
+          const subcategoryData = {
+            organization_id: user.organizationId,
+            name: data.subcategory_name.trim(),
+            description: null,
+            subcategory: null,
+            parent_category_id: createdCategory.id,
+            category: 'subcategory',
+            requires_approval: data.requires_approval,
+            approval_roles: data.approval_roles,
+            is_active: data.is_active,
+            form_schema: [],
+            created_by: user.id,
+            default_job_roles: data.default_job_roles || [],
+            expertise_tags: data.expertise_tags || [],
+          };
+
+          const { error: subError } = await supabase
+            .from('request_types')
+            .insert(subcategoryData);
+
+          if (subError) throw subError;
+          toast.success('Category and subcategory created successfully');
+        } else {
+          toast.success('Category created successfully');
+        }
       }
 
       onSuccess?.();
@@ -231,6 +282,41 @@ export default function SimpleRequestCategoryDialog({
                 </p>
               )}
             </div>
+
+            {/* Dual Creation Mode - Only for new categories without parent */}
+            {!category?.id && !form.watch('parent_category_id') && (
+              <div className="space-y-3 border border-muted rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="create_subcategory"
+                    checked={form.watch('create_subcategory')}
+                    onCheckedChange={(checked) => {
+                      form.setValue('create_subcategory', checked as boolean);
+                      if (!checked) {
+                        form.setValue('subcategory_name', '');
+                      }
+                    }}
+                  />
+                  <Label htmlFor="create_subcategory" className="text-sm font-medium">
+                    Also create subcategory
+                  </Label>
+                </div>
+                
+                {form.watch('create_subcategory') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="subcategory_name">Subcategory Name *</Label>
+                    <Input
+                      id="subcategory_name"
+                      placeholder="e.g., Vacation, Sick Leave, Personal Day"
+                      {...form.register('subcategory_name')}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This will create "{form.watch('name')}" as the main category and "{form.watch('subcategory_name')}" as its subcategory
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
