@@ -95,24 +95,24 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         .select('id, deadline, status, priority, completed_at, created_at, organization_id, user_id, team_id')
         .eq('organization_id', user?.organizationId);
 
-      // Filter by user first if specified
+      // Apply filters based on priority: user selection overrides team selection
       if (userId) {
+        // When user is selected, show all their tasks regardless of team assignment
         query = query.eq('user_id', userId);
-      }
-      
-      // Then apply date filtering - tasks that have deadlines, were created, or completed within range
-      if (userId) {
         // For user-specific reports, use more inclusive date filtering with proper OR syntax
         query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
-      } else {
+      } else if (teamId) {
+        // When only team is selected (no user), filter by team
+        query = query.eq('team_id', teamId);
         // For general reports, keep deadline-based filtering
         query = query
           .gte('deadline', range.startDate)
           .lte('deadline', range.endDate);
-      }
-
-      if (teamId) {
-        query = query.eq('team_id', teamId);
+      } else {
+        // No user or team selected, show all tasks
+        query = query
+          .gte('deadline', range.startDate)
+          .lte('deadline', range.endDate);
       }
 
       const { data, error } = await query;
@@ -181,23 +181,23 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         .select('id, created_at, deadline, status, completed_at, organization_id, user_id, team_id')
         .eq('organization_id', user?.organizationId);
 
-      // Filter by user first if specified
+      // Apply filters based on priority: user selection overrides team selection
       if (userId) {
+        // When user is selected, show all their tasks regardless of team assignment
         query = query.eq('user_id', userId);
-      }
-      
-      // Then apply date filtering with proper OR syntax
-      if (userId) {
         // For user-specific reports, use more inclusive date filtering
         query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
-      } else {
+      } else if (teamId) {
+        // When only team is selected (no user), filter by team
+        query = query.eq('team_id', teamId);
         query = query
           .gte('created_at', range.startDate)
           .lte('created_at', range.endDate);
-      }
-
-      if (teamId) {
-        query = query.eq('team_id', teamId);
+      } else {
+        // No user or team selected, show all tasks
+        query = query
+          .gte('created_at', range.startDate)
+          .lte('created_at', range.endDate);
       }
 
       const { data, error } = await query;
