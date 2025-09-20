@@ -23,7 +23,7 @@ import {
 import VideoPlayer from './VideoPlayer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 
 interface Module {
   id?: string;
@@ -151,7 +151,7 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
         progressData.video_completed_at = new Date().toISOString();
         progressData.completed_at = new Date().toISOString();
         setIsVideoCompleted(true);
-        enhancedNotifications.success('Video completed! Quiz is now available.');
+        toast.success('Video completed! Quiz is now available.');
       }
 
       const { error } = await supabase
@@ -197,7 +197,7 @@ const ModuleViewer: React.FC<ModuleViewerProps> = ({
 
   const handleQuizStart = () => {
     if (!isVideoCompleted && (module?.content_type === 'video' || module?.content_type === 'mixed')) {
-      enhancedNotifications.error('Please complete the video before taking the quiz.');
+      toast.error('Please complete the video before taking the quiz.');
       return;
     }
     onQuizStart?.();

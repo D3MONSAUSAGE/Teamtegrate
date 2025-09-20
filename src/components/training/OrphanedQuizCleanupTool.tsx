@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 import { format } from 'date-fns';
 
 interface OrphanedAttempt {
@@ -133,7 +133,7 @@ const OrphanedQuizCleanupTool: React.FC<OrphanedQuizCleanupToolProps> = ({
       
     } catch (error) {
       console.error('Error fetching orphaned attempts:', error);
-      enhancedNotifications.error('Failed to fetch orphaned quiz attempts');
+      toast.error('Failed to fetch orphaned quiz attempts');
     } finally {
       setLoading(false);
     }
@@ -176,13 +176,13 @@ const OrphanedQuizCleanupTool: React.FC<OrphanedQuizCleanupToolProps> = ({
         
       if (error) throw error;
       
-      enhancedNotifications.success(`Successfully deleted ${attemptIds.length} orphaned quiz attempts`);
+      toast.success(`Successfully deleted ${attemptIds.length} orphaned quiz attempts`);
       setSelectedAttempts(new Set());
       await fetchOrphanedAttempts();
       
     } catch (error) {
       console.error('Error deleting attempts:', error);
-      enhancedNotifications.error('Failed to delete orphaned attempts');
+      toast.error('Failed to delete orphaned attempts');
     } finally {
       setActionInProgress(false);
     }

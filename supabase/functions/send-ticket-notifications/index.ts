@@ -206,7 +206,7 @@ const handler = async (req: Request): Promise<Response> => {
           // Send confirmation email to requester
           if (resend) {
             const success = await sendEmailWithRetry(resend, {
-              from: `${brandName} Support <support@requests.teamtegrate.com>`,
+              from: `${brandName} <notifications@teamtegrate.com>`,
               to: user.email,
               subject: `✅ Ticket #${ticket.id} received - ${ticket.title}`,
               html: await loadEmailTemplate('ticket-created-user.html', {
@@ -233,7 +233,7 @@ const handler = async (req: Request): Promise<Response> => {
             // Send email to admins
             if (resend) {
               const success = await sendEmailWithRetry(resend, {
-                from: `${brandName} Support <support@requests.teamtegrate.com>`,
+                from: `${brandName} <notifications@teamtegrate.com>`,
                 to: admins.map(admin => admin.email),
                 subject: `📩 New Ticket #${ticket.id} needs review`,
                 html: await loadEmailTemplate('ticket-created-admin.html', {
@@ -278,7 +278,7 @@ const handler = async (req: Request): Promise<Response> => {
           // Send email to assignee
           if (resend) {
             const success = await sendEmailWithRetry(resend, {
-              from: `${brandName} Support <support@requests.teamtegrate.com>`,
+              from: `${brandName} <notifications@teamtegrate.com>`,
               to: assignee.email,
               subject: `📋 Ticket #${ticket.id} assigned to you - ${ticket.title}`,
               html: await loadEmailTemplate('ticket-assigned.html', {
@@ -342,7 +342,7 @@ const handler = async (req: Request): Promise<Response> => {
               // Send email
               if (resend) {
                 const success = await sendEmailWithRetry(resend, {
-                  from: `${brandName} Support <support@requests.teamtegrate.com>`,
+                  from: `${brandName} <notifications@teamtegrate.com>`,
                   to: recipient.email,
                   subject: `🔄 Ticket #${ticket.id} status updated - ${newStatus}`,
                   html: await loadEmailTemplate('ticket-updated.html', {
@@ -400,7 +400,7 @@ const handler = async (req: Request): Promise<Response> => {
             // Send email to requester
             if (resend) {
               const success = await sendEmailWithRetry(resend, {
-                from: `${brandName} Support <support@requests.teamtegrate.com>`,
+                from: `${brandName} <notifications@teamtegrate.com>`,
                 to: requester.email,
                 subject: `✅ Ticket #${ticket.id} resolved - ${ticket.title}`,
                 html: await loadEmailTemplate('ticket-closed.html', {

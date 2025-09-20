@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Request, RequestType, RequestAttachment, RequestApproval, RequestComment } from '@/types/requests';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 import type { Json } from '@/integrations/supabase/types';
 
 export function useRequests() {

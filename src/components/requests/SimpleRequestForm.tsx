@@ -14,9 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
-import { RequestType } from '@/types/requests';
+import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import { cn } from '@/lib/utils';
 
 interface SimpleRequestType {
@@ -55,9 +53,8 @@ const PRIORITY_CONFIG = {
 
 export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequestFormProps) {
   const { user } = useAuth();
-  const [requestTypes, setRequestTypes] = useState<SimpleRequestType[]>([]);
+  const { requestTypes, createRequestWithAutoAssignment, loading: hookLoading } = useEnhancedRequests();
   const [loading, setLoading] = useState(false);
-  const [loadingTypes, setLoadingTypes] = useState(true);
 
   const form = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema),
@@ -70,125 +67,41 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
     },
   });
 
-  useEffect(() => {
-    fetchRequestTypes();
-  }, [user?.organizationId]);
-
-  const fetchRequestTypes = async () => {
-    if (!user?.organizationId) return;
-
-    try {
-      setLoadingTypes(true);
-      const { data, error } = await supabase
-        .from('request_types')
-        .select(`
-          id, name, description, requires_approval, category, subcategory,
-          parent_id, is_subcategory, display_order
-        `)
-        .eq('organization_id', user.organizationId)
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .order('name');
-
-      if (error) throw error;
-      setRequestTypes(data || []);
-    } catch (error) {
-      console.error('Error fetching request types:', error);
-      toast.error('Failed to load request types');
-    } finally {
-      setLoadingTypes(false);
-    }
-  };
+  // Convert hook request types to simple format
+  const simpleRequestTypes: SimpleRequestType[] = requestTypes.map(rt => ({
+    id: rt.id,
+    name: rt.name,
+    description: rt.description,
+    requires_approval: rt.requires_approval,
+    category: rt.category,
+    subcategory: undefined,
+    parent_id: undefined,
+    is_subcategory: false,
+    display_order: 0
+  }));
 
   const onSubmit = async (data: RequestFormData) => {
-    if (!user?.organizationId) {
-      toast.error('No organization found');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Create the request first
-      const requestData = {
-        organization_id: user.organizationId,
-        requested_by: user.id,
+      await createRequestWithAutoAssignment({
         request_type_id: data.request_type_id,
         title: data.title,
-        description: data.description || '',
-        priority: data.priority,
-        status: 'submitted',
-        due_date: data.due_date ? data.due_date.toISOString().split('T')[0] : null,
+        description: data.description,
         form_data: {},
-      };
-
-      const { data: newRequest, error } = await supabase
-        .from('requests')
-        .insert(requestData)
-        .select(`
-          *,
-          request_type:request_types(
-            id, name, category, description, organization_id, created_by, created_at, updated_at,
-            requires_approval, approval_roles, is_active, 
-            default_job_roles, expertise_tags
-          )
-        `)
-        .single();
-
-      if (error) throw error;
-
-      // Import and use smart assignment service
-      const { SmartAssignmentService } = await import('@/services/smartAssignmentService');
+        priority: data.priority,
+        due_date: data.due_date ? data.due_date.toISOString().split('T')[0] : undefined,
+      });
       
-      if (newRequest.request_type) {
-        // Transform the request type to match our interface
-        const requestType: RequestType = {
-          id: newRequest.request_type.id || '',
-          organization_id: newRequest.request_type.organization_id || '',
-          name: newRequest.request_type.name || '',
-          description: newRequest.request_type.description,
-          category: newRequest.request_type.category || '',
-          form_schema: [], // Initialize empty form schema
-          requires_approval: newRequest.request_type.requires_approval ?? true,
-          approval_roles: newRequest.request_type.approval_roles || [],
-          is_active: newRequest.request_type.is_active ?? true,
-          created_by: newRequest.request_type.created_by || '',
-          created_at: newRequest.request_type.created_at || '',
-          updated_at: newRequest.request_type.updated_at || '',
-          default_job_roles: newRequest.request_type.default_job_roles || [],
-          selected_user_ids: [], // Not available in database yet
-          expertise_tags: newRequest.request_type.expertise_tags || [],
-        };
-        
-        const assignmentResult = await SmartAssignmentService.assignRequest(
-          newRequest.id,
-          requestType,
-          requestData,
-          user.organizationId
-        );
-
-        // Send notifications to assigned users
-        if (assignmentResult.assignedUsers.length > 0) {
-          await SmartAssignmentService.sendAssignmentNotifications(
-            newRequest.id,
-            assignmentResult.assignedUsers,
-            data.title,
-            user.organizationId
-          );
-        }
-      }
-
-      toast.success('Request submitted and assigned successfully');
       form.reset();
       onSuccess?.();
     } catch (error) {
       console.error('Error creating request:', error);
-      toast.error('Failed to create request');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loadingTypes) {
+  if (hookLoading) {
     return (
       <Card>
         <CardContent className="text-center py-8">
@@ -199,7 +112,7 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
     );
   }
 
-  if (requestTypes.length === 0) {
+  if (simpleRequestTypes.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-8">
@@ -212,7 +125,7 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
     );
   }
 
-  const selectedRequestType = requestTypes.find(rt => rt.id === form.watch('request_type_id'));
+  const selectedRequestType = simpleRequestTypes.find(rt => rt.id === form.watch('request_type_id'));
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -227,10 +140,10 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
             <SelectValue placeholder="Select a request type" />
           </SelectTrigger>
           <SelectContent>
-            {requestTypes
+            {simpleRequestTypes
               .filter(type => !type.is_subcategory) // Show only parent categories
               .map((parentType) => {
-                const subcategories = requestTypes.filter(type => type.parent_id === parentType.id);
+                const subcategories = simpleRequestTypes.filter(type => type.parent_id === parentType.id);
                 
                 return (
                   <div key={parentType.id}>

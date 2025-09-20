@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Calendar, Clock, AlertCircle, Trash2, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useTrainingCourses } from '@/hooks/useTrainingData';
 import { useRetrainingNotifications } from '@/hooks/useRetrainingNotifications';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 
 interface RetrainingSettingsProps {
   open: boolean;
@@ -54,13 +54,13 @@ const RetrainingSettings: React.FC<RetrainingSettingsProps> = ({ open, onOpenCha
 
   const handleSaveSettings = async () => {
     if (!selectedCourseId) {
-      enhancedNotifications.error('Please select a course');
+      toast.error('Please select a course');
       return;
     }
 
     try {
       await saveRetrainingSettings(selectedCourseId, intervalMonths, warningDays, isActive);
-      enhancedNotifications.success('Retraining settings saved successfully!');
+      toast.success('Retraining settings saved successfully!');
       
       // Reset form
       setSelectedCourseId('');
@@ -68,29 +68,29 @@ const RetrainingSettings: React.FC<RetrainingSettingsProps> = ({ open, onOpenCha
       setWarningDays(30);
       setIsActive(true);
     } catch (err) {
-      enhancedNotifications.error('Failed to save retraining settings');
+      toast.error('Failed to save retraining settings');
     }
   };
 
   const handleDeleteSettings = async (courseId: string) => {
     try {
       await deleteRetrainingSettings(courseId);
-      enhancedNotifications.success('Retraining settings deleted');
+      toast.success('Retraining settings deleted');
     } catch (err) {
-      enhancedNotifications.error('Failed to delete retraining settings');
+      toast.error('Failed to delete retraining settings');
     }
   };
 
   const handleTriggerCheck = async () => {
     try {
       await triggerRetrainingCheck();
-      enhancedNotifications.success('Retraining check triggered successfully');
+      toast.success('Retraining check triggered successfully');
       
       // Reload upcoming retraining
       const upcoming = await getUpcomingRetraining();
       setUpcomingRetraining(upcoming);
     } catch (err) {
-      enhancedNotifications.error('Failed to trigger retraining check');
+      toast.error('Failed to trigger retraining check');
     }
   };
 

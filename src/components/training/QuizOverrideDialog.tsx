@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { useCreateQuizOverride, useUpdateQuizOverride } from '@/hooks/useQuizOverrides';
 import { useToast } from '@/hooks/use-toast';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 
 interface QuizOverrideDialogProps {
   open: boolean;
@@ -79,26 +79,26 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
     
     if (!overrideScore || isNaN(scoreValue) || scoreValue < 0 || scoreValue > maxPoints) {
       console.error('❌ Invalid override score:', { overrideScore, scoreValue, maxPoints });
-      enhancedNotifications.error('Invalid score value. Please enter a number between 0 and ' + maxPoints);
+      toast.error('Invalid score value. Please enter a number between 0 and ' + maxPoints);
       return;
     }
 
     if (!reason.trim() || reason.trim().length < 5) {
       console.error('❌ Reason validation failed:', { reason: reason.trim(), length: reason.trim().length });
-      enhancedNotifications.error('Please provide a detailed justification (minimum 5 characters)');
+      toast.error('Please provide a detailed justification (minimum 5 characters)');
       return;
     }
 
     if (!question?.id || !quizAttemptId) {
       console.error('❌ Missing required data:', { questionId: question?.id, quizAttemptId });
-      enhancedNotifications.error('Missing required question or attempt information');
+      toast.error('Missing required question or attempt information');
       return;
     }
 
     // Validate existing override for updates
     if (isEditing && !existingOverride?.id) {
       console.error('❌ Edit mode but no valid existing override:', existingOverride);
-      enhancedNotifications.error('Cannot update override: Invalid override data');
+      toast.error('Cannot update override: Invalid override data');
       return;
     }
 
@@ -129,14 +129,14 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
         });
         
         console.log('✅ Override updated successfully');
-        enhancedNotifications.success('Quiz override updated successfully!');
+        toast.success('Quiz override updated successfully!');
       } else {
         console.log('✨ Creating new override:', overrideData);
         
         await createMutation.mutateAsync(overrideData);
         
         console.log('✅ Override created successfully');
-        enhancedNotifications.success('Quiz override applied successfully!');
+        toast.success('Quiz override applied successfully!');
       }
       
       // Reset form and close dialog
@@ -171,10 +171,7 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
         errorMessage += error?.message || 'Please try again.';
       }
       
-      enhancedNotifications.error(errorMessage, {
-        description: error?.hint || 'If this problem persists, please contact support.',
-        duration: 8000
-      });
+      toast.error(errorMessage);
     }
   };
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 
 export interface CertificateAssignment {
   id: string;
@@ -161,23 +161,15 @@ export const useVerifyCertificate = () => {
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       
       const statusText = variables.status === 'verified' ? 'approved' : 'rejected';
-      enhancedNotifications.success(
-        `Certificate ${statusText} successfully`,
-        {
-          description: `The user will be notified of the ${statusText} status.`
-        }
-      );
+      toast.success(`Certificate ${statusText} successfully`);
     },
     onError: (error) => {
       console.error('Certificate verification error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update certificate status';
-      enhancedNotifications.error('Certificate Verification Failed', {
-        description: errorMessage
-      });
+      toast.error('Certificate Verification Failed');
     }
   });
 };
-
 export const useBulkVerifyCertificates = () => {
   const queryClient = useQueryClient();
 
@@ -209,21 +201,13 @@ export const useBulkVerifyCertificates = () => {
       queryClient.invalidateQueries({ queryKey: ['certificate-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
       
-      enhancedNotifications.success(
-        `${data.length} certificates ${variables.status === 'verified' ? 'approved' : 'rejected'}`,
-        {
-          description: `Bulk action completed successfully`
-        }
-      );
+      toast.success(`${data.length} certificates ${variables.status === 'verified' ? 'approved' : 'rejected'}`);
     },
     onError: (error) => {
-      enhancedNotifications.error('Failed to update certificates', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
-      });
+      toast.error('Failed to update certificates');
     }
   });
 };
-
 export const useCertificateStats = () => {
   return useQuery({
     queryKey: ['certificate-stats'],

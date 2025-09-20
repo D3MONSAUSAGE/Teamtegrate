@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, GripVertical, Eye } from "lucide-react";
 import { useUpdateQuiz, useDeleteQuiz, useTrainingModules } from "@/hooks/useTrainingData";
-import { enhancedNotifications } from "@/utils/enhancedNotifications";
+import { toast } from '@/components/ui/sonner';
 
 interface QuizQuestion {
   id?: string;
@@ -117,11 +117,11 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ open, onOpenChange, quiz }) => 
         questions: questions
       });
       
-      enhancedNotifications.success('Quiz updated successfully!');
+      toast.success('Quiz updated successfully!');
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating quiz:', error);
-      enhancedNotifications.error('Failed to update quiz');
+      toast.error('Failed to update quiz');
     }
   };
 
@@ -131,7 +131,7 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ open, onOpenChange, quiz }) => 
     try {
       console.log('🗑️ QuizEditor: Attempting to delete quiz:', quiz.id);
       await deleteQuizMutation.mutateAsync(quiz.id);
-      enhancedNotifications.success('Quiz deleted successfully!');
+      toast.success('Quiz deleted successfully!');
       setShowDeleteConfirm(false);
       onOpenChange(false);
     } catch (error: any) {
@@ -139,11 +139,11 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ open, onOpenChange, quiz }) => 
       
       // Check for specific RLS errors
       if (error?.message?.includes('row-level security policy')) {
-        enhancedNotifications.error('Permission denied: You do not have permission to delete this quiz');
+        toast.error('Permission denied: You do not have permission to delete this quiz');
       } else if (error?.code === 'PGRST116') {
-        enhancedNotifications.error('Quiz not found or permission denied');
+        toast.error('Quiz not found or permission denied');
       } else {
-        enhancedNotifications.error(`Failed to delete quiz: ${error?.message || 'Unknown error'}`);
+        toast.error(`Failed to delete quiz: ${error?.message || 'Unknown error'}`);
       }
     }
   };

@@ -9,7 +9,7 @@ import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog
 import TasksPageLoading from '@/components/task/TasksPageLoading';
 import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+
 import { useDebounce } from '@/utils/performanceUtils';
 import { toast } from '@/components/ui/sonner';
 import { useTask } from '@/contexts/task';

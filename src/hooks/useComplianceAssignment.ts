@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthProvider';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
 import { toast } from '@/components/ui/sonner';
 
 export interface ComplianceAssignment {
@@ -118,12 +117,12 @@ export const useAssignCompliance = () => {
       queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
       
       toast.success('Compliance training assigned successfully');
-      enhancedNotifications.success('Compliance training assigned successfully');
+      toast.success('Compliance training assigned successfully');
     },
     onError: (error: Error) => {
       console.error('Error assigning compliance training:', error);
       toast.error(error.message || 'Failed to assign compliance training');
-      enhancedNotifications.error(error.message || 'Failed to assign compliance training');
+      toast.error(error.message || 'Failed to assign compliance training');
     },
   });
 };
@@ -180,12 +179,12 @@ export const useBulkAssignCompliance = () => {
       
       const message = `Successfully assigned to ${result.assigned} users${result.skipped > 0 ? ` (${result.skipped} already assigned)` : ''}`;
       toast.success(message);
-      enhancedNotifications.success(message);
+      toast.success(message);
     },
     onError: (error: Error) => {
       console.error('Error bulk assigning compliance training:', error);
       toast.error(error.message || 'Failed to bulk assign compliance training');
-      enhancedNotifications.error(error.message || 'Failed to bulk assign compliance training');
+      toast.error(error.message || 'Failed to bulk assign compliance training');
     },
   });
 };
@@ -269,12 +268,12 @@ export const useDeleteComplianceAssignment = () => {
       queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
       
       toast.success('Assignment deleted successfully');
-      enhancedNotifications.success('Assignment deleted successfully');
+      toast.success('Assignment deleted successfully');
     },
     onError: (error: Error) => {
       console.error('Error deleting assignment:', error);
       toast.error('Failed to delete assignment');
-      enhancedNotifications.error('Failed to delete assignment');
+      toast.error('Failed to delete assignment');
     },
   });
 };
