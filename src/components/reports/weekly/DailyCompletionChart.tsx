@@ -11,11 +11,15 @@ interface DailyCompletionChartProps {
     total: number;
   }>;
   isLoading?: boolean;
+  onDayClick?: (date: string) => void;
+  selectedDate?: string | null;
 }
 
 export const DailyCompletionChart: React.FC<DailyCompletionChartProps> = ({ 
   data, 
-  isLoading 
+  isLoading,
+  onDayClick,
+  selectedDate
 }) => {
   if (isLoading) {
     return (
@@ -60,29 +64,58 @@ export const DailyCompletionChart: React.FC<DailyCompletionChartProps> = ({
       <CardContent>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dailyData}>
-              <XAxis dataKey="day" />
+            <BarChart 
+              data={dailyData}
+              onClick={(data) => {
+                if (data && data.activeLabel && onDayClick) {
+                  const clickedData = dailyData.find(item => item.day === data.activeLabel);
+                  if (clickedData) {
+                    onDayClick(clickedData.date);
+                  }
+                }
+              }}
+            >
+              <XAxis 
+                dataKey="day" 
+                tick={{ fontSize: 12 }}
+              />
               <YAxis />
               <Tooltip 
                 formatter={(value, name) => [
                   value,
                   name === 'completed' ? 'Completed' : 'Pending'
                 ]}
-                labelFormatter={(label) => `${label}`}
+                labelFormatter={(label) => {
+                  const dayData = dailyData.find(item => item.day === label);
+                  return dayData ? `${label} (${dayData.date})` : label;
+                }}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
               />
               <Bar 
                 dataKey="completed" 
                 fill="hsl(var(--chart-1))" 
                 name="completed"
+                opacity={1}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
               />
               <Bar 
                 dataKey="pending" 
                 fill="hsl(var(--chart-3))" 
                 name="pending"
+                opacity={1}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
               />
             </BarChart>
           </ResponsiveContainer>
         </div>
+        {onDayClick && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Click on any bar to view detailed task information for that day
+            {selectedDate && (
+              <span className="text-primary"> • Selected: {format(new Date(selectedDate), 'MMM dd')}</span>
+            )}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

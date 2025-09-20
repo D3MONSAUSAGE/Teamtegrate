@@ -17,7 +17,9 @@ import {
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { useComprehensiveReports, ReportGranularity } from '@/hooks/useComprehensiveReports';
+import { useTaskReports } from '@/hooks/useTaskReports';
 import { DailyCompletionChart } from '@/components/reports/weekly/DailyCompletionChart';
+import { DailyTaskDetailView, DailyDetailData } from '@/components/reports/weekly/DailyTaskDetailView';
 // Temporarily commented out to debug import issue
 // import WeeklyTimeTrackingChart from '@/components/dashboard/WeeklyTimeTrackingChart';
 import { downloadCSV } from '@/utils/exportUtils';
@@ -38,6 +40,9 @@ export const ComprehensiveReportsPanel: React.FC<ComprehensiveReportsPanelProps>
 }) => {
   const [granularity, setGranularity] = useState<ReportGranularity>('daily');
   const [exportType, setExportType] = useState<'daily' | 'weekly' | 'comprehensive'>('comprehensive');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [dailyDetailData, setDailyDetailData] = useState<DailyDetailData | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const {
     comprehensiveData,
@@ -52,6 +57,29 @@ export const ComprehensiveReportsPanel: React.FC<ComprehensiveReportsPanelProps>
     dateRange,
     granularity,
   });
+
+  // Get the task reports hook for daily details
+  const { getDailyTaskDetails } = useTaskReports({
+    timeRange,
+    dateRange,
+    userId,
+  });
+
+  const handleDayClick = async (date: string) => {
+    setSelectedDate(date);
+    setDetailLoading(true);
+    setDailyDetailData(null);
+    
+    try {
+      const details = await getDailyTaskDetails(date);
+      setDailyDetailData(details);
+    } catch (error) {
+      console.error('Failed to load daily details:', error);
+      toast.error('Failed to load daily task details');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   // Prepare data for charts
   const chartData = React.useMemo(() => {
@@ -313,7 +341,19 @@ export const ComprehensiveReportsPanel: React.FC<ComprehensiveReportsPanelProps>
         </TabsList>
 
         <TabsContent value="completion" className="space-y-6">
-          <DailyCompletionChart data={chartData} isLoading={isLoading} />
+          <DailyCompletionChart 
+            data={chartData} 
+            isLoading={isLoading}
+            onDayClick={handleDayClick}
+            selectedDate={selectedDate}
+          />
+          {selectedDate && (
+            <DailyTaskDetailView 
+              data={dailyDetailData}
+              isLoading={detailLoading}
+              selectedDate={selectedDate}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="time" className="space-y-6">

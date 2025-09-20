@@ -80,6 +80,60 @@ const computeDateRange = (timeRange: string, dateRange?: DateRange) => {
   };
 };
 
+// Import the DailyDetailData type
+export interface DailyDetailData {
+  date: string;
+  completion_score: number;
+  completed_tasks: Array<{
+    task_id: string;
+    title: string;
+    description?: string;
+    priority: 'High' | 'Medium' | 'Low';
+    status: 'To Do' | 'In Progress' | 'Completed' | 'Archived';
+    deadline: string;
+    created_at: string;
+    completed_at?: string;
+    project_title?: string;
+  }>;
+  created_tasks: Array<{
+    task_id: string;
+    title: string;
+    description?: string;
+    priority: 'High' | 'Medium' | 'Low';
+    status: 'To Do' | 'In Progress' | 'Completed' | 'Archived';
+    deadline: string;
+    created_at: string;
+    completed_at?: string;
+    project_title?: string;
+  }>;
+  overdue_tasks: Array<{
+    task_id: string;
+    title: string;
+    description?: string;
+    priority: 'High' | 'Medium' | 'Low';
+    status: 'To Do' | 'In Progress' | 'Completed' | 'Archived';
+    deadline: string;
+    created_at: string;
+    completed_at?: string;
+    project_title?: string;
+  }>;
+  pending_tasks: Array<{
+    task_id: string;
+    title: string;
+    description?: string;
+    priority: 'High' | 'Medium' | 'Low';
+    status: 'To Do' | 'In Progress' | 'Completed' | 'Archived';
+    deadline: string;
+    created_at: string;
+    completed_at?: string;
+    project_title?: string;
+  }>;
+  total_tasks: number;
+  high_priority_count: number;
+  medium_priority_count: number;
+  low_priority_count: number;
+}
+
 export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskReportsParams) => {
   const { user } = useAuth();
   const range = computeDateRange(timeRange, dateRange);
@@ -328,6 +382,144 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
     enabled: !!user?.organizationId,
   });
 
+  // Daily detail query for specific date
+  const getDailyTaskDetails = async (selectedDate: string): Promise<DailyDetailData | null> => {
+    if (!user?.organizationId) return null;
+
+    console.log(`Fetching daily details for date: ${selectedDate}, userId: ${userId}`);
+    
+    let query = supabase
+      .from('tasks')
+      .select(`
+        id,
+        title,
+        description,
+        priority,
+        status,
+        deadline,
+        created_at,
+        completed_at,
+        user_id,
+        team_id,
+        organization_id,
+        projects!left(title)
+      `)
+      .eq('organization_id', user.organizationId);
+
+    // Apply user/team filters
+    if (userId) {
+      query = query.eq('user_id', userId);
+    } else if (teamId) {
+      query = query.eq('team_id', teamId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    if (!data) return null;
+
+    const selectedDateObj = new Date(selectedDate);
+    const selectedDateStr = format(selectedDateObj, 'yyyy-MM-dd');
+    
+    // Categorize tasks
+    const completed_tasks = data
+      .filter(task => 
+        task.completed_at && 
+        format(new Date(task.completed_at), 'yyyy-MM-dd') === selectedDateStr
+      )
+      .map(task => ({
+        task_id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority as 'High' | 'Medium' | 'Low',
+        status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+        deadline: task.deadline,
+        created_at: task.created_at,
+        completed_at: task.completed_at,
+        project_title: task.projects?.[0]?.title
+      }));
+
+    const created_tasks = data
+      .filter(task => 
+        format(new Date(task.created_at), 'yyyy-MM-dd') === selectedDateStr
+      )
+      .map(task => ({
+        task_id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority as 'High' | 'Medium' | 'Low',
+        status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+        deadline: task.deadline,
+        created_at: task.created_at,
+        completed_at: task.completed_at,
+        project_title: task.projects?.[0]?.title
+      }));
+
+    const overdue_tasks = data
+      .filter(task => 
+        format(new Date(task.deadline), 'yyyy-MM-dd') < selectedDateStr && 
+        task.status !== 'Completed'
+      )
+      .map(task => ({
+        task_id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority as 'High' | 'Medium' | 'Low',
+        status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+        deadline: task.deadline,
+        created_at: task.created_at,
+        completed_at: task.completed_at,
+        project_title: task.projects?.[0]?.title
+      }));
+
+    const pending_tasks = data
+      .filter(task => 
+        format(new Date(task.deadline), 'yyyy-MM-dd') === selectedDateStr && 
+        task.status !== 'Completed'
+      )
+      .map(task => ({
+        task_id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority as 'High' | 'Medium' | 'Low',
+        status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+        deadline: task.deadline,
+        created_at: task.created_at,
+        completed_at: task.completed_at,
+        project_title: task.projects?.[0]?.title
+      }));
+
+    const all_day_tasks = [...completed_tasks, ...created_tasks, ...overdue_tasks, ...pending_tasks];
+    
+    // Calculate priority counts
+    const high_priority_count = all_day_tasks.filter(t => t.priority === 'High').length;
+    const medium_priority_count = all_day_tasks.filter(t => t.priority === 'Medium').length;
+    const low_priority_count = all_day_tasks.filter(t => t.priority === 'Low').length;
+    
+    // Calculate completion score (weighted by priority)
+    const totalWeightedTasks = (high_priority_count * 3) + (medium_priority_count * 2) + (low_priority_count * 1);
+    const completedWeightedTasks = completed_tasks.reduce((sum, task) => {
+      return sum + (task.priority === 'High' ? 3 : task.priority === 'Medium' ? 2 : 1);
+    }, 0);
+    
+    const completion_score = totalWeightedTasks > 0 
+      ? Math.round((completedWeightedTasks / totalWeightedTasks) * 100)
+      : 0;
+
+    return {
+      date: selectedDateStr,
+      completion_score,
+      completed_tasks,
+      created_tasks,
+      overdue_tasks,
+      pending_tasks,
+      total_tasks: all_day_tasks.length,
+      high_priority_count,
+      medium_priority_count,
+      low_priority_count
+    };
+  };
+
   return {
     dailyData: dailyQuery.data || [],
     weeklyData: weeklyQuery.data || [],
@@ -335,6 +527,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
     projectData: projectQuery.data || [],
     isLoading: dailyQuery.isLoading || weeklyQuery.isLoading || teamQuery.isLoading || projectQuery.isLoading,
     error: dailyQuery.error || weeklyQuery.error || teamQuery.error || projectQuery.error,
-    range
+    range,
+    getDailyTaskDetails
   };
 };
