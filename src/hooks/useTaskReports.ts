@@ -88,22 +88,37 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
   const dailyQuery = useQuery({
     queryKey: ['daily-reports', range, teamId, userId],
     queryFn: async (): Promise<DailyCompletionData[]> => {
+      console.log(`Fetching daily reports for userId: ${userId}, teamId: ${teamId}, range: ${range.startDate} to ${range.endDate}`);
+      
       let query = supabase
         .from('tasks')
-        .select('id, deadline, status, priority, completed_at, organization_id, user_id, team_id')
-        .eq('organization_id', user?.organizationId)
-        .gte('deadline', range.startDate)
-        .lte('deadline', range.endDate);
+        .select('id, deadline, status, priority, completed_at, created_at, organization_id, user_id, team_id')
+        .eq('organization_id', user?.organizationId);
+
+      // More inclusive filtering: tasks that have deadlines, were created, or completed within range
+      if (userId) {
+        // For user-specific reports, use more inclusive date filtering
+        query = query
+          .eq('user_id', userId)
+          .or(`deadline.gte.${range.startDate},deadline.lte.${range.endDate},created_at.gte.${range.startDate},created_at.lte.${range.endDate}`);
+      } else {
+        // For general reports, keep deadline-based filtering
+        query = query
+          .gte('deadline', range.startDate)
+          .lte('deadline', range.endDate);
+      }
 
       if (teamId) {
         query = query.eq('team_id', teamId);
       }
-      if (userId) {
-        query = query.eq('user_id', userId);
-      }
 
       const { data, error } = await query;
       if (error) throw error;
+      
+      console.log(`Daily query returned ${data?.length || 0} tasks`);
+      if (data?.length) {
+        console.log('Sample task:', data[0]);
+      }
 
       const dailyMap = new Map<string, DailyCompletionData>();
       
@@ -156,22 +171,32 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
   const weeklyQuery = useQuery({
     queryKey: ['weekly-reports', range, teamId, userId],
     queryFn: async (): Promise<WeeklyOverviewData[]> => {
+      console.log(`Fetching weekly reports for userId: ${userId}, teamId: ${teamId}`);
+      
       let query = supabase
         .from('tasks')
         .select('id, created_at, deadline, status, completed_at, organization_id, user_id, team_id')
-        .eq('organization_id', user?.organizationId)
-        .gte('created_at', range.startDate)
-        .lte('created_at', range.endDate);
+        .eq('organization_id', user?.organizationId);
+
+      // More inclusive filtering for user-specific reports
+      if (userId) {
+        query = query
+          .eq('user_id', userId)
+          .or(`deadline.gte.${range.startDate},deadline.lte.${range.endDate},created_at.gte.${range.startDate},created_at.lte.${range.endDate}`);
+      } else {
+        query = query
+          .gte('created_at', range.startDate)
+          .lte('created_at', range.endDate);
+      }
 
       if (teamId) {
         query = query.eq('team_id', teamId);
       }
-      if (userId) {
-        query = query.eq('user_id', userId);
-      }
 
       const { data, error } = await query;
       if (error) throw error;
+      
+      console.log(`Weekly query returned ${data?.length || 0} tasks`);
 
       const weeklyData: WeeklyOverviewData = {
         week_start: range.startDate,
