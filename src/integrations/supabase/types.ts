@@ -7751,6 +7751,10 @@ export type Database = {
         Args: { attempt_id: string }
         Returns: Json
       }
+      can_access_request_by_team: {
+        Args: { request_user_id: string }
+        Returns: boolean
+      }
       can_change_user_role: {
         Args: { new_role: string; requester_id: string; target_user_id: string }
         Returns: Json
