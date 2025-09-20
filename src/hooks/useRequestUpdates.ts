@@ -42,7 +42,7 @@ export const useRequestUpdates = (requestId: string | undefined) => {
   }, [requestId]);
 
   const addUpdate = useCallback(async (
-    updateType: 'progress' | 'status_change' | 'assignment',
+    updateType: 'progress' | 'status_change' | 'assignment' | 'comment',
     title: string,
     content?: string,
     oldStatus?: string,

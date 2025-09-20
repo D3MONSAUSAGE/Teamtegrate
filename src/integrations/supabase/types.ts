@@ -4763,6 +4763,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_request_comments_request_id"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_request_comments_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_request_comments_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "request_comments_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
@@ -5076,6 +5097,27 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_request_updates_request_id"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_request_updates_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_request_updates_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "request_updates_request_id_fkey"
             columns: ["request_id"]

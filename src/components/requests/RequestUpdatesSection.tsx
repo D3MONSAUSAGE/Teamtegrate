@@ -10,7 +10,6 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRequestUpdates } from '@/hooks/useRequestUpdates';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRequestComments } from '@/hooks/useRequestComments';
 import { Request } from '@/types/requests';
 
 interface RequestUpdatesSectionProps {
@@ -19,7 +18,6 @@ interface RequestUpdatesSectionProps {
 
 export default function RequestUpdatesSection({ request }: RequestUpdatesSectionProps) {
   const { updates, loading, addUpdate } = useRequestUpdates(request.id);
-  const { comments, loading: commentsLoading, addComment } = useRequestComments(request.id);
   const { user } = useAuth();
   const [showAddUpdate, setShowAddUpdate] = useState(false);
   const [newUpdate, setNewUpdate] = useState('');
@@ -32,7 +30,7 @@ export default function RequestUpdatesSection({ request }: RequestUpdatesSection
     setIsSubmitting(true);
     try {
       if (updateType === 'comment') {
-        await addComment(newUpdate);
+        await addUpdate('comment', 'Comment', newUpdate);
       } else {
         await addUpdate('progress', 'Progress Update', newUpdate);
       }
@@ -79,13 +77,10 @@ export default function RequestUpdatesSection({ request }: RequestUpdatesSection
     ['admin', 'superadmin', 'manager'].includes(user.role || '')
   );
 
-  // Combine and sort all activities
-  const allActivities = [
-    ...updates.map(update => ({ ...update, type: 'update' as const })),
-    ...comments.map(comment => ({ ...comment, type: 'comment' as const, update_type: 'comment' }))
-  ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  // Sort all activities by creation time
+  const allActivities = updates.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-  if (loading || commentsLoading) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="text-center py-8">
@@ -187,27 +182,24 @@ export default function RequestUpdatesSection({ request }: RequestUpdatesSection
                       <span className="font-medium text-sm">
                         {activity.user?.name || 'System'}
                       </span>
-                      <Badge variant="outline" className={getUpdateTypeColor(activity.update_type || 'comment')}>
-                        <span className="mr-1">{getUpdateIcon(activity.update_type || 'comment')}</span>
-                        {activity.type === 'comment' ? 'comment' : (activity.update_type || '').replace('_', ' ')}
+                      <Badge variant="outline" className={getUpdateTypeColor(activity.update_type || 'progress')}>
+                        <span className="mr-1">{getUpdateIcon(activity.update_type || 'progress')}</span>
+                        {(activity.update_type || 'progress').replace('_', ' ')}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(activity.created_at), 'MMM d, yyyy at h:mm a')}
                       </span>
-                      {activity.type === 'comment' && 'is_internal' in activity && activity.is_internal && (
-                        <Badge variant="secondary" className="text-xs">Internal</Badge>
-                      )}
                     </div>
                   </div>
                   
                   <div className="space-y-1">
-                    {activity.type === 'update' && 'title' in activity && (
+                    {activity.title && (
                       <h4 className="font-medium text-sm">{activity.title}</h4>
                     )}
                     <p className="text-sm text-muted-foreground">
-                      {'content' in activity ? activity.content : ''}
+                      {activity.content || ''}
                     </p>
-                    {activity.type === 'update' && 'old_status' in activity && activity.old_status && 'new_status' in activity && activity.new_status && (
+                    {activity.old_status && activity.new_status && (
                       <p className="text-xs text-muted-foreground">
                         Status changed from <span className="font-medium">{activity.old_status}</span> to{' '}
                         <span className="font-medium">{activity.new_status}</span>
