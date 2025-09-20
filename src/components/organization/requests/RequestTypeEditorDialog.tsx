@@ -38,10 +38,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   const [viewerRoles, setViewerRoles] = useState<string[]>([]);
   const [defaultJobRoles, setDefaultJobRoles] = useState<string[]>([]);
   const [expertiseTags, setExpertiseTags] = useState<string[]>([]);
-  const [geographicScope, setGeographicScope] = useState('any');
-  const [workloadBalancing, setWorkloadBalancing] = useState(true);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
-  const [assignmentStrategy, setAssignmentStrategy] = useState('first_available');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -57,10 +54,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setViewerRoles((initial as any).viewer_role_restrictions || []);
       setDefaultJobRoles((initial as any).default_job_roles || []);
       setExpertiseTags((initial as any).expertise_tags || []);
-      setGeographicScope((initial as any).geographic_scope || 'any');
-      setWorkloadBalancing((initial as any).workload_balancing_enabled ?? true);
       setSelectedUserIds((initial as any).selected_user_ids || []);
-      setAssignmentStrategy((initial as any).assignment_strategy || 'first_available');
     } else {
       setName('');
       setCategory('custom');
@@ -114,10 +108,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       viewer_role_restrictions: viewerRoles.length > 0 ? viewerRoles : null,
       default_job_roles: defaultJobRoles.length > 0 ? defaultJobRoles : null,
       expertise_tags: expertiseTags.length > 0 ? expertiseTags : null,
-      geographic_scope: geographicScope,
-      workload_balancing_enabled: workloadBalancing,
       selected_user_ids: selectedUserIds.length > 0 ? selectedUserIds : null,
-      assignment_strategy: assignmentStrategy,
       permission_metadata: {}
     } as Partial<RequestType> & { created_by: string };
 
@@ -223,10 +214,6 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
                     onSelectionChange={setDefaultJobRoles}
                     expertiseTags={expertiseTags}
                     onExpertiseChange={setExpertiseTags}
-                    geographicScope={geographicScope}
-                    onGeographicScopeChange={setGeographicScope}
-                    workloadBalancing={workloadBalancing}
-                    onWorkloadBalancingChange={setWorkloadBalancing}
                   />
                 </div>
                 
@@ -237,8 +224,6 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
                   <UserAssignmentSelector
                     selectedUserIds={selectedUserIds}
                     onSelectionChange={setSelectedUserIds}
-                    assignmentStrategy={assignmentStrategy}
-                    onStrategyChange={setAssignmentStrategy}
                   />
                 </div>
               </CardContent>

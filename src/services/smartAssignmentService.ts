@@ -5,10 +5,7 @@ import { User, UserRole } from '@/types';
 export interface AssignmentConfig {
   selectedUserIds?: string[];
   selectedJobRoles?: string[];
-  assignmentStrategy: 'first_available' | 'round_robin' | 'least_busy' | 'manual' | 'auto';
   expertiseRequired?: string[];
-  geographicPreference?: boolean;
-  workloadBalancingEnabled?: boolean;
 }
 
 export interface AssignmentResult {
@@ -36,10 +33,7 @@ export class SmartAssignmentService {
         const config: AssignmentConfig = {
           selectedJobRoles: requestType.default_job_roles || [],
           selectedUserIds: requestType.selected_user_ids || [],
-          assignmentStrategy: requestType.assignment_strategy || 'first_available',
-          expertiseRequired: requestType.expertise_tags || [],
-          geographicPreference: requestType.geographic_scope === 'local',
-          workloadBalancingEnabled: requestType.workload_balancing_enabled || false
+          expertiseRequired: requestType.expertise_tags || []
         };
 
         return await this.executeAssignment(requestId, config, requestData, organizationId);
@@ -81,23 +75,10 @@ export class SmartAssignmentService {
       candidates = await this.filterByExpertise(candidates, config.expertiseRequired);
     }
 
-    // Step 3: Apply geographic filtering
-    if (config.geographicPreference && requestData.location && candidates.length > 0) {
-      const localCandidates = candidates.filter(user => user.location === requestData.location);
-      if (localCandidates.length > 0) {
-        candidates = localCandidates;
-      }
-    }
+    // Step 3: Apply manual assignment (simplified)
+    const assignedUsers = candidates.slice(0, 1); // Just assign to first candidate
 
-    // Step 4: Apply assignment strategy
-    const assignedUsers = await this.applyAssignmentStrategy(
-      candidates,
-      config.assignmentStrategy,
-      config.workloadBalancingEnabled || false,
-      organizationId
-    );
-
-    // Step 5: Record assignment in database
+    // Step 4: Record assignment in database
     if (assignedUsers.length > 0) {
       await this.recordAssignment(requestId, assignedUsers[0].id, organizationId);
     }
@@ -105,8 +86,8 @@ export class SmartAssignmentService {
     return {
       success: true,
       assignedUsers,
-      assignmentMethod: config.assignmentStrategy,
-      ruleName: 'Smart Assignment'
+      assignmentMethod: 'manual',
+      ruleName: 'Manual Assignment'
     };
   }
 
@@ -270,71 +251,6 @@ export class SmartAssignmentService {
       const userExpertise = user.expertise_tags || [];
       return expertiseRequired.some(tag => userExpertise.includes(tag));
     });
-  }
-
-  /**
-   * Apply assignment strategy
-   */
-  private static async applyAssignmentStrategy(
-    candidates: User[],
-    strategy: string,
-    workloadBalancing: boolean,
-    organizationId: string
-  ): Promise<User[]> {
-    if (candidates.length === 0) return [];
-
-    // Apply workload balancing if enabled
-    if (workloadBalancing) {
-      candidates = await this.applyWorkloadBalancing(candidates, organizationId);
-    }
-
-    switch (strategy) {
-      case 'first_available':
-        return candidates.slice(0, 1);
-      
-      case 'round_robin':
-        // Simple round-robin - can be enhanced with persistent state
-        return [candidates[Math.floor(Math.random() * candidates.length)]];
-      
-      case 'least_busy':
-        // Already handled by workload balancing
-        return candidates.slice(0, 1);
-      
-      case 'manual':
-        // Return all candidates for manual selection
-        return candidates;
-      
-      case 'auto':
-      default:
-        return candidates.slice(0, 1);
-    }
-  }
-
-  /**
-   * Apply workload balancing
-   */
-  private static async applyWorkloadBalancing(users: User[], organizationId: string): Promise<User[]> {
-    try {
-      const { data: workloads } = await supabase
-        .from('approver_workloads')
-        .select('*');
-
-      if (!workloads) return users;
-
-      // Sort by workload (lower workload = higher priority)
-      return users.sort((a, b) => {
-        const workloadA = workloads.find(w => w.approver_id === a.id);
-        const workloadB = workloads.find(w => w.approver_id === b.id);
-        
-        const scoreA = (workloadA?.pending_count || 0) * 2 + (workloadA?.active_requests || 0);
-        const scoreB = (workloadB?.pending_count || 0) * 2 + (workloadB?.active_requests || 0);
-        
-        return scoreA - scoreB;
-      });
-    } catch (error) {
-      console.error('Error applying workload balancing:', error);
-      return users;
-    }
   }
 
   /**

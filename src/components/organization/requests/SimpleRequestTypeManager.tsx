@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, ToggleLeft, ToggleRight, ChevronRight, FolderOpen, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,8 @@ interface SimpleRequestType {
   id: string;
   name: string;
   description?: string;
+  subcategory?: string;
+  parent_category_id?: string;
   requires_approval: boolean;
   approval_roles: string[];
   is_active: boolean;
@@ -42,7 +44,7 @@ export default function SimpleRequestTypeManager() {
       setLoading(true);
       const { data, error } = await supabase
         .from('request_types')
-        .select('id, name, description, requires_approval, approval_roles, is_active, created_at')
+        .select('id, name, description, subcategory, parent_category_id, requires_approval, approval_roles, is_active, created_at')
         .eq('organization_id', user.organizationId)
         .order('name');
 
@@ -119,8 +121,73 @@ export default function SimpleRequestTypeManager() {
     (type.description && type.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Organize categories hierarchically
+  const mainCategories = filteredTypes.filter(type => !type.parent_category_id);
+  const subcategories = filteredTypes.filter(type => type.parent_category_id);
+
   const activeTypes = filteredTypes.filter(type => type.is_active);
   const inactiveTypes = filteredTypes.filter(type => !type.is_active);
+
+  const renderCategoryCard = (type: SimpleRequestType, isSubcategory = false) => (
+    <Card key={type.id} className={`border-l-4 ${type.is_active ? 'border-l-green-500' : 'border-l-gray-300 opacity-75'} ${isSubcategory ? 'ml-6' : ''}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              {isSubcategory ? <FileText className="h-4 w-4" /> : <FolderOpen className="h-4 w-4" />}
+              <h4 className={`font-semibold ${!type.is_active ? 'text-muted-foreground' : ''}`}>{type.name}</h4>
+              <Badge variant={type.is_active ? "default" : "secondary"}>
+                {type.is_active ? 'Active' : 'Inactive'}
+              </Badge>
+              {type.requires_approval && (
+                <Badge variant={type.is_active ? "secondary" : "outline"}>Requires Approval</Badge>
+              )}
+              {isSubcategory && (
+                <Badge variant="outline" className="text-xs">Subcategory</Badge>
+              )}
+            </div>
+            {type.description && (
+              <p className="text-sm text-muted-foreground mb-2">
+                {type.description}
+              </p>
+            )}
+            {type.requires_approval && (
+              <p className="text-xs text-muted-foreground">
+                Approved by: {type.approval_roles.join(', ')}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleToggleActive(type)}
+              disabled={!canManage}
+            >
+              {type.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleEdit(type)}
+              disabled={!canManage}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleDelete(type)}
+              disabled={!canManage}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -140,7 +207,7 @@ export default function SimpleRequestTypeManager() {
         <div>
           <h2 className="text-xl font-semibold">Request Categories</h2>
           <p className="text-sm text-muted-foreground">
-            Manage the types of requests users can submit
+            Manage the types of requests users can submit with hierarchical organization
           </p>
         </div>
         <Button onClick={handleCreate} disabled={!canManage}>
@@ -169,7 +236,7 @@ export default function SimpleRequestTypeManager() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{requestTypes.length}</div>
@@ -178,137 +245,52 @@ export default function SimpleRequestTypeManager() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{activeTypes.length}</div>
-            <p className="text-sm text-muted-foreground">Active Categories</p>
+            <div className="text-2xl font-bold">{mainCategories.length}</div>
+            <p className="text-sm text-muted-foreground">Main Categories</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-orange-600">
-              {requestTypes.filter(t => t.requires_approval).length}
-            </div>
-            <p className="text-sm text-muted-foreground">Require Approval</p>
+            <div className="text-2xl font-bold">{subcategories.length}</div>
+            <p className="text-sm text-muted-foreground">Subcategories</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">{activeTypes.length}</div>
+            <p className="text-sm text-muted-foreground">Active Categories</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Active Categories */}
-      {activeTypes.length > 0 && (
+      {/* Hierarchical Category Display */}
+      {mainCategories.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-lg font-medium">Active Categories</h3>
+          <h3 className="text-lg font-medium">Categories & Subcategories</h3>
           <div className="grid gap-4">
-            {activeTypes.map((type) => (
-              <Card key={type.id} className="border-l-4 border-l-green-500">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold">{type.name}</h4>
-                        <Badge variant="default">Active</Badge>
-                        {type.requires_approval && (
-                          <Badge variant="secondary">Requires Approval</Badge>
-                        )}
-                      </div>
-                      {type.description && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {type.description}
-                        </p>
-                      )}
-                      {type.requires_approval && (
-                        <p className="text-xs text-muted-foreground">
-                          Approved by: {type.approval_roles.join(', ')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleToggleActive(type)}
-                        disabled={!canManage}
-                      >
-                        <ToggleRight className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEdit(type)}
-                        disabled={!canManage}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(type)}
-                        disabled={!canManage}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {mainCategories.map((mainCategory) => (
+              <div key={mainCategory.id} className="space-y-2">
+                {renderCategoryCard(mainCategory)}
+                {/* Render subcategories under main category */}
+                {subcategories
+                  .filter(sub => sub.parent_category_id === mainCategory.id)
+                  .map(subCategory => renderCategoryCard(subCategory, true))
+                }
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Inactive Categories */}
-      {inactiveTypes.length > 0 && (
+      {/* Orphaned Subcategories (subcategories without parent) */}
+      {subcategories.filter(sub => !mainCategories.find(main => main.id === sub.parent_category_id)).length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-lg font-medium">Inactive Categories</h3>
+          <h3 className="text-lg font-medium">Orphaned Subcategories</h3>
           <div className="grid gap-4">
-            {inactiveTypes.map((type) => (
-              <Card key={type.id} className="border-l-4 border-l-gray-300 opacity-75">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold text-muted-foreground">{type.name}</h4>
-                        <Badge variant="secondary">Inactive</Badge>
-                        {type.requires_approval && (
-                          <Badge variant="outline">Requires Approval</Badge>
-                        )}
-                      </div>
-                      {type.description && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {type.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleToggleActive(type)}
-                        disabled={!canManage}
-                      >
-                        <ToggleLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEdit(type)}
-                        disabled={!canManage}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(type)}
-                        disabled={!canManage}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {subcategories
+              .filter(sub => !mainCategories.find(main => main.id === sub.parent_category_id))
+              .map(subCategory => renderCategoryCard(subCategory, true))
+            }
           </div>
         </div>
       )}

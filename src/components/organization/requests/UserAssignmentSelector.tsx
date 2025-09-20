@@ -2,29 +2,17 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useUsers } from '@/hooks/useUsers';
-import { User, UserPlus2, Settings } from 'lucide-react';
+import { User, UserPlus2 } from 'lucide-react';
 
 interface UserAssignmentSelectorProps {
   selectedUserIds: string[];
   onSelectionChange: (userIds: string[]) => void;
-  assignmentStrategy?: string;
-  onStrategyChange?: (strategy: string) => void;
 }
-
-const ASSIGNMENT_STRATEGIES = [
-  { id: 'first_available', label: 'First Available', description: 'Assign to the first available person' },
-  { id: 'round_robin', label: 'Round Robin', description: 'Distribute evenly among assignees' },
-  { id: 'least_busy', label: 'Least Busy', description: 'Assign to person with fewest active requests' },
-  { id: 'manual', label: 'Manual Assignment', description: 'Manager assigns manually' },
-];
 
 const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
   selectedUserIds,
-  onSelectionChange,
-  assignmentStrategy = 'first_available',
-  onStrategyChange
+  onSelectionChange
 }) => {
   const { users, isLoading } = useUsers();
 
@@ -50,7 +38,7 @@ const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
           <Label className="text-base font-medium">Specific User Assignment</Label>
         </div>
         <p className="text-sm text-muted-foreground">
-          Select specific users who can be assigned these requests (optional).
+          Select specific users who can be assigned these requests. Requests will be manually assigned and accepted.
         </p>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
@@ -93,38 +81,6 @@ const UserAssignmentSelector: React.FC<UserAssignmentSelectorProps> = ({
             No specific users selected. Requests will use role-based assignment.
           </p>
         )}
-      </div>
-
-      {/* Assignment Strategy */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Settings className="h-4 w-4" />
-          <Label className="text-base font-medium">Assignment Strategy</Label>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          How should requests be assigned when multiple people are eligible?
-        </p>
-        
-        <RadioGroup 
-          value={assignmentStrategy} 
-          onValueChange={(value) => {
-            console.log('Assignment strategy changed:', value);
-            onStrategyChange?.(value);
-          }}
-          className="space-y-3"
-        >
-          {ASSIGNMENT_STRATEGIES.map(strategy => (
-            <div key={strategy.id} className="flex items-start space-x-2 p-3 border rounded-lg hover:bg-muted/50">
-              <RadioGroupItem value={strategy.id} id={`strategy-${strategy.id}`} className="mt-0.5" />
-              <div className="space-y-1">
-                <Label htmlFor={`strategy-${strategy.id}`} className="text-sm font-medium cursor-pointer">
-                  {strategy.label}
-                </Label>
-                <p className="text-xs text-muted-foreground">{strategy.description}</p>
-              </div>
-            </div>
-          ))}
-        </RadioGroup>
       </div>
     </div>
   );

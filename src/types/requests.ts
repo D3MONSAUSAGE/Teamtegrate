@@ -4,6 +4,8 @@ export interface RequestType {
   name: string;
   description?: string;
   category: string;
+  subcategory?: string;
+  parent_category_id?: string;
   form_schema: FormField[];
   requires_approval: boolean;
   approval_roles: string[];
@@ -17,10 +19,7 @@ export interface RequestType {
   permission_metadata?: Record<string, any>;
   default_job_roles?: string[];
   selected_user_ids?: string[];
-  assignment_strategy?: 'first_available' | 'round_robin' | 'least_busy' | 'manual' | 'auto';
   expertise_tags?: string[];
-  geographic_scope?: string;
-  workload_balancing_enabled?: boolean;
 }
 
 export interface FormField {

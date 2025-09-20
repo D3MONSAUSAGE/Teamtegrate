@@ -120,7 +120,7 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
           request_type:request_types(
             id, name, category, description, organization_id, created_by, created_at, updated_at,
             requires_approval, approval_roles, is_active, 
-            default_job_roles, expertise_tags, geographic_scope, workload_balancing_enabled
+            default_job_roles, expertise_tags
           )
         `)
         .single();
@@ -147,10 +147,7 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
           updated_at: newRequest.request_type.updated_at || '',
           default_job_roles: newRequest.request_type.default_job_roles || [],
           selected_user_ids: [], // Not available in database yet
-          assignment_strategy: 'first_available', // Default strategy
           expertise_tags: newRequest.request_type.expertise_tags || [],
-          geographic_scope: newRequest.request_type.geographic_scope,
-          workload_balancing_enabled: newRequest.request_type.workload_balancing_enabled || false
         };
         
         const assignmentResult = await SmartAssignmentService.assignRequest(

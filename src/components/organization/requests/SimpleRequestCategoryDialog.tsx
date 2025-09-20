@@ -22,15 +22,14 @@ interface SimpleRequestType {
   id: string;
   name: string;
   description?: string;
+  subcategory?: string;
+  parent_category_id?: string;
   requires_approval: boolean;
   approval_roles: string[];
   is_active: boolean;
   default_job_roles?: string[];
   expertise_tags?: string[];
-  geographic_scope?: string;
-  workload_balancing_enabled?: boolean;
   assigned_user_ids?: string[];
-  assignment_strategy?: string;
 }
 
 interface SimpleRequestCategoryDialogProps {
@@ -43,15 +42,14 @@ interface SimpleRequestCategoryDialogProps {
 const categorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
   description: z.string().optional(),
+  subcategory: z.string().optional(),
+  parent_category_id: z.string().optional(),
   requires_approval: z.boolean(),
   approval_roles: z.array(z.string()).min(0),
   is_active: z.boolean(),
   default_job_roles: z.array(z.string()).optional(),
   expertise_tags: z.array(z.string()).optional(),
-  geographic_scope: z.string().optional(),
-  workload_balancing_enabled: z.boolean().optional(),
   assigned_user_ids: z.array(z.string()).optional(),
-  assignment_strategy: z.string().optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -71,39 +69,60 @@ export default function SimpleRequestCategoryDialog({
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [showAssignmentOptions, setShowAssignmentOptions] = React.useState(false);
+  const [parentCategories, setParentCategories] = React.useState<{id: string; name: string}[]>([]);
+  const [isSubcategory, setIsSubcategory] = React.useState(false);
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: category?.name || '',
       description: category?.description || '',
+      subcategory: category?.subcategory || '',
+      parent_category_id: category?.parent_category_id || '',
       requires_approval: category?.requires_approval || false,
       approval_roles: category?.approval_roles || ['manager'],
       is_active: category?.is_active ?? true,
       default_job_roles: category?.default_job_roles || [],
       expertise_tags: category?.expertise_tags || [],
-      geographic_scope: category?.geographic_scope || 'any',
-      workload_balancing_enabled: category?.workload_balancing_enabled ?? true,
       assigned_user_ids: category?.assigned_user_ids || [],
-      assignment_strategy: category?.assignment_strategy || 'first_available',
     },
   });
+
+  // Fetch parent categories for subcategory selection
+  React.useEffect(() => {
+    const fetchParentCategories = async () => {
+      if (!user?.organizationId) return;
+      try {
+        const { data } = await supabase
+          .from('request_types')
+          .select('id, name')
+          .eq('organization_id', user.organizationId)
+          .is('parent_category_id', null)
+          .order('name');
+        setParentCategories(data || []);
+      } catch (error) {
+        console.error('Error fetching parent categories:', error);
+      }
+    };
+    fetchParentCategories();
+  }, [user?.organizationId]);
 
   // Reset form when category changes
   React.useEffect(() => {
     if (open) {
+      const hasParent = !!category?.parent_category_id;
+      setIsSubcategory(hasParent);
       form.reset({
         name: category?.name || '',
         description: category?.description || '',
+        subcategory: category?.subcategory || '',
+        parent_category_id: category?.parent_category_id || '',
         requires_approval: category?.requires_approval || false,
         approval_roles: category?.approval_roles || ['manager'],
         is_active: category?.is_active ?? true,
         default_job_roles: category?.default_job_roles || [],
         expertise_tags: category?.expertise_tags || [],
-        geographic_scope: category?.geographic_scope || 'any',
-        workload_balancing_enabled: category?.workload_balancing_enabled ?? true,
         assigned_user_ids: category?.assigned_user_ids || [],
-        assignment_strategy: category?.assignment_strategy || 'first_available',
       });
     }
   }, [category, open, form]);
@@ -120,7 +139,9 @@ export default function SimpleRequestCategoryDialog({
         organization_id: user.organizationId,
         name: data.name,
         description: data.description || null,
-        category: 'custom', // Simple category for all custom types
+        subcategory: data.subcategory || null,
+        parent_category_id: data.parent_category_id || null,
+        category: isSubcategory ? 'subcategory' : 'custom',
         requires_approval: data.requires_approval,
         approval_roles: data.approval_roles,
         is_active: data.is_active,
@@ -128,8 +149,6 @@ export default function SimpleRequestCategoryDialog({
         created_by: user.id,
         default_job_roles: data.default_job_roles || [],
         expertise_tags: data.expertise_tags || [],
-        geographic_scope: data.geographic_scope || 'any',
-        workload_balancing_enabled: data.workload_balancing_enabled ?? true,
       };
 
       if (category?.id) {
@@ -182,11 +201,56 @@ export default function SimpleRequestCategoryDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" id="category-form">
           {/* Basic Information */}
           <div className="space-y-4">
+            {/* Category Type Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Category Type</Label>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="main-category"
+                    name="category-type"
+                    checked={!isSubcategory}
+                    onChange={() => setIsSubcategory(false)}
+                  />
+                  <Label htmlFor="main-category">Main Category</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="sub-category"
+                    name="category-type"
+                    checked={isSubcategory}
+                    onChange={() => setIsSubcategory(true)}
+                  />
+                  <Label htmlFor="sub-category">Subcategory</Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Parent Category Selection (only for subcategories) */}
+            {isSubcategory && (
+              <div className="space-y-2">
+                <Label htmlFor="parent_category">Parent Category *</Label>
+                <select
+                  {...form.register('parent_category_id')}
+                  className="w-full p-2 border border-input rounded-md"
+                >
+                  <option value="">Select a parent category</option>
+                  {parentCategories.map(parent => (
+                    <option key={parent.id} value={parent.id}>
+                      {parent.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="name">Category Name *</Label>
+              <Label htmlFor="name">{isSubcategory ? 'Subcategory' : 'Category'} Name *</Label>
               <Input
                 id="name"
-                placeholder="e.g., Time Off Request, Equipment Request"
+                placeholder={isSubcategory ? "e.g., Vacation, Sick Leave" : "e.g., Time Off Request, Equipment Request"}
                 {...form.register('name')}
               />
               {form.formState.errors.name && (
@@ -271,18 +335,12 @@ export default function SimpleRequestCategoryDialog({
                 onSelectionChange={(roleIds) => form.setValue('default_job_roles', roleIds)}
                 expertiseTags={form.watch('expertise_tags') || []}
                 onExpertiseChange={(tags) => form.setValue('expertise_tags', tags)}
-                geographicScope={form.watch('geographic_scope') || 'any'}
-                onGeographicScopeChange={(scope) => form.setValue('geographic_scope', scope)}
-                workloadBalancing={form.watch('workload_balancing_enabled') ?? true}
-                onWorkloadBalancingChange={(enabled) => form.setValue('workload_balancing_enabled', enabled)}
                 showAdvanced={true}
               />
               
               <UserAssignmentSelector
                 selectedUserIds={form.watch('assigned_user_ids') || []}
                 onSelectionChange={(userIds) => form.setValue('assigned_user_ids', userIds)}
-                assignmentStrategy={form.watch('assignment_strategy') || 'first_available'}
-                onStrategyChange={(strategy) => form.setValue('assignment_strategy', strategy)}
               />
             </CollapsibleContent>
           </Collapsible>

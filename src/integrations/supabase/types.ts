@@ -4939,7 +4939,6 @@ export type Database = {
       request_types: {
         Row: {
           approval_roles: string[] | null
-          assignment_strategy: string | null
           category: string
           created_at: string
           created_by: string
@@ -4948,22 +4947,21 @@ export type Database = {
           description: string | null
           expertise_tags: string[] | null
           form_schema: Json | null
-          geographic_scope: string | null
           id: string
           is_active: boolean | null
           name: string
           organization_id: string
+          parent_category_id: string | null
           permission_metadata: Json | null
           required_permissions: Json | null
           requires_approval: boolean | null
           selected_user_ids: string[] | null
+          subcategory: string | null
           updated_at: string
           viewer_role_restrictions: string[] | null
-          workload_balancing_enabled: boolean | null
         }
         Insert: {
           approval_roles?: string[] | null
-          assignment_strategy?: string | null
           category: string
           created_at?: string
           created_by: string
@@ -4972,22 +4970,21 @@ export type Database = {
           description?: string | null
           expertise_tags?: string[] | null
           form_schema?: Json | null
-          geographic_scope?: string | null
           id?: string
           is_active?: boolean | null
           name: string
           organization_id: string
+          parent_category_id?: string | null
           permission_metadata?: Json | null
           required_permissions?: Json | null
           requires_approval?: boolean | null
           selected_user_ids?: string[] | null
+          subcategory?: string | null
           updated_at?: string
           viewer_role_restrictions?: string[] | null
-          workload_balancing_enabled?: boolean | null
         }
         Update: {
           approval_roles?: string[] | null
-          assignment_strategy?: string | null
           category?: string
           created_at?: string
           created_by?: string
@@ -4996,20 +4993,28 @@ export type Database = {
           description?: string | null
           expertise_tags?: string[] | null
           form_schema?: Json | null
-          geographic_scope?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
           organization_id?: string
+          parent_category_id?: string | null
           permission_metadata?: Json | null
           required_permissions?: Json | null
           requires_approval?: boolean | null
           selected_user_ids?: string[] | null
+          subcategory?: string | null
           updated_at?: string
           viewer_role_restrictions?: string[] | null
-          workload_balancing_enabled?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "request_types_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "request_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       requests: {
         Row: {

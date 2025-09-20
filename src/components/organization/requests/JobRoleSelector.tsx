@@ -3,8 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useJobRoles } from '@/hooks/useJobRoles';
 import { Briefcase, Plus, X } from 'lucide-react';
@@ -14,30 +12,14 @@ interface JobRoleSelectorProps {
   onSelectionChange: (roles: string[]) => void;
   expertiseTags?: string[];
   onExpertiseChange?: (tags: string[]) => void;
-  geographicScope?: string;
-  onGeographicScopeChange?: (scope: string) => void;
-  workloadBalancing?: boolean;
-  onWorkloadBalancingChange?: (enabled: boolean) => void;
   showAdvanced?: boolean;
 }
-
-const GEOGRAPHIC_SCOPES = [
-  { id: 'any', label: 'Any Location' },
-  { id: 'local', label: 'Local Only' },
-  { id: 'regional', label: 'Regional' },
-  { id: 'national', label: 'National' },
-  { id: 'international', label: 'International' }
-];
 
 const JobRoleSelector: React.FC<JobRoleSelectorProps> = ({
   selectedRoles,
   onSelectionChange,
   expertiseTags = [],
   onExpertiseChange,
-  geographicScope = 'any',
-  onGeographicScopeChange,
-  workloadBalancing = true,
-  onWorkloadBalancingChange,
   showAdvanced = true
 }) => {
   const { jobRoles, isLoading } = useJobRoles();
@@ -152,40 +134,6 @@ const JobRoleSelector: React.FC<JobRoleSelectorProps> = ({
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Geographic Scope */}
-          <div className="space-y-4">
-            <Label className="text-base font-medium">Geographic Scope</Label>
-            <p className="text-sm text-muted-foreground">
-              Specify the geographic scope for this request type.
-            </p>
-            <RadioGroup value={geographicScope} onValueChange={onGeographicScopeChange}>
-              {GEOGRAPHIC_SCOPES.map(scope => (
-                <div key={scope.id} className="flex items-center space-x-2">
-                  <RadioGroupItem value={scope.id} id={`geo-${scope.id}`} />
-                  <Label htmlFor={`geo-${scope.id}`} className="text-sm">
-                    {scope.label}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-
-          {/* Workload Balancing */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div className="space-y-1">
-                <Label className="text-base font-medium">Workload Balancing</Label>
-                <p className="text-xs text-muted-foreground">
-                  Distribute requests evenly among eligible assignees based on current workload.
-                </p>
-              </div>
-              <Switch 
-                checked={workloadBalancing} 
-                onCheckedChange={onWorkloadBalancingChange}
-              />
-            </div>
           </div>
         </>
       )}
