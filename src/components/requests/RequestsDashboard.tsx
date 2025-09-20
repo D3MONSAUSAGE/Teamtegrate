@@ -39,11 +39,10 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     if (!user?.organizationId) return;
 
     try {
-      // First get requests without joins
+      // First get requests without joins - let RLS handle access control
       const { data: requestsData, error } = await supabase
         .from('requests')
         .select('*')
-        .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -141,18 +140,20 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+      <div className={`grid grid-cols-2 md:grid-cols-3 ${user?.role === 'user' ? 'lg:grid-cols-5' : 'lg:grid-cols-6'} gap-4`}>
+        {user?.role !== 'user' && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                </div>
+                <FileText className="h-8 w-8 text-blue-500" />
               </div>
-              <FileText className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardContent className="p-4">
@@ -216,9 +217,11 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
       </div>
 
       {/* Request Tabs */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="all">All Requests</TabsTrigger>
+      <Tabs defaultValue={user?.role === 'user' ? 'mine' : 'all'} className="space-y-4">
+        <TabsList className={`grid w-full ${user?.role === 'user' ? 'grid-cols-5' : 'grid-cols-6'}`}>
+          {user?.role !== 'user' && (
+            <TabsTrigger value="all">All Requests</TabsTrigger>
+          )}
           <TabsTrigger value="assigned">Assigned to Me</TabsTrigger>
           <TabsTrigger value="mine">My Requests</TabsTrigger>
           <TabsTrigger value="pending">Pending Review</TabsTrigger>
@@ -226,20 +229,22 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid gap-4">
-            {requests.map(request => (
-              <EnhancedRequestCard
-                key={request.id}
-                request={request}
-                currentUserId={user?.id}
-                onView={onViewRequest}
-                onAssign={onAssignRequest}
-                onStatusChange={onStatusChange}
-              />
-            ))}
-          </div>
-        </TabsContent>
+        {user?.role !== 'user' && (
+          <TabsContent value="all" className="space-y-4">
+            <div className="grid gap-4">
+              {requests.map(request => (
+                <EnhancedRequestCard
+                  key={request.id}
+                  request={request}
+                  currentUserId={user?.id}
+                  onView={onViewRequest}
+                  onAssign={onAssignRequest}
+                  onStatusChange={onStatusChange}
+                />
+              ))}
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="assigned" className="space-y-4">
           <div className="grid gap-4">

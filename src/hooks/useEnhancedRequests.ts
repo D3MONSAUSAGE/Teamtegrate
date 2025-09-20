@@ -82,14 +82,13 @@ export function useEnhancedRequests() {
       setError(null);
       console.log('Fetching requests for organization:', user.organizationId);
       
-      // Simplified query with organization filtering
+      // Simplified query - let RLS handle access control
       const { data, error } = await supabase
         .from('requests')
         .select(`
           *,
           request_type:request_types(id, name, category, description)
         `)
-        .eq('organization_id', user.organizationId)
         .order('created_at', { ascending: false });
 
       if (error) {
