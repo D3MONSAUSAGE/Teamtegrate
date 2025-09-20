@@ -22,7 +22,7 @@ export default function RequestAcceptanceButton({ request, onRequestUpdated }: R
      request.assigned_to.split(',').includes(user?.id || ''));
 
   const canAcceptRequest = isAssignedToCurrentUser && 
-    request.status === 'submitted' && 
+    request.status === 'under_review' && 
     !request.accepted_by;
 
   const isAlreadyAccepted = request.accepted_by && request.status === 'in_progress';
