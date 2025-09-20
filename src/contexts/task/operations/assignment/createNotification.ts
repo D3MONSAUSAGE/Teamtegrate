@@ -89,7 +89,7 @@ export const createMultipleTaskAssignmentNotifications = async (
   organizationId: string
 ): Promise<void> => {
   try {
-    const notifications = userIds.map(userId => ({
+    const dbNotifications = userIds.map(userId => ({
       user_id: userId,
       title: userId === currentUserId ? 'Task Self-Assigned' : 'Task Assigned',
       content: userId === currentUserId 
@@ -99,9 +99,95 @@ export const createMultipleTaskAssignmentNotifications = async (
       organization_id: organizationId
     }));
 
-    await supabase.from('notifications').insert(notifications);
+    await supabase.from('notifications').insert(dbNotifications);
     
-    console.log(`Created ${notifications.length} task assignment notifications for task:`, taskTitle);
+    console.log(`Created ${dbNotifications.length} task assignment notifications for task:`, taskTitle);
+
+    // Also send email notifications for multiple assignees (don't block if it fails)
+    try {
+      console.log(`[EMAIL] Sending email notifications for ${userIds.length} assignees`);
+      
+      // Get task details for email
+      const { data: taskData } = await supabase
+        .from('tasks')
+        .select(`
+          id, title, description, status, priority, deadline, created_at, organization_id,
+          projects (title)
+        `)
+        .eq('title', taskTitle)
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Get assignee details for all users
+      const { data: assigneesData } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .in('id', userIds);
+
+      // Get current user details (actor)
+      const { data: actorData } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('id', currentUserId)
+        .single();
+
+      if (taskData && assigneesData && assigneesData.length > 0 && actorData) {
+        const taskNotification = {
+          id: taskData.id,
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status,
+          priority: taskData.priority,
+          deadline: taskData.deadline,
+          created_at: taskData.created_at,
+          organization_id: taskData.organization_id,
+          project_title: (taskData.projects as any)?.title
+        };
+
+        const actor = {
+          id: actorData.id,
+          email: actorData.email,
+          name: actorData.name || actorData.email
+        };
+
+        // Send email to each assignee
+        const emailPromises = assigneesData.map(async (userData) => {
+          const assignee = {
+            id: userData.id,
+            email: userData.email,
+            name: userData.name || userData.email
+          };
+
+          console.log(`[EMAIL] Sending task assignment email to: ${assignee.email}`);
+          return notifications.notifyTaskAssigned(taskNotification, [assignee], actor);
+        });
+
+        const emailResults = await Promise.allSettled(emailPromises);
+        
+        // Log results
+        const successful = emailResults.filter(result => result.status === 'fulfilled').length;
+        const failed = emailResults.filter(result => result.status === 'rejected').length;
+        
+        console.log(`[EMAIL] Multiple assignee email results: ${successful} successful, ${failed} failed`);
+        
+        // Log failed attempts
+        emailResults.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.error(`[EMAIL] Failed to send email to assignee ${index}:`, result.reason);
+          }
+        });
+      } else {
+        console.warn('[EMAIL] Missing data for email notifications:', { 
+          hasTaskData: !!taskData, 
+          assigneeCount: assigneesData?.length || 0,
+          hasActorData: !!actorData 
+        });
+      }
+    } catch (emailError) {
+      console.error('Multiple assignee email notifications failed, but task assignment succeeded:', emailError);
+    }
   } catch (error) {
     console.error('Error sending multiple task assignment notifications:', error);
     // Don't block the task assignment if notification fails
