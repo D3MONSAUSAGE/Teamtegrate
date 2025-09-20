@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Task, User } from '@/types';
 import { toast } from '@/components/ui/sonner';
-import { notifications } from '@/lib/notifications';
+import { notifyTaskAssigned } from '@/lib/notifications';
 
 interface AssignTaskParams {
   taskId: string;
@@ -104,7 +104,7 @@ export class TaskAssignmentService {
         };
 
         console.log('[TaskAssignmentService] Sending notifications to:', assignees.map(a => a.email));
-        await notifications.notifyTaskAssigned(taskNotification, assignees, actor);
+        await notifyTaskAssigned(taskNotification, assignees, actor);
         console.log('[TaskAssignmentService] Email notifications sent');
       } else {
         console.warn('[TaskAssignmentService] Missing data for email notifications:', {

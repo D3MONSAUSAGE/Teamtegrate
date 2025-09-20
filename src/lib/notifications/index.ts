@@ -36,6 +36,35 @@ interface TaskNotificationData {
   project_title?: string;
 }
 
+export async function notifyTaskAssigned(task: any, assignees: any[], actor: any) {
+  // assignees must be user objects with .email
+  const recipients = (assignees ?? [])
+    .map((a) => a?.email?.trim()?.toLowerCase())
+    .filter(Boolean);
+
+  if (recipients.length === 0) {
+    console.warn("[notifyTaskAssigned] No recipients with email", { assignees });
+    return { sent: 0, results: [] };
+  }
+
+  const { data, error } = await supabase.functions.invoke("send-task-notifications", {
+    body: {
+      kind: "task_assigned",
+      recipients, // array; the edge function loops
+      task: { id: task.id, title: task.title, due_at: task.due_at ?? task.deadline, description: task.description },
+      actor: { id: actor?.id, email: actor?.email },
+    },
+  });
+
+  if (error) {
+    console.error("[notifyTaskAssigned] invoke failed", error);
+    return { sent: 0, error };
+  }
+
+  console.log("[notifyTaskAssigned] invoke ok", data);
+  return data;
+}
+
 // Centralized notification orchestrator - Frontend calls edge functions
 export const notifications = {
   // Ticket Created - notify requester (confirmation) + admins (new ticket alert)
@@ -142,84 +171,6 @@ export const notifications = {
       console.log('[Notifications] Ticket closed notifications sent successfully:', data);
     } catch (error) {
       console.error('[Notifications] Error in notifyTicketClosed:', error);
-    }
-  },
-
-  // Task Assignment - notify assigned user(s)
-  async notifyTaskAssigned(task: TaskNotificationData, assignees: UserData[], actor: UserData) {
-    try {
-      console.log(`[Notifications] Triggering task assigned notifications: ${task.id} to ${assignees.length} user(s)`);
-
-      // Validate all assignees have email addresses
-      const validAssignees = assignees.filter(assignee => {
-        if (!assignee.email) {
-          console.error('[Notifications] Missing assignee email for:', assignee);
-          return false;
-        }
-        return true;
-      });
-
-      if (validAssignees.length === 0) {
-        throw new Error('No valid assignees with email addresses');
-      }
-
-      // Send notification to each assignee individually and await all
-      const notificationPromises = validAssignees.map(async (assignee) => {
-        console.log(`[Notifications] Sending task assignment email to: ${assignee.email}`);
-
-        try {
-          const { data, error } = await supabase.functions.invoke('send-task-notifications', {
-            body: {
-              kind: 'task_assigned',
-              to: assignee.email,
-              task: {
-                id: task.id,
-                title: task.title,
-                description: task.description,
-                due_at: task.deadline,
-                priority: task.priority
-              },
-              actor: {
-                id: actor.id,
-                email: actor.email,
-                name: actor.name
-              }
-            }
-          });
-
-          console.log(`[Notifications] Result for ${assignee.email}:`, { to: assignee.email, data, error });
-          
-          if (error) {
-            throw error;
-          }
-          
-          return { to: assignee.email, data, error: null };
-        } catch (err) {
-          console.error(`[Notifications] Failed to send task assigned notification to ${assignee.email}:`, err);
-          return { to: assignee.email, data: null, error: err };
-        }
-      });
-
-      const results = await Promise.allSettled(notificationPromises);
-      
-      // Log comprehensive results
-      const successful = results.filter(result => result.status === 'fulfilled' && !result.value.error).length;
-      const failed = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value.error)).length;
-      
-      console.log(`[Notifications] Task assignment email results: ${successful} successful, ${failed} failed out of ${validAssignees.length} total`);
-      
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          const { to, data, error } = result.value;
-          console.log(`[Notifications] Email ${index + 1} - to: ${to}, data:`, data, 'error:', error);
-        } else {
-          console.error(`[Notifications] Email ${index + 1} - Promise rejected:`, result.reason);
-        }
-      });
-
-    } catch (error) {
-      console.error('[Notifications] Error in notifyTaskAssigned:', error);
-      throw error;
     }
   },
 
