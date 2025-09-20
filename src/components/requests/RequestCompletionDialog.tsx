@@ -26,6 +26,7 @@ export default function RequestCompletionDialog({ request, onRequestUpdated }: R
     request.status === 'in_progress';
 
   const handleCompleteRequest = async () => {
+    console.log('handleCompleteRequest called for request:', request.id);
     if (!user?.id) {
       toast.error('You must be logged in to complete requests');
       return;
