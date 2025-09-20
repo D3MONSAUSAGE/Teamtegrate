@@ -1449,6 +1449,42 @@ export type Database = {
           },
         ]
       }
+      email_notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          request_assigned: boolean
+          request_completed: boolean
+          request_created: boolean
+          request_status_changed: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          request_assigned?: boolean
+          request_completed?: boolean
+          request_created?: boolean
+          request_status_changed?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          request_assigned?: boolean
+          request_completed?: boolean
+          request_created?: boolean
+          request_status_changed?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       emergency_contacts: {
         Row: {
           address: string | null
@@ -5132,6 +5168,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           actual_processing_time: number | null
+          archived_at: string | null
           assigned_at: string | null
           assigned_to: string | null
           attachments_count: number | null
@@ -5163,6 +5200,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           actual_processing_time?: number | null
+          archived_at?: string | null
           assigned_at?: string | null
           assigned_to?: string | null
           attachments_count?: number | null
@@ -5194,6 +5232,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           actual_processing_time?: number | null
+          archived_at?: string | null
           assigned_at?: string | null
           assigned_to?: string | null
           attachments_count?: number | null
@@ -7986,6 +8025,15 @@ export type Database = {
           role: string
           started_at: string
           total_adjustment: number
+          user_id: string
+        }[]
+      }
+      get_request_notification_recipients: {
+        Args: { request_id_param: string }
+        Returns: {
+          email: string
+          name: string
+          notification_type: string
           user_id: string
         }[]
       }

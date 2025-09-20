@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Request } from '@/types/requests';
 import { EnhancedRequestCard } from './EnhancedRequestCard';
+import RequestSearchBar from './RequestSearchBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,15 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+
+interface RequestSearchFilters {
+  search: string;
+  status: string;
+  priority: string;
+  category: string;
+  dateRange: string;
+}
 
 interface RequestsDashboardProps {
   onViewRequest?: (request: Request) => void;
@@ -30,6 +40,13 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
   const { user } = useAuth();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchFilters, setSearchFilters] = useState<RequestSearchFilters>({
+    search: '',
+    status: 'all',
+    priority: 'all',
+    category: 'all',
+    dateRange: 'all'
+  });
 
   useEffect(() => {
     fetchRequests();
@@ -39,10 +56,12 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     if (!user?.organizationId) return;
 
     try {
-      // First get requests without joins - let RLS handle access control
+      // Get requests without joins - let RLS handle access control
+      // Exclude archived requests by default
       const { data: requestsData, error } = await supabase
         .from('requests')
         .select('*')
+        .is('archived_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -94,21 +113,84 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     }
   };
 
+  // Filter requests based on search criteria
+  const filteredRequests = useMemo(() => {
+    if (!requests.length) return [];
+
+    return requests.filter(request => {
+      // Text search
+      if (searchFilters.search.trim()) {
+        const searchTerm = searchFilters.search.toLowerCase().trim();
+        const searchableText = [
+          request.title,
+          request.description,
+          request.ticket_number,
+          request.requested_by_user?.name
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        if (!searchableText.includes(searchTerm)) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (searchFilters.status !== 'all' && request.status !== searchFilters.status) {
+        return false;
+      }
+
+      // Priority filter
+      if (searchFilters.priority !== 'all' && request.priority !== searchFilters.priority) {
+        return false;
+      }
+
+      // Category filter (assuming request_type has category)
+      if (searchFilters.category !== 'all' && request.request_type?.category !== searchFilters.category) {
+        return false;
+      }
+
+      // Date range filter
+      if (searchFilters.dateRange !== 'all') {
+        const createdAt = new Date(request.created_at);
+        const now = new Date();
+        
+        switch (searchFilters.dateRange) {
+          case 'today':
+            if (createdAt.toDateString() !== now.toDateString()) return false;
+            break;
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            if (createdAt < weekAgo) return false;
+            break;
+          case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            if (createdAt < monthAgo) return false;
+            break;
+          case 'quarter':
+            const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            if (createdAt < quarterAgo) return false;
+            break;
+        }
+      }
+
+      return true;
+    });
+  }, [requests, searchFilters]);
+
   const getRequestsByStatus = (status: string) => {
-    return requests.filter(request => request.status === status);
+    return filteredRequests.filter(request => request.status === status);
   };
 
   const getMyRequests = () => {
-    return requests.filter(request => request.requested_by === user?.id);
+    return filteredRequests.filter(request => request.requested_by === user?.id);
   };
 
   const getAssignedToMe = () => {
-    return requests.filter(request => request.assigned_to === user?.id);
+    return filteredRequests.filter(request => request.assigned_to === user?.id);
   };
 
   const getOverdueRequests = () => {
     const now = new Date();
-    return requests.filter(request => 
+    return filteredRequests.filter(request => 
       request.due_date && 
       new Date(request.due_date) < now && 
       !['completed', 'cancelled', 'rejected'].includes(request.status)
@@ -117,7 +199,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
 
   const getRequestStats = () => {
     return {
-      total: requests.length,
+      total: filteredRequests.length,
       pending: getRequestsByStatus('submitted').length,
       inProgress: getRequestsByStatus('in_progress').length,
       approved: getRequestsByStatus('approved').length,
@@ -125,6 +207,14 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
       myRequests: getMyRequests().length,
       assignedToMe: getAssignedToMe().length
     };
+  };
+
+  const handleRequestDelete = (requestId: string) => {
+    setRequests(prev => prev.filter(r => r.id !== requestId));
+  };
+
+  const handleRequestArchive = (requestId: string) => {
+    setRequests(prev => prev.filter(r => r.id !== requestId));
   };
 
   const stats = getRequestStats();
@@ -139,6 +229,9 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Search and Filters */}
+      <RequestSearchBar onFiltersChange={setSearchFilters} initialFilters={searchFilters} />
+      
       {/* Stats Overview */}
       <div className={`grid grid-cols-2 md:grid-cols-3 ${user?.role === 'user' ? 'lg:grid-cols-5' : 'lg:grid-cols-6'} gap-4`}>
         {user?.role !== 'user' && (
@@ -232,7 +325,7 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
         {user?.role !== 'user' && (
           <TabsContent value="all" className="space-y-4">
             <div className="grid gap-4">
-              {requests.map(request => (
+              {filteredRequests.map(request => (
                 <EnhancedRequestCard
                   key={request.id}
                   request={request}
@@ -240,6 +333,8 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                   onView={onViewRequest}
                   onAssign={onAssignRequest}
                   onStatusChange={onStatusChange}
+                  onDelete={handleRequestDelete}
+                  onArchive={handleRequestArchive}
                 />
               ))}
             </div>
@@ -256,6 +351,8 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
+                onDelete={handleRequestDelete}
+                onArchive={handleRequestArchive}
               />
             ))}
           </div>
@@ -271,6 +368,8 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
+                onDelete={handleRequestDelete}
+                onArchive={handleRequestArchive}
               />
             ))}
           </div>
@@ -286,6 +385,8 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
+                onDelete={handleRequestDelete}
+                onArchive={handleRequestArchive}
               />
             ))}
           </div>
@@ -301,6 +402,8 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
+                onDelete={handleRequestDelete}
+                onArchive={handleRequestArchive}
               />
             ))}
           </div>
@@ -316,18 +419,25 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                 onView={onViewRequest}
                 onAssign={onAssignRequest}
                 onStatusChange={onStatusChange}
+                onDelete={handleRequestDelete}
+                onArchive={handleRequestArchive}
               />
             ))}
           </div>
         </TabsContent>
       </Tabs>
 
-      {requests.length === 0 && (
+      {filteredRequests.length === 0 && !loading && (
         <Card>
           <CardContent className="p-8 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No requests found</h3>
-            <p className="text-muted-foreground">Create your first request to get started.</p>
+            <p className="text-muted-foreground">
+              {searchFilters.search || searchFilters.status !== 'all' || searchFilters.priority !== 'all' 
+                ? "Try adjusting your search filters."
+                : "Create your first request to get started."
+              }
+            </p>
           </CardContent>
         </Card>
       )}
