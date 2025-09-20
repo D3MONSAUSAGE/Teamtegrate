@@ -1,125 +1,144 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTask } from '@/contexts/task';
+import { DateRange } from 'react-day-picker';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTaskReports } from '@/hooks/useTaskReports';
+import { useReportFilters } from '@/hooks/useReportFilters';
+import { ReportFilters } from '@/components/reports/core/ReportFilters';
+import { DailyCompletionReport } from '@/components/reports/core/DailyCompletionReport';
+import { WeeklyOverviewReport } from '@/components/reports/core/WeeklyOverviewReport';
+import { TeamEffectivenessReport } from '@/components/reports/core/TeamEffectivenessReport';
+import { ProjectAnalyticsReport } from '@/components/reports/core/ProjectAnalyticsReport';
+import { BarChart3, Calendar, Users, FolderOpen } from 'lucide-react';
+import { downloadCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { hasRoleAccess } from '@/contexts/auth';
-import { User } from '@/types';
-import { useEmployeeReports } from '@/hooks/useEmployeeReports';
-import { useTeamAnalytics } from '@/hooks/team/useTeamAnalytics';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Modern Dashboard Components
-import { ModernReportsHeader } from '@/components/reports/modern/ModernReportsHeader';
-import { ExecutiveSummary } from '@/components/reports/modern/ExecutiveSummary';
-import { PerformanceGrid } from '@/components/reports/modern/PerformanceGrid';
-import { InsightsPanel } from '@/components/reports/modern/InsightsPanel';
-import { DetailedAnalytics } from '@/components/reports/modern/DetailedAnalytics';
-import TeamReports from '@/components/reports/TeamReports';
-import { ComprehensiveReportsPanel } from '@/components/reports/ComprehensiveReportsPanel';
 
 export const ReportsPage: React.FC = () => {
   const { user } = useAuth();
-  const { tasks, fetchTasks, isLoading: tasksLoading } = useTask();
+  const [activeTab, setActiveTab] = useState('daily');
   
-  // State management
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [timeRange, setTimeRange] = useState<string>('7 days');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('individual');
-
-  // Fetch tasks when component mounts
-  React.useEffect(() => {
-    if (user && tasks.length === 0) {
-      fetchTasks();
-    }
-  }, [user, tasks.length, fetchTasks]);
-  
-  // Data fetching for the selected user (defaults to current user)
-  const viewingUserId = selectedUser?.id || user?.id;
-  const viewingUserName = selectedUser?.name || user?.name || '';
-  
+  // Use centralized report filters
   const {
-    taskStats,
-    hoursStats,
-    contributions,
-    taskStatsSummary,
-    hoursStatsSummary,
-    isLoading: reportsLoading,
-    error
-  } = useEmployeeReports({
-    userId: viewingUserId || '',
-    timeRange
+    timeRange,
+    dateRange,
+    selectedTeamId,
+    setTimeRange,
+    setDateRange,
+    setSelectedTeamId
+  } = useReportFilters();
+
+  // Fetch unified report data
+  const {
+    dailyData,
+    weeklyData,
+    teamData,
+    projectData,
+    isLoading,
+    error,
+    range
+  } = useTaskReports({
+    timeRange,
+    dateRange,
+    teamId: selectedTeamId || undefined
   });
 
-  // Team analytics data
-  const { analytics: teamAnalytics, isLoading: teamLoading } = useTeamAnalytics();
-
-  const isLoading = tasksLoading || reportsLoading;
-
-  // Handlers
-  const handleUserSelect = (userId: string, userName: string) => {
-    setSelectedUser({ 
-      id: userId, 
-      name: userName,
-      email: `${userName.toLowerCase().replace(' ', '.')}@company.com`,
-      role: 'user',
-      organizationId: user?.organizationId || '',
-      createdAt: new Date()
-    } as User);
-    setSearchQuery('');
-  };
-  
-  const handleBackToPersonal = () => {
-    setSelectedUser(null);
-  };
-  
-  const handleExport = async () => {
+  const handleExport = () => {
     try {
-      const { downloadCSV } = await import('@/utils/exportUtils');
-      
-      const targetUserName = viewingUserName;
-      const isViewingSelf = !selectedUser;
-      
+      let exportData;
       const dateStr = format(new Date(), 'yyyy-MM-dd');
-      const userStr = isViewingSelf ? 'my' : targetUserName.toLowerCase().replace(/\s+/g, '-');
-      const timeStr = timeRange === '7 days' ? 'weekly' : timeRange === '30 days' ? 'monthly' : 'custom';
       
-      const exportData = {
-        filename: `${userStr}-performance-report-${timeStr}-${dateStr}.csv`,
-        headers: ['Category', 'Metric', 'Value', 'Period'],
-        rows: [
-          ['User Info', 'Name', targetUserName, ''],
-          ['User Info', 'Report Period', timeRange, ''],
-          ['User Info', 'Generated At', format(new Date(), 'yyyy-MM-dd HH:mm:ss'), ''],
-          ['', '', '', ''],
-          ['Tasks', 'Total Tasks', (taskStatsSummary?.total_tasks || 0).toString(), timeRange],
-          ['Tasks', 'Completed Tasks', (taskStatsSummary?.completed_tasks || 0).toString(), timeRange],
-          ['Tasks', 'Completion Rate', `${Math.round(taskStatsSummary?.completion_rate || 0)}%`, timeRange],
-          ['', '', '', ''],
-          ['Time', 'Total Hours', Math.round(hoursStatsSummary?.total_hours || 0).toString(), timeRange],
-          ['Time', 'Daily Average', (hoursStatsSummary?.avg_daily_hours || 0).toFixed(1), timeRange],
-          ['Time', 'Overtime Hours', (hoursStatsSummary?.overtime_hours || 0).toString(), timeRange],
-          ['', '', '', ''],
-          ['Projects', 'Active Projects', (contributions?.length || 0).toString(), timeRange],
-          ...((contributions || []).map(project => [
-            'Project Detail',
-            project.project_title,
-            `${project.task_count} tasks (${Math.round(project.completion_rate)}% complete)`,
-            ''
-          ]))
-        ],
-        metadata: {
-          exportType: 'comprehensive-user',
-          dateRange: timeRange,
-          filters: isViewingSelf ? 'Personal dashboard' : `Team member: ${targetUserName}`,
-          generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-          totalRecords: (taskStatsSummary?.total_tasks || 0) + (contributions?.length || 0)
-        }
-      };
+      switch (activeTab) {
+        case 'daily':
+          exportData = {
+            filename: `daily-completion-report-${dateStr}.csv`,
+            headers: ['Date', 'Total Tasks', 'Completed', 'Completion Rate', 'High Priority', 'Medium Priority', 'Low Priority'],
+            rows: dailyData.map(day => [
+              day.date,
+              day.total_tasks.toString(),
+              day.completed_tasks.toString(),
+              `${day.completion_rate}%`,
+              day.high_priority.toString(),
+              day.medium_priority.toString(),
+              day.low_priority.toString()
+            ]),
+            metadata: {
+              exportType: 'daily-completion',
+              dateRange: `${range.startDate} to ${range.endDate}`,
+              generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+              totalRecords: dailyData.length
+            }
+          };
+          break;
+          
+        case 'weekly':
+          exportData = {
+            filename: `weekly-overview-report-${dateStr}.csv`,
+            headers: ['Week Start', 'Assigned Tasks', 'Completed Tasks', 'Overdue Tasks', 'Completion Velocity'],
+            rows: weeklyData.map(week => [
+              week.week_start,
+              week.assigned_tasks.toString(),
+              week.completed_tasks.toString(),
+              week.overdue_tasks.toString(),
+              `${week.completion_velocity}%`
+            ]),
+            metadata: {
+              exportType: 'weekly-overview',
+              dateRange: `${range.startDate} to ${range.endDate}`,
+              generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+              totalRecords: weeklyData.length
+            }
+          };
+          break;
+          
+        case 'team':
+          exportData = {
+            filename: `team-effectiveness-report-${dateStr}.csv`,
+            headers: ['Team Name', 'Members', 'Total Tasks', 'Completed', 'Collaboration Score'],
+            rows: teamData.map(team => [
+              team.team_name,
+              team.member_count.toString(),
+              team.total_tasks.toString(),
+              team.completed_tasks.toString(),
+              `${team.collaboration_score}%`
+            ]),
+            metadata: {
+              exportType: 'team-effectiveness',
+              dateRange: `${range.startDate} to ${range.endDate}`,
+              generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+              totalRecords: teamData.length
+            }
+          };
+          break;
+          
+        case 'project':
+          exportData = {
+            filename: `project-analytics-report-${dateStr}.csv`,
+            headers: ['Project Name', 'Team Size', 'Total Tasks', 'Completed', 'Completion Rate', 'Overdue'],
+            rows: projectData.map(project => [
+              project.project_title,
+              project.team_members.toString(),
+              project.total_tasks.toString(),
+              project.completed_tasks.toString(),
+              `${project.completion_rate}%`,
+              project.overdue_count.toString()
+            ]),
+            metadata: {
+              exportType: 'project-analytics',
+              dateRange: `${range.startDate} to ${range.endDate}`,
+              generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+              totalRecords: projectData.length
+            }
+          };
+          break;
+          
+        default:
+          throw new Error('Invalid report type');
+      }
       
       downloadCSV(exportData);
-      toast.success(`${isViewingSelf ? 'Your' : `${targetUserName}'s`} performance report exported successfully!`);
+      toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} report exported successfully!`);
     } catch (error) {
       console.error('Export failed:', error);
       toast.error('Failed to export report. Please try again.');
@@ -127,7 +146,8 @@ export const ReportsPage: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    toast.success('Data refreshed!');
+    // The useTaskReports hook will automatically refetch when dependencies change
+    toast.success('Reports refreshed!');
   };
 
   if (!user) {
@@ -135,7 +155,7 @@ export const ReportsPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="animate-pulse h-12 w-12 bg-muted rounded-full mx-auto" />
-          <div className="text-muted-foreground">Loading your dashboard...</div>
+          <div className="text-muted-foreground">Loading reports...</div>
         </div>
       </div>
     );
@@ -145,7 +165,7 @@ export const ReportsPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="text-destructive">Failed to load dashboard data</div>
+          <div className="text-destructive">Failed to load report data</div>
           <button 
             onClick={handleRefresh}
             className="text-primary hover:underline"
@@ -158,75 +178,64 @@ export const ReportsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
-      <div className="container mx-auto p-6 space-y-8 max-w-7xl">
-        <ModernReportsHeader
-          currentUser={user}
-          selectedUser={selectedUser}
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-6 max-w-7xl">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Task Reports</h1>
+            <p className="text-muted-foreground">Comprehensive insights into task completion and team performance</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <ReportFilters
           timeRange={timeRange}
-          searchQuery={searchQuery}
-          activeTab={activeTab}
+          dateRange={dateRange}
+          selectedTeamId={selectedTeamId || undefined}
           onTimeRangeChange={setTimeRange}
-          onSearchChange={setSearchQuery}
-          onUserSelect={handleUserSelect}
-          onBackToPersonal={handleBackToPersonal}
-          onTabChange={setActiveTab}
+          onDateRangeChange={setDateRange}
+          onTeamChange={(value) => setSelectedTeamId(value === 'all' ? null : value)}
           onExport={handleExport}
           onRefresh={handleRefresh}
-          isLoading={isLoading}
+          showTeamFilter={true}
         />
 
+        {/* Reports Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsContent value="individual" className="space-y-8 mt-6">
-            {/* Comprehensive Reports Panel */}
-            <ComprehensiveReportsPanel
-              userId={viewingUserId || ''}
-              userName={viewingUserName}
-              timeRange={timeRange}
-              dateRange={undefined}
-            />
-          </TabsContent>
-          
-          <TabsContent value="legacy" className="space-y-8 mt-6">
-            {/* Executive Summary Cards */}
-            <ExecutiveSummary
-              taskStats={taskStatsSummary}
-              hoursStats={hoursStatsSummary}
-              contributions={contributions}
-              isLoading={isLoading}
-            />
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="daily" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Daily Completion
+            </TabsTrigger>
+            <TabsTrigger value="weekly" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Weekly Overview
+            </TabsTrigger>
+            <TabsTrigger value="team" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Team Effectiveness
+            </TabsTrigger>
+            <TabsTrigger value="project" className="flex items-center gap-2">
+              <FolderOpen className="h-4 w-4" />
+              Project Analytics
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Performance Visualization Grid */}
-            <PerformanceGrid
-              taskStats={taskStatsSummary}
-              hoursStats={hoursStatsSummary}
-              contributions={contributions}
-              isLoading={isLoading}
-            />
-
-            {/* Split Layout for Insights and Detailed Analytics */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              <div className="xl:col-span-1">
-                <InsightsPanel
-                  taskStats={taskStatsSummary}
-                  hoursStats={hoursStatsSummary}
-                  contributions={contributions}
-                  isLoading={isLoading}
-                />
-              </div>
-              <div className="xl:col-span-2">
-                <DetailedAnalytics
-                  taskStats={taskStatsSummary}
-                  hoursStats={hoursStatsSummary}
-                  contributions={contributions}
-                  isLoading={isLoading}
-                />
-              </div>
-            </div>
+          <TabsContent value="daily" className="mt-6">
+            <DailyCompletionReport data={dailyData} isLoading={isLoading} />
           </TabsContent>
-          
-          <TabsContent value="team" className="space-y-8 mt-6">
-            <TeamReports />
+
+          <TabsContent value="weekly" className="mt-6">
+            <WeeklyOverviewReport data={weeklyData} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="team" className="mt-6">
+            <TeamEffectivenessReport data={teamData} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="project" className="mt-6">
+            <ProjectAnalyticsReport data={projectData} isLoading={isLoading} />
           </TabsContent>
         </Tabs>
       </div>
