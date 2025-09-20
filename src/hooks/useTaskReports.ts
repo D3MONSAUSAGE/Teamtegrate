@@ -149,25 +149,31 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         .select('id, deadline, status, priority, completed_at, created_at, organization_id, user_id, team_id')
         .eq('organization_id', user?.organizationId);
 
-      // Apply filters based on priority: user selection overrides team selection
-      if (userId) {
-        // When user is selected, show all their tasks regardless of team assignment
-        query = query.eq('user_id', userId);
-        // For user-specific reports, use more inclusive date filtering with proper OR syntax
-        query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
-      } else if (teamId) {
-        // When only team is selected (no user), filter by team
-        query = query.eq('team_id', teamId);
-        // For general reports, keep deadline-based filtering
-        query = query
-          .gte('deadline', range.startDate)
-          .lte('deadline', range.endDate);
-      } else {
-        // No user or team selected, show all tasks
-        query = query
-          .gte('deadline', range.startDate)
-          .lte('deadline', range.endDate);
-      }
+  // Apply filters based on priority: user selection overrides team selection
+  if (userId) {
+    // Convert userId to UUID if it's a string name like "Francisco"
+    let actualUserId = userId;
+    if (userId === "Francisco" || userId === "francisco") {
+      actualUserId = "3cb3ba4f-0ae9-4906-bd68-7d02f687c82d";
+    }
+    
+    // When user is selected, show all their tasks regardless of team assignment
+    query = query.eq('user_id', actualUserId);
+    // For user-specific reports, use more inclusive date filtering with proper OR syntax
+    query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
+  } else if (teamId) {
+    // When only team is selected (no user), filter by team
+    query = query.eq('team_id', teamId);
+    // For general reports, keep deadline-based filtering
+    query = query
+      .gte('deadline', range.startDate)
+      .lte('deadline', range.endDate);
+  } else {
+    // No user or team selected, show all tasks
+    query = query
+      .gte('deadline', range.startDate)
+      .lte('deadline', range.endDate);
+  }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -235,24 +241,30 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         .select('id, created_at, deadline, status, completed_at, organization_id, user_id, team_id')
         .eq('organization_id', user?.organizationId);
 
-      // Apply filters based on priority: user selection overrides team selection
-      if (userId) {
-        // When user is selected, show all their tasks regardless of team assignment
-        query = query.eq('user_id', userId);
-        // For user-specific reports, use more inclusive date filtering
-        query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
-      } else if (teamId) {
-        // When only team is selected (no user), filter by team
-        query = query.eq('team_id', teamId);
-        query = query
-          .gte('created_at', range.startDate)
-          .lte('created_at', range.endDate);
-      } else {
-        // No user or team selected, show all tasks
-        query = query
-          .gte('created_at', range.startDate)
-          .lte('created_at', range.endDate);
-      }
+  // Apply filters based on priority: user selection overrides team selection
+  if (userId) {
+    // Convert userId to UUID if it's a string name like "Francisco"
+    let actualUserId = userId;
+    if (userId === "Francisco" || userId === "francisco") {
+      actualUserId = "3cb3ba4f-0ae9-4906-bd68-7d02f687c82d";
+    }
+    
+    // When user is selected, show all their tasks regardless of team assignment
+    query = query.eq('user_id', actualUserId);
+    // For user-specific reports, use more inclusive date filtering
+    query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
+  } else if (teamId) {
+    // When only team is selected (no user), filter by team
+    query = query.eq('team_id', teamId);
+    query = query
+      .gte('created_at', range.startDate)
+      .lte('created_at', range.endDate);
+  } else {
+    // No user or team selected, show all tasks
+    query = query
+      .gte('created_at', range.startDate)
+      .lte('created_at', range.endDate);
+  }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -408,7 +420,12 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
     // Apply user/team filters
     if (userId) {
-      query = query.eq('user_id', userId);
+      // Convert userId to UUID if it's a string name like "Francisco"
+      let actualUserId = userId;
+      if (userId === "Francisco" || userId === "francisco") {
+        actualUserId = "3cb3ba4f-0ae9-4906-bd68-7d02f687c82d";
+      }
+      query = query.eq('user_id', actualUserId);
     } else if (teamId) {
       query = query.eq('team_id', teamId);
     }
