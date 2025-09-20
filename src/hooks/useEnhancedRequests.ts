@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { notifications } from '@/lib/notifications';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { toast } from '@/components/ui/sonner';
 import { useRequestsRealtime } from './useRequestsRealtime';
 import type { Request, RequestType } from '@/types/requests';
 
@@ -184,11 +184,11 @@ export function useEnhancedRequests() {
       }
 
       await fetchRequests();
-      enhancedNotifications.success('Request created successfully');
+      toast.success('Request created successfully');
       return requestRecord;
     } catch (err) {
       console.error('Error creating request:', err);
-      enhancedNotifications.error('Failed to create request');
+      toast.error('Failed to create request');
       throw err;
     }
   };
@@ -292,10 +292,10 @@ export function useEnhancedRequests() {
       }
 
       await fetchRequests();
-      enhancedNotifications.success('Request submitted successfully');
+      toast.success('Request submitted successfully');
     } catch (err) {
       console.error('Error submitting request:', err);
-      enhancedNotifications.error('Failed to submit request');
+      toast.error('Failed to submit request');
       throw err;
     }
   };
@@ -396,10 +396,10 @@ export function useEnhancedRequests() {
       }
 
       await fetchRequests();
-      enhancedNotifications.success(`Request ${newStatus} successfully`);
+      toast.success(`Request ${newStatus} successfully`);
     } catch (err) {
       console.error('Error updating request status:', err);
-      enhancedNotifications.error(`Failed to ${newStatus} request`);
+      toast.error(`Failed to ${newStatus} request`);
       throw err;
     }
   };

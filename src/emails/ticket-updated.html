@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket Status Updated</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: hsl(240 10% 3.9%); color: hsl(0 0% 98%);">
+  <div style="max-width: 600px; margin: 0 auto; background: hsl(240 10% 3.9%);">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%)); padding: 40px 30px; text-align: center;">
+      <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 600;">{{brandName}}</h1>
+      <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Support Team</p>
+    </div>
+    
+    <!-- Content -->
+    <div style="padding: 40px 30px; background: hsl(240 3.7% 15.9%); color: hsl(0 0% 98%);">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <div style="width: 64px; height: 64px; background: hsl(43 96% 56%); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+          <span style="color: white; font-size: 24px;">🔄</span>
+        </div>
+        <h2 style="margin: 0; color: hsl(0 0% 98%); font-size: 24px; font-weight: 600;">Ticket Status Updated</h2>
+      </div>
+      
+      <p style="margin: 0 0 20px; color: hsl(240 5% 64.9%); font-size: 16px; line-height: 1.6;">Hi {{recipientName}},</p>
+      <p style="margin: 0 0 30px; color: hsl(240 5% 64.9%); font-size: 16px; line-height: 1.6;">
+        Ticket <strong style="color: hsl(0 0% 98%);">#{{ticketId}}</strong> status has been updated by <strong style="color: hsl(0 0% 98%);">{{actorName}}</strong>.
+      </p>
+      
+      <!-- Ticket Details Card -->
+      <div style="background: hsl(240 3.7% 15.9%); border: 1px solid hsl(240 3.7% 25%); padding: 24px; border-radius: 12px; margin: 30px 0;">
+        <h3 style="margin: 0 0 16px; color: hsl(0 0% 98%); font-size: 18px; font-weight: 600;">{{ticketTitle}}</h3>
+        
+        <!-- Status Change -->
+        <div style="background: hsl(240 3.7% 12%); padding: 20px; border-radius: 8px; margin: 16px 0;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+            <span style="background: hsl(240 3.7% 25%); color: hsl(240 5% 64.9%); padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500;">{{oldStatus}}</span>
+            <span style="color: hsl(240 5% 64.9%); font-size: 18px;">→</span>
+            <span style="background: hsl(142 76% 36%); color: white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;">{{newStatus}}</span>
+          </div>
+        </div>
+        
+        {{#if message}}
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid hsl(240 3.7% 25%);">
+          <h4 style="margin: 0 0 8px; color: hsl(0 0% 98%); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Update Message</h4>
+          <p style="margin: 0; color: hsl(240 5% 64.9%); font-size: 14px; line-height: 1.5;">{{message}}</p>
+        </div>
+        {{/if}}
+        
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid hsl(240 3.7% 25%);">
+          <span style="color: hsl(240 5% 64.9%); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Updated by: {{actorName}}</span>
+        </div>
+      </div>
+      
+      <!-- CTA Button -->
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="{{ticketUrl}}" style="display: inline-block; background: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%)); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; transition: all 0.2s;">
+          View Full Update
+        </a>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background: hsl(240 5.9% 10%); padding: 30px; text-align: center;">
+      <p style="margin: 0; color: hsl(240 3.8% 46.1%); font-size: 14px;">
+        {{brandName}} Support Team<br>
+        <span style="font-size: 12px;">This is an automated message from your request management system.</span>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

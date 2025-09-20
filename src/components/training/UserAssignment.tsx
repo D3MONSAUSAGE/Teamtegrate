@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
 import { useTrainingCourses, useQuizzes, useCreateTrainingAssignment } from '@/hooks/useTrainingData';
-import { useEnhancedNotifications } from '@/hooks/useEnhancedNotifications';
+import { notifications } from '@/lib/notifications';
 import { format } from 'date-fns';
 import TrainingReassignmentManager from './TrainingReassignmentManager';
 
@@ -43,7 +43,6 @@ const UserAssignment: React.FC<UserAssignmentProps> = ({ open, onOpenChange }) =
   const { data: courses = [] } = useTrainingCourses();
   const { data: quizzes = [] } = useQuizzes();
   const createAssignment = useCreateTrainingAssignment();
-  const { notifyTrainingCompletion } = useEnhancedNotifications();
 
   // Filter users based on search term
   const filteredUsers = users.filter(user => 

@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
 import { Request } from '@/types/requests';
-import { useRequestNotifications } from '@/hooks/useRequestNotifications';
+import { notifications } from '@/lib/notifications';
 
 interface RequestCompletionDialogProps {
   request: Request;
@@ -17,7 +17,6 @@ interface RequestCompletionDialogProps {
 
 export default function RequestCompletionDialog({ request, onRequestUpdated }: RequestCompletionDialogProps) {
   const { user } = useAuth();
-  const { notifyRequestCompleted } = useRequestNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const [completionNotes, setCompletionNotes] = useState('');
   const [isCompleting, setIsCompleting] = useState(false);
@@ -62,11 +61,27 @@ export default function RequestCompletionDialog({ request, onRequestUpdated }: R
 
       if (updateLogError) throw updateLogError;
 
-      // Send completion notification
+      // Send completion notification using centralized system
       try {
         console.log('Sending completion notification for request:', request.id);
-        await notifyRequestCompleted(request.id);
-        console.log('Completion notification sent successfully');
+        await notifications.notifyTicketClosed(
+          {
+            id: request.id,
+            title: request.title,
+            description: request.description || '',
+            status: 'completed',
+            priority: request.priority || 'medium',
+            created_at: request.created_at,
+            organization_id: request.organization_id
+          },
+          completionNotes.trim() || 'Request has been completed successfully.',
+          {
+            id: user.id,
+            email: user.email || '',
+            name: user.name
+          }
+        );
+        console.log('Centralized completion notification sent successfully');
       } catch (notificationError) {
         console.error('Failed to send completion notification:', notificationError);
         // Don't block the completion process if notification fails

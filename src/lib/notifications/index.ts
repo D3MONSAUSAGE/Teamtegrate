@@ -1,4 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
+import { resendAdapter } from './email/resend';
+import { fcmAdapter } from './push/fcm';
+import { toast } from '@/components/ui/sonner';
 
 interface NotificationRecipient {
   id: string;
@@ -130,5 +133,15 @@ export const notifications = {
     } catch (error) {
       console.error('[Notifications] Error in notifyTicketClosed:', error);
     }
-  }
+  },
+
+  // Direct adapter methods for advanced use cases
+  resend: resendAdapter,
+  fcm: fcmAdapter,
+  
+  // Simple success/error notifications for UI feedback
+  success: (message: string) => toast.success(message),
+  error: (message: string) => toast.error(message),
+  info: (message: string) => toast.info(message),
+  warning: (message: string) => toast.warning(message)
 };

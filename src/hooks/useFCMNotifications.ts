@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFCMTokenManager } from './useFCMTokenManager';
-import { useEnhancedNotifications } from './useEnhancedNotifications';
+import { notifications } from '@/lib/notifications';
 import { toast } from '@/components/ui/sonner';
 
 /**
@@ -12,7 +12,6 @@ import { toast } from '@/components/ui/sonner';
 export const useFCMNotifications = () => {
   const { user } = useAuth();
   const { registerFCMToken, testFCMNotification, isSupported } = useFCMTokenManager();
-  const { sendNotificationToMultiple } = useEnhancedNotifications();
 
   // Send notification with FCM support
   const sendNotificationWithFCM = async (
@@ -84,8 +83,6 @@ export const useFCMNotifications = () => {
     sendNotificationWithFCM,
     sendSingleNotification,
     testFCMNotification,
-    isSupported,
-    // Expose original enhanced notification methods for compatibility
-    sendNotificationToMultiple
+    isSupported
   };
 };
