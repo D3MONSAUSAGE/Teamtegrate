@@ -70,7 +70,6 @@ export default function SimpleRequestCategoryDialog({
   const [loading, setLoading] = React.useState(false);
   const [showAssignmentOptions, setShowAssignmentOptions] = React.useState(false);
   const [parentCategories, setParentCategories] = React.useState<{id: string; name: string}[]>([]);
-  const [isSubcategory, setIsSubcategory] = React.useState(false);
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
@@ -110,8 +109,6 @@ export default function SimpleRequestCategoryDialog({
   // Reset form when category changes
   React.useEffect(() => {
     if (open) {
-      const hasParent = !!category?.parent_category_id;
-      setIsSubcategory(hasParent);
       form.reset({
         name: category?.name || '',
         description: category?.description || '',
@@ -141,7 +138,7 @@ export default function SimpleRequestCategoryDialog({
         description: data.description || null,
         subcategory: data.subcategory || null,
         parent_category_id: data.parent_category_id || null,
-        category: isSubcategory ? 'subcategory' : 'custom',
+        category: data.parent_category_id ? 'subcategory' : 'custom',
         requires_approval: data.requires_approval,
         approval_roles: data.approval_roles,
         is_active: data.is_active,
@@ -201,56 +198,30 @@ export default function SimpleRequestCategoryDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" id="category-form">
           {/* Basic Information */}
           <div className="space-y-4">
-            {/* Category Type Selection */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium">Category Type</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="main-category"
-                    name="category-type"
-                    checked={!isSubcategory}
-                    onChange={() => setIsSubcategory(false)}
-                  />
-                  <Label htmlFor="main-category">Main Category</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="sub-category"
-                    name="category-type"
-                    checked={isSubcategory}
-                    onChange={() => setIsSubcategory(true)}
-                  />
-                  <Label htmlFor="sub-category">Subcategory</Label>
-                </div>
-              </div>
+            {/* Parent Category Selection (optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="parent_category">Parent Category (optional)</Label>
+              <select
+                {...form.register('parent_category_id')}
+                className="w-full p-2 border border-input rounded-md"
+              >
+                <option value="">None - Create as main category</option>
+                {parentCategories.map(parent => (
+                  <option key={parent.id} value={parent.id}>
+                    {parent.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Leave empty to create a main category, or select a parent to create a subcategory
+              </p>
             </div>
 
-            {/* Parent Category Selection (only for subcategories) */}
-            {isSubcategory && (
-              <div className="space-y-2">
-                <Label htmlFor="parent_category">Parent Category *</Label>
-                <select
-                  {...form.register('parent_category_id')}
-                  className="w-full p-2 border border-input rounded-md"
-                >
-                  <option value="">Select a parent category</option>
-                  {parentCategories.map(parent => (
-                    <option key={parent.id} value={parent.id}>
-                      {parent.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label htmlFor="name">{isSubcategory ? 'Subcategory' : 'Category'} Name *</Label>
+              <Label htmlFor="name">Category Name *</Label>
               <Input
                 id="name"
-                placeholder={isSubcategory ? "e.g., Vacation, Sick Leave" : "e.g., Time Off Request, Equipment Request"}
+                placeholder="e.g., Time Off Request, Vacation, Equipment Request"
                 {...form.register('name')}
               />
               {form.formState.errors.name && (
