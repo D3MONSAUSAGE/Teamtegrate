@@ -6,14 +6,16 @@ interface ReportFiltersState {
   timeRange: string;
   dateRange?: DateRange;
   selectedTeamId: string | null;
+  selectedUserId: string | null;
 }
 
 const STORAGE_KEY = 'report-filters';
 
 export const useReportFilters = () => {
-  const [timeRange, setTimeRange] = useState('30 days');
+  const [timeRange, setTimeRange] = useState('7 days');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // Load filters from session storage on mount
   useEffect(() => {
@@ -24,6 +26,7 @@ export const useReportFilters = () => {
         setTimeRange(parsed.timeRange);
         setDateRange(parsed.dateRange);
         setSelectedTeamId(parsed.selectedTeamId);
+        setSelectedUserId(parsed.selectedUserId);
       }
     } catch (error) {
       console.warn('Failed to load saved report filters:', error);
@@ -36,13 +39,14 @@ export const useReportFilters = () => {
       const filtersState: ReportFiltersState = {
         timeRange,
         dateRange,
-        selectedTeamId
+        selectedTeamId,
+        selectedUserId
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filtersState));
     } catch (error) {
       console.warn('Failed to save report filters:', error);
     }
-  }, [timeRange, dateRange, selectedTeamId]);
+  }, [timeRange, dateRange, selectedTeamId, selectedUserId]);
 
   // Calculate actual date range
   const calculatedDateRange = calculateDateRange(timeRange, dateRange);
@@ -51,9 +55,11 @@ export const useReportFilters = () => {
     timeRange,
     dateRange,
     selectedTeamId,
+    selectedUserId,
     calculatedDateRange,
     setTimeRange,
     setDateRange,
-    setSelectedTeamId
+    setSelectedTeamId,
+    setSelectedUserId
   };
 };

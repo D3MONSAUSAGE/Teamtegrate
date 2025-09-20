@@ -24,9 +24,11 @@ export const ReportsPage: React.FC = () => {
     timeRange,
     dateRange,
     selectedTeamId,
+    selectedUserId,
     setTimeRange,
     setDateRange,
-    setSelectedTeamId
+    setSelectedTeamId,
+    setSelectedUserId
   } = useReportFilters();
 
   // Fetch unified report data
@@ -41,7 +43,8 @@ export const ReportsPage: React.FC = () => {
   } = useTaskReports({
     timeRange,
     dateRange,
-    teamId: selectedTeamId || undefined
+    teamId: selectedTeamId || undefined,
+    userId: selectedUserId || undefined
   });
 
   const handleExport = () => {
@@ -193,9 +196,11 @@ export const ReportsPage: React.FC = () => {
           timeRange={timeRange}
           dateRange={dateRange}
           selectedTeamId={selectedTeamId || undefined}
+          selectedUserId={selectedUserId || undefined}
           onTimeRangeChange={setTimeRange}
           onDateRangeChange={setDateRange}
           onTeamChange={(value) => setSelectedTeamId(value === 'all' ? null : value)}
+          onUserChange={(value) => setSelectedUserId(value === 'all' ? null : value)}
           onExport={handleExport}
           onRefresh={handleRefresh}
           showTeamFilter={true}
