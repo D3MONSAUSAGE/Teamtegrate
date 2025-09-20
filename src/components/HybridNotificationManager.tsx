@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, BellRing, Smartphone, Globe, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFCMTokenManager } from '@/hooks/useFCMTokenManager';
-import { useWebPushNotifications } from '@/hooks/useWebPushNotifications';
+import { notifications } from '@/lib/notifications';
 import { Capacitor } from '@capacitor/core';
 import { toast } from '@/components/ui/sonner';
 
@@ -27,60 +27,48 @@ export const HybridNotificationManager: React.FC = () => {
     testFCMNotification
   } = useFCMTokenManager();
   
-  // Web push notifications
-  const {
-    isSupported: webPushSupported,
-    isRegistered: webPushRegistered,
-    permission: webPushPermission,
-    token: webPushToken,
-    isRegistering: webPushRegistering,
-    error: webPushError,
-    registerWebPush,
-    unregisterWebPush,
-    testNotification: testWebPush
-  } = useWebPushNotifications();
+  // Web push notifications (simplified - using FCM for web as well)
+  const webPushSupported = !isNative;
+  const webPushRegistered = fcmToken && !isNative;
+  const webPushPermission = 'granted';
+  const webPushRegistering = fcmRegistering;
+  const webPushError = fcmError;
 
   if (!user) return null;
 
   const handleEnableNotifications = async () => {
     try {
-      if (isNative && fcmSupported) {
+      if (fcmSupported) {
         await registerFCMToken();
-      } else if (webPushSupported) {
-        await registerWebPush();
       } else {
-        toast.error('Push notifications are not supported on this device');
+        notifications.error('Push notifications are not supported on this device');
       }
     } catch (error) {
       console.error('Failed to enable notifications:', error);
-      toast.error('Failed to enable notifications');
+      notifications.error('Failed to enable notifications');
     }
   };
 
   const handleTestNotification = async () => {
     try {
-      if (isNative && fcmToken) {
+      if (fcmToken) {
         await testFCMNotification();
-      } else if (webPushRegistered) {
-        await testWebPush();
       } else {
-        toast.error('Please enable notifications first');
+        notifications.error('Please enable notifications first');
       }
     } catch (error) {
       console.error('Failed to send test notification:', error);
-      toast.error('Failed to send test notification');
+      notifications.error('Failed to send test notification');
     }
   };
 
   const handleDisableNotifications = async () => {
     try {
-      if (webPushRegistered) {
-        await unregisterWebPush();
-      }
-      toast.success('Notifications disabled');
+      // FCM tokens are managed by the FCM hook
+      notifications.success('Notifications disabled');
     } catch (error) {
       console.error('Failed to disable notifications:', error);
-      toast.error('Failed to disable notifications');
+      notifications.error('Failed to disable notifications');
     }
   };
 
@@ -93,15 +81,15 @@ export const HybridNotificationManager: React.FC = () => {
     } else {
       if (webPushRegistered) return { status: 'active', color: 'bg-green-500', text: 'Active (Web)' };
       if (webPushRegistering) return { status: 'pending', color: 'bg-yellow-500', text: 'Setting up...' };
-      if (webPushPermission === 'denied') return { status: 'denied', color: 'bg-red-500', text: 'Permission Denied' };
-      if (webPushError) return { status: 'error', color: 'bg-red-500', text: 'Error' };
+      if (!fcmSupported) return { status: 'denied', color: 'bg-red-500', text: 'Not Supported' };
+      if (fcmError) return { status: 'error', color: 'bg-red-500', text: 'Error' };
       return { status: 'inactive', color: 'bg-gray-500', text: 'Disabled' };
     }
   };
 
   const notificationStatus = getNotificationStatus();
   const isActive = notificationStatus.status === 'active';
-  const canEnable = !isActive && !fcmRegistering && !webPushRegistering;
+  const canEnable = !isActive && !fcmRegistering;
   const canTest = isActive;
 
   return (
@@ -141,13 +129,13 @@ export const HybridNotificationManager: React.FC = () => {
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Support:</span>
           <div className="flex items-center gap-2">
-            {(isNative ? fcmSupported : webPushSupported) ? (
+            {fcmSupported ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
               <AlertCircle className="h-4 w-4 text-red-500" />
             )}
             <span className="text-sm">
-              {(isNative ? fcmSupported : webPushSupported) ? 'Supported' : 'Not Supported'}
+              {fcmSupported ? 'Supported' : 'Not Supported'}
             </span>
           </div>
         </div>
@@ -157,7 +145,7 @@ export const HybridNotificationManager: React.FC = () => {
           {!isActive && canEnable && (
             <Button 
               onClick={handleEnableNotifications}
-              disabled={fcmRegistering || webPushRegistering}
+              disabled={fcmRegistering}
               className="flex-1"
             >
               <BellRing className="h-4 w-4 mr-2" />
@@ -187,9 +175,9 @@ export const HybridNotificationManager: React.FC = () => {
         </div>
 
         {/* Error Messages */}
-        {(fcmError || webPushError) && (
+        {fcmError && (
           <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-            {fcmError || webPushError}
+            {fcmError}
           </div>
         )}
 

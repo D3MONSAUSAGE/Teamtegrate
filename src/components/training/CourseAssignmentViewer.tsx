@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { notifications } from '@/lib/notifications';
 import ModuleViewer from './ModuleViewer';
 import VideoToQuizFlow from './VideoToQuizFlow';
 import QuizTaker from './QuizTaker';
@@ -100,7 +100,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     // Refresh the assignment data to show updated status
     queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
     setShowCertificateUpload(false);
-    enhancedNotifications.success('Certificate uploaded! Your training completion is pending verification.');
+    notifications.success('Certificate uploaded! Your training completion is pending verification.');
   };
 
   const handleStartExternalCourse = async () => {
@@ -139,12 +139,12 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
         .eq('assigned_to', user?.id);
 
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
-      enhancedNotifications.success('Training marked as completed!');
+      notifications.success('Training marked as completed!');
       onComplete?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Error completing assignment:', error);
-      enhancedNotifications.error('Failed to mark training as completed');
+      notifications.error('Failed to mark training as completed');
     }
   };
 
@@ -484,7 +484,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
 
     } catch (error) {
       console.error('Error loading course data:', error);
-      enhancedNotifications.error('Failed to load course data');
+      notifications.error('Failed to load course data');
     } finally {
       setIsLoading(false);
     }
@@ -535,7 +535,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
         queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
         queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
 
-        enhancedNotifications.success('Course completed successfully!');
+        notifications.success('Course completed successfully!');
         onComplete?.();
         onOpenChange(false);
       } catch (error) {
@@ -562,7 +562,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     // Validate quiz has questions before proceeding
     if (!quiz.quiz_questions || quiz.quiz_questions.length === 0) {
       console.error('❌ Quiz has no questions available:', quiz.id);
-      enhancedNotifications.error('This quiz has no questions available. Please contact your administrator.');
+      notifications.error('This quiz has no questions available. Please contact your administrator.');
       return;
     }
     
@@ -574,7 +574,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
     }));
 
     if (!questions.length) {
-      enhancedNotifications.error('Quiz not ready: no questions found');
+      notifications.error('Quiz not ready: no questions found');
       return;
     }
 
@@ -589,7 +589,7 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
   };
 
   const handleQuizComplete = (results: any) => {
-    enhancedNotifications.success(`Quiz completed! Score: ${results.score}/${results.maxScore}`);
+    notifications.success(`Quiz completed! Score: ${results.score}/${results.maxScore}`);
     
     if (results.passed) {
       // Reload course data first to get updated progress
@@ -604,16 +604,16 @@ const CourseAssignmentViewer: React.FC<CourseAssignmentViewerProps> = ({
         if (nextIncompleteIndex >= 0) {
           setCurrentModuleIndex(nextIncompleteIndex);
           setViewMode('overview');
-          enhancedNotifications.info(`Proceeding to: ${modules[nextIncompleteIndex]?.title}`);
+          notifications.info(`Proceeding to: ${modules[nextIncompleteIndex]?.title}`);
         } else {
           // Course completed
           handleModuleComplete();
-          enhancedNotifications.success('🎉 Congratulations! You have completed the entire course!');
+          notifications.success('🎉 Congratulations! You have completed the entire course!');
         }
       });
     } else {
       setViewMode('overview');
-      enhancedNotifications.info('You can review the material and try the quiz again when ready.');
+      notifications.info('You can review the material and try the quiz again when ready.');
     }
     
     setSelectedQuiz(null);

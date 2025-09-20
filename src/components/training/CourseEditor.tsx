@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, GripVertical, Video, FileText, PlayCircle, File } from "lucide-react";
 import { useUpdateCourse, useDeleteCourse } from "@/hooks/useTrainingData";
-import { enhancedNotifications } from "@/utils/enhancedNotifications";
+import { notifications } from '@/lib/notifications';
 import { extractYouTubeVideoId, isValidVideoInput, parseVideoInput } from "@/lib/youtube";
 import ModuleFileUploader from './ModuleFileUploader';
 
@@ -134,11 +134,11 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
         modules: modules
       });
       
-      enhancedNotifications.success('Course updated successfully!');
+      notifications.success('Course updated successfully!');
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating course:', error);
-      enhancedNotifications.error('Failed to update course');
+      notifications.error('Failed to update course');
     }
   };
 
@@ -147,12 +147,12 @@ const CourseEditor: React.FC<CourseEditorProps> = ({ open, onOpenChange, course 
 
     try {
       await deleteCourseMutation.mutateAsync(course.id);
-      enhancedNotifications.success('Course deleted successfully!');
+      notifications.success('Course deleted successfully!');
       setShowDeleteConfirm(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Error deleting course:', error);
-      enhancedNotifications.error('Failed to delete course');
+      notifications.error('Failed to delete course');
     }
   };
 

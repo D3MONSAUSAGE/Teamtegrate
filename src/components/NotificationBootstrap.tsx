@@ -3,7 +3,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
-import { useWebPushNotifications } from '@/hooks/useWebPushNotifications';
+// Web push notifications removed - using FCM for all platforms
 import { usePWAPrompt } from '@/hooks/usePWAPrompt';
 import { Capacitor } from '@capacitor/core';
 
@@ -29,8 +29,7 @@ export function NotificationBootstrap() {
   // Initialize enhanced system notifications with dropdown support
   useSystemNotifications();
   
-  // Initialize web push notifications for browsers
-  useWebPushNotifications();
+  // Web push notifications now handled by FCM
   
   // Initialize PWA installation prompts and detection
   usePWAPrompt();

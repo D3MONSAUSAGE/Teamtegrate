@@ -2,7 +2,7 @@
 import React, { useEffect, memo, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { enhancedNotifications } from '@/utils/enhancedNotifications';
+import { notifications } from '@/lib/notifications';
 import { useNotifications } from '@/hooks/use-notifications';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import NavbarBrand from './navbar/NavbarBrand';
@@ -22,7 +22,7 @@ const Navbar = memo(() => {
     try {
       await logout();
       navigate('/login');
-      enhancedNotifications.success('Logged out successfully');
+      notifications.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
       navigate('/login');
