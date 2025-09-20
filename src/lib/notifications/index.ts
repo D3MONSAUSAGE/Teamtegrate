@@ -24,6 +24,18 @@ interface UserData {
   name?: string;
 }
 
+interface TaskNotificationData {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority?: string;
+  deadline?: string;
+  created_at: string;
+  organization_id: string;
+  project_title?: string;
+}
+
 // Centralized notification orchestrator - Frontend calls edge functions
 export const notifications = {
   // Ticket Created - notify requester (confirmation) + admins (new ticket alert)
@@ -130,6 +142,60 @@ export const notifications = {
       console.log('[Notifications] Ticket closed notifications sent successfully:', data);
     } catch (error) {
       console.error('[Notifications] Error in notifyTicketClosed:', error);
+    }
+  },
+
+  // Task Assignment - notify assigned user(s)
+  async notifyTaskAssigned(task: TaskNotificationData, assignees: UserData[], actor: UserData) {
+    try {
+      console.log(`[Notifications] Triggering task assigned notifications: ${task.id} to ${assignees.length} user(s)`);
+
+      const { data, error } = await supabase.functions.invoke('send-task-notifications', {
+        body: {
+          type: 'task_assigned',
+          task,
+          assignees,
+          actor,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to send task assigned notifications:', error);
+        throw error;
+      }
+
+      console.log('[Notifications] Task assigned notifications sent successfully:', data);
+    } catch (error) {
+      console.error('[Notifications] Error in notifyTaskAssigned:', error);
+    }
+  },
+
+  // Task Status Changed - notify assigned users
+  async notifyTaskStatusChanged(task: TaskNotificationData, oldStatus: string, newStatus: string, actor: UserData, assignees: UserData[]) {
+    try {
+      console.log(`[Notifications] Triggering task status changed notifications: ${task.id} from ${oldStatus} to ${newStatus}`);
+
+      const { data, error } = await supabase.functions.invoke('send-task-notifications', {
+        body: {
+          type: 'task_status_changed',
+          task,
+          oldStatus,
+          newStatus,
+          actor,
+          assignees,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to send task status changed notifications:', error);
+        throw error;
+      }
+
+      console.log('[Notifications] Task status changed notifications sent successfully:', data);
+    } catch (error) {
+      console.error('[Notifications] Error in notifyTaskStatusChanged:', error);
     }
   },
 

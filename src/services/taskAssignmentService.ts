@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Task, User } from '@/types';
 import { toast } from '@/components/ui/sonner';
+import { notifications } from '@/lib/notifications';
 
 interface AssignTaskParams {
   taskId: string;
@@ -50,6 +51,58 @@ export class TaskAssignmentService {
       const userNamesText = userNames.length > 3 
         ? `${userNames.slice(0, 3).join(', ')} and ${userNames.length - 3} others`
         : userNames.join(', ');
+
+      // Get task details for email notification
+      const { data: taskData } = await supabase
+        .from('tasks')
+        .select(`
+          id, title, description, status, priority, deadline, created_at, organization_id,
+          projects (title)
+        `)
+        .eq('id', taskId)
+        .single();
+
+      // Get user details for email notification
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .in('id', userIds);
+
+      // Get actor details
+      const { data: actorData } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('id', params.currentUserId)
+        .single();
+
+      // Send email notifications
+      if (taskData && usersData && actorData) {
+        const taskNotification = {
+          id: taskData.id,
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status,
+          priority: taskData.priority,
+          deadline: taskData.deadline,
+          created_at: taskData.created_at,
+          organization_id: taskData.organization_id,
+          project_title: (taskData.projects as any)?.title
+        };
+
+        const assignees = usersData.map(user => ({
+          id: user.id,
+          email: user.email,
+          name: user.name || user.email
+        }));
+
+        const actor = {
+          id: actorData.id,
+          email: actorData.email,
+          name: actorData.name || actorData.email
+        };
+
+        await notifications.notifyTaskAssigned(taskNotification, assignees, actor);
+      }
 
       toast.success(`Task assigned to ${userNamesText}`);
       return true;
