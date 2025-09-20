@@ -95,12 +95,15 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         .select('id, deadline, status, priority, completed_at, created_at, organization_id, user_id, team_id')
         .eq('organization_id', user?.organizationId);
 
-      // More inclusive filtering: tasks that have deadlines, were created, or completed within range
+      // Filter by user first if specified
       if (userId) {
-        // For user-specific reports, use more inclusive date filtering
-        query = query
-          .eq('user_id', userId)
-          .or(`deadline.gte.${range.startDate},deadline.lte.${range.endDate},created_at.gte.${range.startDate},created_at.lte.${range.endDate}`);
+        query = query.eq('user_id', userId);
+      }
+      
+      // Then apply date filtering - tasks that have deadlines, were created, or completed within range
+      if (userId) {
+        // For user-specific reports, use more inclusive date filtering with proper OR syntax
+        query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
       } else {
         // For general reports, keep deadline-based filtering
         query = query
@@ -178,11 +181,15 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         .select('id, created_at, deadline, status, completed_at, organization_id, user_id, team_id')
         .eq('organization_id', user?.organizationId);
 
-      // More inclusive filtering for user-specific reports
+      // Filter by user first if specified
       if (userId) {
-        query = query
-          .eq('user_id', userId)
-          .or(`deadline.gte.${range.startDate},deadline.lte.${range.endDate},created_at.gte.${range.startDate},created_at.lte.${range.endDate}`);
+        query = query.eq('user_id', userId);
+      }
+      
+      // Then apply date filtering with proper OR syntax
+      if (userId) {
+        // For user-specific reports, use more inclusive date filtering
+        query = query.or(`and(deadline.gte.${range.startDate},deadline.lte.${range.endDate}),and(created_at.gte.${range.startDate},created_at.lte.${range.endDate}),and(completed_at.gte.${range.startDate},completed_at.lte.${range.endDate})`);
       } else {
         query = query
           .gte('created_at', range.startDate)
