@@ -146,17 +146,15 @@ export const useCleanupOrphanedAssignments = () => {
       queryClient.invalidateQueries({ queryKey: ['user-training-assignments'] });
 
       if (data.success && data.orphaned_assignments_cleaned !== undefined) {
-        enhancedNotifications.success(
-          `Successfully cleaned up ${data.orphaned_assignments_cleaned} orphaned training assignments`
-        );
+        toast.success(`Successfully cleaned up ${data.orphaned_assignments_cleaned} orphaned training assignments`);
       } else if (!data.success && data.error) {
-        enhancedNotifications.error(data.error);
+        toast.error(data.error);
       }
     },
     onError: (error: any) => {
       console.error('Failed to clean up orphaned assignments:', error);
       const errorMessage = error?.message || 'Failed to clean up orphaned assignments';
-      enhancedNotifications.error(errorMessage);
+      toast.error(errorMessage);
     }
   });
 };

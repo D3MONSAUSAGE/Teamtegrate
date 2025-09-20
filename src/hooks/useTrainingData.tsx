@@ -1031,11 +1031,11 @@ export const useSubmitQuizAttempt = () => {
       queryClient.invalidateQueries({ queryKey: ['user-training-progress'] });
       
       console.log('Quiz attempt submitted successfully:', data);
-      enhancedNotifications.success('Quiz completed successfully!');
+      toast.success('Quiz completed successfully!');
     },
     onError: (error) => {
       console.error('Failed to submit quiz attempt:', error);
-      enhancedNotifications.error('Failed to submit quiz attempt');
+      toast.error('Failed to submit quiz attempt');
     }
   });
 };
@@ -1142,7 +1142,7 @@ export const useTrainingAssignments = (userId?: string) => {
         if (coursesError) {
           console.error('useTrainingAssignments: Error fetching courses:', coursesError);
           // Don't throw on course fetch failure - continue with assignments but note the issue
-          enhancedNotifications.error(`Failed to fetch course details: ${coursesError.message}`);
+          toast.error(`Failed to fetch course details: ${coursesError.message}`);
         } else {
           coursesData = courses || [];
           console.log('useTrainingAssignments: Fetched courses data successfully:', coursesData.length, coursesData);
@@ -1376,14 +1376,14 @@ export const useCreateTrainingAssignment = () => {
       if (skippedUsers.length > 0) {
         message += ` (${skippedUsers.length} skipped - already assigned)`;
       }
-      enhancedNotifications.success(message);
+      toast.success(message);
     },
     onError: (error: any) => {
       console.error('Error creating training assignment:', error);
       if (error.message.includes('already have active assignments')) {
-        enhancedNotifications.error('All selected users already have active assignments for this content');
+        toast.error('All selected users already have active assignments for this content');
       } else {
-        enhancedNotifications.error('Failed to create assignment');
+        toast.error('Failed to create assignment');
       }
     }
   });
@@ -1720,11 +1720,11 @@ export const useUpdateCertificate = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-assignments'] });
-      enhancedNotifications.success('Certificate updated successfully');
+      toast.success('Certificate updated successfully');
     },
     onError: (error: any) => {
       console.error('Error updating certificate:', error);
-      enhancedNotifications.error('Failed to update certificate');
+      toast.error('Failed to update certificate');
     }
   });
 };
@@ -1825,7 +1825,7 @@ export const useUpdateAssignmentStatus = () => {
     },
     onError: (error: any) => {
       console.error('Error updating assignment status:', error);
-      enhancedNotifications.error('Failed to update assignment status');
+      toast.error('Failed to update assignment status');
     }
   });
 };

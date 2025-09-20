@@ -45,9 +45,7 @@ const TasksPage = () => {
     },
     onRefresh: () => {
       refetch();
-      enhancedNotifications.info('Personal tasks refreshed', {
-        description: 'Your personal task list has been updated with latest data'
-      });
+      toast.info('Personal tasks refreshed');
     }
   });
   

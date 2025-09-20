@@ -153,13 +153,11 @@ export const useDeleteOrphanedAttempts = () => {
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       queryClient.invalidateQueries({ queryKey: ['quiz-results-with-names'] });
       
-      enhancedNotifications.success(
-        `Successfully deleted ${data.deletedCount} orphaned quiz attempts`
-      );
+      toast.success(`Successfully deleted ${data.deletedCount} orphaned quiz attempts`);
     },
     onError: (error) => {
       console.error('Failed to delete orphaned attempts:', error);
-      enhancedNotifications.error('Failed to delete orphaned attempts');
+      toast.error('Failed to delete orphaned attempts');
     }
   });
 };

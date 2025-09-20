@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { useCreateQuizOverride, useUpdateQuizOverride } from '@/hooks/useQuizOverrides';
 import { useToast } from '@/hooks/use-toast';
-import { toast } from '@/components/ui/sonner';
 
 interface QuizOverrideDialogProps {
   open: boolean;
@@ -79,26 +78,42 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
     
     if (!overrideScore || isNaN(scoreValue) || scoreValue < 0 || scoreValue > maxPoints) {
       console.error('❌ Invalid override score:', { overrideScore, scoreValue, maxPoints });
-      toast.error('Invalid score value. Please enter a number between 0 and ' + maxPoints);
+      toast({
+        variant: "destructive",
+        title: "Invalid Score",
+        description: 'Invalid score value. Please enter a number between 0 and ' + maxPoints,
+      });
       return;
     }
 
     if (!reason.trim() || reason.trim().length < 5) {
       console.error('❌ Reason validation failed:', { reason: reason.trim(), length: reason.trim().length });
-      toast.error('Please provide a detailed justification (minimum 5 characters)');
+      toast({
+        variant: "destructive",
+        title: "Invalid Justification",
+        description: 'Please provide a detailed justification (minimum 5 characters)',
+      });
       return;
     }
 
     if (!question?.id || !quizAttemptId) {
       console.error('❌ Missing required data:', { questionId: question?.id, quizAttemptId });
-      toast.error('Missing required question or attempt information');
+      toast({
+        variant: "destructive",
+        title: "Missing Information", 
+        description: 'Missing required question or attempt information',
+      });
       return;
     }
 
     // Validate existing override for updates
     if (isEditing && !existingOverride?.id) {
       console.error('❌ Edit mode but no valid existing override:', existingOverride);
-      toast.error('Cannot update override: Invalid override data');
+      toast({
+        variant: "destructive",
+        title: "Invalid Data",
+        description: 'Cannot update override: Invalid override data',
+      });
       return;
     }
 
@@ -129,14 +144,20 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
         });
         
         console.log('✅ Override updated successfully');
-        toast.success('Quiz override updated successfully!');
+        toast({
+          title: "Override Updated",
+          description: 'Quiz override updated successfully!',
+        });
       } else {
         console.log('✨ Creating new override:', overrideData);
         
         await createMutation.mutateAsync(overrideData);
         
         console.log('✅ Override created successfully');
-        toast.success('Quiz override applied successfully!');
+        toast({
+          title: "Override Applied",
+          description: 'Quiz override applied successfully!',
+        });
       }
       
       // Reset form and close dialog
@@ -171,7 +192,11 @@ const QuizOverrideDialog: React.FC<QuizOverrideDialogProps> = ({
         errorMessage += error?.message || 'Please try again.';
       }
       
-      toast.error(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Override Failed",
+        description: errorMessage,
+      });
     }
   };
 

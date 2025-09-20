@@ -116,11 +116,11 @@ export function useRequests() {
       if (error) throw error;
 
       await fetchRequests();
-      enhancedNotifications.success('Request created successfully');
+      toast.success('Request created successfully');
       return data;
     } catch (err) {
       console.error('Error creating request:', err);
-      enhancedNotifications.error('Failed to create request');
+      toast.error('Failed to create request');
       throw err;
     }
   };
@@ -135,10 +135,10 @@ export function useRequests() {
       if (error) throw error;
 
       await fetchRequests();
-      enhancedNotifications.success('Request updated successfully');
+      toast.success('Request updated successfully');
     } catch (err) {
       console.error('Error updating request:', err);
-      enhancedNotifications.error('Failed to update request');
+      toast.error('Failed to update request');
       throw err;
     }
   };
@@ -156,10 +156,10 @@ export function useRequests() {
       if (error) throw error;
 
       await fetchRequests();
-      enhancedNotifications.success('Request submitted successfully');
+      toast.success('Request submitted successfully');
     } catch (err) {
       console.error('Error submitting request:', err);
-      enhancedNotifications.error('Failed to submit request');
+      toast.error('Failed to submit request');
       throw err;
     }
   };
@@ -174,10 +174,10 @@ export function useRequests() {
       if (error) throw error;
 
       await fetchRequests();
-      enhancedNotifications.success('Request deleted successfully');
+      toast.success('Request deleted successfully');
     } catch (err) {
       console.error('Error deleting request:', err);
-      enhancedNotifications.error('Failed to delete request');
+      toast.error('Failed to delete request');
       throw err;
     }
   };
@@ -338,10 +338,10 @@ export function useRequestDetails(requestId: string) {
         await fetchRequestDetails();
       }, 100);
 
-      enhancedNotifications.success('Comment added successfully');
+      toast.success('Comment added successfully');
     } catch (err) {
       console.error('Error adding comment:', err);
-      enhancedNotifications.error('Failed to add comment');
+      toast.error('Failed to add comment');
       throw err;
     }
   };

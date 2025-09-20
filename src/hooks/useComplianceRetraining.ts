@@ -117,11 +117,11 @@ export const useForceComplianceRetraining = () => {
     onSuccess: () => {
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
-      enhancedNotifications.success('Compliance retraining required successfully');
+      toast.success('Compliance retraining required successfully');
     },
     onError: (error) => {
       console.error('Error forcing compliance retraining:', error);
-      enhancedNotifications.error('Failed to require compliance retraining');
+      toast.error('Failed to require compliance retraining');
     }
   });
 };
@@ -188,11 +188,11 @@ export const useReassignCompliance = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
-      enhancedNotifications.success('Compliance training reassigned successfully');
+      toast.success('Compliance training reassigned successfully');
     },
     onError: (error) => {
       console.error('Error reassigning compliance:', error);
-      enhancedNotifications.error('Failed to reassign compliance training');
+      toast.error('Failed to reassign compliance training');
     }
   });
 };
