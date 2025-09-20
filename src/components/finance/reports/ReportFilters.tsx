@@ -19,6 +19,7 @@ interface ReportFiltersProps {
   onTeamChange: (teamId: string | null) => void;
   onUserChange?: (userId: string | null) => void;
   calculatedDateRange: CalculatedDateRange;
+  showTimeRange?: boolean; // Add prop to control time range visibility
 }
 
 export const ReportFilters: React.FC<ReportFiltersProps> = ({
@@ -30,7 +31,8 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
   onDateRangeChange,
   onTeamChange,
   onUserChange,
-  calculatedDateRange
+  calculatedDateRange,
+  showTimeRange = true
 }) => {
   const { user } = useAuth();
 
@@ -40,30 +42,36 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Date Range Filter */}
-      <TimeRangeSelector
-        timeRange={timeRange}
-        dateRange={dateRange}
-        onTimeRangeChange={onTimeRangeChange}
-        onDateRangeChange={onDateRangeChange}
-      />
-
-      {/* Team Filter - Only for managers and above */}
-      {canSelectTeam && (
-        <EnhancedTeamSelector
-          selectedTeamId={selectedTeamId}
-          onTeamChange={onTeamChange}
+      {/* Date Range Filter - Only show if enabled */}
+      {showTimeRange && (
+        <TimeRangeSelector
+          timeRange={timeRange}
+          dateRange={dateRange}
+          onTimeRangeChange={onTimeRangeChange}
+          onDateRangeChange={onDateRangeChange}
         />
       )}
 
-      {/* User Filter - Only for managers and above */}
-      {canSelectTeam && onUserChange && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Select User</label>
-          <UserSelector
-            selectedUserId={selectedUserId || null}
-            onUserChange={onUserChange}
-          />
+      {/* Team and User Filters - Side by side for managers and above */}
+      {canSelectTeam && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Select Team</label>
+            <EnhancedTeamSelector
+              selectedTeamId={selectedTeamId}
+              onTeamChange={onTeamChange}
+            />
+          </div>
+          
+          {onUserChange && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Select User</label>
+              <UserSelector
+                selectedUserId={selectedUserId || null}
+                onUserChange={onUserChange}
+              />
+            </div>
+          )}
         </div>
       )}
 

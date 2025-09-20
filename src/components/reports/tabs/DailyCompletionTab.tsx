@@ -25,7 +25,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
 
   // Use the task reports hook for single day data
   const { getDailyTaskDetails } = useTaskReports({
-    timeRange: '1 day',
+    timeRange: 'custom', // Use custom for single date queries
     userId,
   });
 

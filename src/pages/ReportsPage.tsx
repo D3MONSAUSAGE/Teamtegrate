@@ -4,8 +4,9 @@ import { DateRange } from 'react-day-picker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useReportFilters } from '@/hooks/useReportFilters';
-import { ComprehensiveReportsPanel } from '@/components/reports/ComprehensiveReportsPanel';
 import { ReportFilters } from '@/components/finance/reports/ReportFilters';
+import { DailyCompletionTab } from '@/components/reports/tabs/DailyCompletionTab';
+import { WeeklyOverviewTab } from '@/components/reports/tabs/WeeklyOverviewTab';
 import { calculateDateRange } from '@/utils/dateRangeUtils';
 import { BarChart3, Calendar, Users, FolderOpen } from 'lucide-react';
 import { downloadCSV } from '@/utils/exportUtils';
@@ -57,25 +58,65 @@ export const ReportsPage: React.FC = () => {
         </div>
 
         {/* User Selection for Reports */}
-        <ReportFilters
-          timeRange={timeRange}
-          dateRange={dateRange}
-          selectedTeamId={selectedTeamId}
-          selectedUserId={selectedUserId}
-          onTimeRangeChange={setTimeRange}
-          onDateRangeChange={setDateRange}
-          onTeamChange={setSelectedTeamId}
-          onUserChange={setSelectedUserId}
-          calculatedDateRange={calculatedDateRange}
-        />
+        <div className="space-y-6">
+          {/* Dynamic filters based on active tab */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="daily">Daily Completion</TabsTrigger>
+              <TabsTrigger value="weekly">Weekly Overview</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="daily">
+              <ReportFilters
+                timeRange={timeRange}
+                dateRange={dateRange}
+                selectedTeamId={selectedTeamId}
+                selectedUserId={selectedUserId}
+                onTimeRangeChange={setTimeRange}
+                onDateRangeChange={setDateRange}
+                onTeamChange={setSelectedTeamId}
+                onUserChange={setSelectedUserId}
+                calculatedDateRange={calculatedDateRange}
+                showTimeRange={false} // Hide time range for daily tab
+              />
+            </TabsContent>
+
+            <TabsContent value="weekly">
+              <ReportFilters
+                timeRange={timeRange}
+                dateRange={dateRange}
+                selectedTeamId={selectedTeamId}
+                selectedUserId={selectedUserId}
+                onTimeRangeChange={setTimeRange}
+                onDateRangeChange={setDateRange}
+                onTeamChange={setSelectedTeamId}
+                onUserChange={setSelectedUserId}
+                calculatedDateRange={calculatedDateRange}
+                showTimeRange={true} // Show time range for weekly tab
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* User-focused Reports Panel */}
-        <ComprehensiveReportsPanel
-          userId={selectedUserId || user.id}
-          userName={selectedUserId ? "Selected User" : user.name || "Current User"}
-          timeRange={timeRange}
-          dateRange={dateRange}
-        />
+        <div className="space-y-6">
+          {/* Show the appropriate tab content */}
+          {activeTab === 'daily' && (
+            <DailyCompletionTab 
+              userId={selectedUserId || user.id}
+              userName={selectedUserId ? 'Selected User' : user.name || 'Current User'}
+            />
+          )}
+          
+          {activeTab === 'weekly' && (
+            <WeeklyOverviewTab 
+              userId={selectedUserId || user.id}
+              userName={selectedUserId ? 'Selected User' : user.name || 'Current User'}
+              timeRange={timeRange}
+              dateRange={dateRange}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
