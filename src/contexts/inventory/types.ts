@@ -217,6 +217,12 @@ export interface InventoryContextType {
   updateTemplate: (id: string, updates: Partial<InventoryTemplate>) => Promise<InventoryTemplate>;
   getTemplateItems: (templateId: string) => Promise<InventoryTemplateItem[]>;
   addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, minimumQuantity?: number, maximumQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
+  updateTemplateItem: (templateId: string, itemId: string, updates: {
+    expected_quantity?: number;
+    minimum_quantity?: number;
+    maximum_quantity?: number;
+    sort_order?: number;
+  }) => Promise<InventoryTemplateItem>;
   removeItemFromTemplate: (templateId: string, itemId: string) => Promise<void>;
   duplicateTemplate: (templateId: string, newName?: string) => Promise<InventoryTemplate>;
   assignTemplateToTeam: (templateId: string, teamId: string) => Promise<TeamInventoryAssignment>;

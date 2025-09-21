@@ -410,6 +410,29 @@ export const useInventoryOperations = ({
     }
   }, [handleAsyncOperation, refreshTemplateItems]);
 
+  const updateTemplateItem = useCallback(async (
+    templateId: string, 
+    itemId: string, 
+    updates: {
+      expected_quantity?: number;
+      minimum_quantity?: number;
+      maximum_quantity?: number;
+      sort_order?: number;
+    }
+  ): Promise<InventoryTemplateItem | null> => {
+    const result = await handleAsyncOperation(
+      () => inventoryTemplatesApi.updateTemplateItem(templateId, itemId, updates),
+      'Update Template Item',
+      'Template item updated successfully'
+    );
+    
+    if (result) {
+      await refreshTemplateItems();
+      return result;
+    }
+    return null;
+  }, [handleAsyncOperation, refreshTemplateItems]);
+
   const duplicateTemplate = useCallback(async (templateId: string, newName?: string): Promise<InventoryTemplate | null> => {
     const result = await handleAsyncOperation(
       () => inventoryTemplatesApi.duplicate(templateId, newName),
@@ -485,6 +508,7 @@ export const useInventoryOperations = ({
     getTemplateItems,
     addItemToTemplate,
     removeItemFromTemplate,
+    updateTemplateItem,
     duplicateTemplate,
   };
 };

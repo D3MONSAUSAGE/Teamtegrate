@@ -88,6 +88,28 @@ export const inventoryTemplatesApi = {
     if (error) throw error;
   },
 
+  async updateTemplateItem(
+    templateId: string, 
+    itemId: string, 
+    updates: {
+      expected_quantity?: number;
+      minimum_quantity?: number;
+      maximum_quantity?: number;
+      sort_order?: number;
+    }
+  ): Promise<InventoryTemplateItem> {
+    const { data, error } = await supabase
+      .from('inventory_template_items')
+      .update(updates)
+      .eq('template_id', templateId)
+      .eq('item_id', itemId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as InventoryTemplateItem;
+  },
+
   async assignToTeam(templateId: string, teamId: string, assignedBy: string): Promise<TeamInventoryAssignment> {
     const { data, error } = await supabase
       .from('team_inventory_assignments')

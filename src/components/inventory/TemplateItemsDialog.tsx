@@ -30,6 +30,8 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [expectedQuantity, setExpectedQuantity] = useState<number>(0);
+  const [minimumQuantity, setMinimumQuantity] = useState<number | undefined>(undefined);
+  const [maximumQuantity, setMaximumQuantity] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
   // Get template items for this specific template from global state
@@ -60,9 +62,11 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     
     setIsLoading(true);
     try {
-      await addItemToTemplate(templateId, selectedItem.id, expectedQuantity);
+      await addItemToTemplate(templateId, selectedItem.id, expectedQuantity, minimumQuantity, maximumQuantity);
       setSelectedItem(null);
       setExpectedQuantity(0);
+      setMinimumQuantity(undefined);
+      setMaximumQuantity(undefined);
       toast({
         title: "Success",
         description: "Item added to template",
@@ -217,7 +221,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                     <ArrowRight className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label htmlFor="expected-qty" className="text-sm font-medium">Expected Quantity</Label>
                       <Input
@@ -230,16 +234,40 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                         className="mt-1"
                       />
                     </div>
-                    <div className="flex items-end">
-                      <Button
-                        onClick={handleAddItem}
-                        disabled={isLoading}
-                        className="w-full h-10"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add to Template
-                      </Button>
+                    <div>
+                      <Label htmlFor="min-qty" className="text-sm font-medium">Min Quantity (Optional)</Label>
+                      <Input
+                        id="min-qty"
+                        type="number"
+                        min="0"
+                        value={minimumQuantity || ''}
+                        onChange={(e) => setMinimumQuantity(e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="Optional"
+                        className="mt-1"
+                      />
                     </div>
+                    <div>
+                      <Label htmlFor="max-qty" className="text-sm font-medium">Max Quantity (Optional)</Label>
+                      <Input
+                        id="max-qty"
+                        type="number"
+                        min="0"
+                        value={maximumQuantity || ''}
+                        onChange={(e) => setMaximumQuantity(e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="Optional"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <Button
+                      onClick={handleAddItem}
+                      disabled={isLoading}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add to Template
+                    </Button>
                   </div>
                 </div>
               </div>

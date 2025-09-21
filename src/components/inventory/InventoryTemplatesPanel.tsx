@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Plus, FileText, Edit, Users, Package, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateItemsDialog } from './TemplateItemsDialog';
+import { TemplateEditDialog } from './TemplateEditDialog';
 import { EnhancedTemplateDialog } from './dialogs/EnhancedTemplateDialog';
 
 interface InventoryTemplatesPanelProps {
@@ -31,6 +32,10 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedTemplateName, setSelectedTemplateName] = useState<string>('');
   const [isItemsDialogOpen, setIsItemsDialogOpen] = useState(false);
+  
+  // Template Edit Dialog state
+  const [selectedTemplateForEdit, setSelectedTemplateForEdit] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleCreateTemplate = async () => {
     if (!templateName.trim()) {
@@ -83,6 +88,11 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
     setSelectedTemplateId(templateId);
     setSelectedTemplateName(templateName);
     setIsItemsDialogOpen(true);
+  };
+
+  const handleEditTemplate = (template: any) => {
+    setSelectedTemplateForEdit(template);
+    setIsEditDialogOpen(true);
   };
 
   const handleDuplicateTemplate = async (templateId: string, templateName: string) => {
@@ -240,7 +250,12 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
                       <Copy className="h-3 w-3" />
                       Duplicate
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1"
+                      onClick={() => handleEditTemplate(template)}
+                    >
                       <Edit className="h-3 w-3" />
                       Edit
                     </Button>
@@ -270,6 +285,18 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
         templateId={selectedTemplateId}
         templateName={selectedTemplateName}
       />
+
+      {/* Template Edit Dialog */}
+      {selectedTemplateForEdit && (
+        <TemplateEditDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setSelectedTemplateForEdit(null);
+          }}
+          template={selectedTemplateForEdit}
+        />
+      )}
     </div>
   );
 };
