@@ -61,7 +61,6 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
         created_by: user?.id || '',
         execution_frequency: 'manual',
         execution_days: [],
-        auto_assign_enabled: false,
         notification_settings: {},
         execution_window_hours: 24,
         priority: 'medium',

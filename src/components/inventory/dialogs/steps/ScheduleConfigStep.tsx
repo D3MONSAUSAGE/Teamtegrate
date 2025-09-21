@@ -143,30 +143,6 @@ export const ScheduleConfigStep: React.FC<ScheduleConfigStepProps> = ({
         </CardContent>
       </Card>
 
-      {/* Auto Assignment */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Assignment Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="auto-assign">Automatic Assignment</Label>
-              <p className="text-sm text-muted-foreground">
-                Automatically assign counts to teams based on schedule
-              </p>
-            </div>
-            <Switch
-              id="auto-assign"
-              checked={formData.auto_assign_enabled}
-              onCheckedChange={(checked) => updateFormData({ auto_assign_enabled: checked })}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Notifications */}
       <Card>
@@ -239,9 +215,6 @@ export const ScheduleConfigStep: React.FC<ScheduleConfigStepProps> = ({
                     )}
                     <p><strong>Time Window:</strong> {formData.execution_time_start} - {formData.execution_time_due}</p>
                     <p><strong>Duration:</strong> {formData.execution_window_hours} hours to complete</p>
-                    {formData.auto_assign_enabled && (
-                      <p><strong>Auto-assigned</strong> to teams based on their schedule</p>
-                    )}
                   </div>
                 )}
               </div>

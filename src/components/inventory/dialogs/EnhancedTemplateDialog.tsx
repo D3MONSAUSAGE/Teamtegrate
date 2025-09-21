@@ -42,7 +42,6 @@ export interface TemplateFormData {
   execution_time_start?: string;
   execution_time_due?: string;
   execution_window_hours: number;
-  auto_assign_enabled: boolean;
   notification_settings: {
     remind_before_hours: number;
     remind_overdue: boolean;
@@ -87,7 +86,6 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
     execution_time_start: '09:00',
     execution_time_due: '17:00',
     execution_window_hours: 24,
-    auto_assign_enabled: false,
     notification_settings: {
       remind_before_hours: 2,
       remind_overdue: true,
@@ -147,7 +145,6 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
         execution_time_start: formData.execution_time_start,
         execution_time_due: formData.execution_time_due,
         execution_window_hours: formData.execution_window_hours,
-        auto_assign_enabled: formData.auto_assign_enabled,
         notification_settings: formData.notification_settings,
         is_active: true,
         created_by: user.id
@@ -175,7 +172,6 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
         execution_time_start: '09:00',
         execution_time_due: '17:00',
         execution_window_hours: 24,
-        auto_assign_enabled: false,
         notification_settings: {
           remind_before_hours: 2,
           remind_overdue: true,

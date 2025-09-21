@@ -143,14 +143,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
           <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-medium text-sm mb-2">Assignment</h4>
-              <p className="text-sm text-muted-foreground">
-                {formData.auto_assign_enabled ? 'Automatic assignment enabled' : 'Manual assignment required'}
-              </p>
-            </div>
-            
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <h4 className="font-medium text-sm mb-2">Notifications</h4>
               <div className="text-sm text-muted-foreground space-y-1">
