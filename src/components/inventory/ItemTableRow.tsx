@@ -23,15 +23,10 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
         {item.base_unit?.name || item.purchase_unit || 'Individual'}
       </TableCell>
       <TableCell>
-        {item.unit_cost ? formatCurrency(item.unit_cost) : 'N/A'}
+        {item.purchase_price ? formatCurrency(item.purchase_price) : 'N/A'}
       </TableCell>
       <TableCell>
-        {item.unit_cost && item.conversion_factor
-          ? formatCurrency(item.unit_cost / item.conversion_factor)
-          : item.unit_cost
-          ? formatCurrency(item.unit_cost)
-          : 'N/A'
-        }
+        {item.unit_cost ? formatCurrency(item.unit_cost) : 'N/A'}
       </TableCell>
     </TableRow>
   );
