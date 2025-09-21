@@ -43,7 +43,7 @@ export const InventoryManagementTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   
   // Category dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -314,25 +314,27 @@ export const InventoryManagementTab: React.FC = () => {
                   ))
                 ) : (
                   <Card>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>SKU</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Stock</TableHead>
-                          <TableHead>Unit</TableHead>
-                          <TableHead>Min</TableHead>
-                          <TableHead>Max</TableHead>
-                          <TableHead>Cost</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredAndSortedItems.map((item) => (
-                          <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="max-h-[600px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Stock</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead>Min</TableHead>
+                            <TableHead>Max</TableHead>
+                            <TableHead>Cost</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredAndSortedItems.map((item) => (
+                            <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </Card>
                 )}
               </div>

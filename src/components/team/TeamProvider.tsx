@@ -58,12 +58,12 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
     return false;
   };
 
-  // Auto-select first team if none selected and user has teams
-  useEffect(() => {
-    if (!selectedTeam && userTeams.length > 0) {
-      setSelectedTeam(userTeams[0]);
-    }
-  }, [selectedTeam, userTeams]);
+  // Keep selectedTeam as null by default to show "All Teams"
+  // useEffect(() => {
+  //   if (!selectedTeam && userTeams.length > 0) {
+  //     setSelectedTeam(userTeams[0]);
+  //   }
+  // }, [selectedTeam, userTeams]);
 
   // Don't render children until we have the necessary data
   if (!user || isLoading) {
