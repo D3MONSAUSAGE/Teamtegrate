@@ -19,9 +19,6 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>{item.sku || 'N/A'}</TableCell>
       <TableCell className="max-w-xs truncate">{item.description || 'N/A'}</TableCell>
       <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
-      <TableCell>
-        {item.base_unit?.name || item.purchase_unit || 'Individual'}
-      </TableCell>
       <TableCell className="text-center">
         <div className="font-medium">{item.conversion_factor || 1}</div>
         <div className="text-xs text-muted-foreground">

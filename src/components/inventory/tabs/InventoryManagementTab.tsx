@@ -297,7 +297,6 @@ export const InventoryManagementTab: React.FC = () => {
                           <TableHead>SKU</TableHead>
                           <TableHead>Description</TableHead>
                           <TableHead>Item Type</TableHead>
-                          <TableHead>Units</TableHead>
                           <TableHead>Units/Package</TableHead>
                           <TableHead>Purchase Unit</TableHead>
                           <TableHead>Package Price</TableHead>
