@@ -129,9 +129,9 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label htmlFor={`min-${selected.item.id}`} className="text-xs">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="flex flex-col items-center">
+                      <Label htmlFor={`min-${selected.item.id}`} className="text-xs mb-1">
                         Min:
                       </Label>
                       <Input
@@ -140,12 +140,12 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                         min="0"
                         value={selected.minimumQuantity || ''}
                         onChange={(e) => updateItemQuantity(selected.item.id, 'minimumQuantity', e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="w-full"
+                        className="w-20 text-center"
                         placeholder="0"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor={`exp-${selected.item.id}`} className="text-xs">
+                    <div className="flex flex-col items-center">
+                      <Label htmlFor={`exp-${selected.item.id}`} className="text-xs mb-1">
                         Expected:
                       </Label>
                       <Input
@@ -154,12 +154,12 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                         min="0"
                         value={selected.expectedQuantity || ''}
                         onChange={(e) => updateItemQuantity(selected.item.id, 'expectedQuantity', parseInt(e.target.value) || 0)}
-                        className="w-full"
+                        className="w-20 text-center"
                         placeholder="0"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor={`max-${selected.item.id}`} className="text-xs">
+                    <div className="flex flex-col items-center">
+                      <Label htmlFor={`max-${selected.item.id}`} className="text-xs mb-1">
                         Max:
                       </Label>
                       <Input
@@ -168,7 +168,7 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                         min="0"
                         value={selected.maximumQuantity || ''}
                         onChange={(e) => updateItemQuantity(selected.item.id, 'maximumQuantity', e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="w-full"
+                        className="w-20 text-center"
                         placeholder="0"
                       />
                     </div>
