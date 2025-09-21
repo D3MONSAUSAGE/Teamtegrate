@@ -321,11 +321,11 @@ export const InventoryManagementTab: React.FC = () => {
                             <TableHead>Name</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead>Description</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Unit</TableHead>
+                            <TableHead>Item Type</TableHead>
+                            <TableHead>Individual Unit</TableHead>
                             <TableHead>Location</TableHead>
-                            <TableHead>Purchase Unit</TableHead>
-                            <TableHead>Cost</TableHead>
+                            <TableHead>Package Info</TableHead>
+                            <TableHead>Cost per Item</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>

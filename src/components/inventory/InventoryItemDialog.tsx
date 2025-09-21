@@ -20,8 +20,8 @@ const inventoryItemSchema = z.object({
   category_id: z.string().optional(),
   base_unit_id: z.string().optional(),
   purchase_unit: z.string().optional(),
-  conversion_factor: z.coerce.number().positive('Must be greater than 0').optional(),
-  purchase_price: z.coerce.number().min(0, 'Price must be 0 or greater').optional(),
+  conversion_factor: z.coerce.number().positive('Package size must be greater than 0').optional(),
+  purchase_price: z.coerce.number().min(0, 'Package price must be 0 or greater').optional(),
   sku: z.string().optional(),
   barcode: z.string().optional(),
   location: z.string().optional(),
@@ -149,7 +149,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
-            {itemId ? 'Edit Inventory Item' : 'Add New Inventory Item'}
+            {itemId ? 'Edit Item' : 'Add New Item'}
           </DialogTitle>
         </DialogHeader>
 
@@ -218,18 +218,18 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               )}
             />
 
-            {/* Category and Units */}
+            {/* Item Type and Units */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="category_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Item Type</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select item type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -245,7 +245,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                             onClick={() => setIsCategoryDialogOpen(true)}
                           >
                             <Plus className="h-3 w-3 mr-2" />
-                            Create New Category
+                            Create New Item Type
                           </Button>
                         </div>
                       </SelectContent>
@@ -260,11 +260,11 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 name="base_unit_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Base Unit (Tracking Unit)</FormLabel>
+                    <FormLabel>Individual Unit</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select base unit" />
+                          <SelectValue placeholder="What is each item?" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -291,11 +291,11 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               />
             </div>
 
-            {/* Purchase Packaging */}
+            {/* Package Information */}
             <div className="border rounded-lg p-4 space-y-4">
               <h3 className="flex items-center gap-2 font-medium text-sm">
-                <Calculator className="h-4 w-4" />
-                Purchase Packaging & Pricing
+                <Package className="h-4 w-4" />
+                How do you buy this item?
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -304,10 +304,26 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   name="purchase_unit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Purchase Unit</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., bag, box, case" {...field} />
-                      </FormControl>
+                      <FormLabel>Package Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="How is it packaged?" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="box">Box</SelectItem>
+                          <SelectItem value="bag">Bag</SelectItem>
+                          <SelectItem value="case">Case</SelectItem>
+                          <SelectItem value="pack">Pack</SelectItem>
+                          <SelectItem value="roll">Roll</SelectItem>
+                          <SelectItem value="bottle">Bottle</SelectItem>
+                          <SelectItem value="container">Container</SelectItem>
+                          <SelectItem value="bundle">Bundle</SelectItem>
+                          <SelectItem value="individual">Individual</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -318,12 +334,12 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   name="conversion_factor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Base Units per Purchase Unit</FormLabel>
+                      <FormLabel>Package Size</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           step="0.0001"
-                          placeholder="e.g., 50 (lbs per bag)" 
+                          placeholder="e.g., 12 (items per package)" 
                           {...field} 
                         />
                       </FormControl>
@@ -337,12 +353,12 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   name="purchase_price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price per Purchase Unit</FormLabel>
+                      <FormLabel>Package Price</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           step="0.01"
-                          placeholder="e.g., 150.00" 
+                          placeholder="e.g., 24.00" 
                           {...field} 
                         />
                       </FormControl>
@@ -353,9 +369,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               </div>
 
               {calculatedUnitPrice !== null && (
-                <div className="bg-muted/50 p-3 rounded-md">
-                  <p className="text-sm font-medium">
-                    Calculated Unit Price: ${calculatedUnitPrice.toFixed(4)} per base unit
+                <div className="bg-primary/5 border border-primary/20 p-4 rounded-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-primary">Cost Calculation</span>
+                  </div>
+                  <p className="text-lg font-semibold">
+                    ${calculatedUnitPrice.toFixed(4)} per item
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This is what each individual item costs based on your package pricing
                   </p>
                 </div>
               )}

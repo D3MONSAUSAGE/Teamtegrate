@@ -20,7 +20,12 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
       <TableCell>{item.base_unit?.abbreviation || 'units'}</TableCell>
       <TableCell>{item.location || 'N/A'}</TableCell>
-      <TableCell>{item.purchase_unit || 'N/A'}</TableCell>
+      <TableCell>
+        {item.purchase_unit && item.conversion_factor 
+          ? `${item.conversion_factor} ${item.base_unit?.name || 'items'} per ${item.purchase_unit}`
+          : item.purchase_unit || 'N/A'
+        }
+      </TableCell>
       <TableCell>
         {item.unit_cost ? `$${item.unit_cost.toFixed(2)}` : 'N/A'}
       </TableCell>
