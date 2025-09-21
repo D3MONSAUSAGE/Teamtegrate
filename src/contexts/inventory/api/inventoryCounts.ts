@@ -124,6 +124,52 @@ export const inventoryCountsApi = {
     if (error) throw error;
   },
 
+  async bulkUpdateCountItems(
+    countId: string,
+    updates: Array<{ itemId: string; actualQuantity: number; notes?: string; countedBy?: string }>
+  ): Promise<void> {
+    try {
+      console.log('Starting bulk update for count:', countId, 'with', updates.length, 'items');
+      
+      // Prepare bulk update operations
+      const updatePromises = updates.map(({ itemId, actualQuantity, notes, countedBy }) => {
+        const updateData: any = {
+          actual_quantity: actualQuantity,
+          counted_at: new Date().toISOString(),
+        };
+
+        if (notes) updateData.notes = notes;
+        if (countedBy) updateData.counted_by = countedBy;
+
+        return supabase
+          .from('inventory_count_items')
+          .upsert({
+            count_id: countId,
+            item_id: itemId,
+            expected_quantity: 0, // This will be updated by a trigger or separate call
+            ...updateData,
+          }, {
+            onConflict: 'count_id,item_id'
+          });
+      });
+
+      // Execute all updates in parallel
+      const results = await Promise.all(updatePromises);
+      
+      // Check for any errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        console.error('Bulk update errors:', errors);
+        throw new Error(`Failed to update ${errors.length} items: ${errors[0].error?.message}`);
+      }
+
+      console.log(`Successfully updated ${updates.length} count items`);
+    } catch (error) {
+      console.error('Error in bulkUpdateCountItems:', error);
+      throw error;
+    }
+  },
+
   async getTemplateItems(templateId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('inventory_template_items')
