@@ -496,10 +496,16 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
           </TabsContent>
 
           <TabsContent value="details" className="space-y-6">
-            {/* Keep existing item details table but enhanced with financial data */}
+            {/* Enhanced item details table with comprehensive min/max data */}
             <Card>
               <CardHeader>
-                <CardTitle>Detailed Item Analysis</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Enhanced Item Analysis
+                </CardTitle>
+                <div className="text-sm text-muted-foreground">
+                  Complete view with min/max thresholds, locations, and stock violations
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 {loading ? (
@@ -511,112 +517,262 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
                     No items found for this count
                   </div>
                 ) : (
-                  <div className="max-h-[500px] overflow-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-background">
-                        <TableRow>
-                          <TableHead>Item</TableHead>
-                          <TableHead className="text-center">Unit Cost</TableHead>
-                          <TableHead className="text-center">Expected</TableHead>
-                          <TableHead className="text-center">Actual</TableHead>
-                          <TableHead className="text-center">Variance</TableHead>
-                          <TableHead className="text-center">Item Value</TableHead>
-                          <TableHead className="text-center">Cost Impact</TableHead>
-                          <TableHead className="text-center">Stock Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {countItems.map((item) => {
-                          const inventoryItem = (item as any).inventory_items;
-                          const unitCost = inventoryItem?.unit_cost || inventoryItem?.purchase_price || 15;
-                          const variance = item.actual_quantity !== null 
-                            ? (item.actual_quantity || 0) - (item.in_stock_quantity || 0)
-                            : null;
-                          const itemValue = item.actual_quantity !== null ? item.actual_quantity * unitCost : 0;
-                          const costImpact = variance !== null ? variance * unitCost : 0;
-                          const hasVariance = variance !== null && Math.abs(variance) > 0.01;
+                  <div className="space-y-4">
+                    {/* Summary Stats */}
+                    <div className="px-6 py-4 bg-muted/50 border-b">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Total Items:</span>
+                          <span className="ml-2 font-medium">{countItems.length}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Counted:</span>
+                          <span className="ml-2 font-medium">{completedItems.length}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Min/Max Violations:</span>
+                          <span className="ml-2 font-medium text-red-600">
+                            {stockStatusSummary.underStock + stockStatusSummary.overStock}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">With Variances:</span>
+                          <span className="ml-2 font-medium text-orange-600">{count.variance_count}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                          return (
-                            <TableRow key={item.id} className={cn(
-                              "hover:bg-muted/50",
-                              hasVariance && "bg-amber-50 border-amber-200"
-                            )}>
-                              <TableCell>
-                                <div className="space-y-1">
-                                  <div className="font-medium">
-                                    {inventoryItem?.name || 'Unknown Item'}
+                    <div className="max-h-[600px] overflow-auto">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-background border-b-2">
+                          <TableRow>
+                            <TableHead className="w-[200px]">Item Details</TableHead>
+                            <TableHead className="text-center w-[120px]">Location/Barcode</TableHead>
+                            <TableHead className="text-center w-[100px]">Category</TableHead>
+                            <TableHead className="text-center w-[80px]">Min Stock</TableHead>
+                            <TableHead className="text-center w-[80px]">Max Stock</TableHead>
+                            <TableHead className="text-center w-[80px]">Expected</TableHead>
+                            <TableHead className="text-center w-[80px]">Actual</TableHead>
+                            <TableHead className="text-center w-[100px]">Variance</TableHead>
+                            <TableHead className="text-center w-[100px]">Unit Cost</TableHead>
+                            <TableHead className="text-center w-[100px]">Cost Impact</TableHead>
+                            <TableHead className="text-center w-[120px]">Stock Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {countItems.map((item) => {
+                            const inventoryItem = (item as any).inventory_items;
+                            const unitCost = inventoryItem?.unit_cost || inventoryItem?.purchase_price || 15;
+                            const variance = item.actual_quantity !== null 
+                              ? (item.actual_quantity || 0) - (item.in_stock_quantity || 0)
+                              : null;
+                            const itemValue = item.actual_quantity !== null ? item.actual_quantity * unitCost : 0;
+                            const costImpact = variance !== null ? variance * unitCost : 0;
+                            const hasVariance = variance !== null && Math.abs(variance) > 0.01;
+
+                            // Determine min/max values (prioritize template values)
+                            const minThreshold = item.template_minimum_quantity || inventoryItem?.minimum_threshold;
+                            const maxThreshold = item.template_maximum_quantity || inventoryItem?.maximum_threshold;
+                            const currentQuantity = item.actual_quantity !== null ? item.actual_quantity : (item.in_stock_quantity || 0);
+                            
+                            // Check violations
+                            const isUnderStock = minThreshold && currentQuantity < minThreshold;
+                            const isOverStock = maxThreshold && currentQuantity > maxThreshold;
+                            const hasThresholdViolation = isUnderStock || isOverStock;
+
+                            return (
+                              <TableRow key={item.id} className={cn(
+                                "hover:bg-muted/50",
+                                hasVariance && "bg-amber-50/50 border-l-4 border-l-amber-400",
+                                hasThresholdViolation && "bg-red-50/50 border-l-4 border-l-red-400",
+                                hasVariance && hasThresholdViolation && "bg-red-100/50 border-l-4 border-l-red-600"
+                              )}>
+                                {/* Item Details */}
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    <div className="font-medium text-sm">
+                                      {inventoryItem?.name || 'Unknown Item'}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground space-y-0.5">
+                                      <div>SKU: {inventoryItem?.sku || 'N/A'}</div>
+                                      {inventoryItem?.description && (
+                                        <div className="max-w-[180px] truncate">
+                                          {inventoryItem.description}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    SKU: {inventoryItem?.sku || 'N/A'}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              
-                              <TableCell className="text-center">
-                                <div className="font-medium">{formatCurrency(unitCost)}</div>
-                              </TableCell>
-                              
-                              <TableCell className="text-center">
-                                <div className="font-medium">{item.in_stock_quantity}</div>
-                              </TableCell>
-                              
-                              <TableCell className="text-center">
-                                {item.actual_quantity !== null ? (
-                                  <div className="font-medium">{item.actual_quantity}</div>
-                                ) : (
-                                  <span className="text-muted-foreground">Not counted</span>
-                                )}
-                              </TableCell>
-                              
-                              <TableCell className="text-center">
-                                {variance !== null ? (
-                                  <div className={cn(
-                                    "flex items-center justify-center gap-1 font-medium",
-                                    variance === 0 ? "text-muted-foreground" : 
-                                    variance > 0 ? "text-green-600" : "text-red-600"
-                                  )}>
-                                    {hasVariance && (
-                                      variance > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />
+                                </TableCell>
+                                
+                                {/* Location/Barcode */}
+                                <TableCell className="text-center">
+                                  <div className="space-y-1 text-xs">
+                                    <div className="font-medium">
+                                      {inventoryItem?.location || 'N/A'}
+                                    </div>
+                                    {inventoryItem?.barcode && (
+                                      <div className="font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded text-[10px]">
+                                        {inventoryItem.barcode}
+                                      </div>
                                     )}
-                                    {variance > 0 ? '+' : ''}{variance.toFixed(2)}
                                   </div>
-                                ) : (
-                                  <span className="text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
+                                </TableCell>
 
-                              <TableCell className="text-center">
-                                <div className="font-medium">{formatCurrency(itemValue)}</div>
-                              </TableCell>
-
-                              <TableCell className="text-center">
-                                {costImpact !== 0 ? (
-                                  <div className={cn(
-                                    "font-medium",
-                                    costImpact >= 0 ? "text-green-600" : "text-red-600"
-                                  )}>
-                                    {costImpact >= 0 ? '+' : ''}{formatCurrency(costImpact)}
+                                {/* Category */}
+                                <TableCell className="text-center">
+                                  <div className="text-xs">
+                                    {inventoryItem?.category?.name || 'Uncategorized'}
                                   </div>
-                                ) : (
-                                  <span className="text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              
-                              <TableCell className="text-center">
-                                <StockStatusBadge
-                                  actualQuantity={item.actual_quantity !== null ? item.actual_quantity : (item.in_stock_quantity || 0)}
-                                  minimumThreshold={inventoryItem?.minimum_threshold}
-                                  maximumThreshold={inventoryItem?.maximum_threshold}
-                                  templateMinimum={item.template_minimum_quantity}
-                                  templateMaximum={item.template_maximum_quantity}
-                                  size="sm"
-                                />
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                                </TableCell>
+
+                                {/* Min Stock */}
+                                <TableCell className="text-center">
+                                  <div className="text-sm">
+                                    {minThreshold !== null && minThreshold !== undefined ? (
+                                      <div className={cn(
+                                        "font-medium",
+                                        isUnderStock && "text-red-600"
+                                      )}>
+                                        {minThreshold}
+                                        {item.template_minimum_quantity && (
+                                          <div className="text-[10px] text-muted-foreground">
+                                            (template)
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">—</span>
+                                    )}
+                                  </div>
+                                </TableCell>
+
+                                {/* Max Stock */}
+                                <TableCell className="text-center">
+                                  <div className="text-sm">
+                                    {maxThreshold !== null && maxThreshold !== undefined ? (
+                                      <div className={cn(
+                                        "font-medium",
+                                        isOverStock && "text-red-600"
+                                      )}>
+                                        {maxThreshold}
+                                        {item.template_maximum_quantity && (
+                                          <div className="text-[10px] text-muted-foreground">
+                                            (template)
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">—</span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                
+                                {/* Expected */}
+                                <TableCell className="text-center">
+                                  <div className="font-medium">{item.in_stock_quantity}</div>
+                                </TableCell>
+                                
+                                {/* Actual */}
+                                <TableCell className="text-center">
+                                  {item.actual_quantity !== null ? (
+                                    <div className={cn(
+                                      "font-medium",
+                                      isUnderStock && "text-red-600",
+                                      isOverStock && "text-orange-600"
+                                    )}>
+                                      {item.actual_quantity}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">Not counted</span>
+                                  )}
+                                </TableCell>
+                                
+                                {/* Variance */}
+                                <TableCell className="text-center">
+                                  {variance !== null ? (
+                                    <div className={cn(
+                                      "flex items-center justify-center gap-1 font-medium",
+                                      variance === 0 ? "text-muted-foreground" : 
+                                      variance > 0 ? "text-green-600" : "text-red-600"
+                                    )}>
+                                      {hasVariance && (
+                                        variance > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />
+                                      )}
+                                      {variance > 0 ? '+' : ''}{variance.toFixed(2)}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+
+                                {/* Unit Cost */}
+                                <TableCell className="text-center">
+                                  <div className="font-medium text-sm">{formatCurrency(unitCost)}</div>
+                                </TableCell>
+
+                                {/* Cost Impact */}
+                                <TableCell className="text-center">
+                                  {costImpact !== 0 ? (
+                                    <div className={cn(
+                                      "font-medium",
+                                      costImpact >= 0 ? "text-green-600" : "text-red-600"
+                                    )}>
+                                      {costImpact >= 0 ? '+' : ''}{formatCurrency(costImpact)}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                                
+                                {/* Stock Status */}
+                                <TableCell className="text-center">
+                                  <div className="space-y-1">
+                                    <StockStatusBadge
+                                      actualQuantity={currentQuantity}
+                                      minimumThreshold={inventoryItem?.minimum_threshold}
+                                      maximumThreshold={inventoryItem?.maximum_threshold}
+                                      templateMinimum={item.template_minimum_quantity}
+                                      templateMaximum={item.template_maximum_quantity}
+                                      size="sm"
+                                    />
+                                    {hasThresholdViolation && (
+                                      <div className="flex items-center justify-center">
+                                        <AlertTriangle className="h-3 w-3 text-red-500" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Action Items Footer */}
+                    <div className="px-6 py-4 bg-muted/30 border-t space-y-2">
+                      <h4 className="font-medium text-sm">Action Items:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        {stockStatusSummary.underStock > 0 && (
+                          <div className="flex items-center gap-2 text-red-600">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{stockStatusSummary.underStock} items need reordering</span>
+                          </div>
+                        )}
+                        {stockStatusSummary.overStock > 0 && (
+                          <div className="flex items-center gap-2 text-orange-600">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{stockStatusSummary.overStock} items are overstocked</span>
+                          </div>
+                        )}
+                        {count.variance_count > 0 && (
+                          <div className="flex items-center gap-2 text-amber-600">
+                            <TrendingUp className="h-3 w-3" />
+                            <span>{count.variance_count} items have count variances</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
