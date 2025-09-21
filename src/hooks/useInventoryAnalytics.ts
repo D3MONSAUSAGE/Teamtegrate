@@ -144,7 +144,7 @@ export const useInventoryAnalytics = (
 
     // Category breakdown from items
     const categoryMap = items.reduce((acc, item) => {
-      const category = item.category || 'Uncategorized';
+      const category = item.category?.name || 'Uncategorized';
       if (!acc[category]) {
         acc[category] = { count: 0, items: [] };
       }

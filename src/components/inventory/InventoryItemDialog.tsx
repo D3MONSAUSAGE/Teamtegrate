@@ -1,31 +1,33 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInventory } from '@/contexts/inventory';
-import { InventoryItem } from '@/contexts/inventory/types';
-import { useTeamContext } from '@/hooks/useTeamContext';
+import { Textarea } from '@/components/ui/textarea';
+import { Package, Calculator } from 'lucide-react';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  sku: z.string().min(1, 'SKU is required'),
-  category: z.string().min(1, 'Category is required'),
-  unit_of_measure: z.string().min(1, 'Unit of measure is required'),
-  unit_cost: z.coerce.number().min(0, 'Cost must be 0 or greater'),
-  minimum_threshold: z.coerce.number().min(0, 'Minimum threshold must be 0 or greater'),
-  maximum_threshold: z.coerce.number().min(0, 'Maximum threshold must be 0 or greater'),
-  current_stock: z.coerce.number().min(0, 'Current stock must be 0 or greater'),
-  location: z.string().optional(),
-  team_id: z.string().optional(),
   description: z.string().optional(),
+  category_id: z.string().optional(),
+  base_unit_id: z.string().optional(),
+  purchase_unit: z.string().optional(),
+  conversion_factor: z.coerce.number().positive('Must be greater than 0').optional(),
+  purchase_price: z.coerce.number().min(0, 'Price must be 0 or greater').optional(),
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  current_stock: z.coerce.number().min(0, 'Current stock must be 0 or greater'),
+  minimum_threshold: z.coerce.number().min(0, 'Minimum threshold must be 0 or greater').optional(),
+  maximum_threshold: z.coerce.number().min(0, 'Maximum threshold must be 0 or greater').optional(),
+  reorder_point: z.coerce.number().min(0, 'Reorder point must be 0 or greater').optional(),
+  unit_cost: z.coerce.number().min(0, 'Unit cost must be 0 or greater').optional(),
+  location: z.string().optional(),
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
@@ -36,122 +38,110 @@ interface InventoryItemDialogProps {
   itemId?: string | null;
 }
 
-const CATEGORIES = [
-  'Raw Materials',
-  'Finished Goods',
-  'Work in Progress',
-  'Supplies',
-  'Equipment',
-  'Other'
-];
-
-const UNITS_OF_MEASURE = [
-  'Each',
-  'Box',
-  'Case',
-  'Lbs',
-  'Kg',
-  'Gallons',
-  'Liters',
-  'Yards',
-  'Meters',
-  'Square Feet',
-  'Square Meters'
-];
-
 export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   open,
   onOpenChange,
   itemId
 }) => {
-  const { createItem, updateItem, getItemById, loading } = useInventory();
-  const teamContext = useTeamContext();
+  const { createItem, updateItem, getItemById, loading, categories, units } = useInventory();
   
+  const [calculatedUnitPrice, setCalculatedUnitPrice] = useState<number | null>(null);
+
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: {
       name: '',
+      description: '',
+      category_id: '',
+      base_unit_id: '',
+      purchase_unit: '',
+      conversion_factor: undefined,
+      purchase_price: undefined,
       sku: '',
-      category: '',
-      unit_of_measure: '',
-      unit_cost: 0,
+      barcode: '',
+      current_stock: 0,
       minimum_threshold: 0,
       maximum_threshold: 100,
-      current_stock: 0,
+      reorder_point: 10,
+      unit_cost: 0,
       location: '',
-      team_id: 'none',
-      description: '',
     },
   });
 
-  const isEditing = !!itemId;
+  const watchedValues = form.watch(['conversion_factor', 'purchase_price']);
 
-  // Load item for editing
   useEffect(() => {
-    if (isEditing && itemId && open) {
-      const loadItem = async () => {
-        try {
-          const item = await getItemById(itemId);
-          if (item) {
-            form.reset({
-              name: item.name,
-              sku: item.sku || '',
-              category: item.category || '',
-              unit_of_measure: item.unit_of_measure,
-              unit_cost: item.unit_cost || 0,
-              minimum_threshold: item.minimum_threshold || 0,
-              maximum_threshold: item.maximum_threshold || 100,
-              current_stock: item.current_stock,
-              location: item.location || '',
-              team_id: item.team_id || 'none',
-              description: item.description || '',
-            });
-          }
-        } catch (error) {
-          console.error('Failed to load item:', error);
-          toast.error('Failed to load item details');
-        }
-      };
-      loadItem();
-    } else if (!isEditing && open) {
-      form.reset({
-        name: '',
-        sku: '',
-        category: '',
-        unit_of_measure: '',
-        unit_cost: 0,
-        minimum_threshold: 0,
-        maximum_threshold: 100,
-        current_stock: 0,
-        location: '',
-        team_id: teamContext?.selectedTeam?.id || 'none',
-        description: '',
-      });
+    const [conversion, price] = watchedValues;
+    if (conversion && price && conversion > 0) {
+      setCalculatedUnitPrice(price / conversion);
+    } else {
+      setCalculatedUnitPrice(null);
     }
-  }, [itemId, isEditing, open, form, getItemById, teamContext?.selectedTeam?.id]);
+  }, [watchedValues]);
 
-  const onSubmit = async (data: InventoryItemFormData) => {
+  useEffect(() => {
+    if (itemId && open) {
+      loadItem();
+    } else if (open) {
+      form.reset();
+      setCalculatedUnitPrice(null);
+    }
+  }, [itemId, open]);
+
+  const loadItem = async () => {
     try {
-      const itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'> = {
-        name: data.name,
-        sku: data.sku,
-        category: data.category,
-        unit_of_measure: data.unit_of_measure,
-        unit_cost: data.unit_cost,
-        minimum_threshold: data.minimum_threshold,
-        maximum_threshold: data.maximum_threshold,
-        current_stock: data.current_stock,
-        location: data.location,
-        team_id: data.team_id === 'none' ? '' : data.team_id,
-        description: data.description,
-        organization_id: '', // This will be set by the API
-        created_by: '', // This will be set by the API  
+      const item = await getItemById(itemId!);
+      if (item) {
+        form.reset({
+          name: item.name,
+          description: item.description || '',
+          category_id: item.category_id || '',
+          base_unit_id: item.base_unit_id || '',
+          purchase_unit: item.purchase_unit || '',
+          conversion_factor: item.conversion_factor || undefined,
+          purchase_price: item.purchase_price || undefined,
+          sku: item.sku || '',
+          barcode: item.barcode || '',
+          current_stock: item.current_stock,
+          minimum_threshold: item.minimum_threshold || 0,
+          maximum_threshold: item.maximum_threshold || 100,
+          reorder_point: item.reorder_point || 10,
+          unit_cost: item.unit_cost || 0,
+          location: item.location || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error loading item:', error);
+      toast.error('Failed to load item details');
+    }
+  };
+
+  const onSubmit = async (values: InventoryItemFormData) => {
+    try {
+      const itemData = {
+        name: values.name || '',
+        description: values.description,
+        category_id: values.category_id,
+        base_unit_id: values.base_unit_id,
+        purchase_unit: values.purchase_unit,
+        conversion_factor: values.conversion_factor,
+        purchase_price: values.purchase_price,
+        sku: values.sku,
+        barcode: values.barcode,
+        current_stock: values.current_stock || 0,
+        minimum_threshold: values.minimum_threshold,
+        maximum_threshold: values.maximum_threshold,
+        reorder_point: values.reorder_point,
+        unit_cost: values.unit_cost,
+        location: values.location,
+        organization_id: '',
+        created_by: '',
         is_active: true,
         is_template: false,
         sort_order: 0,
       };
 
-      if (isEditing && itemId) {
+      if (itemId) {
         await updateItem(itemId, itemData);
         toast.success('Item updated successfully');
       } else {
@@ -159,8 +149,9 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         toast.success('Item created successfully');
       }
       onOpenChange(false);
+      form.reset();
     } catch (error) {
-      console.error('Failed to save item:', error);
+      console.error('Error saving item:', error);
       toast.error('Failed to save item');
     }
   };
@@ -169,20 +160,22 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Inventory Item' : 'Add New Inventory Item'}
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-primary" />
+            {itemId ? 'Edit Inventory Item' : 'Add New Inventory Item'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name *</FormLabel>
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Item Name *</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter item name" {...field} />
                     </FormControl>
@@ -196,7 +189,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 name="sku"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>SKU *</FormLabel>
+                    <FormLabel>SKU</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter SKU" {...field} />
                     </FormControl>
@@ -207,10 +200,45 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
 
               <FormField
                 control={form.control}
-                name="category"
+                name="barcode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category *</FormLabel>
+                    <FormLabel>Barcode</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter barcode" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter item description" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Category and Units */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -218,9 +246,9 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -232,20 +260,20 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
 
               <FormField
                 control={form.control}
-                name="unit_of_measure"
+                name="base_unit_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Unit of Measure *</FormLabel>
+                    <FormLabel>Base Unit (Tracking Unit)</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select unit" />
+                          <SelectValue placeholder="Select base unit" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {UNITS_OF_MEASURE.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
+                        {units.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            {unit.name} ({unit.abbreviation})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -254,29 +282,88 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   </FormItem>
                 )}
               />
+            </div>
 
-              <FormField
-                control={form.control}
-                name="unit_cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cost ($)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Purchase Packaging */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="flex items-center gap-2 font-medium text-sm">
+                <Calculator className="h-4 w-4" />
+                Purchase Packaging & Pricing
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="purchase_unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Unit</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., bag, box, case" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <FormField
+                  control={form.control}
+                  name="conversion_factor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base Units per Purchase Unit</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.0001"
+                          placeholder="e.g., 50 (lbs per bag)" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="purchase_price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price per Purchase Unit</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="e.g., 150.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {calculatedUnitPrice !== null && (
+                <div className="bg-muted/50 p-3 rounded-md">
+                  <p className="text-sm font-medium">
+                    Calculated Unit Price: ${calculatedUnitPrice.toFixed(4)} per base unit
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Stock Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <FormField
                 control={form.control}
                 name="current_stock"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Stock</FormLabel>
+                    <FormLabel>Current Stock *</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" placeholder="0" {...field} />
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -290,7 +377,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   <FormItem>
                     <FormLabel>Minimum Threshold</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" placeholder="0" {...field} />
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -304,7 +391,21 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   <FormItem>
                     <FormLabel>Maximum Threshold</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" placeholder="100" {...field} />
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reorder_point"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reorder Point</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -312,69 +413,48 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Storage location (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {teamContext?.userTeams && teamContext.userTeams.length > 0 && (
+            {/* Additional Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="team_id"
+                name="unit_cost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assigned Team</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select team (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">No team assigned</SelectItem>
-                        {teamContext.userTeams.map((team) => (
-                          <SelectItem key={team.id} value={team.id}>
-                            {team.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Manual Unit Cost</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )}
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Item description (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Storage Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Warehouse A, Shelf 5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? 'Update Item' : 'Create Item'}
+                {loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
               </Button>
             </div>
           </form>

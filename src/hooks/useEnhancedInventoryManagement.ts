@@ -110,6 +110,16 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     }
   }, [user?.organizationId]);
 
+  const refreshTeamAssignments = useCallback(async () => {
+    if (!user?.organizationId) return;
+    try {
+      const data = await inventoryTemplatesApi.getTeamAssignments();
+      setTeamAssignments(data);
+    } catch (error) {
+      console.error('Error fetching team assignments:', error);
+    }
+  }, [user?.organizationId]);
+
   const refreshCategories = useCallback(async () => {
     if (!user?.organizationId) return;
     setCategoriesLoading(true);
@@ -135,6 +145,41 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
       setUnitsLoading(false);
     }
   }, [user?.organizationId]);
+
+  // Categories and Units operations
+  const createCategory = useCallback(async (category: Omit<InventoryCategory, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryCategory> => {
+    const newCategory = await inventoryCategoriesApi.create(category);
+    await refreshCategories();
+    return newCategory;
+  }, [refreshCategories]);
+
+  const updateCategory = useCallback(async (id: string, updates: Partial<InventoryCategory>): Promise<InventoryCategory> => {
+    const updatedCategory = await inventoryCategoriesApi.update(id, updates);
+    await refreshCategories();
+    return updatedCategory;
+  }, [refreshCategories]);
+
+  const deleteCategory = useCallback(async (id: string): Promise<void> => {
+    await inventoryCategoriesApi.delete(id);
+    await refreshCategories();
+  }, [refreshCategories]);
+
+  const createUnit = useCallback(async (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryUnit> => {
+    const newUnit = await inventoryUnitsApi.create(unit);
+    await refreshUnits();
+    return newUnit;
+  }, [refreshUnits]);
+
+  const updateUnit = useCallback(async (id: string, updates: Partial<InventoryUnit>): Promise<InventoryUnit> => {
+    const updatedUnit = await inventoryUnitsApi.update(id, updates);
+    await refreshUnits();
+    return updatedUnit;
+  }, [refreshUnits]);
+
+  const deleteUnit = useCallback(async (id: string): Promise<void> => {
+    await inventoryUnitsApi.delete(id);
+    await refreshUnits();
+  }, [refreshUnits]);
 
   // CRUD Operations
   const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>): Promise<InventoryItem> => {

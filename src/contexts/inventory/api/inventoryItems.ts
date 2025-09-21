@@ -7,14 +7,14 @@ export const inventoryItemsApi = {
       .from('inventory_items')
       .select(`
         *,
-        category:inventory_categories(id, name, description),
-        base_unit:inventory_units(id, name, abbreviation, unit_type)
+        category:inventory_categories(*),
+        base_unit:inventory_units(*)
       `)
       .eq('is_active', true)
       .order('name');
 
     if (error) throw error;
-    return (data || []) as InventoryItem[];
+    return (data || []) as any;
   },
 
   async create(item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>): Promise<InventoryItem> {
@@ -23,13 +23,13 @@ export const inventoryItemsApi = {
       .insert([item])
       .select(`
         *,
-        category:inventory_categories(id, name, description),
-        base_unit:inventory_units(id, name, abbreviation, unit_type)
+        category:inventory_categories(*),
+        base_unit:inventory_units(*)
       `)
       .single();
 
     if (error) throw error;
-    return data as InventoryItem;
+    return data as any;
   },
 
   async update(id: string, updates: Partial<Omit<InventoryItem, 'category' | 'base_unit' | 'calculated_unit_price'>>): Promise<InventoryItem> {
@@ -39,13 +39,13 @@ export const inventoryItemsApi = {
       .eq('id', id)
       .select(`
         *,
-        category:inventory_categories(id, name, description),
-        base_unit:inventory_units(id, name, abbreviation, unit_type)
+        category:inventory_categories(*),
+        base_unit:inventory_units(*)
       `)
       .single();
 
     if (error) throw error;
-    return data as InventoryItem;
+    return data as any;
   },
 
   async delete(id: string): Promise<void> {
@@ -62,8 +62,8 @@ export const inventoryItemsApi = {
       .from('inventory_items')
       .select(`
         *,
-        category:inventory_categories(id, name, description),
-        base_unit:inventory_units(id, name, abbreviation, unit_type)
+        category:inventory_categories(*),
+        base_unit:inventory_units(*)
       `)
       .eq('id', id)
       .eq('is_active', true)
@@ -73,7 +73,7 @@ export const inventoryItemsApi = {
       if (error.code === 'PGRST116') return null; // Not found
       throw error;
     }
-    return data as InventoryItem;
+    return data as any;
   },
 
   async updateStock(id: string, newStock: number): Promise<void> {

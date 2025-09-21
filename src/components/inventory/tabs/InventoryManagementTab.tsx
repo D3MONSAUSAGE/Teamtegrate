@@ -14,14 +14,15 @@ import { Input } from '@/components/ui/input';
 import { useTeamContext } from '@/hooks/useTeamContext';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export const InventoryManagementTab: React.FC = () => {
-  const { items, loading } = useInventory();
   const { hasRoleAccess } = useAuth();
+  const { items, loading } = useInventory();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const teamContext = useTeamContext();
@@ -30,11 +31,10 @@ export const InventoryManagementTab: React.FC = () => {
   const filteredAndSortedItems = React.useMemo(() => {
     let filtered = items.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategory || selectedCategory === 'all' || item.category === selectedCategory;
-      const matchesTeam = !teamContext?.selectedTeam || item.team_id === teamContext.selectedTeam.id;
+                           (item.sku || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !selectedCategory || selectedCategory === 'all' || item.category?.name === selectedCategory;
       
-      return matchesSearch && matchesCategory && matchesTeam;
+      return matchesSearch && matchesCategory;
     });
 
     // Sort items
@@ -45,60 +45,59 @@ export const InventoryManagementTab: React.FC = () => {
         case 'stock':
           return a.current_stock - b.current_stock;
         case 'category':
-          return a.category.localeCompare(b.category);
+          return (a.category?.name || '').localeCompare(b.category?.name || '');
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [items, searchTerm, selectedCategory, sortBy, teamContext?.selectedTeam]);
+  }, [items, searchTerm, selectedCategory, sortBy]);
 
-  // Get unique categories for filter
+  // Get unique categories from items
   const categories = React.useMemo(() => {
-    const uniqueCategories = Array.from(new Set(items.map(item => item.category)));
-    return uniqueCategories.sort();
+    const uniqueCategories = Array.from(new Set(
+      items.map(item => item.category?.name).filter(Boolean)
+    ));
+    return uniqueCategories;
   }, [items]);
+
+  const handleAddItem = () => {
+    setSelectedItemId(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditItem = (itemId: string) => {
+    setSelectedItemId(itemId);
+    setIsDialogOpen(true);
+  };
+
+  if (!hasRoleAccess('manager')) {
+    return (
+      <div className="text-center py-8">
+        <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">
+          You don't have permission to manage inventory items.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Inventory Management</h2>
-          <p className="text-muted-foreground">
-            Create templates and manage inventory items for teams
-          </p>
-        </div>
-        
-        <div className="flex gap-2">
-          {hasRoleAccess('admin') && (
-            <TeamSelector 
-              showAllOption={true}
-              placeholder="Select team"
-            />
-          )}
-          <Button 
-            onClick={() => {
-              setSelectedItemId(null);
-              setIsDialogOpen(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Item
-          </Button>
-        </div>
-      </div>
-
-      <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="items" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="items" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Items
+          </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Templates
           </TabsTrigger>
-          <TabsTrigger value="items" className="flex items-center gap-2">
+          <TabsTrigger value="alerts" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Items
+            Alerts
           </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -106,203 +105,183 @@ export const InventoryManagementTab: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="templates" className="mt-6">
-          <InventoryTemplatesPanel selectedTeam={teamContext?.selectedTeam?.id || ''} />
-        </TabsContent>
-
         <TabsContent value="items" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              {/* Search and Filter Controls */}
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          placeholder="Search items by name or SKU..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-[140px]">
-                          <Filter className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="Category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Categories</SelectItem>
-                          {categories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+              <div className="flex-1 w-full">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search items..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full md:w-[160px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                      <Select value={sortBy} onValueChange={(value: 'name' | 'stock' | 'category') => setSortBy(value)}>
-                        <SelectTrigger className="w-[120px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="name">Name</SelectItem>
-                          <SelectItem value="stock">Stock</SelectItem>
-                          <SelectItem value="category">Category</SelectItem>
-                        </SelectContent>
-                      </Select>
+                <Select value={sortBy} onValueChange={(value: 'name' | 'stock' | 'category') => setSortBy(value)}>
+                  <SelectTrigger className="w-full md:w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="stock">Stock</SelectItem>
+                    <SelectItem value="category">Category</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                      <div className="flex border rounded-md">
-                        <Button
-                          variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => setViewMode('grid')}
-                          className="px-3"
-                        >
-                          <Grid className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant={viewMode === 'list' ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => setViewMode('list')}
-                          className="px-3"
-                        >
-                          <List className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
 
-              {/* Items Display */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-5 w-5" />
-                      Inventory Items
-                      {teamContext?.selectedTeam && (
-                        <Badge variant="outline">
-                          {teamContext.selectedTeam.name}
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-sm font-normal text-muted-foreground">
-                      {filteredAndSortedItems.length} items
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-muted-foreground">Loading items...</div>
-                    </div>
-                  ) : filteredAndSortedItems.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      {searchTerm || selectedCategory ? 'No items match your filters' : 'No items found'}
-                    </div>
-                  ) : (
-                    <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'space-y-2'}>
-                      {filteredAndSortedItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`${
-                            viewMode === 'grid' 
-                              ? 'p-4 border rounded-lg hover:bg-muted/50' 
-                              : 'flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50'
-                          }`}
-                        >
-                          <div className={viewMode === 'grid' ? 'space-y-2' : 'flex-1'}>
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h3 className="font-medium">{item.name}</h3>
-                                <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
-                              </div>
-                              {viewMode === 'grid' && (
-                                <Badge variant="outline" className="text-xs">
-                                  {item.category}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div className={`${viewMode === 'grid' ? 'space-y-1' : 'text-sm text-muted-foreground'}`}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Stock:</span>
-                                <span className={`text-sm font-medium ${
-                                  item.current_stock <= (item.minimum_threshold || 0) ? 'text-destructive' :
-                                  item.current_stock >= (item.maximum_threshold || 100) ? 'text-warning' : 'text-foreground'
-                                }`}>
-                                  {item.current_stock} {item.unit_of_measure}
-                                </span>
-                              </div>
-                              
-                              {viewMode === 'grid' && (
-                                <>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Range:</span>
-                                    <span className="text-sm">{item.minimum_threshold || 0} - {item.maximum_threshold || 100}</span>
-                                  </div>
-                                  
-                                  {(item.unit_cost || 0) > 0 && (
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-muted-foreground">Cost:</span>
-                                      <span className="text-sm">${(item.unit_cost || 0).toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                  
-                                  {item.location && (
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-muted-foreground">Location:</span>
-                                      <span className="text-sm">{item.location}</span>
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            
-                            {viewMode === 'list' && (
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {item.category}
-                                </Badge>
-                                {item.location && (
-                                  <span className="text-xs text-muted-foreground">
-                                    📍 {item.location}
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                <Button onClick={handleAddItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+            </div>
+
+            <TeamSelector />
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredAndSortedItems.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No items found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm || selectedCategory !== 'all' 
+                    ? 'Try adjusting your search or filters.'
+                    : 'Get started by adding your first inventory item.'
+                  }
+                </p>
+                {(!searchTerm && selectedCategory === 'all') && (
+                  <Button onClick={handleAddItem}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Item
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
+                {viewMode === 'grid' ? (
+                  filteredAndSortedItems.map((item) => (
+                    <Card key={item.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleEditItem(item.id)}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">{item.name}</span>
                           </div>
-                          
-                          <div className={viewMode === 'grid' ? 'mt-4' : 'ml-4'}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedItemId(item.id);
-                                setIsDialogOpen(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
+                          <Badge variant={item.current_stock < (item.minimum_threshold || 0) ? 'destructive' : 'secondary'}>
+                            {item.current_stock}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <div>SKU: {item.sku || 'N/A'}</div>
+                          <div>Category: {item.category?.name || 'Uncategorized'}</div>
+                          <div>Min: {item.minimum_threshold || 0} • Max: {item.maximum_threshold || 0}</div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{item.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              SKU: {item.sku || 'N/A'} • Category: {item.category?.name || 'Uncategorized'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{item.current_stock} {item.base_unit?.abbreviation || 'units'}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Min: {item.minimum_threshold || 0}
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <div>
-              <InventoryAlertsPanel />
-            </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Stock</TableHead>
+                          <TableHead>Unit</TableHead>
+                          <TableHead>Min</TableHead>
+                          <TableHead>Max</TableHead>
+                          <TableHead>Cost</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAndSortedItems.map((item) => (
+                          <TableRow 
+                            key={item.id} 
+                            className="cursor-pointer hover:bg-muted/50" 
+                            onClick={() => handleEditItem(item.id)}
+                          >
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell>{item.sku || 'N/A'}</TableCell>
+                            <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
+                            <TableCell>
+                              <Badge variant={item.current_stock < (item.minimum_threshold || 0) ? 'destructive' : 'secondary'}>
+                                {item.current_stock}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{item.base_unit?.abbreviation || 'units'}</TableCell>
+                            <TableCell>{item.minimum_threshold || 0}</TableCell>
+                            <TableCell>{item.maximum_threshold || 0}</TableCell>
+                            <TableCell>${(item.unit_cost || 0).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-6">
+          <InventoryTemplatesPanel selectedTeam={teamContext?.selectedTeam?.id || null} />
+        </TabsContent>
+
+        <TabsContent value="alerts" className="mt-6">
+          <InventoryAlertsPanel />
         </TabsContent>
 
         <TabsContent value="assignments" className="mt-6">
