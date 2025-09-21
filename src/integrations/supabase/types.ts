@@ -2035,6 +2035,36 @@ export type Database = {
           },
         ]
       }
+      inventory_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_count_items: {
         Row: {
           actual_quantity: number | null
@@ -2162,7 +2192,11 @@ export type Database = {
       inventory_items: {
         Row: {
           barcode: string | null
+          base_unit_id: string | null
+          calculated_unit_price: number | null
           category: string | null
+          category_id: string | null
+          conversion_factor: number | null
           created_at: string
           created_by: string
           current_stock: number
@@ -2176,11 +2210,12 @@ export type Database = {
           minimum_threshold: number | null
           name: string
           organization_id: string
+          purchase_price: number | null
+          purchase_unit: string | null
           reorder_point: number | null
           sku: string | null
           sort_order: number | null
           supplier_info: Json | null
-          team_id: string | null
           template_name: string | null
           unit_cost: number | null
           unit_of_measure: string
@@ -2188,7 +2223,11 @@ export type Database = {
         }
         Insert: {
           barcode?: string | null
+          base_unit_id?: string | null
+          calculated_unit_price?: number | null
           category?: string | null
+          category_id?: string | null
+          conversion_factor?: number | null
           created_at?: string
           created_by: string
           current_stock?: number
@@ -2202,11 +2241,12 @@ export type Database = {
           minimum_threshold?: number | null
           name: string
           organization_id: string
+          purchase_price?: number | null
+          purchase_unit?: string | null
           reorder_point?: number | null
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
-          team_id?: string | null
           template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
@@ -2214,7 +2254,11 @@ export type Database = {
         }
         Update: {
           barcode?: string | null
+          base_unit_id?: string | null
+          calculated_unit_price?: number | null
           category?: string | null
+          category_id?: string | null
+          conversion_factor?: number | null
           created_at?: string
           created_by?: string
           current_stock?: number
@@ -2228,11 +2272,12 @@ export type Database = {
           minimum_threshold?: number | null
           name?: string
           organization_id?: string
+          purchase_price?: number | null
+          purchase_unit?: string | null
           reorder_point?: number | null
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
-          team_id?: string | null
           template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
@@ -2240,17 +2285,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "inventory_items_team_id_fkey"
-            columns: ["team_id"]
+            foreignKeyName: "inventory_items_base_unit_id_fkey"
+            columns: ["base_unit_id"]
             isOneToOne: false
-            referencedRelation: "team_details"
+            referencedRelation: "inventory_units"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inventory_items_team_id_fkey"
-            columns: ["team_id"]
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "teams"
+            referencedRelation: "inventory_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -2397,6 +2442,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_units: {
+        Row: {
+          abbreviation: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          unit_type: string
+          updated_at: string
+        }
+        Insert: {
+          abbreviation: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          unit_type: string
+          updated_at?: string
+        }
+        Update: {
+          abbreviation?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          unit_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       invoices: {
         Row: {

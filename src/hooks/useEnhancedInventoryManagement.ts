@@ -5,7 +5,9 @@ import {
   inventoryTransactionsApi,
   inventoryCountsApi,
   inventoryAlertsApi,
-  inventoryTemplatesApi
+  inventoryTemplatesApi,
+  inventoryCategoriesApi,
+  inventoryUnitsApi
 } from '@/contexts/inventory/api';
 import { 
   InventoryItem, 
@@ -15,7 +17,9 @@ import {
   InventoryTemplate,
   InventoryTemplateItem,
   TeamInventoryAssignment,
-  InventoryContextType 
+  InventoryContextType,
+  InventoryCategory,
+  InventoryUnit
 } from '@/contexts/inventory/types';
 
 export const useEnhancedInventoryManagement = (): InventoryContextType => {
@@ -28,6 +32,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   const [templates, setTemplates] = useState<InventoryTemplate[]>([]);
   const [templateItems, setTemplateItems] = useState<InventoryTemplateItem[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamInventoryAssignment[]>([]);
+  const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [units, setUnits] = useState<InventoryUnit[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [itemsLoading, setItemsLoading] = useState(false);
@@ -35,6 +41,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   const [countsLoading, setCountsLoading] = useState(false);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [unitsLoading, setUnitsLoading] = useState(false);
 
   // Define all refresh functions with useCallback to prevent recreation
   const refreshItems = useCallback(async () => {
@@ -102,18 +110,34 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     }
   }, [user?.organizationId]);
 
-  const refreshTeamAssignments = useCallback(async () => {
+  const refreshCategories = useCallback(async () => {
     if (!user?.organizationId) return;
+    setCategoriesLoading(true);
     try {
-      const data = await inventoryTemplatesApi.getTeamAssignments();
-      setTeamAssignments(data);
+      const data = await inventoryCategoriesApi.getAll();
+      setCategories(data);
     } catch (error) {
-      console.error('Error fetching team assignments:', error);
+      console.error('Error fetching inventory categories:', error);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, [user?.organizationId]);
+
+  const refreshUnits = useCallback(async () => {
+    if (!user?.organizationId) return;
+    setUnitsLoading(true);
+    try {
+      const data = await inventoryUnitsApi.getAll();
+      setUnits(data);
+    } catch (error) {
+      console.error('Error fetching inventory units:', error);
+    } finally {
+      setUnitsLoading(false);
     }
   }, [user?.organizationId]);
 
   // CRUD Operations
-  const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> => {
+  const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>): Promise<InventoryItem> => {
     const newItem = await inventoryItemsApi.create(item);
     await refreshItems();
     return newItem;
@@ -242,8 +266,10 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
       refreshAlerts(),
       refreshTemplates(),
       refreshTeamAssignments(),
+      refreshCategories(),
+      refreshUnits(),
     ]);
-  }, [refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments]);
+  }, [refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments, refreshCategories, refreshUnits]);
 
   // Load initial data
   useEffect(() => {
@@ -254,10 +280,12 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
         refreshCounts(),
         refreshAlerts(),
         refreshTemplates(),
-        refreshTeamAssignments()
+        refreshTeamAssignments(),
+        refreshCategories(),
+        refreshUnits()
       ]).finally(() => setLoading(false));
     }
-  }, [user?.organizationId, refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments]);
+  }, [user?.organizationId, refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments, refreshCategories, refreshUnits]);
 
   return {
     // Data
@@ -268,6 +296,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     templates,
     templateItems,
     teamAssignments,
+    categories,
+    units,
     
     // Loading states
     loading,
@@ -276,6 +306,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     countsLoading,
     alertsLoading,
     templatesLoading,
+    categoriesLoading,
+    unitsLoading,
     
     // Operations
     createItem,
@@ -288,6 +320,16 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     updateCountItem,
     completeInventoryCount,
     resolveAlert,
+    
+    // Categories operations
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    
+    // Units operations
+    createUnit,
+    updateUnit,
+    deleteUnit,
     
     // Template operations
     createTemplate,
@@ -308,6 +350,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshAlerts,
     refreshTemplates,
     refreshTeamAssignments,
+    refreshCategories,
+    refreshUnits,
     refreshData: refreshAll,
   };
 };

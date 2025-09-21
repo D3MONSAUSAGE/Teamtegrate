@@ -5,7 +5,11 @@ export const inventoryItemsApi = {
   async getAll(): Promise<InventoryItem[]> {
     const { data, error } = await supabase
       .from('inventory_items')
-      .select('*')
+      .select(`
+        *,
+        category:inventory_categories(id, name, description),
+        base_unit:inventory_units(id, name, abbreviation, unit_type)
+      `)
       .eq('is_active', true)
       .order('name');
 
@@ -13,23 +17,31 @@ export const inventoryItemsApi = {
     return (data || []) as InventoryItem[];
   },
 
-  async create(item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> {
+  async create(item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>): Promise<InventoryItem> {
     const { data, error } = await supabase
       .from('inventory_items')
       .insert([item])
-      .select()
+      .select(`
+        *,
+        category:inventory_categories(id, name, description),
+        base_unit:inventory_units(id, name, abbreviation, unit_type)
+      `)
       .single();
 
     if (error) throw error;
     return data as InventoryItem;
   },
 
-  async update(id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> {
+  async update(id: string, updates: Partial<Omit<InventoryItem, 'category' | 'base_unit' | 'calculated_unit_price'>>): Promise<InventoryItem> {
     const { data, error } = await supabase
       .from('inventory_items')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        category:inventory_categories(id, name, description),
+        base_unit:inventory_units(id, name, abbreviation, unit_type)
+      `)
       .single();
 
     if (error) throw error;
@@ -48,7 +60,11 @@ export const inventoryItemsApi = {
   async getById(id: string): Promise<InventoryItem | null> {
     const { data, error } = await supabase
       .from('inventory_items')
-      .select('*')
+      .select(`
+        *,
+        category:inventory_categories(id, name, description),
+        base_unit:inventory_units(id, name, abbreviation, unit_type)
+      `)
       .eq('id', id)
       .eq('is_active', true)
       .single();

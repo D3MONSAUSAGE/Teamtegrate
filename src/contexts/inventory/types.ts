@@ -1,10 +1,35 @@
+export interface InventoryCategory {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryUnit {
+  id: string;
+  organization_id: string;
+  name: string;
+  abbreviation: string;
+  unit_type: 'weight' | 'volume' | 'count' | 'length' | 'area';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface InventoryItem {
   id: string;
   organization_id: string;
   name: string;
   description?: string;
-  category?: string;
-  unit_of_measure: string;
+  category_id?: string;
+  base_unit_id?: string;
+  purchase_unit?: string;
+  conversion_factor?: number;
+  purchase_price?: number;
+  calculated_unit_price?: number;
   current_stock: number;
   minimum_threshold?: number;
   maximum_threshold?: number;
@@ -18,12 +43,13 @@ export interface InventoryItem {
   created_at: string;
   updated_at: string;
   is_active: boolean;
-  // New team-based fields
-  team_id?: string;
   is_template: boolean;
   template_name?: string;
   expected_cost?: number;
   sort_order: number;
+  // Relations
+  category?: InventoryCategory;
+  base_unit?: InventoryUnit;
 }
 
 export interface InventoryTransaction {
@@ -128,6 +154,8 @@ export interface InventoryContextType {
   transactions: InventoryTransaction[];
   counts: InventoryCount[];
   alerts: InventoryAlert[];
+  categories: InventoryCategory[];
+  units: InventoryUnit[];
   
   // Team-based data
   templates: InventoryTemplate[];
@@ -141,9 +169,11 @@ export interface InventoryContextType {
   countsLoading: boolean;
   alertsLoading: boolean;
   templatesLoading: boolean;
+  categoriesLoading: boolean;
+  unitsLoading: boolean;
   
   // Operations
-  createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryItem>;
+  createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>) => Promise<InventoryItem>;
   updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<InventoryItem>;
   getItemById: (id: string) => Promise<InventoryItem | null>;
   deleteItem: (id: string) => Promise<void>;
@@ -156,6 +186,16 @@ export interface InventoryContextType {
   completeInventoryCount: (countId: string) => Promise<void>;
   
   resolveAlert: (alertId: string) => Promise<void>;
+  
+  // Categories operations
+  createCategory: (category: Omit<InventoryCategory, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryCategory>;
+  updateCategory: (id: string, updates: Partial<InventoryCategory>) => Promise<InventoryCategory>;
+  deleteCategory: (id: string) => Promise<void>;
+  
+  // Units operations
+  createUnit: (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryUnit>;
+  updateUnit: (id: string, updates: Partial<InventoryUnit>) => Promise<InventoryUnit>;
+  deleteUnit: (id: string) => Promise<void>;
   
   // Template operations
   createTemplate: (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryTemplate>;
@@ -176,5 +216,7 @@ export interface InventoryContextType {
   refreshAlerts: () => Promise<void>;
   refreshTemplates: () => Promise<void>;
   refreshTeamAssignments: () => Promise<void>;
+  refreshCategories: () => Promise<void>;
+  refreshUnits: () => Promise<void>;
   refreshData: () => Promise<void>;
 }
