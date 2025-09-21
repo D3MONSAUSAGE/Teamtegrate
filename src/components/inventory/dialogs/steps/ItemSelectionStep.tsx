@@ -40,7 +40,7 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
 
     const newSelectedItem = {
       item,
-      expectedQuantity: 0,
+      inStockQuantity: 0,
       minimumQuantity: undefined,
       maximumQuantity: undefined,
       sortOrder: formData.selectedItems.length
@@ -57,11 +57,11 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
     });
   };
 
-  const updateItemQuantity = (itemId: string, field: 'expectedQuantity' | 'minimumQuantity' | 'maximumQuantity', value: number | undefined) => {
+  const updateItemQuantity = (itemId: string, field: 'inStockQuantity' | 'minimumQuantity' | 'maximumQuantity', value: number | undefined) => {
     updateFormData({
       selectedItems: formData.selectedItems.map(selected =>
         selected.item.id === itemId
-          ? { ...selected, [field]: field === 'expectedQuantity' ? Math.max(0, value || 0) : value }
+          ? { ...selected, [field]: field === 'inStockQuantity' ? Math.max(0, value || 0) : value }
           : selected
       )
     });
@@ -73,7 +73,7 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
       .slice(0, 10) // Limit to 10 items at once
       .map((item, index) => ({
         item,
-        expectedQuantity: 0,
+        inStockQuantity: 0,
         minimumQuantity: undefined,
         maximumQuantity: undefined,
         sortOrder: formData.selectedItems.length + index
@@ -145,15 +145,15 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                       />
                     </div>
                     <div className="flex flex-col items-center">
-                      <Label htmlFor={`exp-${selected.item.id}`} className="text-xs mb-1">
-                        Expected:
+                      <Label htmlFor={`instock-${selected.item.id}`} className="text-xs mb-1">
+                        In Stock:
                       </Label>
                       <Input
-                        id={`exp-${selected.item.id}`}
+                        id={`instock-${selected.item.id}`}
                         type="number"
                         min="0"
-                        value={selected.expectedQuantity || ''}
-                        onChange={(e) => updateItemQuantity(selected.item.id, 'expectedQuantity', parseInt(e.target.value) || 0)}
+                        value={selected.inStockQuantity || ''}
+                        onChange={(e) => updateItemQuantity(selected.item.id, 'inStockQuantity', parseInt(e.target.value) || 0)}
                         className="w-20 text-center"
                         placeholder="0"
                       />
@@ -298,9 +298,9 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
             <div>
               <h4 className="font-medium text-sm">Item Selection Tips</h4>
               <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                <li>• Set expected quantities to help teams know normal stock levels</li>
+                <li>• Set in stock quantities to help teams know normal stock levels</li>
                 <li>• Use minimum/maximum quantities to define acceptable count ranges</li>
-                <li>• Expected quantity is required; min/max are optional for flexibility</li>
+                <li>• In stock quantity is required; min/max are optional for flexibility</li>
                 <li>• Use search and category filters to find items quickly</li>
                 <li>• Add commonly counted items first for better organization</li>
               </ul>

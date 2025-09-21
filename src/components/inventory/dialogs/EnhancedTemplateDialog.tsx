@@ -30,7 +30,7 @@ export interface TemplateFormData {
   // Items
   selectedItems: Array<{
     item: InventoryItem;
-    expectedQuantity: number;
+    inStockQuantity: number;
     minimumQuantity?: number;
     maximumQuantity?: number;
     sortOrder: number;
@@ -154,8 +154,8 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
       });
 
       // Add items to the template
-      for (const { item, expectedQuantity, minimumQuantity, maximumQuantity, sortOrder } of formData.selectedItems) {
-        await addItemToTemplate(template.id, item.id, expectedQuantity, minimumQuantity, maximumQuantity, sortOrder);
+      for (const { item, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder } of formData.selectedItems) {
+        await addItemToTemplate(template.id, item.id, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder);
       }
 
       toast({

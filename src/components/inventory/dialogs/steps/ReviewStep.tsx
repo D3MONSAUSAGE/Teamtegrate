@@ -110,7 +110,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Expected: {selected.expectedQuantity} {selected.item.base_unit?.abbreviation || 'units'}
+                  In Stock: {selected.inStockQuantity} {selected.item.base_unit?.abbreviation || 'units'}
                 </div>
               </div>
             ))}
