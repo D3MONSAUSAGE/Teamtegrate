@@ -11,7 +11,7 @@ interface InventoryProviderProps {
 export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }) => {
   const inventoryData = useEnhancedInventoryManagement();
   
-  console.log('InventoryProvider - inventoryData loading:', inventoryData.loading);
+  // Remove excessive logging
   
   // Always provide the context, even during loading
   return (

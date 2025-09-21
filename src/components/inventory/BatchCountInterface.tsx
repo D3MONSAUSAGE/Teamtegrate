@@ -42,7 +42,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Initialize local counts from existing count items
+  // Initialize local counts from existing count items - only on first load
   useEffect(() => {
     const initialCounts: Record<string, string> = {};
     countItems.forEach(countItem => {
@@ -50,7 +50,24 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
         initialCounts[countItem.item_id] = countItem.actual_quantity.toString();
       }
     });
-    setLocalCounts(initialCounts);
+    
+    // Only update if we don't already have values for these items (prevents overwriting user input)
+    setLocalCounts(prev => {
+      const newCounts = { ...prev };
+      let hasChanges = false;
+      
+      countItems.forEach(countItem => {
+        if (countItem.actual_quantity !== null && countItem.actual_quantity !== undefined) {
+          // Only set if we don't have a value yet or if the user isn't actively editing
+          if (!prev[countItem.item_id]) {
+            newCounts[countItem.item_id] = countItem.actual_quantity.toString();
+            hasChanges = true;
+          }
+        }
+      });
+      
+      return hasChanges ? newCounts : prev;
+    });
   }, [countItems]);
 
   const handleInputChange = (itemId: string, value: string) => {
