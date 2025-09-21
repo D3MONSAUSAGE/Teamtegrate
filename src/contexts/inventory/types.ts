@@ -18,6 +18,12 @@ export interface InventoryItem {
   created_at: string;
   updated_at: string;
   is_active: boolean;
+  // New team-based fields
+  team_id?: string;
+  is_template: boolean;
+  template_name?: string;
+  expected_cost?: number;
+  sort_order: number;
 }
 
 export interface InventoryTransaction {
@@ -43,6 +49,13 @@ export interface InventoryCount {
   notes?: string;
   created_at: string;
   updated_at: string;
+  // New team-based fields
+  team_id?: string;
+  template_id?: string;
+  assigned_to?: string;
+  completion_percentage: number;
+  variance_count: number;
+  total_items_count: number;
 }
 
 export interface InventoryCountItem {
@@ -72,6 +85,43 @@ export interface InventoryAlert {
   item?: InventoryItem;
 }
 
+// New team-based interfaces
+export interface InventoryTemplate {
+  id: string;
+  organization_id: string;
+  team_id?: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryTemplateItem {
+  id: string;
+  template_id: string;
+  item_id: string;
+  expected_quantity: number;
+  sort_order: number;
+  created_at: string;
+  item?: InventoryItem;
+}
+
+export interface TeamInventoryAssignment {
+  id: string;
+  organization_id: string;
+  team_id: string;
+  template_id: string;
+  assigned_by: string;
+  is_active: boolean;
+  schedule_days: string[];
+  due_time: string;
+  created_at: string;
+  updated_at: string;
+  template?: InventoryTemplate;
+}
+
 export interface InventoryContextType {
   // Data
   items: InventoryItem[];
@@ -79,12 +129,18 @@ export interface InventoryContextType {
   counts: InventoryCount[];
   alerts: InventoryAlert[];
   
+  // Team-based data
+  templates: InventoryTemplate[];
+  templateItems: InventoryTemplateItem[];
+  teamAssignments: TeamInventoryAssignment[];
+  
   // Loading states
   loading: boolean;
   itemsLoading: boolean;
   transactionsLoading: boolean;
   countsLoading: boolean;
   alertsLoading: boolean;
+  templatesLoading: boolean;
   
   // Operations
   createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryItem>;
@@ -93,15 +149,23 @@ export interface InventoryContextType {
   
   createTransaction: (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>) => Promise<InventoryTransaction>;
   
-  startInventoryCount: (notes?: string) => Promise<InventoryCount>;
+  startInventoryCount: (notes?: string, teamId?: string, templateId?: string) => Promise<InventoryCount>;
   updateCountItem: (countId: string, itemId: string, actualQuantity: number, notes?: string) => Promise<void>;
   completeInventoryCount: (countId: string) => Promise<void>;
   
   resolveAlert: (alertId: string) => Promise<void>;
+  
+  // Template operations
+  createTemplate: (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryTemplate>;
+  updateTemplate: (id: string, updates: Partial<InventoryTemplate>) => Promise<InventoryTemplate>;
+  assignTemplateToTeam: (templateId: string, teamId: string) => Promise<TeamInventoryAssignment>;
+  getTeamInventories: (teamId: string) => TeamInventoryAssignment[];
   
   // Refresh functions
   refreshItems: () => Promise<void>;
   refreshTransactions: () => Promise<void>;
   refreshCounts: () => Promise<void>;
   refreshAlerts: () => Promise<void>;
+  refreshTemplates: () => Promise<void>;
+  refreshTeamAssignments: () => Promise<void>;
 }

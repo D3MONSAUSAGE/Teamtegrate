@@ -2088,6 +2088,8 @@ export type Database = {
       }
       inventory_counts: {
         Row: {
+          assigned_to: string | null
+          completion_percentage: number | null
           conducted_by: string
           count_date: string
           created_at: string
@@ -2095,9 +2097,15 @@ export type Database = {
           notes: string | null
           organization_id: string
           status: string
+          team_id: string | null
+          template_id: string | null
+          total_items_count: number | null
           updated_at: string
+          variance_count: number | null
         }
         Insert: {
+          assigned_to?: string | null
+          completion_percentage?: number | null
           conducted_by: string
           count_date?: string
           created_at?: string
@@ -2105,9 +2113,15 @@ export type Database = {
           notes?: string | null
           organization_id: string
           status?: string
+          team_id?: string | null
+          template_id?: string | null
+          total_items_count?: number | null
           updated_at?: string
+          variance_count?: number | null
         }
         Update: {
+          assigned_to?: string | null
+          completion_percentage?: number | null
           conducted_by?: string
           count_date?: string
           created_at?: string
@@ -2115,9 +2129,35 @@ export type Database = {
           notes?: string | null
           organization_id?: string
           status?: string
+          team_id?: string | null
+          template_id?: string | null
+          total_items_count?: number | null
           updated_at?: string
+          variance_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_counts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_items: {
         Row: {
@@ -2127,8 +2167,10 @@ export type Database = {
           created_by: string
           current_stock: number
           description: string | null
+          expected_cost: number | null
           id: string
           is_active: boolean
+          is_template: boolean
           location: string | null
           maximum_threshold: number | null
           minimum_threshold: number | null
@@ -2136,7 +2178,10 @@ export type Database = {
           organization_id: string
           reorder_point: number | null
           sku: string | null
+          sort_order: number | null
           supplier_info: Json | null
+          team_id: string | null
+          template_name: string | null
           unit_cost: number | null
           unit_of_measure: string
           updated_at: string
@@ -2148,8 +2193,10 @@ export type Database = {
           created_by: string
           current_stock?: number
           description?: string | null
+          expected_cost?: number | null
           id?: string
           is_active?: boolean
+          is_template?: boolean
           location?: string | null
           maximum_threshold?: number | null
           minimum_threshold?: number | null
@@ -2157,7 +2204,10 @@ export type Database = {
           organization_id: string
           reorder_point?: number | null
           sku?: string | null
+          sort_order?: number | null
           supplier_info?: Json | null
+          team_id?: string | null
+          template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
           updated_at?: string
@@ -2169,8 +2219,10 @@ export type Database = {
           created_by?: string
           current_stock?: number
           description?: string | null
+          expected_cost?: number | null
           id?: string
           is_active?: boolean
+          is_template?: boolean
           location?: string | null
           maximum_threshold?: number | null
           minimum_threshold?: number | null
@@ -2178,12 +2230,123 @@ export type Database = {
           organization_id?: string
           reorder_point?: number | null
           sku?: string | null
+          sort_order?: number | null
           supplier_info?: Json | null
+          team_id?: string | null
+          template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_template_items: {
+        Row: {
+          created_at: string
+          expected_quantity: number | null
+          id: string
+          item_id: string
+          sort_order: number | null
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          expected_quantity?: number | null
+          id?: string
+          item_id: string
+          sort_order?: number | null
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          expected_quantity?: number | null
+          id?: string
+          item_id?: string
+          sort_order?: number | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_template_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_transactions: {
         Row: {
@@ -6236,6 +6399,67 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_inventory_assignments: {
+        Row: {
+          assigned_by: string
+          created_at: string
+          due_time: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          schedule_days: string[] | null
+          team_id: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          created_at?: string
+          due_time?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          schedule_days?: string[] | null
+          team_id: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          created_at?: string
+          due_time?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          schedule_days?: string[] | null
+          team_id?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_inventory_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_inventory_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_inventory_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_templates"
             referencedColumns: ["id"]
           },
         ]

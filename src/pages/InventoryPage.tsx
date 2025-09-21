@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Package, Settings } from 'lucide-react';
 import { InventoryCountTab } from '@/components/inventory/tabs/InventoryCountTab';
 import { InventoryManagementTab } from '@/components/inventory/tabs/InventoryManagementTab';
+import { InventoryRecordsTab } from '@/components/inventory/tabs/InventoryRecordsTab';
 import { InventoryProvider } from '@/contexts/inventory';
 
 const InventoryPage: React.FC = () => {
@@ -23,7 +24,7 @@ const InventoryPage: React.FC = () => {
         </div>
 
         <Tabs defaultValue="count" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="count" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Inventory Count
@@ -34,6 +35,10 @@ const InventoryPage: React.FC = () => {
                 Management
               </TabsTrigger>
             )}
+            <TabsTrigger value="records" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Records
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="count" className="mt-6">
@@ -45,6 +50,10 @@ const InventoryPage: React.FC = () => {
               <InventoryManagementTab />
             </TabsContent>
           )}
+
+          <TabsContent value="records" className="mt-6">
+            <InventoryRecordsTab />
+          </TabsContent>
         </Tabs>
       </div>
     </InventoryProvider>

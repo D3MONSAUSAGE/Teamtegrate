@@ -1,295 +1,209 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { 
-  InventoryContextType, 
-  InventoryItem, 
-  InventoryTransaction, 
-  InventoryCount, 
-  InventoryAlert 
-} from '@/contexts/inventory/types';
-import {
   inventoryItemsApi,
   inventoryTransactionsApi,
   inventoryCountsApi,
-  inventoryAlertsApi
+  inventoryAlertsApi,
+  inventoryTemplatesApi
 } from '@/contexts/inventory/api';
+import { 
+  InventoryItem, 
+  InventoryTransaction, 
+  InventoryCount, 
+  InventoryAlert,
+  InventoryTemplate,
+  InventoryTemplateItem,
+  TeamInventoryAssignment,
+  InventoryContextType 
+} from '@/contexts/inventory/types';
 
 export const useEnhancedInventoryManagement = (): InventoryContextType => {
   const { user } = useAuth();
-  const { toast } = useToast();
-
-  // State
+  
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [counts, setCounts] = useState<InventoryCount[]>([]);
   const [alerts, setAlerts] = useState<InventoryAlert[]>([]);
-
-  // Loading states
-  const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<InventoryTemplate[]>([]);
+  const [templateItems, setTemplateItems] = useState<InventoryTemplateItem[]>([]);
+  const [teamAssignments, setTeamAssignments] = useState<TeamInventoryAssignment[]>([]);
+  
+  const [loading, setLoading] = useState(true);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [countsLoading, setCountsLoading] = useState(false);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
 
-  // Refresh functions
   const refreshItems = async () => {
+    if (!user?.organizationId) return;
     setItemsLoading(true);
     try {
       const data = await inventoryItemsApi.getAll();
       setItems(data);
     } catch (error) {
       console.error('Error fetching inventory items:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch inventory items',
-        variant: 'destructive',
-      });
     } finally {
       setItemsLoading(false);
     }
   };
 
   const refreshTransactions = async () => {
+    if (!user?.organizationId) return;
     setTransactionsLoading(true);
     try {
       const data = await inventoryTransactionsApi.getAll();
       setTransactions(data);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch transactions',
-        variant: 'destructive',
-      });
+      console.error('Error fetching inventory transactions:', error);
     } finally {
       setTransactionsLoading(false);
     }
   };
 
   const refreshCounts = async () => {
+    if (!user?.organizationId) return;
     setCountsLoading(true);
     try {
       const data = await inventoryCountsApi.getAll();
       setCounts(data);
     } catch (error) {
       console.error('Error fetching inventory counts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch inventory counts',
-        variant: 'destructive',
-      });
     } finally {
       setCountsLoading(false);
     }
   };
 
+  const startInventoryCount = async (notes?: string, teamId?: string, templateId?: string): Promise<InventoryCount> => {
+    const countData = {
+      organization_id: user?.organizationId || '',
+      count_date: new Date().toISOString(),
+      status: 'in_progress' as const,
+      conducted_by: user?.id || '',
+      notes,
+      team_id: teamId,
+      template_id: templateId,
+      assigned_to: user?.id,
+      completion_percentage: 0,
+      variance_count: 0,
+      total_items_count: 0
+    };
+    
+    const newCount = await inventoryCountsApi.create(countData);
+    await inventoryCountsApi.initializeCountItems(newCount.id);
+    await refreshCounts();
+    return newCount;
+  };
+
+  const updateCountItem = async (countId: string, itemId: string, actualQuantity: number, notes?: string): Promise<void> => {
+    await inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes, user?.id);
+  };
+
+  const completeInventoryCount = async (countId: string): Promise<void> => {
+    await inventoryCountsApi.update(countId, { status: 'completed' });
+    await refreshCounts();
+  };
+
+  const createItem = async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> => {
+    const newItem = await inventoryItemsApi.create(item);
+    await refreshItems();
+    return newItem;
+  };
+
+  const updateItem = async (id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
+    const updatedItem = await inventoryItemsApi.update(id, updates);
+    await refreshItems();
+    return updatedItem;
+  };
+
+  const deleteItem = async (id: string): Promise<void> => {
+    await inventoryItemsApi.delete(id);
+    await refreshItems();
+  };
+
+  const createTransaction = async (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>): Promise<InventoryTransaction> => {
+    const newTransaction = await inventoryTransactionsApi.create(transaction);
+    await refreshTransactions();
+    return newTransaction;
+  };
+
   const refreshAlerts = async () => {
+    if (!user?.organizationId) return;
     setAlertsLoading(true);
     try {
       const data = await inventoryAlertsApi.getAll();
       setAlerts(data);
     } catch (error) {
-      console.error('Error fetching alerts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch alerts',
-        variant: 'destructive',
-      });
+      console.error('Error fetching inventory alerts:', error);
     } finally {
       setAlertsLoading(false);
     }
   };
 
-  // Operations
-  const createItem = async (itemData: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> => {
+  const refreshTemplates = async () => {
+    if (!user?.organizationId) return;
+    setTemplatesLoading(true);
     try {
-      const newItem = await inventoryItemsApi.create(itemData);
-      setItems(prev => [...prev, newItem]);
-      toast({
-        title: 'Success',
-        description: 'Inventory item created successfully',
-      });
-      return newItem;
+      const data = await inventoryTemplatesApi.getAll();
+      setTemplates(data);
     } catch (error) {
-      console.error('Error creating item:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create inventory item',
-        variant: 'destructive',
-      });
-      throw error;
+      console.error('Error fetching inventory templates:', error);
+    } finally {
+      setTemplatesLoading(false);
     }
   };
 
-  const updateItem = async (id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
+  const refreshTeamAssignments = async () => {
+    if (!user?.organizationId) return;
     try {
-      const updatedItem = await inventoryItemsApi.update(id, updates);
-      setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
-      toast({
-        title: 'Success',
-        description: 'Inventory item updated successfully',
-      });
-      return updatedItem;
+      const data = await inventoryTemplatesApi.getTeamAssignments();
+      setTeamAssignments(data);
     } catch (error) {
-      console.error('Error updating item:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update inventory item',
-        variant: 'destructive',
-      });
-      throw error;
+      console.error('Error fetching team assignments:', error);
     }
   };
 
-  const deleteItem = async (id: string): Promise<void> => {
-    try {
-      await inventoryItemsApi.delete(id);
-      setItems(prev => prev.filter(item => item.id !== id));
-      toast({
-        title: 'Success',
-        description: 'Inventory item deleted successfully',
-      });
-    } catch (error) {
-      console.error('Error deleting item:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete inventory item',
-        variant: 'destructive',
-      });
-      throw error;
-    }
+  // Template operations
+  const createTemplate = async (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryTemplate> => {
+    const newTemplate = await inventoryTemplatesApi.create(template);
+    await refreshTemplates();
+    return newTemplate;
   };
 
-  const createTransaction = async (transactionData: Omit<InventoryTransaction, 'id' | 'created_at'>): Promise<InventoryTransaction> => {
-    try {
-      const newTransaction = await inventoryTransactionsApi.create(transactionData);
-      setTransactions(prev => [newTransaction, ...prev]);
-      // Refresh items to get updated stock levels
-      await refreshItems();
-      toast({
-        title: 'Success',
-        description: 'Transaction recorded successfully',
-      });
-      return newTransaction;
-    } catch (error) {
-      console.error('Error creating transaction:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to record transaction',
-        variant: 'destructive',
-      });
-      throw error;
-    }
+  const updateTemplate = async (id: string, updates: Partial<InventoryTemplate>): Promise<InventoryTemplate> => {
+    const updatedTemplate = await inventoryTemplatesApi.update(id, updates);
+    await refreshTemplates();
+    return updatedTemplate;
   };
 
-  const startInventoryCount = async (notes?: string): Promise<InventoryCount> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    try {
-      const countData = {
-        organization_id: user.organizationId,
-        conducted_by: user.id,
-        count_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-        status: 'in_progress' as const,
-        notes,
-      };
-      
-      const newCount = await inventoryCountsApi.create(countData);
-      await inventoryCountsApi.initializeCountItems(newCount.id);
-      setCounts(prev => [newCount, ...prev]);
-      
-      toast({
-        title: 'Success',
-        description: 'Inventory count started successfully',
-      });
-      return newCount;
-    } catch (error) {
-      console.error('Error starting inventory count:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to start inventory count',
-        variant: 'destructive',
-      });
-      throw error;
-    }
+  const assignTemplateToTeam = async (templateId: string, teamId: string): Promise<TeamInventoryAssignment> => {
+    const assignment = await inventoryTemplatesApi.assignToTeam(templateId, teamId, user?.id || '');
+    await refreshTeamAssignments();
+    return assignment;
   };
 
-  const updateCountItem = async (countId: string, itemId: string, actualQuantity: number, notes?: string): Promise<void> => {
-    try {
-      await inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes, user?.id);
-      toast({
-        title: 'Success',
-        description: 'Count item updated successfully',
-      });
-    } catch (error) {
-      console.error('Error updating count item:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update count item',
-        variant: 'destructive',
-      });
-      throw error;
-    }
-  };
-
-  const completeInventoryCount = async (countId: string): Promise<void> => {
-    try {
-      await inventoryCountsApi.update(countId, { status: 'completed' });
-      setCounts(prev => prev.map(count => 
-        count.id === countId ? { ...count, status: 'completed' } : count
-      ));
-      
-      // Refresh items and alerts as the count completion might trigger stock updates
-      await Promise.all([refreshItems(), refreshAlerts()]);
-      
-      toast({
-        title: 'Success',
-        description: 'Inventory count completed successfully',
-      });
-    } catch (error) {
-      console.error('Error completing inventory count:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to complete inventory count',
-        variant: 'destructive',
-      });
-      throw error;
-    }
+  const getTeamInventories = (teamId: string): TeamInventoryAssignment[] => {
+    return teamAssignments.filter(assignment => assignment.team_id === teamId && assignment.is_active);
   };
 
   const resolveAlert = async (alertId: string): Promise<void> => {
-    if (!user) throw new Error('User not authenticated');
-    
-    try {
-      await inventoryAlertsApi.resolve(alertId, user.id);
-      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
-      toast({
-        title: 'Success',
-        description: 'Alert resolved successfully',
-      });
-    } catch (error) {
-      console.error('Error resolving alert:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to resolve alert',
-        variant: 'destructive',
-      });
-      throw error;
-    }
+    await inventoryAlertsApi.resolve(alertId, user?.id || '');
+    await refreshAlerts();
   };
 
-  // Initial data loading
   useEffect(() => {
-    if (user) {
+    if (user?.organizationId) {
       Promise.all([
         refreshItems(),
         refreshTransactions(),
         refreshCounts(),
         refreshAlerts(),
-      ]);
+        refreshTemplates(),
+        refreshTeamAssignments()
+      ]).finally(() => setLoading(false));
     }
-  }, [user]);
+  }, [user?.organizationId]);
 
   return {
     // Data
@@ -297,13 +211,17 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     transactions,
     counts,
     alerts,
+    templates,
+    templateItems,
+    teamAssignments,
     
     // Loading states
-    loading: itemsLoading || transactionsLoading || countsLoading || alertsLoading,
+    loading,
     itemsLoading,
     transactionsLoading,
     countsLoading,
     alertsLoading,
+    templatesLoading,
     
     // Operations
     createItem,
@@ -315,10 +233,18 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     completeInventoryCount,
     resolveAlert,
     
+    // Template operations
+    createTemplate,
+    updateTemplate,
+    assignTemplateToTeam,
+    getTeamInventories,
+    
     // Refresh functions
     refreshItems,
     refreshTransactions,
     refreshCounts,
     refreshAlerts,
+    refreshTemplates,
+    refreshTeamAssignments,
   };
 };
