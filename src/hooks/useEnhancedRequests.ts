@@ -169,7 +169,8 @@ export function useEnhancedRequests() {
             status: requestRecord.status,
             priority: requestRecord.priority,
             created_at: requestRecord.created_at,
-            organization_id: requestRecord.organization_id
+            organization_id: requestRecord.organization_id,
+            ticket_number: requestRecord.ticket_number
           },
           {
             id: user.id,
@@ -276,7 +277,8 @@ export function useEnhancedRequests() {
             status: requestRecord.status,
             priority: requestRecord.priority || 'medium',
             created_at: requestRecord.created_at,
-            organization_id: requestRecord.organization_id
+            organization_id: requestRecord.organization_id,
+            ticket_number: requestRecord.ticket_number
           },
           'draft',
           'submitted',
@@ -349,44 +351,33 @@ export function useEnhancedRequests() {
 
       // Send centralized notifications for status change
       try {
-        await notifications.notifyTicketUpdated(
-          {
-            id: requestRecord.id,
-            title: requestRecord.title,
-            description: requestRecord.description,
-            status: requestRecord.status,
-            priority: requestRecord.priority || 'medium',
-            created_at: requestRecord.created_at,
-            organization_id: requestRecord.organization_id
-          },
-          oldStatus,
-          newStatus,
-          {
-            id: user.id,
-            email: user.email || '',
-            name: user.name
-          },
-          comments
-        );
-        
-        // Special handling for ticket closed
-        if (newStatus === 'completed') {
-          await notifications.notifyTicketClosed(
-            {
-              id: requestRecord.id,
-              title: requestRecord.title,
-              description: requestRecord.description,
-              status: requestRecord.status,
-              priority: requestRecord.priority || 'medium',
-              created_at: requestRecord.created_at,
-              organization_id: requestRecord.organization_id
-            },
-            comments || 'Ticket has been resolved.',
-            {
-              id: user.id,
-              email: user.email || '',
-              name: user.name
-            }
+        const ticketData = {
+          id: requestRecord.id,
+          title: requestRecord.title,
+          description: requestRecord.description,
+          status: requestRecord.status,
+          priority: requestRecord.priority || 'medium',
+          created_at: requestRecord.created_at,
+          organization_id: requestRecord.organization_id,
+          ticket_number: requestRecord.ticket_number
+        };
+
+        const actorData = {
+          id: user.id,
+          email: user.email || '',
+          name: user.name
+        };
+
+        // Special handling for completed status
+        if (newStatus === 'completed' && oldStatus !== 'completed') {
+          await notifications.notifyTicketCompleted(ticketData, actorData);
+        } else {
+          await notifications.notifyTicketUpdated(
+            ticketData,
+            oldStatus,
+            newStatus,
+            actorData,
+            comments
           );
         }
         

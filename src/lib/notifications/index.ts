@@ -16,6 +16,7 @@ interface TicketNotificationData {
   priority?: string;
   created_at: string;
   organization_id: string;
+  ticket_number?: string;
 }
 
 interface UserData {
@@ -158,6 +159,31 @@ export const notifications = {
       console.log('[Notifications] Ticket closed notifications sent successfully:', data);
     } catch (error) {
       console.error('[Notifications] Error in notifyTicketClosed:', error);
+    }
+  },
+
+  // Ticket Completed - notify requester with completion message
+  async notifyTicketCompleted(ticket: TicketNotificationData, actor: UserData) {
+    try {
+      console.log(`[Notifications] Triggering ticket completed notifications: ${ticket.id}`);
+
+      const { data, error } = await supabase.functions.invoke('send-ticket-notifications', {
+        body: {
+          type: 'ticket_completed',
+          ticket,
+          actor,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to send ticket completed notifications:', error);
+        throw error;
+      }
+
+      console.log('[Notifications] Ticket completed notifications sent successfully:', data);
+    } catch (error) {
+      console.error('[Notifications] Error in notifyTicketCompleted:', error);
     }
   },
 

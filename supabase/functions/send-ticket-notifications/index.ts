@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 interface TicketNotificationRequest {
-  type: 'ticket_created' | 'ticket_assigned' | 'ticket_updated' | 'ticket_closed';
+  type: 'ticket_created' | 'ticket_assigned' | 'ticket_updated' | 'ticket_closed' | 'ticket_completed';
   ticket: {
     id: string;
     title: string;
@@ -18,6 +18,7 @@ interface TicketNotificationRequest {
     priority?: string;
     created_at: string;
     organization_id: string;
+    ticket_number?: string;
   };
   user?: {
     id: string;
@@ -234,6 +235,42 @@ async function sendPushWithRetry(supabase: any, pushOptions: any, context: strin
   return false;
 }
 
+// HTML escape utility function
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Email template renderers
+function renderCreatedEmail({ ticketNo, title, requesterName, baseUrl, id }: any) {
+  const url = `${baseUrl}/requests/${id}`;
+  return `
+    <h2 style="margin:0 0 12px;font-family:Inter,Arial">Your request was received</h2>
+    <p style="margin:0 0 12px">Hi${requesterName ? " " + requesterName : ""},</p>
+    <p style="margin:0 0 12px">We've created your request <strong>${ticketNo}</strong>.</p>
+    <p style="margin:0 0 12px"><strong>Title:</strong> ${escapeHtml(title ?? "")}</p>
+    <p style="margin:16px 0"><a href="${url}">View request</a></p>
+    <hr style="border:none;border-top:1px solid #eee;margin:16px 0" />
+    <p style="color:#666;font-size:12px">Teamtegrate Support</p>
+  `;
+}
+
+function renderCompletedEmail({ ticketNo, title, baseUrl, id }: any) {
+  const url = `${baseUrl}/requests/${id}`;
+  return `
+    <h2 style="margin:0 0 12px;font-family:Inter,Arial">Your request is completed</h2>
+    <p style="margin:0 0 12px">Great news—request <strong>${ticketNo}</strong> has been completed.</p>
+    <p style="margin:0 0 12px"><strong>Title:</strong> ${escapeHtml(title ?? "")}</p>
+    <p style="margin:16px 0"><a href="${url}">Review outcome</a></p>
+    <hr style="border:none;border-top:1px solid #eee;margin:16px 0" />
+    <p style="color:#666;font-size:12px">Teamtegrate Support</p>
+  `;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -275,6 +312,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[Notification Processing] Starting ${type} notification for ticket ${ticket.id}`);
 
+    // Get human-readable ticket number
+    const uiNo = ticket?.ticket_number ?? null;
+    const rawId = ticket?.id ?? "";
+    const ticketNo = uiNo || (rawId.startsWith("REQ-") ? rawId : rawId.slice(0, 8));
+
     // Get configuration from environment variables
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://teamtegrate.com';
     const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate Support <support@requests.teamtegrate.com>';
@@ -284,7 +326,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('[Config] Using configuration:', {
       appBaseUrl,
       fromEmail,
-      ticketUrl
+      ticketUrl,
+      ticketNo
     });
 
     let emailsSent = 0;
@@ -297,16 +340,16 @@ const handler = async (req: Request): Promise<Response> => {
       case 'ticket_created':
         if (user) {
           // Send confirmation email to requester
+          const subject = `✅ Request ${ticketNo} received — ${ticket.title ?? ""}`;
           const userEmailSuccess = await sendEmailWithRetry(resendApiKey, fromEmail, {
             to: user.email,
-            subject: `✅ Ticket #${ticket.id} received - ${ticket.title}`,
-            html: await loadEmailTemplate('ticket-created-user.html', {
-              userName: user.name || user.email,
-              ticketId: ticket.id,
-              ticketTitle: ticket.title,
-              ticketDescription: ticket.description || '',
-              ticketUrl,
-              brandName
+            subject,
+            html: renderCreatedEmail({
+              ticketNo,
+              title: ticket.title,
+              requesterName: user.name,
+              baseUrl: appBaseUrl,
+              id: ticket.id
             })
           }, 'user confirmation email');
 
@@ -323,10 +366,10 @@ const handler = async (req: Request): Promise<Response> => {
             // Send email to admins
             const adminEmailSuccess = await sendEmailWithRetry(resendApiKey, fromEmail, {
               to: admins.map(admin => admin.email),
-              subject: `📩 New Ticket #${ticket.id} needs review`,
+              subject: `📩 New Request ${ticketNo} needs review`,
               html: await loadEmailTemplate('ticket-created-admin.html', {
                 adminName: 'Admin',
-                ticketId: ticket.id,
+                ticketId: ticketNo,
                 ticketTitle: ticket.title,
                 requesterName: user.name || user.email,
                 requesterEmail: user.email,
@@ -363,12 +406,13 @@ const handler = async (req: Request): Promise<Response> => {
       case 'ticket_assigned':
         if (assignee && actor) {
           // Send email to assignee
+          const subject = `📋 Request ${ticketNo} assigned to you — ${ticket.title ?? ""}`;
           const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
             to: assignee.email,
-            subject: `📋 Ticket #${ticket.id} assigned to you - ${ticket.title}`,
+            subject,
             html: await loadEmailTemplate('ticket-assigned.html', {
               assigneeName: assignee.name || assignee.email,
-              ticketId: ticket.id,
+              ticketId: ticketNo,
               ticketTitle: ticket.title,
               actorName: actor.name || actor.email,
               ticketUrl,
@@ -424,12 +468,13 @@ const handler = async (req: Request): Promise<Response> => {
 
             for (const recipient of recipients) {
               // Send email
+              const subject = `🔄 Request ${ticketNo} status updated — ${newStatus}`;
               const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
                 to: recipient.email,
-                subject: `🔄 Ticket #${ticket.id} status updated - ${newStatus}`,
+                subject,
                 html: await loadEmailTemplate('ticket-updated.html', {
                   recipientName: recipient.name || recipient.email,
-                  ticketId: ticket.id,
+                  ticketId: ticketNo,
                   ticketTitle: ticket.title,
                   oldStatus,
                   newStatus,
@@ -463,6 +508,39 @@ const handler = async (req: Request): Promise<Response> => {
         }
         break;
 
+      case 'ticket_completed':
+        if (actor) {
+          // Get ticket requester
+          const { data: ticketData } = await supabase
+            .from('requests')
+            .select(`
+              requested_by,
+              users_requested_by:users!requests_requested_by_fkey(id, email, name, push_token)
+            `)
+            .eq('id', ticket.id)
+            .single();
+
+          if (ticketData?.users_requested_by && Array.isArray(ticketData.users_requested_by) && ticketData.users_requested_by.length > 0) {
+            const requester = ticketData.users_requested_by[0];
+
+            // Send completion email to requester
+            const subject = `✅ Request ${ticketNo} completed — ${ticket.title ?? ""}`;
+            const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+              to: requester.email,
+              subject,
+              html: renderCompletedEmail({
+                ticketNo,
+                title: ticket.title,
+                baseUrl: appBaseUrl,
+                id: ticket.id
+              })
+            }, 'completion email');
+
+            if (success) emailsSent++; else emailErrors++;
+          }
+        }
+        break;
+
       case 'ticket_closed':
         if (actor && resolution) {
           // Get ticket requester
@@ -479,12 +557,13 @@ const handler = async (req: Request): Promise<Response> => {
             const requester = ticketData.users_requested_by[0];
 
             // Send email to requester
+            const subject = `✅ Request ${ticketNo} resolved — ${ticket.title ?? ""}`;
             const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
               to: requester.email,
-              subject: `✅ Ticket #${ticket.id} resolved - ${ticket.title}`,
+              subject,
               html: await loadEmailTemplate('ticket-closed.html', {
                 requesterName: requester.name || requester.email,
-                ticketId: ticket.id,
+                ticketId: ticketNo,
                 ticketTitle: ticket.title,
                 resolution,
                 actorName: actor.name || actor.email,
