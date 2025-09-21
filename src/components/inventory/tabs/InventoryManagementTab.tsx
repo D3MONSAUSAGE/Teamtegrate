@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { InventoryItemDialog } from '../InventoryItemDialog';
 import { InventoryAlertsPanel } from '../InventoryAlertsPanel';
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
+import { TeamAssignmentsPanel } from '../team-assignments/TeamAssignmentsPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { Plus, Package, FileText, Users, Search, Filter, Grid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -305,16 +306,7 @@ export const InventoryManagementTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="assignments" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Assignments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Team assignment management coming soon...
-              </div>
-            </CardContent>
-          </Card>
+          <TeamAssignmentsPanel />
         </TabsContent>
       </Tabs>
 
