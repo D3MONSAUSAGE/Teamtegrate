@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,9 +11,11 @@ import { TeamAssignmentsPanel } from '../team-assignments/TeamAssignmentsPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
 import { InventoryUnitDialog } from '../InventoryUnitDialog';
+import { ItemCard } from '../ItemCard';
+import { ItemTableRow } from '../ItemTableRow';
+import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
 import { Plus, Package, FileText, Users, Search, Filter, Grid, List, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useTeamContext } from '@/hooks/useTeamContext';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,7 +24,20 @@ import { DEFAULT_CATEGORIES, DEFAULT_UNITS, shouldSeedDefaults } from '@/utils/i
 
 export const InventoryManagementTab: React.FC = () => {
   const { hasRoleAccess } = useAuth();
-  const { items, loading, categories, units, deleteCategory, deleteUnit, createCategory, createUnit } = useInventory();
+  const { 
+    items, 
+    loading, 
+    itemsLoading,
+    categories, 
+    categoriesLoading,
+    units, 
+    unitsLoading,
+    deleteCategory, 
+    deleteUnit, 
+    createCategory, 
+    createUnit 
+  } = useInventory();
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,8 +52,6 @@ export const InventoryManagementTab: React.FC = () => {
   // Unit dialog states
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
-  
-  const teamContext = useTeamContext();
 
   // Check if we should seed default data
   React.useEffect(() => {
@@ -75,11 +88,12 @@ export const InventoryManagementTab: React.FC = () => {
     }
   };
 
-  // Filter and sort items
-  const filteredAndSortedItems = React.useMemo(() => {
+  // Filter and sort items with memoization for performance
+  const filteredAndSortedItems = useMemo(() => {
     let filtered = items.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (item.sku || '').toLowerCase().includes(searchTerm.toLowerCase());
+                           (item.sku || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = !selectedCategory || selectedCategory === 'all' || item.category?.name === selectedCategory;
       
       return matchesSearch && matchesCategory;
@@ -103,7 +117,7 @@ export const InventoryManagementTab: React.FC = () => {
   }, [items, searchTerm, selectedCategory, sortBy]);
 
   // Get unique categories from items for filtering
-  const itemCategories = React.useMemo(() => {
+  const itemCategories = useMemo(() => {
     const uniqueCategories = Array.from(new Set(
       items.map(item => item.category?.name).filter(Boolean)
     ));
@@ -271,10 +285,8 @@ export const InventoryManagementTab: React.FC = () => {
 
             <TeamSelector />
 
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
+            {loading || itemsLoading ? (
+              <LoadingState type="cards" rows={6} />
             ) : filteredAndSortedItems.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -296,38 +308,7 @@ export const InventoryManagementTab: React.FC = () => {
               <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
                 {viewMode === 'grid' ? (
                   filteredAndSortedItems.map((item) => (
-                    <Card key={item.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleEditItem(item.id)}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-sm">{item.name}</span>
-                          </div>
-                          <Badge variant={item.current_stock < (item.minimum_threshold || 0) ? 'destructive' : 'secondary'}>
-                            {item.current_stock}
-                          </Badge>
-                        </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div>SKU: {item.sku || 'N/A'}</div>
-                          <div>Category: {item.category?.name || 'Uncategorized'}</div>
-                          <div>Min: {item.minimum_threshold || 0} • Max: {item.maximum_threshold || 0}</div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              SKU: {item.sku || 'N/A'} • Category: {item.category?.name || 'Uncategorized'}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium">{item.current_stock} {item.base_unit?.abbreviation || 'units'}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Min: {item.minimum_threshold || 0}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <ItemCard key={item.id} item={item} onClick={handleEditItem} />
                   ))
                 ) : (
                   <Card>
@@ -346,24 +327,7 @@ export const InventoryManagementTab: React.FC = () => {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedItems.map((item) => (
-                          <TableRow 
-                            key={item.id} 
-                            className="cursor-pointer hover:bg-muted/50" 
-                            onClick={() => handleEditItem(item.id)}
-                          >
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>{item.sku || 'N/A'}</TableCell>
-                            <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
-                            <TableCell>
-                              <Badge variant={item.current_stock < (item.minimum_threshold || 0) ? 'destructive' : 'secondary'}>
-                                {item.current_stock}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{item.base_unit?.abbreviation || 'units'}</TableCell>
-                            <TableCell>{item.minimum_threshold || 0}</TableCell>
-                            <TableCell>{item.maximum_threshold || 0}</TableCell>
-                            <TableCell>${(item.unit_cost || 0).toFixed(2)}</TableCell>
-                          </TableRow>
+                          <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
                         ))}
                       </TableBody>
                     </Table>
@@ -387,7 +351,9 @@ export const InventoryManagementTab: React.FC = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              {categories.length === 0 ? (
+              {categoriesLoading ? (
+                <LoadingState rows={3} showHeader={false} />
+              ) : categories.length === 0 ? (
                 <div className="text-center py-12">
                   <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No categories yet</h3>
@@ -460,7 +426,9 @@ export const InventoryManagementTab: React.FC = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              {units.length === 0 ? (
+              {unitsLoading ? (
+                <LoadingState rows={3} showHeader={false} />
+              ) : units.length === 0 ? (
                 <div className="text-center py-12">
                   <Ruler className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No units yet</h3>
@@ -523,7 +491,7 @@ export const InventoryManagementTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6">
-          <InventoryTemplatesPanel selectedTeam={teamContext?.selectedTeam?.id || null} />
+          <InventoryTemplatesPanel selectedTeam={null} />
         </TabsContent>
 
         <TabsContent value="alerts" className="mt-6">
