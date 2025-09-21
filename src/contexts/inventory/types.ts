@@ -145,7 +145,9 @@ export interface InventoryContextType {
   // Operations
   createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryItem>;
   updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<InventoryItem>;
+  getItemById: (id: string) => Promise<InventoryItem | null>;
   deleteItem: (id: string) => Promise<void>;
+  updateStock: (id: string, newStock: number) => Promise<void>;
   
   createTransaction: (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>) => Promise<InventoryTransaction>;
   

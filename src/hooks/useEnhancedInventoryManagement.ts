@@ -130,6 +130,15 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     await refreshItems();
   }, [refreshItems]);
 
+  const getItemById = useCallback(async (id: string): Promise<InventoryItem | null> => {
+    return await inventoryItemsApi.getById(id);
+  }, []);
+
+  const updateStock = useCallback(async (id: string, newStock: number): Promise<void> => {
+    await inventoryItemsApi.updateStock(id, newStock);
+    await refreshItems();
+  }, [refreshItems]);
+
   const createTransaction = useCallback(async (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>): Promise<InventoryTransaction> => {
     const newTransaction = await inventoryTransactionsApi.create(transaction);
     await refreshTransactions();
@@ -229,7 +238,9 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     // Operations
     createItem,
     updateItem,
+    getItemById,
     deleteItem,
+    updateStock,
     createTransaction,
     startInventoryCount,
     updateCountItem,
