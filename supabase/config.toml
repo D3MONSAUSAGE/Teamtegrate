@@ -86,6 +86,9 @@ verify_jwt = true
 [functions.send-task-notifications]
 verify_jwt = true
 
+[functions.send-inventory-notifications]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325

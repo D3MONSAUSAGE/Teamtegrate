@@ -36,6 +36,22 @@ interface TaskNotificationData {
   project_title?: string;
 }
 
+interface InventoryNotificationData {
+  id: string;
+  count_date: string;
+  status: string;
+  organization_id: string;
+  team_id?: string;
+  template_id?: string;
+  template_name?: string;
+  team_name?: string;
+  conducted_by: string;
+  completion_percentage: number;
+  variance_count: number;
+  total_items_count: number;
+  notes?: string;
+}
+
 // Centralized notification orchestrator - Frontend calls edge functions
 export const notifications = {
   // Ticket Created - notify requester (confirmation) + admins (new ticket alert)
@@ -214,6 +230,31 @@ export const notifications = {
       console.log('[Notifications] Task status changed notifications sent successfully:', data);
     } catch (error) {
       console.error('[Notifications] Error in notifyTaskStatusChanged:', error);
+    }
+  },
+
+  // Inventory Template Completed - notify team managers and admins
+  async notifyInventoryTemplateCompleted(count: InventoryNotificationData, completedBy: UserData) {
+    try {
+      console.log(`[Notifications] Triggering inventory template completed notifications: ${count.id}`);
+
+      const { data, error } = await supabase.functions.invoke('send-inventory-notifications', {
+        body: {
+          type: 'template_completed',
+          count,
+          completedBy,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to send inventory template completed notifications:', error);
+        throw error;
+      }
+
+      console.log('[Notifications] Inventory template completed notifications sent successfully:', data);
+    } catch (error) {
+      console.error('[Notifications] Error in notifyInventoryTemplateCompleted:', error);
     }
   },
 

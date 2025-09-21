@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   inventoryItemsApi,
   inventoryTransactionsApi,
@@ -262,7 +263,55 @@ export const useInventoryOperations = ({
         await inventoryCountsApi.updateCountTotals(countId);
         
         // Complete the count
-        return await inventoryCountsApi.update(countId, { status: 'completed' });
+        const completedCount = await inventoryCountsApi.update(countId, { status: 'completed' });
+        
+        // Send notifications after successful completion
+        if (completedCount && user) {
+          try {
+            // Get additional count details for notifications
+            const { data: countDetails } = await supabase
+              .from('inventory_counts')
+              .select(`
+                *,
+                inventory_templates(name),
+                teams(name)
+              `)
+              .eq('id', countId)
+              .single();
+
+            if (countDetails) {
+              const { notifications } = await import('@/lib/notifications');
+              
+              await notifications.notifyInventoryTemplateCompleted(
+                {
+                  id: countDetails.id,
+                  count_date: countDetails.count_date,
+                  status: countDetails.status,
+                  organization_id: countDetails.organization_id,
+                  team_id: countDetails.team_id,
+                  template_id: countDetails.template_id,
+                  template_name: countDetails.inventory_templates?.name,
+                  team_name: countDetails.teams?.name,
+                  conducted_by: countDetails.conducted_by,
+                  completion_percentage: countDetails.completion_percentage,
+                  variance_count: countDetails.variance_count,
+                  total_items_count: countDetails.total_items_count,
+                  notes: countDetails.notes,
+                },
+                {
+                  id: user.id,
+                  email: user.email || '',
+                  name: user.name,
+                }
+              );
+            }
+          } catch (notificationError) {
+            console.error('Failed to send inventory completion notifications:', notificationError);
+            // Don't throw - notifications shouldn't break the main flow
+          }
+        }
+        
+        return completedCount;
       },
       'Complete Inventory Count',
       'Inventory count completed successfully'
@@ -271,7 +320,7 @@ export const useInventoryOperations = ({
     if (result !== null) {
       await refreshCounts();
     }
-  }, [handleAsyncOperation, refreshCounts]);
+  }, [handleAsyncOperation, refreshCounts, user]);
 
   // Alert operations
   const resolveAlert = useCallback(async (alertId: string): Promise<void> => {
