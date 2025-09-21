@@ -160,12 +160,14 @@ export interface InventoryContextType {
   // Template operations
   createTemplate: (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryTemplate>;
   updateTemplate: (id: string, updates: Partial<InventoryTemplate>) => Promise<InventoryTemplate>;
-  assignTemplateToTeam: (templateId: string, teamId: string) => Promise<TeamInventoryAssignment>;
-  getTeamInventories: (teamId: string) => TeamInventoryAssignment[];
   getTemplateItems: (templateId: string) => Promise<InventoryTemplateItem[]>;
   addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
   removeItemFromTemplate: (templateId: string, itemId: string) => Promise<void>;
   duplicateTemplate: (templateId: string, newName?: string) => Promise<InventoryTemplate>;
+  assignTemplateToTeam: (templateId: string, teamId: string, assignedBy: string) => Promise<TeamInventoryAssignment>;
+  getTeamAssignments: () => TeamInventoryAssignment[];
+  getTeamInventories: (teamId: string) => TeamInventoryAssignment[];
+  initializeCountItems: (countId: string, templateId?: string) => Promise<void>;
   
   // Refresh functions
   refreshItems: () => Promise<void>;
@@ -174,4 +176,5 @@ export interface InventoryContextType {
   refreshAlerts: () => Promise<void>;
   refreshTemplates: () => Promise<void>;
   refreshTeamAssignments: () => Promise<void>;
+  refreshData: () => Promise<void>;
 }

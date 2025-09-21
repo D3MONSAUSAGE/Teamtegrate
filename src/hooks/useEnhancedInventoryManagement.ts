@@ -220,6 +220,31 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     return await inventoryTemplatesApi.duplicate(templateId, newName);
   }, []);
 
+  const initializeCountItems = useCallback(async (countId: string, templateId?: string) => {
+    if (templateId) {
+      const templateItems = await inventoryTemplatesApi.getTemplateItems(templateId);
+      const countItems = templateItems.map(ti => ({
+        count_id: countId,
+        item_id: ti.item_id,
+        expected_quantity: ti.expected_quantity || 0,
+      }));
+      await inventoryCountsApi.bulkCreateCountItems(countItems);
+    } else {
+      await inventoryCountsApi.initializeCountItems(countId);
+    }
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([
+      refreshItems(),
+      refreshTransactions(),
+      refreshCounts(),
+      refreshAlerts(),
+      refreshTemplates(),
+      refreshTeamAssignments(),
+    ]);
+  }, [refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments]);
+
   // Load initial data
   useEffect(() => {
     if (user?.organizationId) {
@@ -273,6 +298,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     addItemToTemplate,
     removeItemFromTemplate,
     duplicateTemplate,
+    getTeamAssignments: () => teamAssignments,
+    initializeCountItems,
     
     // Refresh functions
     refreshItems,
@@ -281,5 +308,6 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshAlerts,
     refreshTemplates,
     refreshTeamAssignments,
+    refreshData: refreshAll,
   };
 };

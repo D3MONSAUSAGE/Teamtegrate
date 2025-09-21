@@ -5,33 +5,70 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
-import { InventoryCountItem } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Search, AlertTriangle } from 'lucide-react';
+import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
+import { Package, Play, CheckCircle, Search, AlertTriangle, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
+import { MobileCountInterface } from '../MobileCountInterface';
 
 export const InventoryCountTab: React.FC = () => {
-  const { items, counts, startInventoryCount, updateCountItem, completeInventoryCount } = useInventory();
+  const { items, counts, templates, startInventoryCount, updateCountItem, completeInventoryCount, initializeCountItems } = useInventory();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
+  const [activeTemplate, setActiveTemplate] = useState<InventoryTemplate | null>(null);
   const [countItems, setCountItems] = useState<InventoryCountItem[]>([]);
+  const [templateItems, setTemplateItems] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loadingCountItems, setLoadingCountItems] = useState(false);
+  const [useMobileInterface, setUseMobileInterface] = useState(false);
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
-  const filteredItems = items.filter(item => 
+  
+  // Use template items when in a template-based count, otherwise use all items
+  const countableItems = activeTemplate && templateItems.length > 0 
+    ? templateItems.map(ti => items.find(item => item.id === ti.item_id)).filter(Boolean)
+    : items;
+    
+  const filteredItems = countableItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleStartCount = async () => {
+  const handleStartCount = async (template?: InventoryTemplate) => {
     try {
-      const count = await startInventoryCount('Manual inventory count');
+      const countName = template 
+        ? `Count from template: ${template.name}` 
+        : 'Manual inventory count';
+      
+      const count = await startInventoryCount(countName);
       setActiveCount(count.id);
+      setActiveTemplate(template || null);
+      
+      if (template) {
+        // Initialize count with template items
+        await initializeCountItems(count.id, template.id);
+        // Load template items
+        const items = await inventoryCountsApi.getTemplateItems(template.id);
+        setTemplateItems(items);
+      }
+      
       await loadCountItems(count.id);
+      
+      toast({
+        title: 'Count Started',
+        description: `Started counting ${template ? `template "${template.name}"` : 'all items'}`,
+      });
     } catch (error) {
       console.error('Failed to start count:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to start inventory count',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -74,13 +111,21 @@ export const InventoryCountTab: React.FC = () => {
     try {
       await completeInventoryCount(activeCount);
       setActiveCount(null);
+      setActiveTemplate(null);
       setCountItems([]);
+      setTemplateItems([]);
+      setUseMobileInterface(false);
       toast({
         title: 'Success',
         description: 'Inventory count completed successfully',
       });
     } catch (error) {
       console.error('Failed to complete count:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to complete inventory count',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -133,10 +178,22 @@ export const InventoryCountTab: React.FC = () => {
               )}
             </div>
             
-            <div className="mt-6 pt-6 border-t">
-              <Button onClick={handleStartCount} className="w-full" size="lg">
-                <Play className="h-4 w-4 mr-2" />
-                Start New Inventory Count
+            <div className="mt-6 pt-6 border-t space-y-3">
+              <TemplateCountSelectionDialog onStartCount={handleStartCount}>
+                <Button className="w-full" size="lg">
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Count from Template
+                </Button>
+              </TemplateCountSelectionDialog>
+              
+              <Button 
+                onClick={() => handleStartCount()} 
+                variant="outline" 
+                className="w-full" 
+                size="lg"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Start Count (All Items)
               </Button>
             </div>
           </CardContent>
@@ -157,12 +214,17 @@ export const InventoryCountTab: React.FC = () => {
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Active Inventory Count
+              {activeTemplate ? `Counting: ${activeTemplate.name}` : 'Active Inventory Count'}
             </span>
             <Badge variant="secondary">In Progress</Badge>
           </CardTitle>
           <CardDescription>
             Count started on {new Date(activeCountRecord?.count_date || '').toLocaleDateString()}
+            {activeTemplate && (
+              <span className="block text-xs mt-1">
+                Template-based count • {templateItems.length} items
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -180,7 +242,7 @@ export const InventoryCountTab: React.FC = () => {
               />
             </div>
             
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-2 mt-6">
               <Button 
                 onClick={handleCompleteCount}
                 disabled={completedItems === 0}
@@ -189,99 +251,123 @@ export const InventoryCountTab: React.FC = () => {
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Complete Count
               </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Search and Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Count Items</CardTitle>
-          <CardDescription>
-            Enter actual quantities for each item
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search items by name, category, or SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Items List */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {loadingCountItems ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-sm text-muted-foreground">Loading items...</p>
-                </div>
-              ) : filteredItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No items found</p>
-                </div>
-              ) : (
-                filteredItems.map((item) => {
-                  const countItem = countItems.find(ci => ci.item_id === item.id);
-                  const expectedQty = countItem?.expected_quantity || item.current_stock;
-                  const actualQty = countItem?.actual_quantity;
-                  const variance = actualQty !== null && actualQty !== undefined 
-                    ? actualQty - expectedQty 
-                    : null;
-
-                  return (
-                    <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{item.name}</h4>
-                          {variance !== null && variance !== 0 && (
-                            <AlertTriangle className="h-4 w-4 text-amber-500" />
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Expected: {expectedQty} {item.unit_of_measure}
-                          {item.location && ` • Location: ${item.location}`}
-                        </p>
-                        {variance !== null && (
-                          <p className={`text-sm ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                            Variance: {variance > 0 ? '+' : ''}{variance}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Actual qty"
-                          value={actualQty ?? ''}
-                          onChange={(e) => {
-                            const value = e.target.value ? parseFloat(e.target.value) : null;
-                            if (value !== null) {
-                              handleUpdateCount(item.id, value);
-                            }
-                          }}
-                          className="w-24"
-                          step="0.01"
-                        />
-                        <span className="text-sm text-muted-foreground min-w-0">
-                          {item.unit_of_measure}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
+              
+              {isMobile && (
+                <Button
+                  onClick={() => setUseMobileInterface(!useMobileInterface)}
+                  variant="outline"
+                  size="default"
+                >
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  {useMobileInterface ? 'List View' : 'Mobile UI'}
+                </Button>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Count Interface */}
+      {useMobileInterface ? (
+        <MobileCountInterface
+          countItems={countItems}
+          items={filteredItems}
+          onUpdateCount={handleUpdateCount}
+          onCompleteCount={handleCompleteCount}
+          progress={progress}
+          completedItems={completedItems}
+          totalItems={totalItems}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Count Items</CardTitle>
+            <CardDescription>
+              Enter actual quantities for each item
+              {activeTemplate && ` (${filteredItems.length} items from template)`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search items by name, category, or SKU..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {loadingCountItems ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Loading items...</p>
+                  </div>
+                ) : filteredItems.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No items found</p>
+                  </div>
+                ) : (
+                  filteredItems.map((item) => {
+                    const countItem = countItems.find(ci => ci.item_id === item.id);
+                    const expectedQty = countItem?.expected_quantity || item.current_stock;
+                    const actualQty = countItem?.actual_quantity;
+                    const variance = actualQty !== null && actualQty !== undefined 
+                      ? actualQty - expectedQty 
+                      : null;
+
+                    return (
+                      <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{item.name}</h4>
+                            {variance !== null && variance !== 0 && (
+                              <AlertTriangle className="h-4 w-4 text-amber-500" />
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Expected: {expectedQty} {item.unit_of_measure}
+                            {item.location && ` • Location: ${item.location}`}
+                          </p>
+                          {variance !== null && (
+                            <p className={`text-sm ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                              Variance: {variance > 0 ? '+' : ''}{variance}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Actual qty"
+                            value={actualQty ?? ''}
+                            onChange={(e) => {
+                              const value = e.target.value ? parseFloat(e.target.value) : null;
+                              if (value !== null) {
+                                handleUpdateCount(item.id, value);
+                              }
+                            }}
+                            className="w-24"
+                            step="0.01"
+                          />
+                          <span className="text-sm text-muted-foreground min-w-0">
+                            {item.unit_of_measure}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

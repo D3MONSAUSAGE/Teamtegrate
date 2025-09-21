@@ -100,4 +100,25 @@ export const inventoryCountsApi = {
       if (error) throw error;
     }
   },
+
+  async bulkCreateCountItems(countItems: any[]): Promise<void> {
+    const { error } = await supabase
+      .from('inventory_count_items')
+      .insert(countItems);
+
+    if (error) throw error;
+  },
+
+  async getTemplateItems(templateId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('inventory_template_items')
+      .select(`
+        *,
+        inventory_items(*)
+      `)
+      .eq('template_id', templateId);
+
+    if (error) throw error;
+    return data || [];
+  },
 };
