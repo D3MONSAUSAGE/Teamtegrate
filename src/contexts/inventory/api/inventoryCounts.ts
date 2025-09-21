@@ -323,4 +323,87 @@ export const inventoryCountsApi = {
     if (error) throw error;
     return data || [];
   },
+
+  async updateInventoryStockFromCount(countId: string): Promise<void> {
+    try {
+      // Get all count items with actual quantities
+      const { data: countItems, error: countError } = await supabase
+        .from('inventory_count_items')
+        .select(`
+          item_id,
+          actual_quantity,
+          in_stock_quantity
+        `)
+        .eq('count_id', countId)
+        .not('actual_quantity', 'is', null);
+
+      if (countError) throw countError;
+
+      if (!countItems || countItems.length === 0) {
+        console.log('No counted items found for stock update');
+        return;
+      }
+
+      // Update inventory items current_stock and create adjustment transactions
+      const stockUpdates = [];
+      const adjustmentTransactions = [];
+
+      for (const countItem of countItems) {
+        const actualQuantity = countItem.actual_quantity;
+        const inStockQuantity = countItem.in_stock_quantity || 0;
+        const adjustment = actualQuantity - inStockQuantity;
+
+        // Update inventory item stock
+        stockUpdates.push(
+          supabase
+            .from('inventory_items')
+            .update({ current_stock: actualQuantity })
+            .eq('id', countItem.item_id)
+        );
+
+        // Create adjustment transaction if there's a difference
+        if (Math.abs(adjustment) > 0.01) {
+          adjustmentTransactions.push({
+            organization_id: (await supabase
+              .from('inventory_counts')
+              .select('organization_id')
+              .eq('id', countId)
+              .single()).data?.organization_id,
+            item_id: countItem.item_id,
+            transaction_type: 'adjustment',
+            quantity_change: adjustment,
+            transaction_date: new Date().toISOString(),
+            reference_id: countId,
+            reference_type: 'inventory_count',
+            notes: `Stock adjustment from inventory count (${inStockQuantity} → ${actualQuantity})`
+          });
+        }
+      }
+
+      // Execute all stock updates
+      const updateResults = await Promise.all(stockUpdates);
+      const updateErrors = updateResults.filter(result => result.error);
+
+      if (updateErrors.length > 0) {
+        throw new Error(`Failed to update ${updateErrors.length} items: ${updateErrors[0].error?.message}`);
+      }
+
+      // Create adjustment transactions if any
+      if (adjustmentTransactions.length > 0) {
+        const { error: transactionError } = await supabase
+          .from('inventory_transactions')
+          .insert(adjustmentTransactions);
+
+        if (transactionError) {
+          console.error('Failed to create adjustment transactions:', transactionError);
+          // Don't throw here - stock updates succeeded, transactions are for audit only
+        }
+      }
+
+      console.log(`Successfully updated stock for ${countItems.length} items, created ${adjustmentTransactions.length} adjustment transactions`);
+    } catch (error) {
+      console.error('Error updating inventory stock from count:', error);
+      throw error;
+    }
+  },
 };

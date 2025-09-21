@@ -262,6 +262,9 @@ export const useInventoryOperations = ({
         // Update count totals before completing
         await inventoryCountsApi.updateCountTotals(countId);
         
+        // Update inventory item stock quantities with actual counted amounts
+        await inventoryCountsApi.updateInventoryStockFromCount(countId);
+        
         // Complete the count
         const completedCount = await inventoryCountsApi.update(countId, { status: 'completed' });
         
@@ -314,13 +317,13 @@ export const useInventoryOperations = ({
         return completedCount;
       },
       'Complete Inventory Count',
-      'Inventory count completed successfully'
+      'Inventory count completed and stock updated successfully'
     );
     
     if (result !== null) {
-      await refreshCounts();
+      await Promise.all([refreshCounts(), refreshItems(), refreshTransactions()]);
     }
-  }, [handleAsyncOperation, refreshCounts, user]);
+  }, [handleAsyncOperation, refreshCounts, refreshItems, refreshTransactions, user]);
 
   // Alert operations
   const resolveAlert = useCallback(async (alertId: string): Promise<void> => {
