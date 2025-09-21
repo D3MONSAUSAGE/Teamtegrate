@@ -206,7 +206,7 @@ export const CountComparisonDialog: React.FC<CountComparisonDialogProps> = ({
                   <div className="p-2 border rounded bg-muted/30">
                     <div className="font-medium">{format(new Date(currentCount.count_date), 'PPP')}</div>
                     <div className="text-sm text-muted-foreground">
-                      {currentCount.team_name || 'No team'} • {currentCount.total_items_count} items
+                      {currentCount.team_id ? `Team ${currentCount.team_id}` : 'No team'} • {currentCount.total_items_count} items
                     </div>
                   </div>
                 </div>
@@ -223,8 +223,8 @@ export const CountComparisonDialog: React.FC<CountComparisonDialogProps> = ({
                     <SelectContent>
                       {availablePreviousCounts.map(count => (
                         <SelectItem key={count.id} value={count.id}>
-                          {format(new Date(count.count_date), 'MMM dd, yyyy')} - 
-                          {count.team_name || 'No team'} ({count.total_items_count} items)
+                      {format(new Date(count.count_date), 'MMM dd, yyyy')} - 
+                      {count.team_id ? `Team ${count.team_id}` : 'No team'} ({count.total_items_count} items)
                         </SelectItem>
                       ))}
                     </SelectContent>

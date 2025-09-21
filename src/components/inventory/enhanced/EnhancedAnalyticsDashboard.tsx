@@ -110,13 +110,13 @@ export const EnhancedAnalyticsDashboard: React.FC<EnhancedAnalyticsDashboardProp
           outerRadius={100}
           fill="#8884d8"
           dataKey="totalValue"
-          label={({ category, totalValue }) => `${category}: ${formatCurrency(totalValue)}`}
+          label={(entry: any) => `${entry.category}: ${formatCurrency(entry.totalValue)}`}
         >
           {chartData.costAnalysis.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+        <Tooltip formatter={(value: number) => [formatCurrency(value), 'Total Value']} />
       </RechartsPieChart>
     </ResponsiveContainer>
   );
