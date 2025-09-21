@@ -197,11 +197,11 @@ export const InventoryManagementTab: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="categories" className="flex items-center gap-2">
             <FolderOpen className="h-4 w-4" />
-            Categories
+            Item Types
           </TabsTrigger>
           <TabsTrigger value="units" className="flex items-center gap-2">
             <Ruler className="h-4 w-4" />
-            Units
+            Packaging
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -239,7 +239,7 @@ export const InventoryManagementTab: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">All Item Types</SelectItem>
                     {itemCategories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -255,7 +255,7 @@ export const InventoryManagementTab: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="name">Name</SelectItem>
                     <SelectItem value="stock">Stock</SelectItem>
-                    <SelectItem value="category">Category</SelectItem>
+                    <SelectItem value="category">Item Type</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -322,7 +322,7 @@ export const InventoryManagementTab: React.FC = () => {
                             <TableHead>SKU</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Item Type</TableHead>
-                            <TableHead>Individual Unit</TableHead>
+                            <TableHead>Package Type</TableHead>
                             <TableHead>Location</TableHead>
                             <TableHead>Package Info</TableHead>
                             <TableHead>Cost per Item</TableHead>
@@ -347,11 +347,11 @@ export const InventoryManagementTab: React.FC = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FolderOpen className="h-5 w-5" />
-                Inventory Categories
+                Item Types
               </CardTitle>
               <Button onClick={handleAddCategory}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Category
+                Add Item Type
               </Button>
             </CardHeader>
             <CardContent>
@@ -360,14 +360,14 @@ export const InventoryManagementTab: React.FC = () => {
               ) : categories.length === 0 ? (
                 <div className="text-center py-12">
                   <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                  <h3 className="text-lg font-medium mb-2">No item types yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create categories to organize your inventory items
+                    Create item types to organize your inventory items
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddCategory}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Create First Category
+                      Create First Item Type
                     </Button>
                     {units.length === 0 && (
                       <Button variant="outline" onClick={handleSeedDefaults}>
@@ -422,11 +422,11 @@ export const InventoryManagementTab: React.FC = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Ruler className="h-5 w-5" />
-                Measurement Units
+                Package Types
               </CardTitle>
               <Button onClick={handleAddUnit}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Unit
+                Add Package Type
               </Button>
             </CardHeader>
             <CardContent>
@@ -435,14 +435,14 @@ export const InventoryManagementTab: React.FC = () => {
               ) : units.length === 0 ? (
                 <div className="text-center py-12">
                   <Ruler className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No units yet</h3>
+                  <h3 className="text-lg font-medium mb-2">No package types yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create measurement units for your inventory items
+                    Create package types for your inventory items (Box, Bag, Case, etc.)
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddUnit}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Create First Unit
+                      Create First Package Type
                     </Button>
                     {categories.length === 0 && (
                       <Button variant="outline" onClick={handleSeedDefaults}>

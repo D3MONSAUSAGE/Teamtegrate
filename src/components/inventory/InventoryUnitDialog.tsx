@@ -77,16 +77,16 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
       
       if (unitId) {
         await updateUnit(unitId, unitData);
-        toast.success('Unit updated successfully');
+        toast.success('Package type updated successfully');
       } else {
         await createUnit(unitData);
-        toast.success('Unit created successfully');
+        toast.success('Package type created successfully');
       }
       onOpenChange(false);
       form.reset();
     } catch (error) {
       console.error('Error saving unit:', error);
-      toast.error('Failed to save unit');
+      toast.error('Failed to save package type');
     }
   };
 
@@ -96,7 +96,7 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
-            {unitId ? 'Edit Unit' : 'Create New Unit'}
+            {unitId ? 'Edit Package Type' : 'Create New Package Type'}
           </DialogTitle>
         </DialogHeader>
 
@@ -107,9 +107,9 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
               name="name"
               render={({ field }) => (
                   <FormItem>
-                  <FormLabel>Unit Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Box, Pieces, Pounds, Gallons" {...field} />
+                    <FormLabel>Package Type Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Box, Bag, Case, Pallet" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -122,8 +122,8 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
               render={({ field }) => (
                   <FormItem>
                   <FormLabel>Abbreviation *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., box, pcs, lbs, gal" {...field} />
+                    <FormControl>
+                      <Input placeholder="e.g., box, bag, case, pallet" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,11 +135,11 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
               name="unit_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Unit Type *</FormLabel>
+                  <FormLabel>Package Type Category *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select unit type" />
+                        <SelectValue placeholder="Select package category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -165,7 +165,7 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : unitId ? 'Update Unit' : 'Create Unit'}
+                {loading ? 'Saving...' : unitId ? 'Update Package Type' : 'Create Package Type'}
               </Button>
             </div>
           </form>

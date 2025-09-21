@@ -255,66 +255,22 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="base_unit_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Individual Unit</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="What is each item?" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {units.filter(unit => unit.unit_type === 'count' || unit.unit_type === 'weight' || unit.unit_type === 'volume').map((unit) => (
-                          <SelectItem key={unit.id} value={unit.id}>
-                            {unit.name} ({unit.abbreviation})
-                          </SelectItem>
-                        ))}
-                        <div className="border-t">
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start text-xs h-8"
-                            onClick={() => setIsUnitDialogOpen(true)}
-                          >
-                            <Plus className="h-3 w-3 mr-2" />
-                            Create New Unit
-                          </Button>
-                        </div>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Package Information */}
-            <div className="border rounded-lg p-4 space-y-4">
-              <h3 className="flex items-center gap-2 font-medium text-sm">
-                <Package className="h-4 w-4" />
-                How do you buy this item?
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
-                  name="purchase_unit"
+                  name="base_unit_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Package Type</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="How is it packaged?" />
+                            <SelectValue placeholder="Select package type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {units.filter(unit => unit.unit_type === 'count').map((unit) => (
-                            <SelectItem key={unit.id} value={unit.name.toLowerCase()}>
-                              {unit.name}
+                            <SelectItem key={unit.id} value={unit.id}>
+                              {unit.name} ({unit.abbreviation})
                             </SelectItem>
                           ))}
                           <div className="border-t">
@@ -333,18 +289,27 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                     </FormItem>
                   )}
                 />
+            </div>
 
+            {/* Package Information */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="flex items-center gap-2 font-medium text-sm">
+                <Package className="h-4 w-4" />
+                How do you buy this item?
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="conversion_factor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Package Size</FormLabel>
+                      <FormLabel>Units per Package</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           step="0.0001"
-                          placeholder="e.g., 12 (items per package)" 
+                          placeholder="e.g., 12 (units per package)" 
                           {...field} 
                         />
                       </FormControl>

@@ -82,7 +82,7 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-primary" />
-            {categoryId ? 'Edit Category' : 'Create New Category'}
+            {categoryId ? 'Edit Item Type' : 'Create New Item Type'}
           </DialogTitle>
         </DialogHeader>
 
@@ -93,9 +93,9 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category Name *</FormLabel>
+                  <FormLabel>Item Type Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter category name" {...field} />
+                    <Input placeholder="Enter item type name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,7 +110,7 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter category description (optional)" 
+                      placeholder="Enter item type description (optional)" 
                       className="min-h-[80px]"
                       {...field} 
                     />
@@ -130,7 +130,7 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : categoryId ? 'Update Category' : 'Create Category'}
+                {loading ? 'Saving...' : categoryId ? 'Update Item Type' : 'Create Item Type'}
               </Button>
             </div>
           </form>
