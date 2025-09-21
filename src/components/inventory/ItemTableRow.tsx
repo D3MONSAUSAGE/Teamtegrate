@@ -9,8 +9,6 @@ interface ItemTableRowProps {
 }
 
 export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => {
-  const isLowStock = item.current_stock < (item.minimum_threshold || 0);
-  
   return (
     <TableRow 
       className="cursor-pointer hover:bg-muted/50" 
@@ -18,15 +16,11 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
     >
       <TableCell className="font-medium">{item.name}</TableCell>
       <TableCell>{item.sku || 'N/A'}</TableCell>
+      <TableCell className="max-w-xs truncate">{item.description || 'N/A'}</TableCell>
       <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
-      <TableCell>
-        <Badge variant={isLowStock ? 'destructive' : 'secondary'}>
-          {item.current_stock}
-        </Badge>
-      </TableCell>
       <TableCell>{item.base_unit?.abbreviation || 'units'}</TableCell>
-      <TableCell>{item.minimum_threshold || 0}</TableCell>
-      <TableCell>{item.maximum_threshold || 0}</TableCell>
+      <TableCell>{item.location || 'N/A'}</TableCell>
+      <TableCell>{item.purchase_unit || 'N/A'}</TableCell>
       <TableCell>
         {item.unit_cost ? `$${item.unit_cost.toFixed(2)}` : 'N/A'}
       </TableCell>
