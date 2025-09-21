@@ -14,7 +14,7 @@ import { InventoryUnitDialog } from '../InventoryUnitDialog';
 import { ItemCard } from '../ItemCard';
 import { ItemTableRow } from '../ItemTableRow';
 import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
-import { Plus, Package, FileText, Users, Search, Filter, Grid, List, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Package, FileText, Users, Search, Filter, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -270,7 +270,7 @@ export const InventoryManagementTab: React.FC = () => {
             <TeamSelector />
 
             {loading || itemsLoading ? (
-              <LoadingState type="cards" rows={6} />
+              <LoadingState type="table" rows={6} />
             ) : filteredAndSortedItems.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
