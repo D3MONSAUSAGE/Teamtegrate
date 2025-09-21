@@ -317,16 +317,15 @@ export const InventoryManagementTab: React.FC = () => {
                     <div className="max-h-[600px] overflow-y-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>SKU</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Item Type</TableHead>
-                            <TableHead>Package Type</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Package Info</TableHead>
-                            <TableHead>Cost per Item</TableHead>
-                          </TableRow>
+                           <TableRow>
+                             <TableHead>Name</TableHead>
+                             <TableHead>SKU</TableHead>
+                             <TableHead>Description</TableHead>
+                             <TableHead>Item Type</TableHead>
+                             <TableHead>Location</TableHead>
+                             <TableHead>Package Info</TableHead>
+                             <TableHead>Cost per Item</TableHead>
+                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {filteredAndSortedItems.map((item) => (

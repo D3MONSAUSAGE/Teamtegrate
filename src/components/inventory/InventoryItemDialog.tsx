@@ -306,21 +306,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 How do you buy this item?
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="purchase_unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Package Type</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Box, Case, Bag" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="conversion_factor"

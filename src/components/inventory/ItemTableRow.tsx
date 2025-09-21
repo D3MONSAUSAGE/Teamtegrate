@@ -18,7 +18,6 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>{item.sku || 'N/A'}</TableCell>
       <TableCell className="max-w-xs truncate">{item.description || 'N/A'}</TableCell>
       <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
-      <TableCell>{item.base_unit?.name || 'N/A'}</TableCell>
       <TableCell>{item.location || 'N/A'}</TableCell>
       <TableCell>
         {item.purchase_unit && item.conversion_factor && item.base_unit?.measurement_type
