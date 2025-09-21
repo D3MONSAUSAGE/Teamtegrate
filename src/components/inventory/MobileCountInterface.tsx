@@ -53,7 +53,13 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
   
   // Get stock status for current item
   const finalQuantity = actualQty !== null ? actualQty : expectedQty;
-  const stockStatus = currentItem ? getStockStatus(finalQuantity, currentItem.minimum_threshold, currentItem.maximum_threshold) : null;
+  const stockStatus = currentItem ? getStockStatus(
+    finalQuantity, 
+    currentItem.minimum_threshold, 
+    currentItem.maximum_threshold,
+    countItem?.template_minimum_quantity,
+    countItem?.template_maximum_quantity
+  ) : null;
 
   const handleQuantityUpdate = (quantity: number) => {
     if (!currentItem) return;
@@ -125,7 +131,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
             {currentItem.location && <div>Location: {currentItem.location}</div>}
             <div className="flex items-center gap-2 text-sm">
               <Target className="h-3 w-3" />
-              Min: {currentItem.minimum_threshold ?? 'N/A'} • Max: {currentItem.maximum_threshold ?? 'N/A'}
+              Min: {countItem?.template_minimum_quantity ?? currentItem.minimum_threshold ?? 'N/A'} • Max: {countItem?.template_maximum_quantity ?? currentItem.maximum_threshold ?? 'N/A'}
             </div>
           </CardDescription>
         </CardHeader>
@@ -152,6 +158,8 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
                   actualQuantity={finalQuantity}
                   minimumThreshold={currentItem.minimum_threshold}
                   maximumThreshold={currentItem.maximum_threshold}
+                  templateMinimum={countItem?.template_minimum_quantity}
+                  templateMaximum={countItem?.template_maximum_quantity}
                 />
               </div>
             )}

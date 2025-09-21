@@ -7,6 +7,8 @@ interface StockStatusBadgeProps {
   actualQuantity: number;
   minimumThreshold?: number | null;
   maximumThreshold?: number | null;
+  templateMinimum?: number | null;
+  templateMaximum?: number | null;
   size?: 'sm' | 'default';
 }
 
@@ -14,9 +16,11 @@ export const StockStatusBadge: React.FC<StockStatusBadgeProps> = ({
   actualQuantity,
   minimumThreshold,
   maximumThreshold,
+  templateMinimum,
+  templateMaximum,
   size = 'default'
 }) => {
-  const stockInfo = getStockStatus(actualQuantity, minimumThreshold, maximumThreshold);
+  const stockInfo = getStockStatus(actualQuantity, minimumThreshold, maximumThreshold, templateMinimum, templateMaximum);
 
   const getVariant = (status: StockStatus) => {
     switch (status) {

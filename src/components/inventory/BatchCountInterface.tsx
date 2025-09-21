@@ -166,11 +166,26 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
     const variance = actualQty !== null && !isNaN(actualQty) ? actualQty - expectedQty : null;
     const hasUnsavedChanges = localValue !== (countItem?.actual_quantity?.toString() || '');
     
-    // Get stock status for the item
+    // Get stock status for the item using template values when available
     const finalQuantity = actualQty !== null ? actualQty : expectedQty;
-    const stockStatus = getStockStatus(finalQuantity, item.minimum_threshold, item.maximum_threshold);
+    const stockStatus = getStockStatus(
+      finalQuantity, 
+      item.minimum_threshold, 
+      item.maximum_threshold,
+      countItem?.template_minimum_quantity,
+      countItem?.template_maximum_quantity
+    );
 
-    return { expectedQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity };
+    return { 
+      expectedQty, 
+      actualQty, 
+      variance, 
+      hasUnsavedChanges, 
+      localValue, 
+      stockStatus, 
+      finalQuantity,
+      countItem
+    };
   };
 
   return (
@@ -264,7 +279,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
               </TableHeader>
               <TableBody>
                 {filteredItems.map((item, index) => {
-                  const { expectedQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity } = getItemData(item);
+                  const { expectedQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity, countItem } = getItemData(item);
                   
                   return (
                     <TableRow key={item.id} className={cn(
@@ -286,13 +301,13 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                       
                       <TableCell className="text-center">
                         <div className="text-sm font-medium">
-                          {item.minimum_threshold ?? '—'}
+                          {countItem?.template_minimum_quantity ?? item.minimum_threshold ?? '—'}
                         </div>
                       </TableCell>
                       
                       <TableCell className="text-center">
                         <div className="text-sm font-medium">
-                          {item.maximum_threshold ?? '—'}
+                          {countItem?.template_maximum_quantity ?? item.maximum_threshold ?? '—'}
                         </div>
                       </TableCell>
                       
@@ -347,6 +362,8 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                           actualQuantity={finalQuantity}
                           minimumThreshold={item.minimum_threshold}
                           maximumThreshold={item.maximum_threshold}
+                          templateMinimum={countItem?.template_minimum_quantity}
+                          templateMaximum={countItem?.template_maximum_quantity}
                           size="sm"
                         />
                       </TableCell>

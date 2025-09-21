@@ -160,6 +160,8 @@ export const inventoryCountsApi = {
           .select(`
             item_id,
             expected_quantity,
+            minimum_quantity,
+            maximum_quantity,
             inventory_items!inner(id, current_stock, is_active)
           `)
           .eq('template_id', templateId)
@@ -174,6 +176,8 @@ export const inventoryCountsApi = {
           count_id: countId,
           item_id: item.item_id,
           expected_quantity: item.expected_quantity || item.inventory_items.current_stock || 0,
+          template_minimum_quantity: item.minimum_quantity,
+          template_maximum_quantity: item.maximum_quantity,
         }));
       } else {
         // Initialize from all active items

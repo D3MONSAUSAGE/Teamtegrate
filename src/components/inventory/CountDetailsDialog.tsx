@@ -72,6 +72,8 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
       actualQuantity: item.actual_quantity || 0,
       minimumThreshold: (item as any).inventory_items?.minimum_threshold,
       maximumThreshold: (item as any).inventory_items?.maximum_threshold,
+      templateMinimum: item.template_minimum_quantity,
+      templateMaximum: item.template_maximum_quantity,
     }))
   );
 
@@ -258,7 +260,9 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                               <div className="text-sm">
                                 <div className="flex items-center justify-center gap-1">
                                   <Target className="h-3 w-3 text-muted-foreground" />
-                                  <span>{inventoryItem?.minimum_threshold ?? '—'} / {inventoryItem?.maximum_threshold ?? '—'}</span>
+                                  <span>
+                                    {item.template_minimum_quantity ?? inventoryItem?.minimum_threshold ?? '—'} / {item.template_maximum_quantity ?? inventoryItem?.maximum_threshold ?? '—'}
+                                  </span>
                                 </div>
                               </div>
                             </TableCell>
@@ -297,6 +301,8 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                                 actualQuantity={finalQuantity}
                                 minimumThreshold={inventoryItem?.minimum_threshold}
                                 maximumThreshold={inventoryItem?.maximum_threshold}
+                                templateMinimum={item.template_minimum_quantity}
+                                templateMaximum={item.template_maximum_quantity}
                                 size="sm"
                               />
                             </TableCell>

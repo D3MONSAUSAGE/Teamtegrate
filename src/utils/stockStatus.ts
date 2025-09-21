@@ -14,10 +14,15 @@ export interface StockStatusInfo {
 export function getStockStatus(
   actualQuantity: number,
   minimumThreshold?: number | null,
-  maximumThreshold?: number | null
+  maximumThreshold?: number | null,
+  templateMinimum?: number | null,
+  templateMaximum?: number | null
 ): StockStatusInfo {
+  // Use template thresholds if available, otherwise fall back to item thresholds
+  const effectiveMinimum = templateMinimum ?? minimumThreshold;
+  const effectiveMaximum = templateMaximum ?? maximumThreshold;
   // If no thresholds are set, we can't determine stock status
-  if (!minimumThreshold && !maximumThreshold) {
+  if (!effectiveMinimum && !effectiveMaximum) {
     return {
       status: 'no_thresholds',
       isLowStock: false,
@@ -30,8 +35,8 @@ export function getStockStatus(
     };
   }
 
-  const isLowStock = minimumThreshold && actualQuantity < minimumThreshold;
-  const isOverStock = maximumThreshold && actualQuantity > maximumThreshold;
+  const isLowStock = effectiveMinimum && actualQuantity < effectiveMinimum;
+  const isOverStock = effectiveMaximum && actualQuantity > effectiveMaximum;
 
   if (isLowStock) {
     return {
@@ -75,6 +80,8 @@ export function getStockStatusSummary(items: Array<{
   actualQuantity: number;
   minimumThreshold?: number | null;
   maximumThreshold?: number | null;
+  templateMinimum?: number | null;
+  templateMaximum?: number | null;
 }>) {
   let underStock = 0;
   let overStock = 0;
@@ -82,7 +89,7 @@ export function getStockStatusSummary(items: Array<{
   let noThresholds = 0;
 
   items.forEach(item => {
-    const status = getStockStatus(item.actualQuantity, item.minimumThreshold, item.maximumThreshold);
+    const status = getStockStatus(item.actualQuantity, item.minimumThreshold, item.maximumThreshold, item.templateMinimum, item.templateMaximum);
     switch (status.status) {
       case 'under_stock':
         underStock++;

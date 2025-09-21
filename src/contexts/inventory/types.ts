@@ -95,6 +95,8 @@ export interface InventoryCountItem {
   notes?: string;
   counted_by?: string;
   counted_at?: string;
+  template_minimum_quantity?: number;
+  template_maximum_quantity?: number;
   item?: InventoryItem;
 }
 
