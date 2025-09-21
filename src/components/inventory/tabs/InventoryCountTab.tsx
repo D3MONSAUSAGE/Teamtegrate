@@ -3,13 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle } from 'lucide-react';
+import { Package, Play, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
+import { format, isToday, differenceInMinutes } from 'date-fns';
 
 
 export const InventoryCountTab: React.FC = () => {
@@ -147,47 +149,36 @@ export const InventoryCountTab: React.FC = () => {
     }
   }, [counts]);
 
+  // Helper functions for filtering counts by date
+  const todayCounts = counts.filter(count => isToday(new Date(count.created_at)));
+  const recentCounts = counts.filter(count => !isToday(new Date(count.created_at)));
+  
+  const formatExecutionTime = (count: any) => {
+    const startTime = format(new Date(count.created_at), 'MMM dd, yyyy \'at\' h:mm a');
+    if (count.status === 'completed' && count.updated_at) {
+      const endTime = format(new Date(count.updated_at), 'h:mm a');
+      const duration = differenceInMinutes(new Date(count.updated_at), new Date(count.created_at));
+      return `Started: ${startTime}, Completed: ${endTime} (${duration}min)`;
+    }
+    return `Started: ${startTime}`;
+  };
+
   if (!activeCount) {
     return (
       <div className="space-y-6">
-        {/* Recent Counts */}
+        {/* Start Count Actions - Moved to Top */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Recent Inventory Counts
+              <Play className="h-5 w-5" />
+              Start New Count
             </CardTitle>
             <CardDescription>
-              View recent inventory counts and start a new one
+              Begin a new inventory count using templates or all items
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {counts.slice(0, 5).map((count) => (
-                <div key={count.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium">
-                      Count from {new Date(count.count_date).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {count.notes || 'No notes provided'}
-                    </p>
-                  </div>
-                  <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
-                    {count.status === 'completed' ? 'Completed' : 'In Progress'}
-                  </Badge>
-                </div>
-              ))}
-              
-              {counts.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No inventory counts yet</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-6 pt-6 border-t space-y-3">
+            <div className="space-y-3">
               <TemplateCountSelectionDialog onStartCount={handleStartCount}>
                 <Button className="w-full" size="lg">
                   <Play className="h-4 w-4 mr-2" />
@@ -205,6 +196,141 @@ export const InventoryCountTab: React.FC = () => {
                 Start Count (All Items)
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Today's Counts */}
+        {todayCounts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Today's Counts
+              </CardTitle>
+              <CardDescription>
+                Inventory counts started today
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {todayCounts.slice(0, 5).map((count) => (
+                  <div key={count.id} className="p-4 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium">
+                            {count.notes || `Count ${count.id.slice(0, 8)}`}
+                          </p>
+                          <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
+                            {count.status === 'completed' ? 'Completed' : 'In Progress'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formatExecutionTime(count)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {todayCounts.length > 5 && (
+                  <ScrollArea className="h-32">
+                    <div className="space-y-3">
+                      {todayCounts.slice(5).map((count) => (
+                        <div key={count.id} className="p-4 border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium">
+                                  {count.notes || `Count ${count.id.slice(0, 8)}`}
+                                </p>
+                                <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
+                                  {count.status === 'completed' ? 'Completed' : 'In Progress'}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {formatExecutionTime(count)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Counts (Non-today) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Recent Inventory Counts
+            </CardTitle>
+            <CardDescription>
+              Previous inventory count history
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentCounts.length === 0 && todayCounts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No inventory counts yet</p>
+              </div>
+            ) : recentCounts.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                <p className="text-sm">No previous counts to show</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentCounts.slice(0, 5).map((count) => (
+                  <div key={count.id} className="p-4 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium">
+                            {count.notes || `Count ${count.id.slice(0, 8)}`}
+                          </p>
+                          <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
+                            {count.status === 'completed' ? 'Completed' : 'In Progress'}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formatExecutionTime(count)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {recentCounts.length > 5 && (
+                  <ScrollArea className="h-32">
+                    <div className="space-y-3">
+                      {recentCounts.slice(5).map((count) => (
+                        <div key={count.id} className="p-4 border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium">
+                                  {count.notes || `Count ${count.id.slice(0, 8)}`}
+                                </p>
+                                <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
+                                  {count.status === 'completed' ? 'Completed' : 'In Progress'}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {formatExecutionTime(count)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

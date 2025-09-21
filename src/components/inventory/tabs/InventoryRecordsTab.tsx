@@ -9,7 +9,7 @@ import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryAnalyticsDashboard } from '@/components/inventory/analytics/InventoryAnalyticsDashboard';
 import { CountDetailsDialog } from '../CountDetailsDialog';
 import { Search, Download, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { InventoryCount } from '@/contexts/inventory/types';
 
 export const InventoryRecordsTab: React.FC = () => {
@@ -166,7 +166,13 @@ export const InventoryRecordsTab: React.FC = () => {
                         {count.status.replace('_', ' ').toUpperCase()}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(count.count_date), 'PPP')}
+                        Started: {format(new Date(count.created_at), 'MMM dd, yyyy \'at\' h:mm a')}
+                        {count.status === 'completed' && count.updated_at && (
+                          <span className="block">
+                            Completed: {format(new Date(count.updated_at), 'MMM dd, yyyy \'at\' h:mm a')} 
+                            ({differenceInMinutes(new Date(count.updated_at), new Date(count.created_at))}min)
+                          </span>
+                        )}
                       </span>
                       {count.variance_count > 0 && (
                         <Badge variant={getVarianceColor(count.variance_count)} className="gap-1">
