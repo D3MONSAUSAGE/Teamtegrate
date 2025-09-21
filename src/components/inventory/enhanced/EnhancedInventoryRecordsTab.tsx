@@ -32,6 +32,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [selectedCount, setSelectedCount] = useState<InventoryCount | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isComparisonDialogOpen, setIsComparisonDialogOpen] = useState(false);
+  const [showInventoryExport, setShowInventoryExport] = useState(false);
+  const [exportCountId, setExportCountId] = useState<string | undefined>();
+  const [exportTeamId, setExportTeamId] = useState<string | undefined>();
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -110,9 +113,25 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            Export Report
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowAnalyticsExport(true)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Analytics
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setExportCountId(undefined);
+              setExportTeamId(selectedTeam || undefined);
+              setShowInventoryExport(true);
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Inventory
           </Button>
         </div>
       </div>
