@@ -79,18 +79,18 @@ const MeetingsPage = () => {
   const tabCounts = getTabCounts();
 
   const getWeeklyMeetings = () => {
-    if (!meetingRequests) return 0;
+    if (!meetings) return 0;
     const now = new Date();
     const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return meetingRequests.filter(m => {
+    return meetings.filter(m => {
       const meetingDate = new Date(m.start_time);
       return meetingDate >= now && meetingDate <= weekFromNow && m.status !== 'cancelled';
     }).length;
   };
 
   const getResponseRate = () => {
-    if (!meetingRequests) return 0;
-    const invitations = meetingRequests.flatMap(m => 
+    if (!meetings) return 0;
+    const invitations = meetings.flatMap(m => 
       m.participants?.filter(p => p.user_id === user?.id) || []
     );
     if (invitations.length === 0) return 0;
@@ -98,8 +98,8 @@ const MeetingsPage = () => {
     return Math.round((responded / invitations.length) * 100);
   };
 
-  const renderMeetingList = (meetings: typeof meetingRequests) => {
-    if (!meetings || meetings.length === 0) {
+  const renderMeetingList = (meetingsList: typeof meetings) => {
+    if (!meetingsList || meetingsList.length === 0) {
       return (
         <div className="text-center py-12 px-4">
           <div className="relative mb-6">
@@ -122,7 +122,7 @@ const MeetingsPage = () => {
 
     return (
       <div className="space-y-4">
-        {meetings.map((meeting) => (
+        {meetingsList.map((meeting) => (
           <div key={meeting.id} className="animate-fade-in">
             <MeetingInvitationCard 
               meeting={meeting} 

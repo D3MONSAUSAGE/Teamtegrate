@@ -44,11 +44,11 @@ export const MeetingSyncStatus: React.FC<MeetingSyncStatusProps> = ({
 
     setIsSyncing(true);
     try {
-      const result = await manualSyncMeeting(meetingId, 'create');
-      if (result.success) {
+      const success = await manualSyncMeeting(meetingId, 'create');
+      if (success) {
         toast.success('Meeting sync initiated successfully');
       } else {
-        toast.error(result.error || 'Failed to initiate sync');
+        toast.error('Failed to initiate sync');
       }
     } catch (error) {
       console.error('Manual sync failed:', error);
@@ -66,11 +66,11 @@ export const MeetingSyncStatus: React.FC<MeetingSyncStatusProps> = ({
 
     setIsSyncing(true);
     try {
-      const result = await manualSyncMeeting(meetingId, googleEventId ? 'update' : 'create');
-      if (result.success) {
+      const success = await manualSyncMeeting(meetingId, googleEventId ? 'update' : 'create');
+      if (success) {
         toast.success('Sync retry initiated successfully');
       } else {
-        toast.error(result.error || 'Failed to initiate retry');
+        toast.error('Failed to initiate retry');
       }
     } catch (error) {
       console.error('Retry sync failed:', error);
