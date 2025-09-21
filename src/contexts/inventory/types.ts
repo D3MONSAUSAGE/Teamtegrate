@@ -14,6 +14,7 @@ export interface InventoryUnit {
   name: string;
   abbreviation: string;
   unit_type: 'weight' | 'volume' | 'count' | 'length' | 'area';
+  measurement_type?: string; // What each individual unit is (bottles, bags, pieces, pounds, etc.)
   is_active: boolean;
   created_at: string;
   updated_at: string;

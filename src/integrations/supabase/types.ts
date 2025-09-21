@@ -2482,6 +2482,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          measurement_type: string | null
           name: string
           organization_id: string
           unit_type: string
@@ -2492,6 +2493,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          measurement_type?: string | null
           name: string
           organization_id: string
           unit_type: string
@@ -2502,6 +2504,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          measurement_type?: string | null
           name?: string
           organization_id?: string
           unit_type?: string

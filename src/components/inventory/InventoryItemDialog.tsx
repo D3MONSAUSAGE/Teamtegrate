@@ -20,7 +20,7 @@ const inventoryItemSchema = z.object({
   category_id: z.string().optional(),
   base_unit_id: z.string().optional(),
   purchase_unit: z.string().optional(),
-  conversion_factor: z.coerce.number().positive('Package size must be greater than 0').optional(),
+  conversion_factor: z.coerce.number().positive('Units per package must be greater than 0').optional(),
   purchase_price: z.coerce.number().min(0, 'Package price must be 0 or greater').optional(),
   sku: z.string().optional(),
   barcode: z.string().optional(),
@@ -259,34 +259,34 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   control={form.control}
                   name="base_unit_id"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Package Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select package type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {units.filter(unit => unit.unit_type === 'count').map((unit) => (
-                            <SelectItem key={unit.id} value={unit.id}>
-                              {unit.name} ({unit.abbreviation})
-                            </SelectItem>
-                          ))}
-                          <div className="border-t">
-                            <Button
-                              variant="ghost"
-                              className="w-full justify-start text-xs h-8"
-                              onClick={() => setIsUnitDialogOpen(true)}
-                            >
-                              <Plus className="h-3 w-3 mr-2" />
-                              Create New Package Type
-                            </Button>
-                          </div>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                  <FormItem>
+                    <FormLabel>Package Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select package type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {units.filter(unit => unit.unit_type === 'count').map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id}>
+                            {unit.name} ({unit.abbreviation})
+                          </SelectItem>
+                        ))}
+                        <div className="border-t">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-xs h-8"
+                            onClick={() => setIsUnitDialogOpen(true)}
+                          >
+                            <Plus className="h-3 w-3 mr-2" />
+                            Create New Unit
+                          </Button>
+                        </div>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                   )}
                 />
             </div>
@@ -309,7 +309,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                         <Input 
                           type="number" 
                           step="0.0001"
-                          placeholder="e.g., 12 (units per package)" 
+                          placeholder="e.g., 12" 
                           {...field} 
                         />
                       </FormControl>
@@ -345,10 +345,10 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                     <span className="font-medium text-primary">Cost Calculation</span>
                   </div>
                   <p className="text-lg font-semibold">
-                    ${calculatedUnitPrice.toFixed(4)} per item
+                    ${calculatedUnitPrice.toFixed(4)} per {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    This is what each individual item costs based on your package pricing
+                    This is what each individual {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'} costs based on your package pricing
                   </p>
                 </div>
               )}
