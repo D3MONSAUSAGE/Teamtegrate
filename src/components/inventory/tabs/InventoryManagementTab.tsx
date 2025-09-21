@@ -30,7 +30,7 @@ export const InventoryManagementTab: React.FC = () => {
     let filtered = items.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategory || item.category === selectedCategory;
+      const matchesCategory = !selectedCategory || selectedCategory === 'all' || item.category === selectedCategory;
       const matchesTeam = !teamContext?.selectedTeam || item.team_id === teamContext.selectedTeam.id;
       
       return matchesSearch && matchesCategory && matchesTeam;
@@ -135,7 +135,7 @@ export const InventoryManagementTab: React.FC = () => {
                           <SelectValue placeholder="Category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Categories</SelectItem>
+                          <SelectItem value="all">All Categories</SelectItem>
                           {categories.map((category) => (
                             <SelectItem key={category} value={category}>
                               {category}

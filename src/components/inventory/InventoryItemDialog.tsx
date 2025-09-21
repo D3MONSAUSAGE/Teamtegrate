@@ -79,7 +79,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       maximum_threshold: 100,
       current_stock: 0,
       location: '',
-      team_id: '',
+      team_id: 'none',
       description: '',
     },
   });
@@ -103,7 +103,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               maximum_threshold: item.maximum_threshold || 100,
               current_stock: item.current_stock,
               location: item.location || '',
-              team_id: item.team_id || '',
+              team_id: item.team_id || 'none',
               description: item.description || '',
             });
           }
@@ -124,7 +124,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         maximum_threshold: 100,
         current_stock: 0,
         location: '',
-        team_id: teamContext?.selectedTeam?.id || '',
+        team_id: teamContext?.selectedTeam?.id || 'none',
         description: '',
       });
     }
@@ -142,7 +142,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         maximum_threshold: data.maximum_threshold,
         current_stock: data.current_stock,
         location: data.location,
-        team_id: data.team_id,
+        team_id: data.team_id === 'none' ? '' : data.team_id,
         description: data.description,
         organization_id: '', // This will be set by the API
         created_by: '', // This will be set by the API  
@@ -340,7 +340,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No team assigned</SelectItem>
+                        <SelectItem value="none">No team assigned</SelectItem>
                         {teamContext.userTeams.map((team) => (
                           <SelectItem key={team.id} value={team.id}>
                             {team.name}
