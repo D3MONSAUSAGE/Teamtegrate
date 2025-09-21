@@ -51,6 +51,104 @@ interface InventoryNotificationRequest {
   timestamp: string;
 }
 
+// Template loading function
+async function loadEmailTemplate(templateName: string): Promise<string> {
+  try {
+    const response = await fetch(`https://raw.githubusercontent.com/teamtegrate/teamtegrate/main/src/emails/${templateName}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load template: ${response.status}`);
+    }
+    return await response.text();
+  } catch (error) {
+    console.warn(`Failed to load template ${templateName}:`, error);
+    // Return fallback template
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>{{subject}}</title></head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>📦 Inventory Count Submitted</h2>
+        <p><strong>Submitted by:</strong> {{submitterName}}</p>
+        <p><strong>Team:</strong> {{teamName}}</p>
+        <p><strong>Date:</strong> {{submissionDate}} at {{submissionTime}}</p>
+        <p><strong>Total items:</strong> {{totalItems}}</p>
+        <div style="margin: 20px 0;">
+          <a href="{{reviewUrl}}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">🔍 View Full Inventory Report</a>
+        </div>
+        <p style="color: #666; font-size: 14px;">This is an automated message from {{companyName}} – Inventory Management.</p>
+      </body>
+      </html>
+    `;
+  }
+}
+
+// Template processing function
+function processTemplate(template: string, variables: Record<string, any>): string {
+  let processed = template;
+  
+  // Handle simple variable replacements
+  Object.entries(variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    processed = processed.replace(regex, String(value || ''));
+  });
+  
+  // Handle conditional sections for showLowItemWarning
+  if (variables.showLowItemWarning) {
+    processed = processed.replace(/{{#showLowItemWarning}}([\s\S]*?){{\/showLowItemWarning}}/g, '$1');
+  } else {
+    processed = processed.replace(/{{#showLowItemWarning}}[\s\S]*?{{\/showLowItemWarning}}/g, '');
+  }
+  
+  // Handle itemPreview conditional sections
+  if (variables.itemPreview && variables.itemPreview.items && variables.itemPreview.items.length > 0) {
+    processed = processed.replace(/{{#itemPreview}}([\s\S]*?){{\/itemPreview}}/g, '$1');
+    
+    // Process items list
+    const itemsSection = processed.match(/{{#items}}([\s\S]*?){{\/items}}/);
+    if (itemsSection) {
+      const itemTemplate = itemsSection[1];
+      const itemsHtml = variables.itemPreview.items.map((item: any) => {
+        return itemTemplate
+          .replace(/{{name}}/g, item.name || '')
+          .replace(/{{quantity}}/g, item.quantity || '')
+          .replace(/{{unit}}/g, item.unit || '');
+      }).join('');
+      processed = processed.replace(/{{#items}}[\s\S]*?{{\/items}}/, itemsHtml);
+    }
+    
+    // Handle hasMoreItems conditional
+    if (variables.itemPreview.hasMoreItems) {
+      processed = processed.replace(/{{#hasMoreItems}}([\s\S]*?){{\/hasMoreItems}}/g, '$1');
+      processed = processed.replace(/{{remainingCount}}/g, String(variables.itemPreview.remainingCount || ''));
+    } else {
+      processed = processed.replace(/{{#hasMoreItems}}[\s\S]*?{{\/hasMoreItems}}/g, '');
+    }
+  } else {
+    processed = processed.replace(/{{#itemPreview}}[\s\S]*?{{\/itemPreview}}/g, '');
+  }
+  
+  return processed;
+}
+
+// Date formatting functions
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
+
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+}
+
 // Direct Resend API call function
 async function sendViaResend(apiKey: string, from: string, to: string, subject: string, html: string) {
   const r = await fetch("https://api.resend.com/emails", {
@@ -97,17 +195,66 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const inv = inventory ?? {};
-      const subject = `📦 Inventory Count Submitted: ${inv.team_name ?? inv.location_name ?? inv.id ?? ""}`;
-      const url = `${base}/inventory/counts/${inv.id ?? ""}`;
-      const html = `
-        <h2>${subject}</h2>
-        <p><strong>Submitted by:</strong> ${inv.submitted_by_name ?? ""}</p>
-        <p><strong>Team:</strong> ${inv.team_name ?? "N/A"}</p>
-        <p><strong>Total items:</strong> ${inv.items_total ?? ""}</p>
-        <p><a href="${url}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review inventory count</a></p>
-        <br>
-        <p style="color: hsl(240 3.8% 46.1%); font-size: 14px;">Teamtegrate - Inventory Management</p>
-      `;
+      const submitterName = inv.submitted_by_name || 'Unknown User';
+      const teamName = inv.team_name || inv.location_name || 'N/A';
+      const totalItems = inv.items_total || 0;
+      const submissionDate = formatDate(requestData.timestamp);
+      const submissionTime = formatTime(requestData.timestamp);
+      
+      // Enhanced subject line
+      const subject = `📦 Inventory Count – ${submitterName} – ${teamName} – ${submissionDate}`;
+      const url = `${base}/dashboard/inventory`;
+
+      // Fetch inventory items for preview (first 5 items)
+      let itemPreview = null;
+      try {
+        const { data: items } = await supabase
+          .from('inventory_count_items')
+          .select('item_name, counted_quantity, unit')
+          .eq('count_id', inv.id)
+          .limit(5);
+
+        if (items && items.length > 0) {
+          const previewItems = items.map(item => ({
+            name: item.item_name || 'Unknown Item',
+            quantity: item.counted_quantity || 0,
+            unit: item.unit || 'units'
+          }));
+
+          // Check if there are more items
+          const { count: totalItemsCount } = await supabase
+            .from('inventory_count_items')
+            .select('*', { count: 'exact', head: true })
+            .eq('count_id', inv.id);
+
+          const hasMoreItems = (totalItemsCount || 0) > 5;
+          const remainingCount = Math.max(0, (totalItemsCount || 0) - 5);
+
+          itemPreview = {
+            items: previewItems,
+            hasMoreItems,
+            remainingCount
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to fetch inventory items for preview:', error);
+      }
+
+      // Load and process email template
+      const template = await loadEmailTemplate('inventory-submitted.html');
+      const templateVariables = {
+        companyName: 'Teamtegrate',
+        submitterName,
+        teamName,
+        submissionDate,
+        submissionTime,
+        totalItems: `${totalItems}`,
+        reviewUrl: url,
+        showLowItemWarning: totalItems < 5,
+        itemPreview
+      };
+
+      const html = processTemplate(template, templateVariables);
 
       const sends = await Promise.allSettled(
         recipientList.map(async (toEmail) => {

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Count Submitted</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 8px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 32px 24px;
+        }
+        .summary-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+        .summary-label {
+            font-weight: 600;
+            color: #475569;
+        }
+        .summary-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        .items-preview {
+            background-color: #fefefe;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .items-preview h3 {
+            margin: 0 0 16px 0;
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .item-list li {
+            padding: 6px 0;
+            color: #475569;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .item-list li:last-child {
+            border-bottom: none;
+        }
+        .item-name {
+            font-weight: 500;
+            color: #1e293b;
+        }
+        .item-quantity {
+            color: #6366f1;
+            font-weight: 600;
+        }
+        .warning-box {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+            color: #dc2626;
+        }
+        .warning-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 18px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 16px 0;
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 24px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            .header {
+                padding: 24px 16px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .content {
+                padding: 24px 16px;
+            }
+            .summary-box {
+                padding: 16px;
+            }
+            .summary-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            .cta-button {
+                display: block;
+                text-align: center;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📦 {{companyName}} Inventory Management</h1>
+            <p>Inventory Count Submission</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Summary Box -->
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span class="summary-label">Submitted by:</span>
+                    <span class="summary-value">{{submitterName}}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Team/Branch:</span>
+                    <span class="summary-value">{{teamName}}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Date & Time:</span>
+                    <span class="summary-value">{{submissionDate}} at {{submissionTime}}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Total Items Counted:</span>
+                    <span class="summary-value">{{totalItems}} items</span>
+                </div>
+            </div>
+
+            <!-- Low Item Warning (Conditional) -->
+            {{#showLowItemWarning}}
+            <div class="warning-box">
+                <span class="warning-icon">⚠️</span>
+                <strong>Low item count detected.</strong> Please verify completeness.
+            </div>
+            {{/showLowItemWarning}}
+
+            <!-- Items Preview -->
+            {{#itemPreview}}
+            <div class="items-preview">
+                <h3>Items Counted</h3>
+                <ul class="item-list">
+                    {{#items}}
+                    <li>
+                        <span class="item-name">{{name}}</span> – 
+                        <span class="item-quantity">{{quantity}} {{unit}}</span>
+                    </li>
+                    {{/items}}
+                    {{#hasMoreItems}}
+                    <li style="font-style: italic; color: #64748b;">
+                        ...and {{remainingCount}} more items
+                    </li>
+                    {{/hasMoreItems}}
+                </ul>
+            </div>
+            {{/itemPreview}}
+
+            <!-- Call to Action -->
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{reviewUrl}}" class="cta-button">
+                    🔍 View Full Inventory Report
+                </a>
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin-top: 24px;">
+                This inventory count has been recorded and is now available for review. 
+                Click the button above to view the complete details and take any necessary actions.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>This is an automated message from {{companyName}} – Inventory Management.</p>
+        </div>
+    </div>
+</body>
+</html>
