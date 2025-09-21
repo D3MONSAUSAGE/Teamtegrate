@@ -159,8 +159,10 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
   };
 
   const getItemData = (item: InventoryItem) => {
+    console.log('getItemData called for item:', item.name);
     const countItem = countItems.find(ci => ci.item_id === item.id);
     const inStockQty = countItem?.in_stock_quantity || item.current_stock || 0;
+    console.log('inStockQty for', item.name, ':', inStockQty);
     const localValue = localCounts[item.id] || '';
     const actualQty = localValue ? parseFloat(localValue) : null;
     const variance = actualQty !== null && !isNaN(actualQty) ? actualQty - inStockQty : null;
