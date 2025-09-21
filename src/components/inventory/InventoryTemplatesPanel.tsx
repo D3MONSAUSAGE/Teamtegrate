@@ -6,20 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, FileText, Edit, Users, Package, Copy } from 'lucide-react';
+import { Plus, FileText, Edit, Users, Package, Copy, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateItemsDialog } from './TemplateItemsDialog';
 import { TemplateEditDialog } from './TemplateEditDialog';
 import { EnhancedTemplateDialog } from './dialogs/EnhancedTemplateDialog';
+import { canDeleteTemplate } from '@/lib/rolePermissions';
 
 interface InventoryTemplatesPanelProps {
   selectedTeam: string;
 }
 
 export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = ({ selectedTeam }) => {
-  const { templates, createTemplate, duplicateTemplate, refreshTemplates } = useInventory();
+  const { templates, createTemplate, duplicateTemplate, deleteTemplate, refreshTemplates } = useInventory();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -27,6 +29,7 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   
   // Template Items Dialog state
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -112,6 +115,25 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string, templateName: string) => {
+    setIsDeleting(templateId);
+    try {
+      await deleteTemplate(templateId);
+      toast({
+        title: "Success",
+        description: "Template deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -259,10 +281,43 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
                       <Edit className="h-3 w-3" />
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1">
-                      <Users className="h-3 w-3" />
-                      Assign
-                    </Button>
+                    {canDeleteTemplate(user?.role, user?.id, template.created_by) ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-1"
+                            disabled={isDeleting === template.id}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{template.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTemplate(template.id, template.name)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Template
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <Button variant="outline" size="sm" className="gap-1">
+                        <Users className="h-3 w-3" />
+                        Assign
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

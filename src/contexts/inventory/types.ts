@@ -215,6 +215,7 @@ export interface InventoryContextType {
   // Template operations
   createTemplate: (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryTemplate>;
   updateTemplate: (id: string, updates: Partial<InventoryTemplate>) => Promise<InventoryTemplate>;
+  deleteTemplate: (id: string) => Promise<void>;
   getTemplateItems: (templateId: string) => Promise<InventoryTemplateItem[]>;
   addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, minimumQuantity?: number, maximumQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
   updateTemplateItem: (templateId: string, itemId: string, updates: {

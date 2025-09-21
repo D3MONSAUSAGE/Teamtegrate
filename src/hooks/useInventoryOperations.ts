@@ -433,6 +433,18 @@ export const useInventoryOperations = ({
     return null;
   }, [handleAsyncOperation, refreshTemplateItems]);
 
+  const deleteTemplate = useCallback(async (id: string): Promise<void> => {
+    const result = await handleAsyncOperation(
+      () => inventoryTemplatesApi.delete(id),
+      'Delete Template',
+      'Template deleted successfully'
+    );
+    
+    if (result !== null) {
+      await refreshTemplates();
+    }
+  }, [handleAsyncOperation, refreshTemplates]);
+
   const duplicateTemplate = useCallback(async (templateId: string, newName?: string): Promise<InventoryTemplate | null> => {
     const result = await handleAsyncOperation(
       () => inventoryTemplatesApi.duplicate(templateId, newName),
@@ -504,6 +516,7 @@ export const useInventoryOperations = ({
     // Template operations
     createTemplate,
     updateTemplate,
+    deleteTemplate,
     assignTemplateToTeam,
     getTemplateItems,
     addItemToTemplate,

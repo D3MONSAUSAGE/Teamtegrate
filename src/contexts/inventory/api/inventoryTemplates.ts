@@ -204,4 +204,13 @@ export const inventoryTemplatesApi = {
 
     return newTemplate as InventoryTemplate;
   },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('inventory_templates')
+      .update({ is_active: false })
+      .eq('id', id);
+
+    if (error) throw error;
+  },
 };
