@@ -107,39 +107,47 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
 
   const onSubmit = async (values: InventoryItemFormData) => {
     try {
+      console.log('Form values submitted:', values);
+      console.log('Calculated unit price:', calculatedUnitPrice);
+      
       const itemData = {
         name: values.name || '',
         description: values.description,
-        category_id: values.category_id,
-        base_unit_id: values.base_unit_id,
-        purchase_unit: values.purchase_unit,
-        conversion_factor: values.conversion_factor,
-        purchase_price: values.purchase_price,
+        category_id: values.category_id || null,
+        base_unit_id: values.base_unit_id || null,
+        purchase_unit: values.purchase_unit || null,
+        conversion_factor: values.conversion_factor || null,
+        purchase_price: values.purchase_price || null,
         sku: values.sku,
         barcode: values.barcode,
-        current_stock: 0, // Default to 0 for master items
+        current_stock: 0,
         minimum_threshold: null,
         maximum_threshold: null,
         reorder_point: null,
-        unit_cost: calculatedUnitPrice || null, // Use calculated price instead of manual
+        unit_cost: calculatedUnitPrice || null,
         location: values.location,
         is_active: true,
         is_template: false,
         sort_order: 0,
       };
 
+      console.log('Item data being sent:', itemData);
+
       if (itemId) {
-        await updateItem(itemId, itemData);
+        const result = await updateItem(itemId, itemData);
+        console.log('Update result:', result);
         toast.success('Item updated successfully');
       } else {
-        await createItem(itemData);
+        const result = await createItem(itemData);
+        console.log('Create result:', result);
         toast.success('Item created successfully');
       }
       onOpenChange(false);
       form.reset();
     } catch (error) {
       console.error('Error saving item:', error);
-      toast.error('Failed to save item');
+      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+      toast.error(`Failed to save item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -218,7 +226,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               )}
             />
 
-            {/* Item Type and Units */}
+            {/* Item Type and Unit Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -255,22 +263,22 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 )}
               />
 
-                <FormField
-                  control={form.control}
-                  name="base_unit_id"
-                  render={({ field }) => (
+              <FormField
+                control={form.control}
+                name="base_unit_id"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Package Type</FormLabel>
+                    <FormLabel>Unit Type</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select package type" />
+                          <SelectValue placeholder="Select unit type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {units.filter(unit => unit.unit_type === 'count').map((unit) => (
+                        {units.map((unit) => (
                           <SelectItem key={unit.id} value={unit.id}>
-                            {unit.name} ({unit.abbreviation})
+                            {unit.measurement_type} ({unit.abbreviation})
                           </SelectItem>
                         ))}
                         <div className="border-t">
@@ -287,8 +295,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                     </Select>
                     <FormMessage />
                   </FormItem>
-                  )}
-                />
+                )}
+              />
             </div>
 
             {/* Package Information */}
@@ -299,6 +307,20 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="purchase_unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Package Type</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Box, Case, Bag" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="conversion_factor"

@@ -18,9 +18,15 @@ export const inventoryItemsApi = {
   },
 
   async create(item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>): Promise<InventoryItem> {
+    // Add created_by field automatically for RLS policy compliance
+    const itemWithCreatedBy = {
+      ...item,
+      created_by: (await supabase.auth.getUser()).data.user?.id
+    };
+
     const { data, error } = await supabase
       .from('inventory_items')
-      .insert([item])
+      .insert([itemWithCreatedBy])
       .select(`
         *,
         category:inventory_categories(*),

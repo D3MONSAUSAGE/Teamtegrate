@@ -18,16 +18,16 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>{item.sku || 'N/A'}</TableCell>
       <TableCell className="max-w-xs truncate">{item.description || 'N/A'}</TableCell>
       <TableCell>{item.category?.name || 'Uncategorized'}</TableCell>
-      <TableCell>{item.base_unit?.abbreviation || 'units'}</TableCell>
+      <TableCell>{item.base_unit?.name || 'N/A'}</TableCell>
       <TableCell>{item.location || 'N/A'}</TableCell>
       <TableCell>
-        {item.purchase_unit && item.conversion_factor 
-          ? `${item.conversion_factor} ${item.base_unit?.name || 'units'} per ${item.purchase_unit}`
+        {item.purchase_unit && item.conversion_factor && item.base_unit?.measurement_type
+          ? `${item.conversion_factor} ${item.base_unit.measurement_type} per ${item.purchase_unit}`
           : item.purchase_unit || 'Individual'
         }
       </TableCell>
       <TableCell>
-        {item.unit_cost ? `$${item.unit_cost.toFixed(2)}` : 'N/A'}
+        {item.unit_cost ? `$${item.unit_cost.toFixed(4)}` : 'N/A'}
       </TableCell>
     </TableRow>
   );
