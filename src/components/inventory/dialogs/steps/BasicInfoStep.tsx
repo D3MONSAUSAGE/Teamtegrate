@@ -60,7 +60,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                 teams={teamsForSelect}
                 isLoading={teamsLoading}
                 selectedTeam={formData.team_id}
-                onTeamChange={(teamId) => updateFormData({ team_id: teamId })}
+                onTeamChange={(teamId) => updateFormData({ team_id: teamId || null })}
                 optional={canCreateForAllTeams}
                 disabled={false}
               />

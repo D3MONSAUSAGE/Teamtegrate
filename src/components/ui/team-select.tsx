@@ -37,6 +37,14 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
     disabled
   });
 
+  const handleValueChange = (value: string) => {
+    if (value === "all") {
+      onTeamChange(undefined); // Convert "all" to undefined, which becomes null
+    } else {
+      onTeamChange(value);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <Label className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -46,8 +54,8 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
         Team Selection {!optional && <span className="text-destructive text-xs">*</span>}
       </Label>
       <Select 
-        value={selectedTeam || ""} 
-        onValueChange={onTeamChange}
+        value={selectedTeam || (optional ? "all" : "")} 
+        onValueChange={handleValueChange}
         disabled={isLoading || disabled}
       >
         <SelectTrigger className="h-11 bg-gradient-to-r from-background to-muted/20 border-border/50 hover:border-primary/30 transition-all duration-200">
