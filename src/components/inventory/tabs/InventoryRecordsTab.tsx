@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { TeamSelector } from '@/components/team/TeamSelector';
+import { InventoryAnalyticsDashboard } from '@/components/inventory/analytics/InventoryAnalyticsDashboard';
 import { Search, Download, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -193,19 +194,7 @@ export const InventoryRecordsTab: React.FC = () => {
       </Card>
 
       {/* Analytics Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Performance Analytics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            Advanced analytics coming soon...
-          </div>
-        </CardContent>
-      </Card>
+      <InventoryAnalyticsDashboard />
     </div>
   );
 };
