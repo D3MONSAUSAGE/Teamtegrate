@@ -1,36 +1,8 @@
 {
-  "name": "TeamTegrate",
-  "short_name": "TeamTegrate",
-  "description": "Complete team collaboration platform",
+  "name": "Teamtegrate",
+  "short_name": "Teamtegrate",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#3b82f6",
-  "orientation": "portrait-primary",
-  "categories": ["business", "productivity"],
-  "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
-    }
-  ],
-  "permissions": [
-    "notifications"
-  ],
-  "features": [
-    "CrossOriginIsolated"
-  ]
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a"
 }
