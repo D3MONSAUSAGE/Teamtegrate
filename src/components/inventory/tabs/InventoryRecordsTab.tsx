@@ -156,10 +156,9 @@ export const InventoryRecordsTab: React.FC = () => {
                 No inventory records found
               </div>
             ) : (
-              <>
-                {/* Show first 6 records normally */}
-                <div className="space-y-4">
-                  {filteredCounts.slice(0, 6).map((count) => (
+              <ScrollArea className="h-[500px] w-full">
+                <div className="space-y-4 pr-4">
+                  {filteredCounts.map((count) => (
                     <div
                       key={count.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
@@ -212,67 +211,7 @@ export const InventoryRecordsTab: React.FC = () => {
                     </div>
                   ))}
                 </div>
-
-                {/* Show remaining records in ScrollArea */}
-                {filteredCounts.length > 6 && (
-                  <ScrollArea className="h-96 w-full">
-                    <div className="space-y-4 pr-4">
-                      {filteredCounts.slice(6).map((count) => (
-                        <div
-                          key={count.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Badge variant={getStatusColor(count.status)}>
-                                {count.status.replace('_', ' ').toUpperCase()}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                Started: {format(new Date(count.created_at), 'MMM dd, yyyy \'at\' h:mm a')}
-                                {count.status === 'completed' && count.updated_at && (
-                                  <span className="block">
-                                    Completed: {format(new Date(count.updated_at), 'MMM dd, yyyy \'at\' h:mm a')} 
-                                    ({differenceInMinutes(new Date(count.updated_at), new Date(count.created_at))}min)
-                                  </span>
-                                )}
-                              </span>
-                              {count.variance_count > 0 && (
-                                <Badge variant={getVarianceColor(count.variance_count)} className="gap-1">
-                                  <AlertTriangle className="h-3 w-3" />
-                                  {count.variance_count} variances
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            <div className="text-sm text-muted-foreground">
-                              {count.notes || 'No notes provided'}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 text-right">
-                            <div className="text-sm">
-                              <div className="font-medium">
-                                {count.completion_percentage.toFixed(0)}% Complete
-                              </div>
-                              <div className="text-muted-foreground">
-                                {count.total_items_count} items
-                              </div>
-                            </div>
-                            
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleViewDetails(count)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </>
+              </ScrollArea>
             )}
           </div>
         </CardContent>
