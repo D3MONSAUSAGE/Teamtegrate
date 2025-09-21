@@ -305,10 +305,12 @@ export const InventoryManagementTab: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
+              <div className={viewMode === 'grid' ? 'flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-background' : 'space-y-4'}>
                 {viewMode === 'grid' ? (
                   filteredAndSortedItems.map((item) => (
-                    <ItemCard key={item.id} item={item} onClick={handleEditItem} />
+                    <div key={item.id} className="flex-shrink-0 w-80">
+                      <ItemCard item={item} onClick={handleEditItem} />
+                    </div>
                   ))
                 ) : (
                   <Card>
