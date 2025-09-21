@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Request, PRIORITY_COLORS, STATUS_COLORS, REQUEST_CATEGORIES } from '@/types/requests';
+import { categoryIcons, categoryBadgeColors } from '@/utils/categoryConfig';
 import RequestAcceptanceButton from './RequestAcceptanceButton';
 import RequestCompletionDialog from './RequestCompletionDialog';
 import RequestUpdatesSection from './RequestUpdatesSection';
@@ -49,9 +50,25 @@ export default function RequestDetails({ request, onRequestUpdated }: RequestDet
               <Badge className={PRIORITY_COLORS[request.priority]}>
                 {request.priority}
               </Badge>
-              {request.request_type && (
-                <Badge variant="outline">
-                  {REQUEST_CATEGORIES[request.request_type.category as keyof typeof REQUEST_CATEGORIES]}
+              {request.request_type && request.request_type.category ? (
+                (() => {
+                  const category = request.request_type.category;
+                  const subcategory = request.request_type.subcategory;
+                  const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons];
+                  const badgeColor = categoryBadgeColors[category as keyof typeof categoryBadgeColors];
+                  
+                  return (
+                    <Badge variant="outline" className={badgeColor}>
+                      {CategoryIcon && <CategoryIcon className="h-3 w-3 mr-1" />}
+                      {REQUEST_CATEGORIES[category as keyof typeof REQUEST_CATEGORIES]}
+                      {subcategory && ` • ${subcategory}`}
+                    </Badge>
+                  );
+                })()
+              ) : (
+                <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                  <FileText className="h-3 w-3 mr-1" />
+                  General Request
                 </Badge>
               )}
             </div>
