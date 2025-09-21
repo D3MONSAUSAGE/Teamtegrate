@@ -235,40 +235,175 @@ async function sendPushWithRetry(supabase: any, pushOptions: any, context: strin
   return false;
 }
 
-// HTML escape utility function
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+// Enhanced HTML escape utility function
+function esc(s?: string) {
+  return (s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]!));
 }
 
-// Email template renderers
-function renderCreatedEmail({ ticketNo, title, requesterName, baseUrl, id }: any) {
-  const url = `${baseUrl}/requests/${id}`;
-  return `
-    <h2 style="margin:0 0 12px;font-family:Inter,Arial">Your request was received</h2>
-    <p style="margin:0 0 12px">Hi${requesterName ? " " + requesterName : ""},</p>
-    <p style="margin:0 0 12px">We've created your request <strong>${ticketNo}</strong>.</p>
-    <p style="margin:0 0 12px"><strong>Title:</strong> ${escapeHtml(title ?? "")}</p>
-    <p style="margin:16px 0"><a href="${url}">View request</a></p>
-    <hr style="border:none;border-top:1px solid #eee;margin:16px 0" />
-    <p style="color:#666;font-size:12px">Teamtegrate Support</p>
-  `;
+// Request email context interface
+type RequestEmailContext = {
+  ticketNo: string;              // e.g., REQ-2025-0035
+  title?: string;
+  requesterName?: string;
+  orgName?: string;
+  logoUrl?: string;
+  requestUrl: string;            // e.g., `${APP_BASE_URL}/requests/${id}`
+  priority?: string;
+  resolutionSummary?: string;
+};
+
+// Professional email template renderers
+function renderCreatedEmail(ctx: RequestEmailContext) {
+  const x = { 
+    ...ctx, 
+    title: esc(ctx.title), 
+    orgName: esc(ctx.orgName) || 'Teamtegrate', 
+    requesterName: esc(ctx.requesterName),
+    logoUrl: ctx.logoUrl || '',
+    priority: esc(ctx.priority)
+  };
+  
+  return `<!-- preview text (hidden) -->
+<div style="display:none;max-height:0;overflow:hidden;">We've logged your request. We'll keep you posted.</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7fb;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;">
+        <!-- header -->
+        <tr>
+          <td style="padding:20px 24px;background:#0d3b66;color:#fff;">
+            <table role="presentation" width="100%"><tr>
+              <td align="left" style="font-size:18px;font-weight:600;">
+                ${x.logoUrl ? `<img src="${x.logoUrl}" alt="${x.orgName} logo" width="28" height="28" style="vertical-align:middle;border:0;margin-right:8px;">` : ''}
+                ${x.orgName}
+              </td>
+              <td align="right" style="font-size:12px;opacity:.9;">Request ${x.ticketNo}</td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- body -->
+        <tr>
+          <td style="padding:28px 24px 8px;color:#111;">
+            <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Your request was received</h1>
+            <p style="margin:0 0 8px;font-size:14px;color:#333;">
+              Hi${x.requesterName ? ' ' + x.requesterName : ''}, we've created your request
+              <strong>${x.ticketNo}</strong>.
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0 8px;">
+              <tr>
+                <td style="font-size:14px;color:#555;"><strong>Title:</strong></td>
+                <td style="font-size:14px;color:#111;padding-left:8px;">${x.title || ''}</td>
+              </tr>
+              ${x.priority ? `
+              <tr>
+                <td style="font-size:14px;color:#555;"><strong>Priority:</strong></td>
+                <td style="font-size:14px;color:#111;padding-left:8px;">${x.priority}</td>
+              </tr>
+              ` : ''}
+            </table>
+
+            <!-- CTA -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+              <tr>
+                <td>
+                  <a href="${x.requestUrl}" style="display:inline-block;background:#0d3b66;color:#fff;text-decoration:none;font-weight:600;border-radius:8px;padding:10px 16px;">View request</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:16px 0 0;font-size:12px;color:#666;">We'll email you when there are updates.</p>
+          </td>
+        </tr>
+
+        <!-- footer -->
+        <tr>
+          <td style="padding:16px 24px;background:#fafbfe;border-top:1px solid #eef0f5;color:#6b7280;font-size:12px;">
+            Teamtegrate Support • ${x.orgName}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
 }
 
-function renderCompletedEmail({ ticketNo, title, baseUrl, id }: any) {
-  const url = `${baseUrl}/requests/${id}`;
-  return `
-    <h2 style="margin:0 0 12px;font-family:Inter,Arial">Your request is completed</h2>
-    <p style="margin:0 0 12px">Great news—request <strong>${ticketNo}</strong> has been completed.</p>
-    <p style="margin:0 0 12px"><strong>Title:</strong> ${escapeHtml(title ?? "")}</p>
-    <p style="margin:16px 0"><a href="${url}">Review outcome</a></p>
-    <hr style="border:none;border-top:1px solid #eee;margin:16px 0" />
-    <p style="color:#666;font-size:12px">Teamtegrate Support</p>
-  `;
+function renderCompletedEmail(ctx: RequestEmailContext) {
+  const x = { 
+    ...ctx, 
+    title: esc(ctx.title), 
+    orgName: esc(ctx.orgName) || 'Teamtegrate', 
+    requesterName: esc(ctx.requesterName),
+    logoUrl: ctx.logoUrl || '',
+    resolutionSummary: esc(ctx.resolutionSummary)
+  };
+  
+  return `<!-- preview text (hidden) -->
+<div style="display:none;max-height:0;overflow:hidden;">Your request has been resolved. Review the outcome.</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7fb;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;">
+        <!-- header -->
+        <tr>
+          <td style="padding:20px 24px;background:#0d3b66;color:#fff;">
+            <table role="presentation" width="100%"><tr>
+              <td align="left" style="font-size:18px;font-weight:600;">
+                ${x.logoUrl ? `<img src="${x.logoUrl}" alt="${x.orgName} logo" width="28" height="28" style="vertical-align:middle;border:0;margin-right:8px;">` : ''}
+                ${x.orgName}
+              </td>
+              <td align="right" style="font-size:12px;opacity:.9;">Request ${x.ticketNo}</td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- body -->
+        <tr>
+          <td style="padding:28px 24px 8px;color:#111;">
+            <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Your request is completed</h1>
+            <p style="margin:0 0 8px;font-size:14px;color:#333;">
+              Request <strong>${x.ticketNo}</strong> is now marked as <strong>Completed</strong>.
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0 8px;">
+              <tr>
+                <td style="font-size:14px;color:#555;"><strong>Title:</strong></td>
+                <td style="font-size:14px;color:#111;padding-left:8px;">${x.title || ''}</td>
+              </tr>
+              ${x.resolutionSummary ? `
+              <tr>
+                <td style="font-size:14px;color:#555;vertical-align:top;"><strong>Summary:</strong></td>
+                <td style="font-size:14px;color:#111;padding-left:8px;">${x.resolutionSummary}</td>
+              </tr>
+              ` : ''}
+            </table>
+
+            <!-- CTA -->
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+              <tr>
+                <td>
+                  <a href="${x.requestUrl}" style="display:inline-block;background:#0d3b66;color:#fff;text-decoration:none;font-weight:600;border-radius:8px;padding:10px 16px;">Review request</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:16px 0 0;font-size:12px;color:#666;">If something doesn't look right, reply to this email.</p>
+          </td>
+        </tr>
+
+        <!-- footer -->
+        <tr>
+          <td style="padding:16px 24px;background:#fafbfe;border-top:1px solid #eef0f5;color:#6b7280;font-size:12px;">
+            Teamtegrate Support • ${x.orgName}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -348,8 +483,9 @@ const handler = async (req: Request): Promise<Response> => {
               ticketNo,
               title: ticket.title,
               requesterName: user.name,
-              baseUrl: appBaseUrl,
-              id: ticket.id
+              requestUrl: `${appBaseUrl}/requests/${ticket.id}`,
+              priority: ticket.priority,
+              orgName: 'Teamtegrate'
             })
           }, 'user confirmation email');
 
@@ -531,8 +667,9 @@ const handler = async (req: Request): Promise<Response> => {
               html: renderCompletedEmail({
                 ticketNo,
                 title: ticket.title,
-                baseUrl: appBaseUrl,
-                id: ticket.id
+                requestUrl: `${appBaseUrl}/requests/${ticket.id}`,
+                resolutionSummary: resolution,
+                orgName: 'Teamtegrate'
               })
             }, 'completion email');
 
