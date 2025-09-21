@@ -6,11 +6,86 @@ import { Badge } from '@/components/ui/badge';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Search, AlertTriangle, Smartphone } from 'lucide-react';
+import { Package, Play, CheckCircle, Search, AlertTriangle, Smartphone, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCountItemInput } from '@/hooks/useCountItemInput';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { MobileCountInterface } from '../MobileCountInterface';
+
+// Individual count item row component with optimized input handling
+const CountItemRow: React.FC<{
+  item: any;
+  countItem: any;
+  expectedQty: number;
+  actualQty: number | null;
+  variance: number | null;
+  onUpdate: (itemId: string, value: number) => Promise<void>;
+}> = ({ item, countItem, expectedQty, actualQty, variance, onUpdate }) => {
+  const {
+    displayValue,
+    isSaving,
+    hasError,
+    hasUnsavedChanges,
+    handleChange,
+    handleBlur,
+    handleKeyDown
+  } = useCountItemInput({
+    itemId: item.id,
+    initialValue: actualQty,
+    onUpdate,
+    debounceMs: 500
+  });
+
+  return (
+    <div className="flex items-center gap-4 p-4 border rounded-lg">
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <h4 className="font-medium">{item.name}</h4>
+          {variance !== null && variance !== 0 && (
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+          )}
+          {hasUnsavedChanges && (
+            <Badge variant="outline" className="text-xs">
+              Unsaved
+            </Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Expected: {expectedQty} {item.base_unit?.name || 'units'}
+          {item.location && ` • Location: ${item.location}`}
+        </p>
+        {variance !== null && (
+          <p className={`text-sm ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+            Variance: {variance > 0 ? '+' : ''}{variance}
+          </p>
+        )}
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <Input
+            type="number"
+            placeholder="Actual qty"
+            value={displayValue}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className={`w-24 ${hasError ? 'border-red-500' : ''}`}
+            step="0.01"
+            disabled={isSaving}
+          />
+          {isSaving && (
+            <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-muted-foreground" />
+          )}
+        </div>
+        <span className="text-sm text-muted-foreground min-w-0">
+          {item.base_unit?.name || 'units'}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const InventoryCountTab: React.FC = () => {
   const { items, counts, templates, startInventoryCount, updateCountItem, completeInventoryCount, initializeCountItems } = useInventory();
@@ -322,44 +397,15 @@ export const InventoryCountTab: React.FC = () => {
                       : null;
 
                     return (
-                      <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium">{item.name}</h4>
-                            {variance !== null && variance !== 0 && (
-                              <AlertTriangle className="h-4 w-4 text-amber-500" />
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Expected: {expectedQty} {item.base_unit?.name || 'units'}
-                            {item.location && ` • Location: ${item.location}`}
-                          </p>
-                          {variance !== null && (
-                            <p className={`text-sm ${variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
-                              Variance: {variance > 0 ? '+' : ''}{variance}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            placeholder="Actual qty"
-                            value={actualQty ?? ''}
-                            onChange={(e) => {
-                              const value = e.target.value ? parseFloat(e.target.value) : null;
-                              if (value !== null) {
-                                handleUpdateCount(item.id, value);
-                              }
-                            }}
-                            className="w-24"
-                            step="0.01"
-                          />
-                          <span className="text-sm text-muted-foreground min-w-0">
-                            {item.base_unit?.name || 'units'}
-                          </span>
-                        </div>
-                      </div>
+                      <CountItemRow
+                        key={item.id}
+                        item={item}
+                        countItem={countItem}
+                        expectedQty={expectedQty}
+                        actualQty={actualQty}
+                        variance={variance}
+                        onUpdate={handleUpdateCount}
+                      />
                     );
                   })
                 )}
