@@ -24,11 +24,6 @@ const inventoryItemSchema = z.object({
   purchase_price: z.coerce.number().min(0, 'Price must be 0 or greater').optional(),
   sku: z.string().optional(),
   barcode: z.string().optional(),
-  current_stock: z.coerce.number().min(0, 'Current stock must be 0 or greater'),
-  minimum_threshold: z.coerce.number().min(0, 'Minimum threshold must be 0 or greater').optional(),
-  maximum_threshold: z.coerce.number().min(0, 'Maximum threshold must be 0 or greater').optional(),
-  reorder_point: z.coerce.number().min(0, 'Reorder point must be 0 or greater').optional(),
-  unit_cost: z.coerce.number().min(0, 'Unit cost must be 0 or greater').optional(),
   location: z.string().optional(),
 });
 
@@ -63,11 +58,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       purchase_price: undefined,
       sku: '',
       barcode: '',
-      current_stock: 0,
-      minimum_threshold: 0,
-      maximum_threshold: 100,
-      reorder_point: 10,
-      unit_cost: 0,
       location: '',
     },
   });
@@ -106,11 +96,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           purchase_price: item.purchase_price || undefined,
           sku: item.sku || '',
           barcode: item.barcode || '',
-          current_stock: item.current_stock,
-          minimum_threshold: item.minimum_threshold || 0,
-          maximum_threshold: item.maximum_threshold || 100,
-          reorder_point: item.reorder_point || 10,
-          unit_cost: item.unit_cost || 0,
           location: item.location || '',
         });
       }
@@ -132,11 +117,11 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         purchase_price: values.purchase_price,
         sku: values.sku,
         barcode: values.barcode,
-        current_stock: values.current_stock || 0,
-        minimum_threshold: values.minimum_threshold,
-        maximum_threshold: values.maximum_threshold,
-        reorder_point: values.reorder_point,
-        unit_cost: values.unit_cost,
+        current_stock: 0, // Default to 0 for master items
+        minimum_threshold: null,
+        maximum_threshold: null,
+        reorder_point: null,
+        unit_cost: calculatedUnitPrice || null, // Use calculated price instead of manual
         location: values.location,
         is_active: true,
         is_template: false,
@@ -376,95 +361,20 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               )}
             </div>
 
-            {/* Stock Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="current_stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Stock *</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="minimum_threshold"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Minimum Threshold</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="maximum_threshold"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Maximum Threshold</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="reorder_point"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reorder Point</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Additional Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="unit_cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Manual Unit Cost</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Storage Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Warehouse A, Shelf 5" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Storage Location */}
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Storage Location</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Warehouse A, Shelf 5" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-2 pt-4">
               <Button
