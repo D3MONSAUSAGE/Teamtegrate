@@ -138,8 +138,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         reorder_point: values.reorder_point,
         unit_cost: values.unit_cost,
         location: values.location,
-        organization_id: '',
-        created_by: '',
         is_active: true,
         is_template: false,
         sort_order: 0,

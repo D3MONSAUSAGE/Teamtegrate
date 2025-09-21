@@ -188,11 +188,16 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   }, [refreshUnits]);
 
   // CRUD Operations
-  const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>): Promise<InventoryItem> => {
-    const newItem = await inventoryItemsApi.create(item);
+  const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by'>): Promise<InventoryItem> => {
+    const itemWithOrgAndUser = { 
+      ...item, 
+      organization_id: user?.organizationId || '', 
+      created_by: user?.id || ''
+    };
+    const newItem = await inventoryItemsApi.create(itemWithOrgAndUser);
     await refreshItems();
     return newItem;
-  }, [refreshItems]);
+  }, [refreshItems, user?.organizationId, user?.id]);
 
   const updateItem = useCallback(async (id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
     const updatedItem = await inventoryItemsApi.update(id, updates);

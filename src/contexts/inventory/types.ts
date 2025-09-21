@@ -173,7 +173,7 @@ export interface InventoryContextType {
   unitsLoading: boolean;
   
   // Operations
-  createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price'>) => Promise<InventoryItem>;
+  createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by'>) => Promise<InventoryItem>;
   updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<InventoryItem>;
   getItemById: (id: string) => Promise<InventoryItem | null>;
   deleteItem: (id: string) => Promise<void>;
