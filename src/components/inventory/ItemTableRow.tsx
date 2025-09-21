@@ -22,8 +22,8 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>{item.location || 'N/A'}</TableCell>
       <TableCell>
         {item.purchase_unit && item.conversion_factor 
-          ? `${item.conversion_factor} ${item.base_unit?.name || 'items'} per ${item.purchase_unit}`
-          : item.purchase_unit || 'N/A'
+          ? `${item.conversion_factor} ${item.base_unit?.name || 'units'} per ${item.purchase_unit}`
+          : item.purchase_unit || 'Individual'
         }
       </TableCell>
       <TableCell>

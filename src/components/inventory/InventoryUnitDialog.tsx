@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInventory } from '@/contexts/inventory';
-import { Ruler } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 const unitSchema = z.object({
@@ -28,7 +28,7 @@ interface InventoryUnitDialogProps {
 }
 
 const UNIT_TYPES = [
-  { value: 'count', label: 'Count (pieces, items)' },
+  { value: 'count', label: 'Count (pieces, items, box, bag, case)' },
   { value: 'weight', label: 'Weight (pounds, ounces, kg)' },
   { value: 'volume', label: 'Volume (gallons, liters, cups)' },
   { value: 'length', label: 'Length (feet, meters, inches)' },
@@ -95,7 +95,7 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Ruler className="h-5 w-5 text-primary" />
+            <Package className="h-5 w-5 text-primary" />
             {unitId ? 'Edit Unit' : 'Create New Unit'}
           </DialogTitle>
         </DialogHeader>
@@ -106,10 +106,10 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
+                  <FormItem>
                   <FormLabel>Unit Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Pounds, Gallons, Each" {...field} />
+                    <Input placeholder="e.g., Box, Pieces, Pounds, Gallons" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,10 +120,10 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
               control={form.control}
               name="abbreviation"
               render={({ field }) => (
-                <FormItem>
+                  <FormItem>
                   <FormLabel>Abbreviation *</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., lbs, gal, ea" {...field} />
+                    <Input placeholder="e.g., box, pcs, lbs, gal" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

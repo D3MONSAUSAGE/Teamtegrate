@@ -268,7 +268,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {units.map((unit) => (
+                        {units.filter(unit => unit.unit_type === 'count' || unit.unit_type === 'weight' || unit.unit_type === 'volume').map((unit) => (
                           <SelectItem key={unit.id} value={unit.id}>
                             {unit.name} ({unit.abbreviation})
                           </SelectItem>
@@ -312,16 +312,21 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="box">Box</SelectItem>
-                          <SelectItem value="bag">Bag</SelectItem>
-                          <SelectItem value="case">Case</SelectItem>
-                          <SelectItem value="pack">Pack</SelectItem>
-                          <SelectItem value="roll">Roll</SelectItem>
-                          <SelectItem value="bottle">Bottle</SelectItem>
-                          <SelectItem value="container">Container</SelectItem>
-                          <SelectItem value="bundle">Bundle</SelectItem>
-                          <SelectItem value="individual">Individual</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          {units.filter(unit => unit.unit_type === 'count').map((unit) => (
+                            <SelectItem key={unit.id} value={unit.name.toLowerCase()}>
+                              {unit.name}
+                            </SelectItem>
+                          ))}
+                          <div className="border-t">
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start text-xs h-8"
+                              onClick={() => setIsUnitDialogOpen(true)}
+                            >
+                              <Plus className="h-3 w-3 mr-2" />
+                              Create New Package Type
+                            </Button>
+                          </div>
                         </SelectContent>
                       </Select>
                       <FormMessage />
