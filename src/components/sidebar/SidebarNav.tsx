@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Send,
   ClipboardList,
+  Package,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -69,6 +70,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
       { name: 'Documents', href: '/dashboard/documents', icon: FileText },
       { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
+      { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
       { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
       { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
       { name: 'Profile', href: '/dashboard/profile', icon: User },

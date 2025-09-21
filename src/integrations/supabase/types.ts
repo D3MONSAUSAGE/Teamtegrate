@@ -1988,6 +1988,253 @@ export type Database = {
           },
         ]
       }
+      inventory_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          current_value: number | null
+          id: string
+          is_resolved: boolean
+          item_id: string
+          organization_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          threshold_value: number | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          is_resolved?: boolean
+          item_id: string
+          organization_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          threshold_value?: number | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          is_resolved?: boolean
+          item_id?: string
+          organization_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          threshold_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_count_items: {
+        Row: {
+          actual_quantity: number | null
+          count_id: string
+          counted_at: string | null
+          counted_by: string | null
+          expected_quantity: number
+          id: string
+          item_id: string
+          notes: string | null
+          variance: number | null
+        }
+        Insert: {
+          actual_quantity?: number | null
+          count_id: string
+          counted_at?: string | null
+          counted_by?: string | null
+          expected_quantity: number
+          id?: string
+          item_id: string
+          notes?: string | null
+          variance?: number | null
+        }
+        Update: {
+          actual_quantity?: number | null
+          count_id?: string
+          counted_at?: string | null
+          counted_by?: string | null
+          expected_quantity?: number
+          id?: string
+          item_id?: string
+          notes?: string | null
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_count_items_count_id_fkey"
+            columns: ["count_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_count_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_counts: {
+        Row: {
+          conducted_by: string
+          count_date: string
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          conducted_by: string
+          count_date?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          conducted_by?: string
+          count_date?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          barcode: string | null
+          category: string | null
+          created_at: string
+          created_by: string
+          current_stock: number
+          description: string | null
+          id: string
+          is_active: boolean
+          location: string | null
+          maximum_threshold: number | null
+          minimum_threshold: number | null
+          name: string
+          organization_id: string
+          reorder_point: number | null
+          sku: string | null
+          supplier_info: Json | null
+          unit_cost: number | null
+          unit_of_measure: string
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          created_by: string
+          current_stock?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          maximum_threshold?: number | null
+          minimum_threshold?: number | null
+          name: string
+          organization_id: string
+          reorder_point?: number | null
+          sku?: string | null
+          supplier_info?: Json | null
+          unit_cost?: number | null
+          unit_of_measure?: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string
+          current_stock?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          maximum_threshold?: number | null
+          minimum_threshold?: number | null
+          name?: string
+          organization_id?: string
+          reorder_point?: number | null
+          sku?: string | null
+          supplier_info?: Json | null
+          unit_cost?: number | null
+          unit_of_measure?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          notes: string | null
+          organization_id: string
+          quantity: number
+          reference_number: string | null
+          transaction_date: string
+          transaction_type: string
+          unit_cost: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          organization_id: string
+          quantity: number
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type: string
+          unit_cost?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          organization_id?: string
+          quantity?: number
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          unit_cost?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           branch: string

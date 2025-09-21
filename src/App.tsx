@@ -47,6 +47,7 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import TermsPage from "@/pages/TermsPage";
 import CookiePolicyPage from "@/pages/CookiePolicyPage";
 import SecurityPage from "@/pages/SecurityPage";
+import InventoryPage from "@/pages/InventoryPage";
 
 const queryClient = new QueryClient();
 
@@ -98,10 +99,11 @@ function App() {
                    <Route path="employee-actions" element={<RoleProtectedRoute requiredRole="manager"><EmployeeActionsPage /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
-                  <Route path="finance" element={<FinancePage />} />
-                   <Route path="meetings" element={<MeetingsPage />} />
-                   <Route path="training" element={<TrainingPage />} />
-                   <Route path="checklists" element={<ChecklistsPage />} />
+                   <Route path="finance" element={<FinancePage />} />
+                   <Route path="inventory" element={<InventoryPage />} />
+                    <Route path="meetings" element={<MeetingsPage />} />
+                    <Route path="training" element={<TrainingPage />} />
+                    <Route path="checklists" element={<ChecklistsPage />} />
                 </Route>
                 
                 {/* Fallback for unmatched routes */}
