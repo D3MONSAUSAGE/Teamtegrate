@@ -128,8 +128,9 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     try {
       const data = await inventoryCategoriesApi.getAll();
       setCategories(data);
-    } catch (error) {
-      console.warn('Categories not available yet, skipping:', error.message);
+      console.log(`Loaded ${data.length} inventory categories`);
+    } catch (error: any) {
+      console.error('Error loading categories:', error);
       setCategories([]);
     } finally {
       setCategoriesLoading(false);
@@ -142,8 +143,9 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     try {
       const data = await inventoryUnitsApi.getAll();
       setUnits(data);
-    } catch (error) {
-      console.warn('Units not available yet, skipping:', error.message);
+      console.log(`Loaded ${data.length} inventory units`);
+    } catch (error: any) {
+      console.error('Error loading units:', error);
       setUnits([]);
     } finally {
       setUnitsLoading(false);
@@ -301,18 +303,35 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   }, []);
 
   const initializeCountItems = useCallback(async (countId: string, templateId?: string) => {
-    if (templateId) {
-      const templateItems = await inventoryTemplatesApi.getTemplateItems(templateId);
-      const countItems = templateItems.map(ti => ({
-        count_id: countId,
-        item_id: ti.item_id,
-        expected_quantity: ti.expected_quantity || 0,
-      }));
-      await inventoryCountsApi.bulkCreateCountItems(countItems);
-    } else {
-      await inventoryCountsApi.initializeCountItems(countId);
+    try {
+      if (templateId) {
+        console.log(`Initializing count items from template ${templateId} for count ${countId}`);
+        const templateItems = await inventoryTemplatesApi.getTemplateItems(templateId);
+        
+        if (!templateItems || templateItems.length === 0) {
+          throw new Error('Selected template has no items configured');
+        }
+        
+        const countItems = templateItems.map(ti => ({
+          count_id: countId,
+          item_id: ti.item_id,
+          expected_quantity: ti.expected_quantity || 0,
+        }));
+        
+        await inventoryCountsApi.bulkCreateCountItems(countItems);
+        console.log(`Successfully initialized ${countItems.length} count items from template`);
+      } else {
+        console.log(`Initializing count items from all active inventory for count ${countId}`);
+        await inventoryCountsApi.initializeCountItems(countId);
+      }
+      
+      // Refresh counts to get updated data
+      await refreshCounts();
+    } catch (error) {
+      console.error('Error initializing count items:', error);
+      throw error;
     }
-  }, []);
+  }, [refreshCounts]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([

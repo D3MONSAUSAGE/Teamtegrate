@@ -43,7 +43,7 @@ export const inventoryCountsApi = {
         inventory_items(*)
       `)
       .eq('count_id', countId)
-      .order('created_at');
+      .order('counted_at', { ascending: false, nullsFirst: false });
 
     if (error) throw error;
     return (data || []) as InventoryCountItem[];
@@ -77,27 +77,42 @@ export const inventoryCountsApi = {
   },
 
   async initializeCountItems(countId: string): Promise<void> {
-    // This would typically be done via a stored procedure or edge function
-    // For now, we'll create count items for all active inventory items
-    const { data: items, error: itemsError } = await supabase
-      .from('inventory_items')
-      .select('id, current_stock')
-      .eq('is_active', true);
+    try {
+      // Get all active inventory items with organization filtering
+      const { data: items, error: itemsError } = await supabase
+        .from('inventory_items')
+        .select('id, current_stock, organization_id')
+        .eq('is_active', true);
 
-    if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Error fetching inventory items for count initialization:', itemsError);
+        throw new Error(`Failed to fetch inventory items: ${itemsError.message}`);
+      }
 
-    if (items && items.length > 0) {
+      if (!items || items.length === 0) {
+        console.warn('No active inventory items found for count initialization');
+        return;
+      }
+
       const countItems = items.map(item => ({
         count_id: countId,
         item_id: item.id,
-        expected_quantity: item.current_stock,
+        expected_quantity: item.current_stock || 0,
       }));
 
       const { error } = await supabase
         .from('inventory_count_items')
         .insert(countItems);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting count items:', error);
+        throw new Error(`Failed to initialize count items: ${error.message}`);
+      }
+
+      console.log(`Successfully initialized ${countItems.length} count items for count ${countId}`);
+    } catch (error) {
+      console.error('Error in initializeCountItems:', error);
+      throw error;
     }
   },
 
