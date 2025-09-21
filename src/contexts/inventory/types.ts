@@ -164,7 +164,7 @@ export interface InventoryContextType {
   addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
   removeItemFromTemplate: (templateId: string, itemId: string) => Promise<void>;
   duplicateTemplate: (templateId: string, newName?: string) => Promise<InventoryTemplate>;
-  assignTemplateToTeam: (templateId: string, teamId: string, assignedBy: string) => Promise<TeamInventoryAssignment>;
+  assignTemplateToTeam: (templateId: string, teamId: string) => Promise<TeamInventoryAssignment>;
   getTeamAssignments: () => TeamInventoryAssignment[];
   getTeamInventories: (teamId: string) => TeamInventoryAssignment[];
   initializeCountItems: (countId: string, templateId?: string) => Promise<void>;
