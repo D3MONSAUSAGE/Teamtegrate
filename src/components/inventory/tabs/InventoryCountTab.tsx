@@ -34,7 +34,7 @@ export const InventoryCountTab: React.FC = () => {
     
   const filteredItems = countableItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -331,7 +331,7 @@ export const InventoryCountTab: React.FC = () => {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Expected: {expectedQty} {item.unit_of_measure}
+                            Expected: {expectedQty} {item.base_unit?.name || 'units'}
                             {item.location && ` • Location: ${item.location}`}
                           </p>
                           {variance !== null && (
@@ -356,7 +356,7 @@ export const InventoryCountTab: React.FC = () => {
                             step="0.01"
                           />
                           <span className="text-sm text-muted-foreground min-w-0">
-                            {item.unit_of_measure}
+                            {item.base_unit?.name || 'units'}
                           </span>
                         </div>
                       </div>

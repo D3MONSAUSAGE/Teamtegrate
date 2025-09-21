@@ -113,7 +113,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
           </CardTitle>
           <CardDescription className="space-y-1">
             <div>SKU: {currentItem.sku || 'N/A'}</div>
-            <div>Category: {currentItem.category || 'N/A'}</div>
+            <div>Category: {currentItem.category?.name || 'N/A'}</div>
             {currentItem.location && <div>Location: {currentItem.location}</div>}
           </CardDescription>
         </CardHeader>
@@ -142,7 +142,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
               }`}>
                 <AlertTriangle className="h-4 w-4" />
                 <span className="font-medium">
-                  Variance: {variance > 0 ? '+' : ''}{variance} {currentItem.unit_of_measure}
+                  Variance: {variance > 0 ? '+' : ''}{variance} {currentItem.base_unit?.name || 'units'}
                 </span>
               </div>
             )}

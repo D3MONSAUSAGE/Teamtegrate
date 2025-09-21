@@ -47,7 +47,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
       !templateItemIds.includes(item.id) &&
       (item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
        item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       item.category?.toLowerCase().includes(searchTerm.toLowerCase()))
+       item.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setAvailableItems(filtered);
   }, [items, templateItems, searchTerm]);
@@ -163,7 +163,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                         </div>
                         {item.category && (
                           <Badge variant="secondary" className="text-xs">
-                            {item.category}
+                            {item.category.name}
                           </Badge>
                         )}
                       </div>
