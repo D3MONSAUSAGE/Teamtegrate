@@ -16,7 +16,6 @@ interface TicketNotificationData {
   priority?: string;
   created_at: string;
   organization_id: string;
-  ticket_number?: string;
 }
 
 interface UserData {
@@ -35,35 +34,6 @@ interface TaskNotificationData {
   created_at: string;
   organization_id: string;
   project_title?: string;
-}
-
-export async function notifyTaskAssigned(task: any, assignees: any[], actor: any) {
-  // assignees must be user objects with .email
-  const recipients = (assignees ?? [])
-    .map((a) => a?.email?.trim()?.toLowerCase())
-    .filter(Boolean);
-
-  if (recipients.length === 0) {
-    console.warn("[notifyTaskAssigned] No recipients with email", { assignees });
-    return { sent: 0, results: [] };
-  }
-
-  const { data, error } = await supabase.functions.invoke("send-task-notifications", {
-    body: {
-      kind: "task_assigned",
-      recipients, // array; the edge function loops
-      task: { id: task.id, title: task.title, due_at: task.due_at ?? task.deadline, description: task.description },
-      actor: { id: actor?.id, email: actor?.email },
-    },
-  });
-
-  if (error) {
-    console.error("[notifyTaskAssigned] invoke failed", error);
-    return { sent: 0, error };
-  }
-
-  console.log("[notifyTaskAssigned] invoke ok", data);
-  return data;
 }
 
 // Centralized notification orchestrator - Frontend calls edge functions
@@ -172,6 +142,50 @@ export const notifications = {
       console.log('[Notifications] Ticket closed notifications sent successfully:', data);
     } catch (error) {
       console.error('[Notifications] Error in notifyTicketClosed:', error);
+    }
+  },
+
+  // Task Assignment - notify assigned user(s)
+  async notifyTaskAssigned(task: TaskNotificationData, assignees: UserData[], actor: UserData) {
+    try {
+      console.log(`[Notifications] Triggering task assigned notifications: ${task.id} to ${assignees.length} user(s)`);
+
+      // Send notification to each assignee individually
+      for (const assignee of assignees) {
+        if (!assignee.email) {
+          console.error('[Notifications] Missing assignee email for:', assignee);
+          continue;
+        }
+
+        console.log(`[Notifications] Sending task assignment email to: ${assignee.email}`);
+
+        const { data, error } = await supabase.functions.invoke('send-task-notifications', {
+          body: {
+            kind: 'task_assigned',
+            to: assignee.email,
+            task: {
+              id: task.id,
+              title: task.title,
+              description: task.description,
+              due_at: task.deadline,
+              priority: task.priority
+            },
+            actor: {
+              id: actor.id,
+              email: actor.email,
+              name: actor.name
+            }
+          }
+        });
+
+        if (error) {
+          console.error(`[Notifications] Failed to send task assigned notification to ${assignee.email}:`, error);
+        } else {
+          console.log(`[Notifications] Task assigned notification sent successfully to ${assignee.email}:`, data);
+        }
+      }
+    } catch (error) {
+      console.error('[Notifications] Error in notifyTaskAssigned:', error);
     }
   },
 

@@ -7,7 +7,6 @@ import { fetchUserInfo } from './fetchUserInfo';
 import { createTaskAssignmentNotification } from './createNotification';
 import { updateTaskStates } from './updateTaskStates';
 import { getUserOrganizationId } from '@/utils/typeCompatibility';
-import { notifyTaskAssigned } from '@/lib/notifications';
 
 /**
  * Assign a task to a specific user
@@ -74,6 +73,8 @@ export const assignTaskToUser = async (
             .single();
 
           if (assigneeData) {
+            const { notifications } = await import('@/lib/notifications');
+            
             const taskNotification = {
               id: task.id,
               title: task.title,
@@ -99,7 +100,7 @@ export const assignTaskToUser = async (
             };
 
             console.log('[assignTaskToUser] Sending email notification');
-            await notifyTaskAssigned(taskNotification, assignees, actor);
+            await notifications.notifyTaskAssigned(taskNotification, assignees, actor);
           }
         } catch (error) {
           console.error('[assignTaskToUser] Error sending email notification:', error);

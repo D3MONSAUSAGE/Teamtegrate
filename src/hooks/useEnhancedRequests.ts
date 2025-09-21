@@ -169,8 +169,7 @@ export function useEnhancedRequests() {
             status: requestRecord.status,
             priority: requestRecord.priority,
             created_at: requestRecord.created_at,
-            organization_id: requestRecord.organization_id,
-            ticket_number: requestRecord.ticket_number
+            organization_id: requestRecord.organization_id
           },
           {
             id: user.id,
@@ -277,8 +276,7 @@ export function useEnhancedRequests() {
             status: requestRecord.status,
             priority: requestRecord.priority || 'medium',
             created_at: requestRecord.created_at,
-            organization_id: requestRecord.organization_id,
-            ticket_number: requestRecord.ticket_number
+            organization_id: requestRecord.organization_id
           },
           'draft',
           'submitted',
@@ -359,8 +357,7 @@ export function useEnhancedRequests() {
             status: requestRecord.status,
             priority: requestRecord.priority || 'medium',
             created_at: requestRecord.created_at,
-            organization_id: requestRecord.organization_id,
-            ticket_number: requestRecord.ticket_number
+            organization_id: requestRecord.organization_id
           },
           oldStatus,
           newStatus,
@@ -382,8 +379,7 @@ export function useEnhancedRequests() {
               status: requestRecord.status,
               priority: requestRecord.priority || 'medium',
               created_at: requestRecord.created_at,
-              organization_id: requestRecord.organization_id,
-              ticket_number: requestRecord.ticket_number
+              organization_id: requestRecord.organization_id
             },
             comments || 'Ticket has been resolved.',
             {

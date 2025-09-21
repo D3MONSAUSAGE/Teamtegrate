@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { notifyTaskAssigned } from '@/lib/notifications';
+import { notifications } from '@/lib/notifications';
 
 /**
  * Create a notification for task assignment
@@ -68,7 +68,7 @@ export const createTaskAssignmentNotification = async (
           name: userData.name || userData.email
         };
 
-        await notifyTaskAssigned(taskNotification, [assignee], assignee);
+        await notifications.notifyTaskAssigned(taskNotification, [assignee], assignee);
       }
     } catch (emailError) {
       console.log('Email notification failed, but task assignment succeeded:', emailError);
@@ -161,7 +161,7 @@ export const createMultipleTaskAssignmentNotifications = async (
           };
 
           console.log(`[EMAIL] Sending task assignment email to: ${assignee.email}`);
-          return notifyTaskAssigned(taskNotification, [assignee], actor);
+          return notifications.notifyTaskAssigned(taskNotification, [assignee], actor);
         });
 
         const emailResults = await Promise.allSettled(emailPromises);
