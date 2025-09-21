@@ -138,8 +138,11 @@ export interface InventoryTemplateItem {
   template_id: string;
   item_id: string;
   expected_quantity: number;
+  minimum_quantity?: number;
+  maximum_quantity?: number;
   sort_order: number;
   created_at: string;
+  updated_at: string;
   item?: InventoryItem;
 }
 
@@ -210,7 +213,7 @@ export interface InventoryContextType {
   createTemplate: (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryTemplate>;
   updateTemplate: (id: string, updates: Partial<InventoryTemplate>) => Promise<InventoryTemplate>;
   getTemplateItems: (templateId: string) => Promise<InventoryTemplateItem[]>;
-  addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
+  addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, minimumQuantity?: number, maximumQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
   removeItemFromTemplate: (templateId: string, itemId: string) => Promise<void>;
   duplicateTemplate: (templateId: string, newName?: string) => Promise<InventoryTemplate>;
   assignTemplateToTeam: (templateId: string, teamId: string) => Promise<TeamInventoryAssignment>;

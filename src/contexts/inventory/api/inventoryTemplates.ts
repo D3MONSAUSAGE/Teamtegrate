@@ -47,13 +47,18 @@ export const inventoryTemplatesApi = {
       .order('sort_order');
 
     if (error) throw error;
-    return (data || []) as InventoryTemplateItem[];
+    return (data || []).map((item: any) => ({
+      ...item,
+      updated_at: item.updated_at || item.created_at || new Date().toISOString()
+    })) as InventoryTemplateItem[];
   },
 
   async addItemToTemplate(
     templateId: string, 
     itemId: string, 
     expectedQuantity: number = 0,
+    minimumQuantity?: number,
+    maximumQuantity?: number,
     sortOrder: number = 0
   ): Promise<InventoryTemplateItem> {
     const { data, error } = await supabase
@@ -62,6 +67,8 @@ export const inventoryTemplatesApi = {
         template_id: templateId,
         item_id: itemId,
         expected_quantity: expectedQuantity,
+        minimum_quantity: minimumQuantity,
+        maximum_quantity: maximumQuantity,
         sort_order: sortOrder
       }])
       .select()

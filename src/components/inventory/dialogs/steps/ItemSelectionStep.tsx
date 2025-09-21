@@ -41,6 +41,8 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
     const newSelectedItem = {
       item,
       expectedQuantity: 0,
+      minimumQuantity: undefined,
+      maximumQuantity: undefined,
       sortOrder: formData.selectedItems.length
     };
 
@@ -55,11 +57,11 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
     });
   };
 
-  const updateItemQuantity = (itemId: string, expectedQuantity: number) => {
+  const updateItemQuantity = (itemId: string, field: 'expectedQuantity' | 'minimumQuantity' | 'maximumQuantity', value: number | undefined) => {
     updateFormData({
       selectedItems: formData.selectedItems.map(selected =>
         selected.item.id === itemId
-          ? { ...selected, expectedQuantity: Math.max(0, expectedQuantity) }
+          ? { ...selected, [field]: field === 'expectedQuantity' ? Math.max(0, value || 0) : value }
           : selected
       )
     });
@@ -72,6 +74,8 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
       .map((item, index) => ({
         item,
         expectedQuantity: 0,
+        minimumQuantity: undefined,
+        maximumQuantity: undefined,
         sortOrder: formData.selectedItems.length + index
       }));
 
@@ -125,18 +129,49 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                     </p>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor={`qty-${selected.item.id}`} className="text-xs whitespace-nowrap">
-                      Expected:
-                    </Label>
-                    <Input
-                      id={`qty-${selected.item.id}`}
-                      type="number"
-                      min="0"
-                      value={selected.expectedQuantity}
-                      onChange={(e) => updateItemQuantity(selected.item.id, parseInt(e.target.value) || 0)}
-                      className="w-20"
-                    />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label htmlFor={`min-${selected.item.id}`} className="text-xs">
+                        Min:
+                      </Label>
+                      <Input
+                        id={`min-${selected.item.id}`}
+                        type="number"
+                        min="0"
+                        value={selected.minimumQuantity || ''}
+                        onChange={(e) => updateItemQuantity(selected.item.id, 'minimumQuantity', e.target.value ? parseInt(e.target.value) : undefined)}
+                        className="w-full"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`exp-${selected.item.id}`} className="text-xs">
+                        Expected:
+                      </Label>
+                      <Input
+                        id={`exp-${selected.item.id}`}
+                        type="number"
+                        min="0"
+                        value={selected.expectedQuantity || ''}
+                        onChange={(e) => updateItemQuantity(selected.item.id, 'expectedQuantity', parseInt(e.target.value) || 0)}
+                        className="w-full"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`max-${selected.item.id}`} className="text-xs">
+                        Max:
+                      </Label>
+                      <Input
+                        id={`max-${selected.item.id}`}
+                        type="number"
+                        min="0"
+                        value={selected.maximumQuantity || ''}
+                        onChange={(e) => updateItemQuantity(selected.item.id, 'maximumQuantity', e.target.value ? parseInt(e.target.value) : undefined)}
+                        className="w-full"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                   
                   <Button
@@ -264,9 +299,10 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
               <h4 className="font-medium text-sm">Item Selection Tips</h4>
               <ul className="text-sm text-muted-foreground mt-1 space-y-1">
                 <li>• Set expected quantities to help teams know normal stock levels</li>
+                <li>• Use minimum/maximum quantities to define acceptable count ranges</li>
+                <li>• Expected quantity is required; min/max are optional for flexibility</li>
                 <li>• Use search and category filters to find items quickly</li>
                 <li>• Add commonly counted items first for better organization</li>
-                <li>• You can reorder items by dragging the grip handles</li>
               </ul>
             </div>
           </div>

@@ -2306,6 +2306,8 @@ export type Database = {
           expected_quantity: number | null
           id: string
           item_id: string
+          maximum_quantity: number | null
+          minimum_quantity: number | null
           sort_order: number | null
           template_id: string
         }
@@ -2314,6 +2316,8 @@ export type Database = {
           expected_quantity?: number | null
           id?: string
           item_id: string
+          maximum_quantity?: number | null
+          minimum_quantity?: number | null
           sort_order?: number | null
           template_id: string
         }
@@ -2322,6 +2326,8 @@ export type Database = {
           expected_quantity?: number | null
           id?: string
           item_id?: string
+          maximum_quantity?: number | null
+          minimum_quantity?: number | null
           sort_order?: number | null
           template_id?: string
         }
