@@ -31,6 +31,7 @@ interface UseInventoryOperationsProps {
   refreshTeamAssignments: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
+  refreshTemplateItems: () => Promise<void>;
 }
 
 export const useInventoryOperations = ({
@@ -42,6 +43,7 @@ export const useInventoryOperations = ({
   refreshTeamAssignments,
   refreshCategories,
   refreshUnits,
+  refreshTemplateItems,
 }: UseInventoryOperationsProps) => {
   const { user } = useAuth();
   const { handleAsyncOperation } = useInventoryErrorHandler();
@@ -329,12 +331,17 @@ export const useInventoryOperations = ({
   }, [handleAsyncOperation]);
 
   const addItemToTemplate = useCallback(async (templateId: string, itemId: string, expectedQuantity: number = 0, minimumQuantity?: number, maximumQuantity?: number, sortOrder: number = 0): Promise<InventoryTemplateItem | null> => {
-    return await handleAsyncOperation(
+    const result = await handleAsyncOperation(
       () => inventoryTemplatesApi.addItemToTemplate(templateId, itemId, expectedQuantity, minimumQuantity, maximumQuantity, sortOrder),
       'Add Item to Template',
       'Item added to template successfully'
     );
-  }, [handleAsyncOperation]);
+    
+    if (result) {
+      await refreshTemplateItems();
+    }
+    return result;
+  }, [handleAsyncOperation, refreshTemplateItems]);
 
   const removeItemFromTemplate = useCallback(async (templateId: string, itemId: string): Promise<void> => {
     const result = await handleAsyncOperation(
@@ -344,9 +351,9 @@ export const useInventoryOperations = ({
     );
     
     if (result !== null) {
-      await refreshTemplates();
+      await refreshTemplateItems();
     }
-  }, [handleAsyncOperation, refreshTemplates]);
+  }, [handleAsyncOperation, refreshTemplateItems]);
 
   const duplicateTemplate = useCallback(async (templateId: string, newName?: string): Promise<InventoryTemplate | null> => {
     const result = await handleAsyncOperation(

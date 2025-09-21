@@ -53,6 +53,7 @@ interface UseInventoryDataReturn {
   refreshTeamAssignments: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
+  refreshTemplateItems: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -193,6 +194,28 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     }
   }, [user?.organizationId, handleAsyncOperation]);
 
+  const refreshTemplateItems = useCallback(async () => {
+    if (!user?.organizationId) return;
+    try {
+      // Get all template items across all templates
+      const allTemplateItems: InventoryTemplateItem[] = [];
+      
+      for (const template of templates) {
+        const templateItems = await handleAsyncOperation(
+          () => inventoryTemplatesApi.getTemplateItems(template.id),
+          'Load Template Items'
+        );
+        if (templateItems) {
+          allTemplateItems.push(...templateItems);
+        }
+      }
+      
+      setTemplateItems(allTemplateItems);
+    } catch (error) {
+      console.error('Error refreshing template items:', error);
+    }
+  }, [user?.organizationId, handleAsyncOperation, templates]);
+
   const refreshAll = useCallback(async () => {
     if (!user?.organizationId) return;
     
@@ -208,6 +231,9 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     ];
     
     await Promise.allSettled(refreshFunctions.map(fn => fn()));
+    
+    // Refresh template items after templates are loaded
+    await refreshTemplateItems();
   }, [
     user?.organizationId,
     refreshItems,
@@ -217,7 +243,8 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshTemplates,
     refreshTeamAssignments,
     refreshCategories,
-    refreshUnits
+    refreshUnits,
+    refreshTemplateItems
   ]);
 
   // Initial data load
@@ -261,6 +288,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshTemplateItems,
     refreshAll,
   };
 };

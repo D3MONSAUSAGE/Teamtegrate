@@ -36,6 +36,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshTemplateItems,
     refreshAll,
   } = useInventoryData();
 
@@ -49,6 +50,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshTemplateItems,
   });
 
   // Helper function for team inventory assignments
@@ -96,6 +98,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshTemplateItems,
     refreshData: refreshAll,
   }), [
     // Data dependencies
@@ -133,6 +136,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshTemplateItems,
     refreshAll,
   ]);
 

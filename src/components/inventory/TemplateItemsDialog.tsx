@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Search, Plus, X, Package, ArrowRight } from 'lucide-react';
+import { Search, Plus, X, Package, ArrowRight, ShoppingCart } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { useToast } from '@/hooks/use-toast';
 import { InventoryItem, InventoryTemplateItem } from '@/contexts/inventory/types';
@@ -24,46 +24,36 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   templateId,
   templateName
 }) => {
-  const { items, getTemplateItems, addItemToTemplate, removeItemFromTemplate } = useInventory();
+  const { items, templateItems, addItemToTemplate, removeItemFromTemplate, refreshTemplateItems } = useInventory();
   const { toast } = useToast();
   
-  const [templateItems, setTemplateItems] = useState<InventoryTemplateItem[]>([]);
-  const [availableItems, setAvailableItems] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [expectedQuantity, setExpectedQuantity] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && templateId) {
-      loadTemplateItems();
-    }
-  }, [isOpen, templateId]);
+  // Get template items for this specific template from global state
+  const currentTemplateItems = useMemo(() => {
+    return templateItems.filter(ti => ti.template_id === templateId);
+  }, [templateItems, templateId]);
 
-  useEffect(() => {
-    // Filter available items (exclude those already in template)
-    const templateItemIds = templateItems.map(ti => ti.item_id);
-    const filtered = items.filter(item => 
+  // Filter available items (exclude those already in template)
+  const availableItems = useMemo(() => {
+    const templateItemIds = currentTemplateItems.map(ti => ti.item_id);
+    return items.filter(item => 
       !templateItemIds.includes(item.id) &&
       (item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
        item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
        item.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    setAvailableItems(filtered);
-  }, [items, templateItems, searchTerm]);
+  }, [items, currentTemplateItems, searchTerm]);
 
-  const loadTemplateItems = async () => {
-    try {
-      const data = await getTemplateItems(templateId);
-      setTemplateItems(data);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load template items",
-        variant: "destructive",
-      });
+  // Refresh template items when dialog opens
+  useEffect(() => {
+    if (isOpen && templateId) {
+      refreshTemplateItems();
     }
-  };
+  }, [isOpen, templateId, refreshTemplateItems]);
 
   const handleAddItem = async () => {
     if (!selectedItem) return;
@@ -71,7 +61,6 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await addItemToTemplate(templateId, selectedItem.id, expectedQuantity);
-      await loadTemplateItems();
       setSelectedItem(null);
       setExpectedQuantity(0);
       toast({
@@ -89,11 +78,29 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     }
   };
 
+  const handleQuickAdd = async (item: InventoryItem) => {
+    setIsLoading(true);
+    try {
+      await addItemToTemplate(templateId, item.id, 0);
+      toast({
+        title: "Success",
+        description: `${item.name} added to template`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item to template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleRemoveItem = async (itemId: string) => {
     setIsLoading(true);
     try {
       await removeItemFromTemplate(templateId, itemId);
-      await loadTemplateItems();
       toast({
         title: "Success",
         description: "Item removed from template",
@@ -115,7 +122,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh]">
+      <DialogContent className="max-w-7xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
@@ -123,49 +130,78 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-          {/* Available Items Panel */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold mb-2">Available Items</h3>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        <div className="grid grid-cols-3 gap-6 overflow-hidden">
+          {/* Available Items Panel - Enhanced */}
+          <div className="col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">Available Items</h3>
+              <Badge variant="outline" className="text-sm">
+                {availableItems.length} items
+              </Badge>
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search items by name, SKU, or category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
 
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {availableItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? 'No items found matching your search' : 'All items are already in this template'}
+                <div className="text-center py-12 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-lg font-medium mb-2">
+                    {searchTerm ? 'No items found' : 'All items added'}
+                  </div>
+                  <div className="text-sm">
+                    {searchTerm 
+                      ? 'Try adjusting your search terms' 
+                      : 'All available items are already in this template'}
+                  </div>
                 </div>
               ) : (
                 availableItems.map((item) => (
                   <Card 
                     key={item.id} 
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedItem?.id === item.id ? 'ring-2 ring-primary' : ''
+                    className={`cursor-pointer transition-all hover:shadow-md border-2 ${
+                      selectedItem?.id === item.id 
+                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
                     }`}
                     onClick={() => setSelectedItem(item)}
                   >
-                    <CardContent className="p-3">
+                    <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            SKU: {item.sku || 'N/A'} | Stock: {item.current_stock}
+                        <div className="flex-1">
+                          <div className="font-medium text-lg">{item.name}</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            <span className="font-medium">SKU:</span> {item.sku || 'N/A'} • 
+                            <span className="font-medium"> Stock:</span> {item.current_stock}
                           </div>
                         </div>
-                        {item.category && (
-                          <Badge variant="secondary" className="text-xs">
-                            {item.category.name}
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {item.category && (
+                            <Badge variant="secondary" className="text-xs">
+                              {item.category.name}
+                            </Badge>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickAdd(item);
+                            }}
+                            disabled={isLoading}
+                            className="ml-2"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -173,17 +209,17 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
               )}
             </div>
 
-            {/* Add Item Section */}
+            {/* Add Item Section - Enhanced */}
             {selectedItem && (
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 bg-muted/30 p-4 rounded-lg">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
-                    <span className="font-medium">Add: {selectedItem.name}</span>
+                    <ArrowRight className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="expected-qty">Expected Quantity</Label>
+                      <Label htmlFor="expected-qty" className="text-sm font-medium">Expected Quantity</Label>
                       <Input
                         id="expected-qty"
                         type="number"
@@ -191,16 +227,17 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                         value={expectedQuantity}
                         onChange={(e) => setExpectedQuantity(Number(e.target.value))}
                         placeholder="0"
+                        className="mt-1"
                       />
                     </div>
                     <div className="flex items-end">
                       <Button
                         onClick={handleAddItem}
                         disabled={isLoading}
-                        className="w-full"
+                        className="w-full h-10"
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add to Template
                       </Button>
                     </div>
                   </div>
@@ -209,39 +246,58 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
             )}
           </div>
 
-          <Separator orientation="vertical" className="hidden lg:block" />
-
-          {/* Template Items Panel */}
-          <div className="space-y-4">
+          {/* Template Items Panel - Enhanced */}
+          <div className="space-y-4 border-l pl-6 bg-primary/5 -mr-6 pr-6 py-4 rounded-l-lg">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Template Items ({templateItems.length})</h3>
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">Template Items</h3>
+              </div>
+              <Badge variant="default" className="text-sm">
+                {currentTemplateItems.length} items
+              </Badge>
             </div>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {templateItems.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No items in this template yet
+            <div className="text-sm text-muted-foreground mb-4">
+              Items in this template will be used for inventory counts and assignments.
+            </div>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {currentTemplateItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-lg font-medium mb-2">No items yet</div>
+                  <div className="text-sm">
+                    Add items from the left panel to build your template
+                  </div>
                 </div>
               ) : (
-                templateItems.map((templateItem) => {
+                currentTemplateItems.map((templateItem) => {
                   const itemDetails = getItemDetails(templateItem.item_id);
                   if (!itemDetails) return null;
 
                   return (
-                    <Card key={templateItem.id}>
-                      <CardContent className="p-3">
+                    <Card key={templateItem.id} className="border-2">
+                      <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="font-medium">{itemDetails.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Expected: {templateItem.expected_quantity} | Current Stock: {itemDetails.current_stock}
+                            <div className="font-medium text-lg">{itemDetails.name}</div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              <span className="font-medium">Expected:</span> {templateItem.expected_quantity} • 
+                              <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
                             </div>
+                            {templateItem.minimum_quantity !== null && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Min: {templateItem.minimum_quantity} • Max: {templateItem.maximum_quantity || 'N/A'}
+                              </div>
+                            )}
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveItem(templateItem.item_id)}
                             disabled={isLoading}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -255,7 +311,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-4 border-t">
           <Button variant="outline" onClick={onClose}>
             Done
           </Button>

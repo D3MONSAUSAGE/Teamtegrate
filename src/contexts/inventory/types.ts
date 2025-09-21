@@ -231,5 +231,6 @@ export interface InventoryContextType {
   refreshTeamAssignments: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
+  refreshTemplateItems: () => Promise<void>;
   refreshData: () => Promise<void>;
 }
