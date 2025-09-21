@@ -42,7 +42,7 @@ const EnhancedCreateRoomDialog: React.FC<EnhancedCreateRoomDialogProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
-  const [selectedTeamId, setSelectedTeamId] = useState(preselectedTeamId || '');
+  const [selectedTeamId, setSelectedTeamId] = useState(preselectedTeamId || 'none');
   const [loading, setLoading] = useState(false);
 
   const canCreate = canCreateChatRoom();
@@ -57,14 +57,14 @@ const EnhancedCreateRoomDialog: React.FC<EnhancedCreateRoomDialogProps> = ({
         name.trim(), 
         description.trim() || undefined, 
         isPublic,
-        selectedTeamId || undefined
+        (selectedTeamId && selectedTeamId !== 'none') ? selectedTeamId : undefined
       );
       
       // Reset form
       setName('');
       setDescription('');
       setIsPublic(false);
-      setSelectedTeamId('');
+      setSelectedTeamId('none');
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create room:', error);
@@ -159,7 +159,7 @@ const EnhancedCreateRoomDialog: React.FC<EnhancedCreateRoomDialogProps> = ({
                   <SelectValue placeholder="Select a team..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No team association</SelectItem>
+                  <SelectItem value="none">No team association</SelectItem>
                   {userTeams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const EnhancedCreateRoomDialog: React.FC<EnhancedCreateRoomDialogProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-              {selectedTeamId && (
+              {selectedTeamId && selectedTeamId !== 'none' && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Team members will be automatically invited to this room
                 </p>

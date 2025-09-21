@@ -398,14 +398,14 @@ export const ComprehensiveReportGenerator: React.FC<ComprehensiveReportGenerator
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Teams</label>
                       <Select
-                        value={reportConfig.teamIds?.[0] || ''}
-                        onValueChange={(value) => updateConfig({ teamIds: value ? [value] : [] })}
+                        value={reportConfig.teamIds?.[0] || 'all'}
+                        onValueChange={(value) => updateConfig({ teamIds: value && value !== 'all' ? [value] : [] })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select team (optional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Teams</SelectItem>
+                          <SelectItem value="all">All Teams</SelectItem>
                           {availableTeams.map(team => (
                             <SelectItem key={team.id} value={team.id}>
                               {team.name}
