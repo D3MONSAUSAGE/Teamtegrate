@@ -221,6 +221,7 @@ export interface InventoryContextType {
   getTeamAssignments: () => TeamInventoryAssignment[];
   getTeamInventories: (teamId: string) => TeamInventoryAssignment[];
   initializeCountItems: (countId: string, templateId?: string) => Promise<void>;
+  repairCountExpectedQuantities: (countId: string) => Promise<void>;
   
   // Refresh functions
   refreshItems: () => Promise<void>;

@@ -388,6 +388,16 @@ export const useInventoryOperations = ({
     await refreshCounts();
   }, [handleAsyncOperation, refreshCounts]);
 
+  const repairCountExpectedQuantities = useCallback(async (countId: string): Promise<void> => {
+    await handleAsyncOperation(
+      () => inventoryCountsApi.repairCountExpectedQuantities(countId),
+      'Repair Count Expected Quantities',
+      'Count expected quantities repaired successfully'
+    );
+    
+    await refreshCounts();
+  }, [handleAsyncOperation, refreshCounts]);
+
   return {
     // Item operations
     createItem,
@@ -414,6 +424,7 @@ export const useInventoryOperations = ({
     updateCountItem,
     completeInventoryCount,
     initializeCountItems,
+    repairCountExpectedQuantities,
     
     // Alert operations
     resolveAlert,

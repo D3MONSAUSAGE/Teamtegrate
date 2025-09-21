@@ -13,7 +13,7 @@ import { BatchCountInterface } from '../BatchCountInterface';
 
 
 export const InventoryCountTab: React.FC = () => {
-  const { items, counts, templates, startInventoryCount, completeInventoryCount, initializeCountItems } = useInventory();
+  const { items, counts, templates, startInventoryCount, completeInventoryCount, initializeCountItems, repairCountExpectedQuantities } = useInventory();
   const { toast } = useToast();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
@@ -111,6 +111,26 @@ export const InventoryCountTab: React.FC = () => {
         variant: 'destructive',
       });
       throw error; // Re-throw to let the component handle loading state
+    }
+  };
+
+  const handleRepairCount = async () => {
+    if (!activeCount) return;
+    
+    try {
+      await repairCountExpectedQuantities(activeCount);
+      await loadCountItems(activeCount); // Reload to show updated quantities
+      toast({
+        title: 'Success',
+        description: 'Expected quantities have been repaired',
+      });
+    } catch (error) {
+      console.error('Failed to repair expected quantities:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to repair expected quantities',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -263,6 +283,28 @@ export const InventoryCountTab: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Debug/Repair Section for broken counts */}
+      {countItems.some(item => item.expected_quantity === 0) && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-amber-800">Expected quantities need repair</h4>
+                <p className="text-sm text-amber-700">Some items show expected quantity of 0. This might cause input issues.</p>
+              </div>
+              <Button
+                onClick={handleRepairCount}
+                variant="outline"
+                size="sm"
+                className="border-amber-300 text-amber-800 hover:bg-amber-100"
+              >
+                Repair Quantities
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Batch Count Interface */}
       <BatchCountInterface

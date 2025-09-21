@@ -66,14 +66,87 @@ export const inventoryCountsApi = {
 
     const { error } = await supabase
       .from('inventory_count_items')
-      .upsert({
-        count_id: countId,
-        item_id: itemId,
-        expected_quantity: 0, // This will be updated by a trigger or separate call
-        ...updateData,
-      });
+      .update(updateData)
+      .eq('count_id', countId)
+      .eq('item_id', itemId);
 
     if (error) throw error;
+  },
+
+  async repairCountExpectedQuantities(countId: string): Promise<void> {
+    try {
+      // Get the count to find its template_id
+      const { data: count, error: countError } = await supabase
+        .from('inventory_counts')
+        .select('template_id')
+        .eq('id', countId)
+        .single();
+
+      if (countError) throw countError;
+
+      if (count.template_id) {
+        // Get template items with their expected quantities
+        const { data: templateItems, error: templateError } = await supabase
+          .from('inventory_template_items')
+          .select('item_id, expected_quantity')
+          .eq('template_id', count.template_id);
+
+        if (templateError) throw templateError;
+
+        // Update count items with correct expected quantities
+        const updatePromises = templateItems.map(templateItem => 
+          supabase
+            .from('inventory_count_items')
+            .update({ expected_quantity: templateItem.expected_quantity })
+            .eq('count_id', countId)
+            .eq('item_id', templateItem.item_id)
+        );
+
+        const results = await Promise.all(updatePromises);
+        const errors = results.filter(result => result.error);
+        
+        if (errors.length > 0) {
+          throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+        }
+
+        // Update count totals
+        await this.updateCountTotals(countId);
+        
+        console.log(`Successfully repaired expected quantities for ${templateItems.length} items`);
+      } else {
+        // Fallback to current stock for counts without templates
+        const { data: countItems, error: itemsError } = await supabase
+          .from('inventory_count_items')
+          .select(`
+            item_id,
+            inventory_items!inner(current_stock)
+          `)
+          .eq('count_id', countId);
+
+        if (itemsError) throw itemsError;
+
+        const updatePromises = countItems.map(countItem => 
+          supabase
+            .from('inventory_count_items')
+            .update({ expected_quantity: countItem.inventory_items.current_stock || 0 })
+            .eq('count_id', countId)
+            .eq('item_id', countItem.item_id)
+        );
+
+        const results = await Promise.all(updatePromises);
+        const errors = results.filter(result => result.error);
+        
+        if (errors.length > 0) {
+          throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+        }
+
+        await this.updateCountTotals(countId);
+        console.log(`Successfully repaired expected quantities for ${countItems.length} items using current stock`);
+      }
+    } catch (error) {
+      console.error('Error repairing count expected quantities:', error);
+      throw error;
+    }
   },
 
   async initializeCountItems(countId: string, templateId?: string): Promise<void> {
