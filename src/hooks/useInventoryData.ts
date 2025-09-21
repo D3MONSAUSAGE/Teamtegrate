@@ -232,8 +232,10 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     
     await Promise.allSettled(refreshFunctions.map(fn => fn()));
     
-    // Refresh template items after templates are loaded
-    await refreshTemplateItems();
+    // Refresh template items after templates are loaded if we have templates
+    if (templates.length > 0) {
+      await refreshTemplateItems();
+    }
   }, [
     user?.organizationId,
     refreshItems,
@@ -244,18 +246,53 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
-    refreshTemplateItems
+    refreshTemplateItems,
+    templates,
   ]);
 
-  // Initial data load
+  // Load template items when templates change
   useEffect(() => {
-    if (user?.organizationId) {
-      setLoading(true);
-      refreshAll().finally(() => {
-        setLoading(false);
-      });
+    if (user?.organizationId && templates.length > 0) {
+      refreshTemplateItems();
     }
-  }, [user?.organizationId, refreshAll]);
+  }, [user?.organizationId, templates, refreshTemplateItems]);
+
+  // Initial data load - use stable function to avoid dependency cycle
+  useEffect(() => {
+    if (!user?.organizationId) return;
+    
+    const initialLoad = async () => {
+      setLoading(true);
+      try {
+        const refreshFunctions = [
+          refreshItems,
+          refreshTransactions,
+          refreshCounts,
+          refreshAlerts,
+          refreshTemplates,
+          refreshTeamAssignments,
+          refreshCategories,
+          refreshUnits,
+        ];
+        
+        await Promise.allSettled(refreshFunctions.map(fn => fn()));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initialLoad();
+  }, [
+    user?.organizationId,
+    refreshItems,
+    refreshTransactions,
+    refreshCounts,
+    refreshAlerts,
+    refreshTemplates,
+    refreshTeamAssignments,
+    refreshCategories,
+    refreshUnits,
+  ]);
 
   return {
     // Data
