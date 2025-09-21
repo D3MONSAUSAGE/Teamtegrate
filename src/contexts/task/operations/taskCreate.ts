@@ -175,11 +175,19 @@ const sendTaskCreationNotifications = async (task: Task, creator: SimpleUser): P
     // Handle single assignment
     if (task.assignedToId && task.assignedToId !== creator.id) {
       console.log('📬 Sending notification for single assignment to:', task.assignedToId);
+      
+      const actor = {
+        id: creator.id,
+        email: creator.email,
+        name: creator.email // Use email as fallback since SimpleUser doesn't have name
+      };
+      
       await createTaskAssignmentNotification(
         task.assignedToId,
         task.title,
         false, // Not self-assigned since creator is different
-        creator.organization_id
+        creator.organization_id,
+        actor
       );
     }
 

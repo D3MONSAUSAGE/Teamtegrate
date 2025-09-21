@@ -9,7 +9,8 @@ export const createTaskAssignmentNotification = async (
   userId: string,
   taskTitle: string,
   isSelfAssigned: boolean,
-  organizationId: string
+  organizationId: string,
+  actor?: { id: string; email: string; name?: string | null }
 ): Promise<void> => {
   try {
     const notificationType = isSelfAssigned ? 'Task Self-Assigned' : 'Task Assigned';
@@ -27,8 +28,9 @@ export const createTaskAssignmentNotification = async (
     
     console.log(`${isSelfAssigned ? 'Self-assignment' : 'Task assignment'} notification created for user:`, userId);
 
-    // Also send email notification (don't block if it fails)
-    try {
+    // Also send email notification if not self-assigned and actor provided (don't block if it fails)  
+    if (!isSelfAssigned && actor) {
+      try {
       // Get task details for email
       const { data: taskData } = await supabase
         .from('tasks')
@@ -68,10 +70,17 @@ export const createTaskAssignmentNotification = async (
           name: userData.name || userData.email
         };
 
-        await notifications.notifyTaskAssigned(taskNotification, [assignee], assignee);
+        const actorForEmail = {
+          id: actor.id,
+          email: actor.email,
+          name: actor.name || actor.email
+        };
+
+        await notifications.notifyTaskAssigned(taskNotification, [assignee], actorForEmail);
       }
-    } catch (emailError) {
-      console.log('Email notification failed, but task assignment succeeded:', emailError);
+      } catch (emailError) {
+        console.log('Email notification failed, but task assignment succeeded:', emailError);
+      }
     }
   } catch (error) {
     console.error(`Error sending ${isSelfAssigned ? 'self-assignment' : 'task assignment'} notification:`, error);

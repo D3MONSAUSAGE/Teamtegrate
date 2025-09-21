@@ -312,12 +312,29 @@ const sendAPITaskCreationNotifications = async (task: Task, creatorId: string, o
     // Handle single assignment
     if (task.assignedToId && task.assignedToId !== creatorId) {
       console.log('📬 Sending notification for single assignment to:', task.assignedToId);
-      await createTaskAssignmentNotification(
-        task.assignedToId,
-        task.title,
-        false, // Not self-assigned since creator is different
-        organizationId
-      );
+      
+      // Get creator details for email notification
+      const { data: creatorData } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('id', creatorId)
+        .single();
+      
+      if (creatorData) {
+        const actor = {
+          id: creatorData.id,
+          email: creatorData.email,
+          name: creatorData.name
+        };
+        
+        await createTaskAssignmentNotification(
+          task.assignedToId,
+          task.title,
+          false, // Not self-assigned since creator is different
+          organizationId,
+          actor
+        );
+      }
     }
 
     // Handle multiple assignments

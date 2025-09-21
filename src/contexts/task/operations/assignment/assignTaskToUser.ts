@@ -58,54 +58,7 @@ export const assignTaskToUser = async (
     // Create notification for the assigned user
     if (userId) {
       const isSelfAssigned = (userId === user.id);
-      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned, getUserOrganizationId(user));
-      
-      // Also send email notification if not self-assigned
-      if (!isSelfAssigned) {
-        try {
-          console.log('[assignTaskToUser] Preparing email notification for task assignment');
-          
-          // Get assignee details
-          const { data: assigneeData } = await supabase
-            .from('users')
-            .select('id, email, name')
-            .eq('id', userId)
-            .single();
-
-          if (assigneeData) {
-            const { notifications } = await import('@/lib/notifications');
-            
-            const taskNotification = {
-              id: task.id,
-              title: task.title,
-              description: task.description,
-              status: task.status,
-              priority: task.priority,
-              deadline: task.deadline?.toISOString(),
-              created_at: task.createdAt?.toISOString() || new Date().toISOString(),
-              organization_id: task.organizationId,
-              project_title: task.projectTitle
-            };
-
-            const assignees = [{
-              id: assigneeData.id,
-              email: assigneeData.email,
-              name: assigneeData.name || assigneeData.email
-            }];
-
-            const actor = {
-              id: user.id,
-              email: user.email,
-              name: user.name || user.email
-            };
-
-            console.log('[assignTaskToUser] Sending email notification');
-            await notifications.notifyTaskAssigned(taskNotification, assignees, actor);
-          }
-        } catch (error) {
-          console.error('[assignTaskToUser] Error sending email notification:', error);
-        }
-      }
+      await createTaskAssignmentNotification(userId, task.title, isSelfAssigned, getUserOrganizationId(user), user);
     }
     
     // Update the state in both tasks array and projects array
