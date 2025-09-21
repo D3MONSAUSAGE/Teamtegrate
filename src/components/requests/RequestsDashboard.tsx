@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Request } from '@/types/requests';
+import { Request, RequestType } from '@/types/requests';
 import { EnhancedRequestCard } from './EnhancedRequestCard';
 import RequestSearchBar from './RequestSearchBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,11 +56,14 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     if (!user?.organizationId) return;
 
     try {
-      // Get requests without joins - let RLS handle access control
+      // Get requests with request_type data - let RLS handle access control
       // Exclude archived requests by default
       const { data: requestsData, error } = await supabase
         .from('requests')
-        .select('*')
+        .select(`
+          *,
+          request_type:request_types(id, name, category, subcategory, description)
+        `)
         .is('archived_at', null)
         .order('created_at', { ascending: false });
 
@@ -82,11 +85,12 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
         return acc;
       }, {} as Record<string, any>) || {};
 
-      // Map the requests with user data
+      // Map the requests with user data and request_type
       const mappedRequests: Request[] = requestsData.map(item => ({
         id: item.id,
         organization_id: item.organization_id,
         request_type_id: item.request_type_id,
+        request_type: item.request_type as RequestType,
         requested_by: item.requested_by,
         title: item.title,
         description: item.description,
