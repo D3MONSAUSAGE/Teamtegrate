@@ -12,7 +12,7 @@ import { useFolders, type Folder } from '@/hooks/documents/useFolders';
 import { useTeams } from '@/hooks/useTeams';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
-import TeamSelect from '@/components/ui/team-select';
+import { TeamSelect } from '@/components/ui/team-select';
 import { toast } from 'sonner';
 
 interface FolderManagementModalProps {

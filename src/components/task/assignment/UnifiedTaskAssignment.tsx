@@ -16,7 +16,7 @@ import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 import { useUsersByContext } from '@/hooks/useUsersByContext';
 import { useTaskAssignmentValidation } from '@/hooks/useTaskAssignmentValidation';
 import OrganizationSelector from '@/components/organization/OrganizationSelector';
-import TeamSelect from '@/components/ui/team-select';
+import { TeamSelect } from '@/components/ui/team-select';
 
 interface UnifiedTaskAssignmentProps {
   taskId?: string;

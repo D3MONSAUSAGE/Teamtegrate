@@ -8,7 +8,7 @@ import DocumentSearch from '@/components/documents/DocumentSearch';
 import { CreateFolderModal } from '@/components/documents/CreateFolderModal';
 import { useTeamManagement } from '@/hooks/organization/useTeamManagement';
 import { useTeamDocuments } from '@/hooks/documents/useTeamDocuments';
-import TeamSelect from '@/components/ui/team-select';
+import { TeamSelect } from '@/components/ui/team-select';
 import { Button } from '@/components/ui/button';
 import { FolderPlus } from 'lucide-react';
 

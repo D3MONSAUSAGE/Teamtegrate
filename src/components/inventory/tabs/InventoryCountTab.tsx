@@ -113,10 +113,12 @@ export const InventoryCountTab: React.FC = () => {
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleStartCount = async (template?: InventoryTemplate) => {
+  const handleStartCount = async (template?: InventoryTemplate, selectedTeam?: { id: string; name: string }) => {
     try {
       const countName = template 
-        ? `Count from template: ${template.name}` 
+        ? selectedTeam 
+          ? `Count for ${selectedTeam.name}: ${template.name}`
+          : `Count from template: ${template.name}` 
         : 'Manual inventory count';
       
       const count = await startInventoryCount(countName);
@@ -135,7 +137,7 @@ export const InventoryCountTab: React.FC = () => {
       
       toast({
         title: 'Count Started',
-        description: `Started counting ${template ? `template "${template.name}"` : 'all items'}`,
+        description: `Started counting ${template ? `template "${template.name}"` : 'all items'}${selectedTeam ? ` for ${selectedTeam.name}` : ''}`,
       });
     } catch (error) {
       console.error('Failed to start count:', error);

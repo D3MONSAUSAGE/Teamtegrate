@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
-import TeamSelect from '@/components/ui/team-select';
+import { TeamSelect } from '@/components/ui/team-select';
 import { useTeams } from '@/hooks/useTeams';
 import { canStartChecklistExecution, formatTimeWindow, getTimeStatusStyling } from '@/utils/checklistTimeUtils';
 import { useMultipleChecklistTimeWindows } from '@/hooks/useChecklistTimeWindow';

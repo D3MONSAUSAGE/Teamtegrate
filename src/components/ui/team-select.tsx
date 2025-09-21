@@ -116,4 +116,4 @@ const TeamSelect: React.FC<TeamSelectProps> = ({
   );
 };
 
-export default TeamSelect;
+export { TeamSelect };
