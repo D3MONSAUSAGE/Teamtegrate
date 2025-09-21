@@ -188,12 +188,12 @@ export interface InventoryContextType {
   resolveAlert: (alertId: string) => Promise<void>;
   
   // Categories operations
-  createCategory: (category: Omit<InventoryCategory, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryCategory>;
+  createCategory: (category: Omit<InventoryCategory, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) => Promise<InventoryCategory>;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => Promise<InventoryCategory>;
   deleteCategory: (id: string) => Promise<void>;
   
   // Units operations
-  createUnit: (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryUnit>;
+  createUnit: (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) => Promise<InventoryUnit>;
   updateUnit: (id: string, updates: Partial<InventoryUnit>) => Promise<InventoryUnit>;
   deleteUnit: (id: string) => Promise<void>;
   

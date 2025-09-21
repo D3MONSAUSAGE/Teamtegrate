@@ -72,7 +72,6 @@ export const InventoryUnitDialog: React.FC<InventoryUnitDialogProps> = ({
         name: values.name,
         abbreviation: values.abbreviation,
         unit_type: values.unit_type,
-        organization_id: '', // Will be set by context
         is_active: true,
       };
       

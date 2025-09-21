@@ -151,11 +151,12 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   }, [user?.organizationId]);
 
   // Categories and Units operations
-  const createCategory = useCallback(async (category: Omit<InventoryCategory, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryCategory> => {
-    const newCategory = await inventoryCategoriesApi.create(category);
+  const createCategory = useCallback(async (category: Omit<InventoryCategory, 'id' | 'created_at' | 'updated_at' | 'organization_id'>): Promise<InventoryCategory> => {
+    const categoryWithOrg = { ...category, organization_id: user?.organizationId || '' };
+    const newCategory = await inventoryCategoriesApi.create(categoryWithOrg);
     await refreshCategories();
     return newCategory;
-  }, [refreshCategories]);
+  }, [refreshCategories, user?.organizationId]);
 
   const updateCategory = useCallback(async (id: string, updates: Partial<InventoryCategory>): Promise<InventoryCategory> => {
     const updatedCategory = await inventoryCategoriesApi.update(id, updates);
@@ -168,11 +169,12 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     await refreshCategories();
   }, [refreshCategories]);
 
-  const createUnit = useCallback(async (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryUnit> => {
-    const newUnit = await inventoryUnitsApi.create(unit);
+  const createUnit = useCallback(async (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at' | 'organization_id'>): Promise<InventoryUnit> => {
+    const unitWithOrg = { ...unit, organization_id: user?.organizationId || '' };
+    const newUnit = await inventoryUnitsApi.create(unitWithOrg);
     await refreshUnits();
     return newUnit;
-  }, [refreshUnits]);
+  }, [refreshUnits, user?.organizationId]);
 
   const updateUnit = useCallback(async (id: string, updates: Partial<InventoryUnit>): Promise<InventoryUnit> => {
     const updatedUnit = await inventoryUnitsApi.update(id, updates);

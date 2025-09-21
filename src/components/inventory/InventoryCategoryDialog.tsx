@@ -58,7 +58,6 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
       const categoryData = {
         name: values.name,
         description: values.description || '',
-        organization_id: '', // Will be set by context
         is_active: true,
       };
       

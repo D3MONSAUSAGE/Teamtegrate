@@ -54,7 +54,6 @@ export const InventoryManagementTab: React.FC = () => {
         for (const category of DEFAULT_CATEGORIES) {
           await createCategory({
             ...category,
-            organization_id: '', // Will be set by context
             is_active: true,
           });
         }
@@ -64,7 +63,6 @@ export const InventoryManagementTab: React.FC = () => {
         for (const unit of DEFAULT_UNITS) {
           await createUnit({
             ...unit,
-            organization_id: '', // Will be set by context
             is_active: true,
           });
         }
