@@ -8,21 +8,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, FileText, Edit, Users } from 'lucide-react';
+import { Plus, FileText, Edit, Users, Package, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TemplateItemsDialog } from './TemplateItemsDialog';
 
 interface InventoryTemplatesPanelProps {
   selectedTeam: string;
 }
 
 export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = ({ selectedTeam }) => {
-  const { templates, createTemplate } = useInventory();
+  const { templates, createTemplate, duplicateTemplate, refreshTemplates } = useInventory();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Template Items Dialog state
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string>('');
+  const [isItemsDialogOpen, setIsItemsDialogOpen] = useState(false);
 
   const handleCreateTemplate = async () => {
     if (!templateName.trim()) {
@@ -57,6 +63,32 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
       toast({
         title: "Error",
         description: "Failed to create template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleManageItems = (templateId: string, templateName: string) => {
+    setSelectedTemplateId(templateId);
+    setSelectedTemplateName(templateName);
+    setIsItemsDialogOpen(true);
+  };
+
+  const handleDuplicateTemplate = async (templateId: string, templateName: string) => {
+    setIsLoading(true);
+    try {
+      await duplicateTemplate(templateId, `${templateName} (Copy)`);
+      await refreshTemplates();
+      toast({
+        title: "Success",
+        description: "Template duplicated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to duplicate template",
         variant: "destructive",
       });
     } finally {
@@ -169,12 +201,31 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
                     {template.team_id ? 'Team Specific' : 'Organization Wide'}
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 gap-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1"
+                      onClick={() => handleManageItems(template.id, template.name)}
+                    >
+                      <Package className="h-3 w-3" />
+                      Manage Items
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1"
+                      onClick={() => handleDuplicateTemplate(template.id, template.name)}
+                      disabled={isLoading}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Duplicate
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1">
                       <Edit className="h-3 w-3" />
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 gap-1">
+                    <Button variant="outline" size="sm" className="gap-1">
                       <Users className="h-3 w-3" />
                       Assign
                     </Button>
@@ -185,6 +236,14 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
           ))
         )}
       </div>
+
+      {/* Template Items Dialog */}
+      <TemplateItemsDialog
+        isOpen={isItemsDialogOpen}
+        onClose={() => setIsItemsDialogOpen(false)}
+        templateId={selectedTemplateId}
+        templateName={selectedTemplateName}
+      />
     </div>
   );
 };

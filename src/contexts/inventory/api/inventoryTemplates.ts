@@ -125,4 +125,54 @@ export const inventoryTemplatesApi = {
     if (error) throw error;
     return (data || []) as TeamInventoryAssignment[];
   },
+
+  async duplicate(templateId: string, newName?: string): Promise<InventoryTemplate> {
+    // First get the original template
+    const { data: originalTemplate, error: fetchError } = await supabase
+      .from('inventory_templates')
+      .select('*')
+      .eq('id', templateId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Create new template with modified name
+    const { data: newTemplate, error: createError } = await supabase
+      .from('inventory_templates')
+      .insert([{
+        ...originalTemplate,
+        id: undefined,
+        name: newName || `${originalTemplate.name} (Copy)`,
+        created_at: undefined,
+        updated_at: undefined,
+      }])
+      .select()
+      .single();
+
+    if (createError) throw createError;
+
+    // Copy all template items
+    const { data: templateItems, error: itemsError } = await supabase
+      .from('inventory_template_items')
+      .select('*')
+      .eq('template_id', templateId);
+
+    if (itemsError) throw itemsError;
+
+    if (templateItems && templateItems.length > 0) {
+      const newTemplateItems = templateItems.map(item => ({
+        ...item,
+        id: undefined,
+        template_id: newTemplate.id,
+      }));
+
+      const { error: insertItemsError } = await supabase
+        .from('inventory_template_items')
+        .insert(newTemplateItems);
+
+      if (insertItemsError) throw insertItemsError;
+    }
+
+    return newTemplate as InventoryTemplate;
+  },
 };

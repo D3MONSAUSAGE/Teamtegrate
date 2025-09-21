@@ -203,6 +203,23 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     return teamAssignments.filter(assignment => assignment.team_id === teamId && assignment.is_active);
   }, [teamAssignments]);
 
+  // Template item operations
+  const getTemplateItems = useCallback(async (templateId: string): Promise<InventoryTemplateItem[]> => {
+    return await inventoryTemplatesApi.getTemplateItems(templateId);
+  }, []);
+
+  const addItemToTemplate = useCallback(async (templateId: string, itemId: string, expectedQuantity: number = 0, sortOrder: number = 0): Promise<InventoryTemplateItem> => {
+    return await inventoryTemplatesApi.addItemToTemplate(templateId, itemId, expectedQuantity, sortOrder);
+  }, []);
+
+  const removeItemFromTemplate = useCallback(async (templateId: string, itemId: string): Promise<void> => {
+    await inventoryTemplatesApi.removeItemFromTemplate(templateId, itemId);
+  }, []);
+
+  const duplicateTemplate = useCallback(async (templateId: string, newName?: string): Promise<InventoryTemplate> => {
+    return await inventoryTemplatesApi.duplicate(templateId, newName);
+  }, []);
+
   // Load initial data
   useEffect(() => {
     if (user?.organizationId) {
@@ -252,6 +269,10 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     updateTemplate,
     assignTemplateToTeam,
     getTeamInventories,
+    getTemplateItems,
+    addItemToTemplate,
+    removeItemFromTemplate,
+    duplicateTemplate,
     
     // Refresh functions
     refreshItems,
