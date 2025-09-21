@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   inventoryItemsApi,
@@ -36,7 +36,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(false);
 
-  const refreshItems = async () => {
+  // Define all refresh functions with useCallback to prevent recreation
+  const refreshItems = useCallback(async () => {
     if (!user?.organizationId) return;
     setItemsLoading(true);
     try {
@@ -47,9 +48,9 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     } finally {
       setItemsLoading(false);
     }
-  };
+  }, [user?.organizationId]);
 
-  const refreshTransactions = async () => {
+  const refreshTransactions = useCallback(async () => {
     if (!user?.organizationId) return;
     setTransactionsLoading(true);
     try {
@@ -60,9 +61,9 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     } finally {
       setTransactionsLoading(false);
     }
-  };
+  }, [user?.organizationId]);
 
-  const refreshCounts = async () => {
+  const refreshCounts = useCallback(async () => {
     if (!user?.organizationId) return;
     setCountsLoading(true);
     try {
@@ -73,9 +74,69 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     } finally {
       setCountsLoading(false);
     }
-  };
+  }, [user?.organizationId]);
 
-  const startInventoryCount = async (notes?: string, teamId?: string, templateId?: string): Promise<InventoryCount> => {
+  const refreshAlerts = useCallback(async () => {
+    if (!user?.organizationId) return;
+    setAlertsLoading(true);
+    try {
+      const data = await inventoryAlertsApi.getAll();
+      setAlerts(data);
+    } catch (error) {
+      console.error('Error fetching inventory alerts:', error);
+    } finally {
+      setAlertsLoading(false);
+    }
+  }, [user?.organizationId]);
+
+  const refreshTemplates = useCallback(async () => {
+    if (!user?.organizationId) return;
+    setTemplatesLoading(true);
+    try {
+      const data = await inventoryTemplatesApi.getAll();
+      setTemplates(data);
+    } catch (error) {
+      console.error('Error fetching inventory templates:', error);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }, [user?.organizationId]);
+
+  const refreshTeamAssignments = useCallback(async () => {
+    if (!user?.organizationId) return;
+    try {
+      const data = await inventoryTemplatesApi.getTeamAssignments();
+      setTeamAssignments(data);
+    } catch (error) {
+      console.error('Error fetching team assignments:', error);
+    }
+  }, [user?.organizationId]);
+
+  // CRUD Operations
+  const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> => {
+    const newItem = await inventoryItemsApi.create(item);
+    await refreshItems();
+    return newItem;
+  }, [refreshItems]);
+
+  const updateItem = useCallback(async (id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
+    const updatedItem = await inventoryItemsApi.update(id, updates);
+    await refreshItems();
+    return updatedItem;
+  }, [refreshItems]);
+
+  const deleteItem = useCallback(async (id: string): Promise<void> => {
+    await inventoryItemsApi.delete(id);
+    await refreshItems();
+  }, [refreshItems]);
+
+  const createTransaction = useCallback(async (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>): Promise<InventoryTransaction> => {
+    const newTransaction = await inventoryTransactionsApi.create(transaction);
+    await refreshTransactions();
+    return newTransaction;
+  }, [refreshTransactions]);
+
+  const startInventoryCount = useCallback(async (notes?: string, teamId?: string, templateId?: string): Promise<InventoryCount> => {
     const countData = {
       organization_id: user?.organizationId || '',
       count_date: new Date().toISOString(),
@@ -94,104 +155,46 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     await inventoryCountsApi.initializeCountItems(newCount.id);
     await refreshCounts();
     return newCount;
-  };
+  }, [user?.organizationId, user?.id, refreshCounts]);
 
-  const updateCountItem = async (countId: string, itemId: string, actualQuantity: number, notes?: string): Promise<void> => {
+  const updateCountItem = useCallback(async (countId: string, itemId: string, actualQuantity: number, notes?: string): Promise<void> => {
     await inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes, user?.id);
-  };
+  }, [user?.id]);
 
-  const completeInventoryCount = async (countId: string): Promise<void> => {
+  const completeInventoryCount = useCallback(async (countId: string): Promise<void> => {
     await inventoryCountsApi.update(countId, { status: 'completed' });
     await refreshCounts();
-  };
+  }, [refreshCounts]);
 
-  const createItem = async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> => {
-    const newItem = await inventoryItemsApi.create(item);
-    await refreshItems();
-    return newItem;
-  };
-
-  const updateItem = async (id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> => {
-    const updatedItem = await inventoryItemsApi.update(id, updates);
-    await refreshItems();
-    return updatedItem;
-  };
-
-  const deleteItem = async (id: string): Promise<void> => {
-    await inventoryItemsApi.delete(id);
-    await refreshItems();
-  };
-
-  const createTransaction = async (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>): Promise<InventoryTransaction> => {
-    const newTransaction = await inventoryTransactionsApi.create(transaction);
-    await refreshTransactions();
-    return newTransaction;
-  };
-
-  const refreshAlerts = async () => {
-    if (!user?.organizationId) return;
-    setAlertsLoading(true);
-    try {
-      const data = await inventoryAlertsApi.getAll();
-      setAlerts(data);
-    } catch (error) {
-      console.error('Error fetching inventory alerts:', error);
-    } finally {
-      setAlertsLoading(false);
-    }
-  };
-
-  const refreshTemplates = async () => {
-    if (!user?.organizationId) return;
-    setTemplatesLoading(true);
-    try {
-      const data = await inventoryTemplatesApi.getAll();
-      setTemplates(data);
-    } catch (error) {
-      console.error('Error fetching inventory templates:', error);
-    } finally {
-      setTemplatesLoading(false);
-    }
-  };
-
-  const refreshTeamAssignments = async () => {
-    if (!user?.organizationId) return;
-    try {
-      const data = await inventoryTemplatesApi.getTeamAssignments();
-      setTeamAssignments(data);
-    } catch (error) {
-      console.error('Error fetching team assignments:', error);
-    }
-  };
+  const resolveAlert = useCallback(async (alertId: string): Promise<void> => {
+    await inventoryAlertsApi.resolve(alertId, user?.id || '');
+    await refreshAlerts();
+  }, [user?.id, refreshAlerts]);
 
   // Template operations
-  const createTemplate = async (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryTemplate> => {
+  const createTemplate = useCallback(async (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryTemplate> => {
     const newTemplate = await inventoryTemplatesApi.create(template);
     await refreshTemplates();
     return newTemplate;
-  };
+  }, [refreshTemplates]);
 
-  const updateTemplate = async (id: string, updates: Partial<InventoryTemplate>): Promise<InventoryTemplate> => {
+  const updateTemplate = useCallback(async (id: string, updates: Partial<InventoryTemplate>): Promise<InventoryTemplate> => {
     const updatedTemplate = await inventoryTemplatesApi.update(id, updates);
     await refreshTemplates();
     return updatedTemplate;
-  };
+  }, [refreshTemplates]);
 
-  const assignTemplateToTeam = async (templateId: string, teamId: string): Promise<TeamInventoryAssignment> => {
+  const assignTemplateToTeam = useCallback(async (templateId: string, teamId: string): Promise<TeamInventoryAssignment> => {
     const assignment = await inventoryTemplatesApi.assignToTeam(templateId, teamId, user?.id || '');
     await refreshTeamAssignments();
     return assignment;
-  };
+  }, [user?.id, refreshTeamAssignments]);
 
-  const getTeamInventories = (teamId: string): TeamInventoryAssignment[] => {
+  const getTeamInventories = useCallback((teamId: string): TeamInventoryAssignment[] => {
     return teamAssignments.filter(assignment => assignment.team_id === teamId && assignment.is_active);
-  };
+  }, [teamAssignments]);
 
-  const resolveAlert = async (alertId: string): Promise<void> => {
-    await inventoryAlertsApi.resolve(alertId, user?.id || '');
-    await refreshAlerts();
-  };
-
+  // Load initial data
   useEffect(() => {
     if (user?.organizationId) {
       Promise.all([
@@ -203,7 +206,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
         refreshTeamAssignments()
       ]).finally(() => setLoading(false));
     }
-  }, [user?.organizationId]);
+  }, [user?.organizationId, refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments]);
 
   return {
     // Data
