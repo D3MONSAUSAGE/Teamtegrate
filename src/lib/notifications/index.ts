@@ -16,6 +16,7 @@ interface TicketNotificationData {
   priority?: string;
   created_at: string;
   organization_id: string;
+  ticket_number?: string;
 }
 
 interface UserData {
