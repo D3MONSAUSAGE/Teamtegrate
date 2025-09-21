@@ -43,7 +43,6 @@ export const InventoryManagementTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
-  // Always use list view only
   
   // Category dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
