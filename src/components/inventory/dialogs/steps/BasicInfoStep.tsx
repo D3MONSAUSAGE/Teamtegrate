@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TeamSelect } from '@/components/ui/team-select';
+
 import { Settings } from 'lucide-react';
 import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,14 +56,28 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             
             <div className="space-y-2">
               <Label htmlFor="team-assignment">Team Assignment</Label>
-              <TeamSelect
-                teams={teamsForSelect}
-                isLoading={teamsLoading}
-                selectedTeam={formData.team_id}
-                onTeamChange={(teamId) => updateFormData({ team_id: teamId || null })}
-                optional={canCreateForAllTeams}
-                disabled={false}
-              />
+              <Select
+                value={formData.team_id || (canCreateForAllTeams ? "all" : "")}
+                onValueChange={(value) => {
+                  const teamId = value === "all" ? null : value;
+                  updateFormData({ team_id: teamId });
+                }}
+                disabled={teamsLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={teamsLoading ? "Loading teams..." : "Select a team"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {canCreateForAllTeams && (
+                    <SelectItem value="all">All Teams</SelectItem>
+                  )}
+                  {teamsForSelect.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {formData.team_id === null && canCreateForAllTeams && (
                 <p className="text-sm text-muted-foreground">
                   This template will be available to all teams in your organization.
