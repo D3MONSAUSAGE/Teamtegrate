@@ -268,6 +268,20 @@ export const useInventoryOperations = ({
         // Complete the count
         const completedCount = await inventoryCountsApi.update(countId, { status: 'completed' });
         
+        // Check idempotency - if email already sent, skip email notifications
+        console.log(`[completeInventoryCount] Checking email status for count ${countId}`);
+        const { data: countCheck } = await supabase
+          .from('inventory_counts')
+          .select('email_sent_at, id, team_id, total_items_count, organization_id')
+          .eq('id', countId)
+          .single();
+
+        let emailAlreadySent = false;
+        if (countCheck?.email_sent_at) {
+          console.log(`[completeInventoryCount] Email already sent at ${countCheck.email_sent_at}, skipping email notifications`);
+          emailAlreadySent = true;
+        }
+
         // Send notifications after successful completion
         if (completedCount && user) {
           try {
@@ -277,7 +291,7 @@ export const useInventoryOperations = ({
               .select(`
                 *,
                 inventory_templates(name),
-                teams(name)
+                teams(name, manager_id)
               `)
               .eq('id', countId)
               .single();
@@ -285,6 +299,7 @@ export const useInventoryOperations = ({
             if (countDetails) {
               const { notifications } = await import('@/lib/notifications');
               
+              // Always send in-app notifications
               await notifications.notifyInventoryTemplateCompleted(
                 {
                   id: countDetails.id,
@@ -307,6 +322,75 @@ export const useInventoryOperations = ({
                   name: user.name,
                 }
               );
+
+              // Send email notifications only if not already sent
+              if (!emailAlreadySent) {
+                console.log(`[completeInventoryCount] Preparing email notifications for count ${countId} with ${countDetails.total_items_count} items`);
+                
+                // Query recipients: team managers + admins + superadmins
+                let recipientIds = [];
+                
+                // Add team manager if team exists
+                if (countDetails.team_id && countDetails.teams?.manager_id) {
+                  recipientIds.push(countDetails.teams.manager_id);
+                }
+                
+                // Add admins and superadmins
+                const { data: adminUsers } = await supabase
+                  .from('users')
+                  .select('id, email, name, role')
+                  .eq('organization_id', countDetails.organization_id)
+                  .in('role', ['admin', 'superadmin']);
+                
+                if (adminUsers) {
+                  adminUsers.forEach(admin => {
+                    if (!recipientIds.includes(admin.id)) {
+                      recipientIds.push(admin.id);
+                    }
+                  });
+                }
+
+                // Get email addresses for all recipients
+                const { data: recipients } = await supabase
+                  .from('users')
+                  .select('email, name')
+                  .in('id', recipientIds)
+                  .not('email', 'is', null);
+
+                console.log(`[completeInventoryCount] Found ${recipients?.length || 0} email recipients for count ${countId}`);
+
+                if (recipients && recipients.length > 0) {
+                  // Send email notifications
+                  const emailResult = await notifications.notifyInventorySubmitted(
+                    {
+                      id: countDetails.id,
+                      team_name: countDetails.teams?.name,
+                      team_id: countDetails.team_id,
+                      items_total: countDetails.total_items_count,
+                      submitted_by_name: user.name,
+                      location_name: countDetails.teams?.name, // Fallback
+                    },
+                    recipients
+                  );
+
+                  // Check if emails were sent successfully
+                  if (emailResult?.data?.ok && emailResult.data.sent === recipients.length) {
+                    console.log(`[completeInventoryCount] All ${recipients.length} emails sent successfully for count ${countId}`);
+                    
+                    // Update email_sent_at timestamp for idempotency
+                    await supabase
+                      .from('inventory_counts')
+                      .update({ email_sent_at: new Date().toISOString() })
+                      .eq('id', countId);
+                      
+                    console.log(`[completeInventoryCount] Updated email_sent_at timestamp for count ${countId}`);
+                  } else {
+                    console.error(`[completeInventoryCount] Email sending failed or incomplete for count ${countId}:`, emailResult);
+                  }
+                } else {
+                  console.warn(`[completeInventoryCount] No email recipients found for count ${countId}`);
+                }
+              }
             }
           } catch (notificationError) {
             console.error('Failed to send inventory completion notifications:', notificationError);

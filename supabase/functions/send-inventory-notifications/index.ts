@@ -1,15 +1,24 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Dynamic CORS function matching ticket notifications pattern
+function cors(req: Request) {
+  const requested =
+    req.headers.get("Access-Control-Request-Headers") ??
+    "authorization, x-client-info, apikey, content-type, x-application-name, x-supabase-api-version";
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": requested,
+    "Vary": "Origin, Access-Control-Request-Headers",
+    "Content-Type": "application/json",
+  };
+}
 
 interface InventoryNotificationRequest {
-  type: 'template_completed';
-  count: {
+  type: 'template_completed' | 'inventory_count_submitted';
+  kind?: 'inventory_count_submitted'; // Alternative field name for consistency
+  count?: {
     id: string;
     count_date: string;
     status: string;
@@ -24,21 +33,45 @@ interface InventoryNotificationRequest {
     total_items_count: number;
     notes?: string;
   };
-  completedBy: {
+  inventory?: {
+    id: string;
+    team_name?: string;
+    team_id?: string;
+    items_total?: number;
+    submitted_by_name?: string;
+    location_name?: string;
+  };
+  completedBy?: {
     id: string;
     email: string;
     name?: string;
   };
+  recipients?: string[];
+  to?: string;
   timestamp: string;
 }
 
+// Direct Resend API call function
+async function sendViaResend(apiKey: string, from: string, to: string, subject: string, html: string) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to, subject, html }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`RESEND ${r.status}: ${JSON.stringify(body)}`);
+  return body; // includes id
+}
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const CORS = cors(req);
+  if (req.method === 'OPTIONS') return new Response("ok", { headers: CORS });
 
   try {
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    const from = Deno.env.get("FROM_EMAIL") || "Teamtegrate Support <support@requests.teamtegrate.com>";
+    const base = Deno.env.get("APP_BASE_URL") || "https://teamtegrate.com";
+
     console.log('[Inventory Notifications] Processing notification request...');
     
     const supabase = createClient(
@@ -46,15 +79,59 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const requestData: InventoryNotificationRequest = await req.json();
-    const { type, count, completedBy } = requestData;
+    const requestData: InventoryNotificationRequest = await req.json().catch(() => ({}));
+    const { type, kind, count, inventory, completedBy, recipients, to } = requestData;
 
-    console.log(`[Inventory Notifications] Processing ${type} for count ${count.id}`);
+    // Handle new email notification type
+    if (kind === 'inventory_count_submitted' || type === 'inventory_count_submitted') {
+      if (!apiKey) return new Response(JSON.stringify({ ok: false, error: "missing_resend_key" }), { status: 500, headers: CORS });
+
+      // Accept either {to:"a@x.com"} or {recipients:["a@x.com","b@y.com"]}
+      let recipientList: string[] = [];
+      if (Array.isArray(recipients)) recipientList = recipients.filter(Boolean);
+      if (to && typeof to === "string") recipientList.push(to);
+      recipientList = [...new Set(recipientList.map((e: string) => e?.trim()?.toLowerCase()).filter(Boolean))];
+      
+      if (recipientList.length === 0) {
+        return new Response(JSON.stringify({ ok: false, error: "missing_recipients" }), { status: 400, headers: CORS });
+      }
+
+      const inv = inventory ?? {};
+      const subject = `📦 Inventory Count Submitted: ${inv.team_name ?? inv.location_name ?? inv.id ?? ""}`;
+      const url = `${base}/inventory/counts/${inv.id ?? ""}`;
+      const html = `
+        <h2>${subject}</h2>
+        <p><strong>Submitted by:</strong> ${inv.submitted_by_name ?? ""}</p>
+        <p><strong>Team:</strong> ${inv.team_name ?? "N/A"}</p>
+        <p><strong>Total items:</strong> ${inv.items_total ?? ""}</p>
+        <p><a href="${url}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review inventory count</a></p>
+        <br>
+        <p style="color: hsl(240 3.8% 46.1%); font-size: 14px;">Teamtegrate - Inventory Management</p>
+      `;
+
+      const sends = await Promise.allSettled(
+        recipientList.map(async (toEmail) => {
+          const out = await sendViaResend(apiKey, from, toEmail, subject, html);
+          return { to: toEmail, ok: true, id: out?.id ?? null };
+        })
+      );
+
+      const results = sends.map((r) =>
+        r.status === "fulfilled" ? r.value : { ok: false, error: String(r.reason) }
+      );
+      const sent = results.filter((r: any) => r.ok).length;
+
+      console.log("INVENTORY_EMAIL_RESULTS", { inventory_id: inv.id, team_id: inv.team_id, sent, total: recipientList.length, results });
+      return new Response(JSON.stringify({ ok: sent > 0, sent, total: recipientList.length, results }), { status: 200, headers: CORS });
+    }
+
+    // Handle existing in-app notification type (template_completed)
+    console.log(`[Inventory Notifications] Processing ${type} for count ${count?.id}`);
 
     let notificationsSent = 0;
     let errors = 0;
 
-    if (type === 'template_completed') {
+    if (type === 'template_completed' && count) {
       // Get notification recipients
       const recipients = new Set<string>();
       
@@ -148,29 +225,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
+      headers: CORS,
     });
 
   } catch (error) {
-    console.error('[Inventory Notifications] Error processing request:', error);
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    );
+    console.error("INVENTORY_NOTIFY_ERROR", error);
+    return new Response(JSON.stringify({ ok: false, error: String(error) }), { status: 500, headers: CORS });
   }
 };
 

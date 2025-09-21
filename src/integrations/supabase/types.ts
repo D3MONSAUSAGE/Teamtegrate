@@ -2129,6 +2129,7 @@ export type Database = {
           conducted_by: string
           count_date: string
           created_at: string
+          email_sent_at: string | null
           id: string
           notes: string | null
           organization_id: string
@@ -2145,6 +2146,7 @@ export type Database = {
           conducted_by: string
           count_date?: string
           created_at?: string
+          email_sent_at?: string | null
           id?: string
           notes?: string | null
           organization_id: string
@@ -2161,6 +2163,7 @@ export type Database = {
           conducted_by?: string
           count_date?: string
           created_at?: string
+          email_sent_at?: string | null
           id?: string
           notes?: string | null
           organization_id?: string

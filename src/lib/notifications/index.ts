@@ -258,6 +258,40 @@ export const notifications = {
     }
   },
 
+  // Inventory Count Submitted - email notifications to team managers and admins
+  async notifyInventorySubmitted(
+    inventory: { id: string; team_name?: string; team_id?: string; items_total?: number; submitted_by_name?: string; location_name?: string; },
+    recipients: Array<{ email?: string | null }>
+  ) {
+    try {
+      const emails = (recipients ?? [])
+        .map(r => r?.email?.trim()?.toLowerCase())
+        .filter(Boolean);
+      
+      if (emails.length === 0) {
+        console.warn("[notifyInventorySubmitted] No recipients with email", { recipients });
+        return { data: { sent: 0, results: [] }, error: null };
+      }
+
+      console.log(`[Notifications] Sending inventory submission emails to ${emails.length} recipients: ${inventory.id}`);
+
+      const { data, error } = await supabase.functions.invoke("send-inventory-notifications", {
+        body: { kind: "inventory_count_submitted", recipients: emails, inventory, timestamp: new Date().toISOString() },
+      });
+
+      if (error) {
+        console.error("[notifyInventorySubmitted] invoke failed", error);
+      } else {
+        console.log("[notifyInventorySubmitted] invoke ok", data);
+      }
+
+      return { data, error };
+    } catch (error) {
+      console.error('[Notifications] Error in notifyInventorySubmitted:', error);
+      return { data: null, error };
+    }
+  },
+
   
   // Simple success/error notifications for UI feedback
   success: (message: string) => toast.success(message),
