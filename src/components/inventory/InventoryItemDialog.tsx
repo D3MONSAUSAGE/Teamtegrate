@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInventory } from '@/contexts/inventory';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Calculator } from 'lucide-react';
+import { Package, Calculator, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { InventoryCategoryDialog } from './InventoryCategoryDialog';
+import { InventoryUnitDialog } from './InventoryUnitDialog';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -46,6 +48,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const { createItem, updateItem, getItemById, loading, categories, units } = useInventory();
   
   const [calculatedUnitPrice, setCalculatedUnitPrice] = useState<number | null>(null);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -251,6 +255,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                             {category.name}
                           </SelectItem>
                         ))}
+                        <div className="border-t">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-xs h-8"
+                            onClick={() => setIsCategoryDialogOpen(true)}
+                          >
+                            <Plus className="h-3 w-3 mr-2" />
+                            Create New Category
+                          </Button>
+                        </div>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -276,6 +290,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                             {unit.name} ({unit.abbreviation})
                           </SelectItem>
                         ))}
+                        <div className="border-t">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start text-xs h-8"
+                            onClick={() => setIsUnitDialogOpen(true)}
+                          >
+                            <Plus className="h-3 w-3 mr-2" />
+                            Create New Unit
+                          </Button>
+                        </div>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -459,6 +483,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
             </div>
           </form>
         </Form>
+
+        <InventoryCategoryDialog
+          open={isCategoryDialogOpen}
+          onOpenChange={setIsCategoryDialogOpen}
+        />
+
+        <InventoryUnitDialog
+          open={isUnitDialogOpen}
+          onOpenChange={setIsUnitDialogOpen}
+        />
       </DialogContent>
     </Dialog>
   );

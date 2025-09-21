@@ -9,23 +9,73 @@ import { InventoryAlertsPanel } from '../InventoryAlertsPanel';
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
 import { TeamAssignmentsPanel } from '../team-assignments/TeamAssignmentsPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
-import { Plus, Package, FileText, Users, Search, Filter, Grid, List } from 'lucide-react';
+import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
+import { InventoryUnitDialog } from '../InventoryUnitDialog';
+import { Plus, Package, FileText, Users, Search, Filter, Grid, List, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTeamContext } from '@/hooks/useTeamContext';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from 'sonner';
+import { DEFAULT_CATEGORIES, DEFAULT_UNITS, shouldSeedDefaults } from '@/utils/inventorySeeds';
 
 export const InventoryManagementTab: React.FC = () => {
   const { hasRoleAccess } = useAuth();
-  const { items, loading } = useInventory();
+  const { items, loading, categories, units, deleteCategory, deleteUnit, createCategory, createUnit } = useInventory();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Category dialog states
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  
+  // Unit dialog states
+  const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  
   const teamContext = useTeamContext();
+
+  // Check if we should seed default data
+  React.useEffect(() => {
+    if (shouldSeedDefaults(categories, units) && hasRoleAccess('manager')) {
+      // Only suggest seeding if user can manage inventory
+      console.log('No categories or units found. Consider seeding default data.');
+    }
+  }, [categories, units, hasRoleAccess]);
+
+  const handleSeedDefaults = async () => {
+    try {
+      if (categories.length === 0) {
+        for (const category of DEFAULT_CATEGORIES) {
+          await createCategory({
+            ...category,
+            organization_id: '', // Will be set by context
+            is_active: true,
+          });
+        }
+      }
+      
+      if (units.length === 0) {
+        for (const unit of DEFAULT_UNITS) {
+          await createUnit({
+            ...unit,
+            organization_id: '', // Will be set by context
+            is_active: true,
+          });
+        }
+      }
+      
+      toast.success('Default categories and units created successfully!');
+    } catch (error) {
+      console.error('Error seeding defaults:', error);
+      toast.error('Failed to create default data');
+    }
+  };
 
   // Filter and sort items
   const filteredAndSortedItems = React.useMemo(() => {
@@ -54,8 +104,8 @@ export const InventoryManagementTab: React.FC = () => {
     return filtered;
   }, [items, searchTerm, selectedCategory, sortBy]);
 
-  // Get unique categories from items
-  const categories = React.useMemo(() => {
+  // Get unique categories from items for filtering
+  const itemCategories = React.useMemo(() => {
     const uniqueCategories = Array.from(new Set(
       items.map(item => item.category?.name).filter(Boolean)
     ));
@@ -72,6 +122,48 @@ export const InventoryManagementTab: React.FC = () => {
     setIsDialogOpen(true);
   };
 
+  const handleAddCategory = () => {
+    setSelectedCategoryId(null);
+    setIsCategoryDialogOpen(true);
+  };
+
+  const handleEditCategory = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    setIsCategoryDialogOpen(true);
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (confirm('Are you sure you want to delete this category?')) {
+      try {
+        await deleteCategory(categoryId);
+        toast.success('Category deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete category');
+      }
+    }
+  };
+
+  const handleAddUnit = () => {
+    setSelectedUnitId(null);
+    setIsUnitDialogOpen(true);
+  };
+
+  const handleEditUnit = (unitId: string) => {
+    setSelectedUnitId(unitId);
+    setIsUnitDialogOpen(true);
+  };
+
+  const handleDeleteUnit = async (unitId: string) => {
+    if (confirm('Are you sure you want to delete this unit?')) {
+      try {
+        await deleteUnit(unitId);
+        toast.success('Unit deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete unit');
+      }
+    }
+  };
+
   if (!hasRoleAccess('manager')) {
     return (
       <div className="text-center py-8">
@@ -86,10 +178,18 @@ export const InventoryManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="items" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Items
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <FolderOpen className="h-4 w-4" />
+            Categories
+          </TabsTrigger>
+          <TabsTrigger value="units" className="flex items-center gap-2">
+            <Ruler className="h-4 w-4" />
+            Units
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -128,7 +228,7 @@ export const InventoryManagementTab: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((category) => (
+                    {itemCategories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
                       </SelectItem>
@@ -276,6 +376,154 @@ export const InventoryManagementTab: React.FC = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="categories" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5" />
+                Inventory Categories
+              </CardTitle>
+              <Button onClick={handleAddCategory}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {categories.length === 0 ? (
+                <div className="text-center py-12">
+                  <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create categories to organize your inventory items
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={handleAddCategory}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Category
+                    </Button>
+                    {units.length === 0 && (
+                      <Button variant="outline" onClick={handleSeedDefaults}>
+                        Create Defaults
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell>{category.description || 'No description'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditCategory(category.id)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteCategory(category.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="units" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Ruler className="h-5 w-5" />
+                Measurement Units
+              </CardTitle>
+              <Button onClick={handleAddUnit}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Unit
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {units.length === 0 ? (
+                <div className="text-center py-12">
+                  <Ruler className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No units yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create measurement units for your inventory items
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={handleAddUnit}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Unit
+                    </Button>
+                    {categories.length === 0 && (
+                      <Button variant="outline" onClick={handleSeedDefaults}>
+                        Create Defaults
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Abbreviation</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {units.map((unit) => (
+                      <TableRow key={unit.id}>
+                        <TableCell className="font-medium">{unit.name}</TableCell>
+                        <TableCell>{unit.abbreviation}</TableCell>
+                        <TableCell className="capitalize">{unit.unit_type}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditUnit(unit.id)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteUnit(unit.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="templates" className="mt-6">
           <InventoryTemplatesPanel selectedTeam={teamContext?.selectedTeam?.id || null} />
         </TabsContent>
@@ -293,6 +541,18 @@ export const InventoryManagementTab: React.FC = () => {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         itemId={selectedItemId}
+      />
+
+      <InventoryCategoryDialog
+        open={isCategoryDialogOpen}
+        onOpenChange={setIsCategoryDialogOpen}
+        categoryId={selectedCategoryId}
+      />
+
+      <InventoryUnitDialog
+        open={isUnitDialogOpen}
+        onOpenChange={setIsUnitDialogOpen}
+        unitId={selectedUnitId}
       />
     </div>
   );
