@@ -5,16 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { InventoryItemDialog } from '../InventoryItemDialog';
-import { InventoryAlertsPanel } from '../InventoryAlertsPanel';
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
-import { TeamAssignmentsPanel } from '../team-assignments/TeamAssignmentsPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
 import { InventoryUnitDialog } from '../InventoryUnitDialog';
 import { ItemCard } from '../ItemCard';
 import { ItemTableRow } from '../ItemTableRow';
 import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
-import { Plus, Package, FileText, Users, Search, Filter, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -189,7 +187,7 @@ export const InventoryManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="items" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Items
@@ -205,14 +203,6 @@ export const InventoryManagementTab: React.FC = () => {
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Templates
-          </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Alerts
-          </TabsTrigger>
-          <TabsTrigger value="assignments" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Team Assignments
           </TabsTrigger>
         </TabsList>
 
@@ -469,14 +459,6 @@ export const InventoryManagementTab: React.FC = () => {
 
         <TabsContent value="templates" className="mt-6">
           <InventoryTemplatesPanel selectedTeam={null} />
-        </TabsContent>
-
-        <TabsContent value="alerts" className="mt-6">
-          <InventoryAlertsPanel />
-        </TabsContent>
-
-        <TabsContent value="assignments" className="mt-6">
-          <TeamAssignmentsPanel />
         </TabsContent>
       </Tabs>
 
