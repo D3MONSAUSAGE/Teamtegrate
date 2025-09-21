@@ -22,6 +22,15 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>
         {item.base_unit?.name || item.purchase_unit || 'Individual'}
       </TableCell>
+      <TableCell className="text-center">
+        <div className="font-medium">{item.conversion_factor || 1}</div>
+        <div className="text-xs text-muted-foreground">
+          {item.base_unit?.name || 'units'}
+        </div>
+      </TableCell>
+      <TableCell className="text-center">
+        {item.purchase_unit || 'Package'}
+      </TableCell>
       <TableCell>
         {item.purchase_price ? formatCurrency(item.purchase_price) : 'N/A'}
       </TableCell>

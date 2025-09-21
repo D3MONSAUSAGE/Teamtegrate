@@ -291,17 +291,19 @@ export const InventoryManagementTab: React.FC = () => {
               <Card>
                 <div className="max-h-[600px] overflow-y-auto">
                   <Table>
-                    <TableHeader>
-                       <TableRow>
-                         <TableHead>Name</TableHead>
-                         <TableHead>SKU</TableHead>
-                         <TableHead>Description</TableHead>
-                         <TableHead>Item Type</TableHead>
-                         <TableHead>Units</TableHead>
-                         <TableHead>Package Price</TableHead>
-                         <TableHead>Cost per Item</TableHead>
-                       </TableRow>
-                    </TableHeader>
+                     <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Item Type</TableHead>
+                          <TableHead>Units</TableHead>
+                          <TableHead>Units/Package</TableHead>
+                          <TableHead>Purchase Unit</TableHead>
+                          <TableHead>Package Price</TableHead>
+                          <TableHead>Cost per Item</TableHead>
+                        </TableRow>
+                     </TableHeader>
                     <TableBody>
                       {filteredAndSortedItems.map((item) => (
                         <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />

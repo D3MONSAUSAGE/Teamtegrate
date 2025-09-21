@@ -176,10 +176,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
       countItem?.template_maximum_quantity
     );
 
-    // Package information
-    const unitsPerPackage = item.conversion_factor || 1;
-    const purchaseUnit = item.purchase_unit || 'Package';
-
     return { 
       inStockQty, 
       actualQty, 
@@ -188,9 +184,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
       localValue, 
       stockStatus,
       finalQuantity,
-      countItem,
-      unitsPerPackage,
-      purchaseUnit
+      countItem
     };
   };
 
@@ -274,8 +268,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
                   <TableHead className="w-[300px]">Item</TableHead>
-                  <TableHead className="w-[90px] text-center">Units/Pkg</TableHead>
-                  <TableHead className="w-[100px] text-center">Purchase Unit</TableHead>
                   <TableHead className="w-[80px] text-center">Min</TableHead>
                   <TableHead className="w-[80px] text-center">Max</TableHead>
                   <TableHead className="w-[100px] text-center">In-Stock</TableHead>
@@ -287,7 +279,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
               </TableHeader>
               <TableBody>
                 {filteredItems.map((item, index) => {
-                  const { inStockQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity, countItem, unitsPerPackage, purchaseUnit } = getItemData(item);
+                  const { inStockQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity, countItem } = getItemData(item);
                   
                   return (
                     <TableRow key={item.id} className={cn(
@@ -305,17 +297,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                             {item.location && <span> • {item.location}</span>}
                           </div>
                         </div>
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <div className="font-medium">{unitsPerPackage}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.base_unit?.name || 'units'}
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <div className="text-sm font-medium">{purchaseUnit}</div>
                       </TableCell>
                       
                       <TableCell className="text-center">
