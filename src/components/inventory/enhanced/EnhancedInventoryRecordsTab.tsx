@@ -13,6 +13,7 @@ import { TeamSelector } from '@/components/team/TeamSelector';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
 import { CountComparisonDialog } from './CountComparisonDialog';
 import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
+import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
   BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare
@@ -116,14 +117,6 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setShowAnalyticsExport(true)}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export Analytics
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
             onClick={() => {
               setExportCountId(undefined);
               setExportTeamId(selectedTeam || undefined);
@@ -131,7 +124,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             }}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export Inventory
+            Export Inventory Report
           </Button>
         </div>
       </div>
@@ -572,6 +565,13 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
           null
         }
         counts={sortedCounts}
+      />
+
+      <InventoryExportDialog
+        open={showInventoryExport}
+        onOpenChange={setShowInventoryExport}
+        countId={exportCountId}
+        teamId={exportTeamId}
       />
     </div>
   );
