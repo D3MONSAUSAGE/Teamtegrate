@@ -2,7 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, Package, Calendar, Clock, Bell, Settings, Users } from 'lucide-react';
+import { CheckCircle, Package, Calendar, Clock, Bell, Settings, Users, Building } from 'lucide-react';
+import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
+import { useAuth } from '@/contexts/AuthContext';
 import type { TemplateFormData } from '../EnhancedTemplateDialog';
 
 interface ReviewStepProps {
@@ -14,6 +16,13 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
   formData,
   selectedTeam
 }) => {
+  const { user } = useAuth();
+  const { teams } = useTeamsByOrganization(user?.organizationId);
+  
+  // Find the selected team name
+  const selectedTeamData = formData.team_id 
+    ? teams.find(team => team.id === formData.team_id)
+    : null;
   const formatSchedule = () => {
     if (formData.execution_frequency === 'manual') {
       return 'Manual execution only';
@@ -52,7 +61,17 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{formData.category}</Badge>
+              {formData.team_id ? (
+                <Badge variant="secondary">
+                  <Users className="h-3 w-3 mr-1" />
+                  Team: {selectedTeamData?.name || 'Unknown Team'}
+                </Badge>
+              ) : (
+                <Badge variant="outline">
+                  <Building className="h-3 w-3 mr-1" />
+                  All Teams
+                </Badge>
+              )}
               <Badge variant={
                 formData.priority === 'urgent' ? 'destructive' :
                 formData.priority === 'high' ? 'default' :
@@ -60,12 +79,6 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               }>
                 {formData.priority} priority
               </Badge>
-              {selectedTeam && (
-                <Badge variant="secondary">
-                  <Users className="h-3 w-3 mr-1" />
-                  Team specific
-                </Badge>
-              )}
             </div>
           </div>
         </CardContent>
@@ -162,7 +175,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               <h4 className="font-medium text-sm text-green-800">Ready to Create</h4>
               <p className="text-sm text-green-700 mt-1">
                 Your template is configured and ready to be created. Once created, it will be available
-                for {selectedTeam ? 'your selected team' : 'your organization'} to use for inventory counts.
+                for {formData.team_id ? `the ${selectedTeamData?.name || 'selected'} team` : 'all teams in your organization'} to use for inventory counts.
               </p>
             </div>
           </div>

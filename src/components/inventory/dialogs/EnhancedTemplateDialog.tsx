@@ -24,7 +24,7 @@ export interface TemplateFormData {
   // Basic Info
   name: string;
   description: string;
-  category: string;
+  team_id: string | null; // null means "All Teams"
   priority: 'low' | 'medium' | 'high' | 'urgent';
   
   // Items
@@ -79,7 +79,7 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
   const [formData, setFormData] = useState<TemplateFormData>({
     name: '',
     description: '',
-    category: 'general',
+    team_id: selectedTeam || null,
     priority: 'medium',
     selectedItems: [],
     execution_frequency: 'manual',
@@ -137,10 +137,10 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
       // Create the template
       const template = await createTemplate({
         organization_id: user.organizationId,
-        team_id: selectedTeam,
+        team_id: formData.team_id,
         name: formData.name,
         description: formData.description,
-        category: formData.category,
+        category: formData.team_id ? 'team' : 'organization', // Use team or organization category
         priority: formData.priority,
         execution_frequency: formData.execution_frequency,
         execution_days: formData.execution_days,
@@ -167,7 +167,7 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
       setFormData({
         name: '',
         description: '',
-        category: 'general',
+        team_id: selectedTeam || null,
         priority: 'medium',
         selectedItems: [],
         execution_frequency: 'manual',
