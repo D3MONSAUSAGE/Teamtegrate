@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Check if API key is configured before initializing
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,11 +53,12 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const body: TicketNotificationRequest = await req.json();
     console.log("[Notification Processing] Starting", body.type, "notification for ticket", body.ticket?.id);
+    console.log("[API Key Check] RESEND_API_KEY exists:", !!resendApiKey);
 
-    if (!resend) {
-      console.warn("RESEND_API_KEY not configured, skipping email notification");
+    if (!resend || !resendApiKey) {
+      console.error("[Email Error] RESEND_API_KEY not configured or invalid");
       return new Response(JSON.stringify({ success: false, error: "Email service not configured" }), {
-        status: 200,
+        status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
