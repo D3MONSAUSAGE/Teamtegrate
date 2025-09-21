@@ -43,10 +43,13 @@ export const InventoryCountTab: React.FC = () => {
       
       if (template) {
         // Initialize count with template items
-        await initializeCountItems(count.id, template.id);
+        await inventoryCountsApi.initializeCountItems(count.id, template.id);
         // Load template items
         const items = await inventoryCountsApi.getTemplateItems(template.id);
         setTemplateItems(items);
+      } else {
+        // Initialize count with all items
+        await inventoryCountsApi.initializeCountItems(count.id);
       }
       
       await loadCountItems(count.id);

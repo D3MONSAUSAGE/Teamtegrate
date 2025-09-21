@@ -234,7 +234,7 @@ export const useInventoryOperations = ({
     const result = await handleAsyncOperation(
       async () => {
         const newCount = await inventoryCountsApi.create(countData);
-        await inventoryCountsApi.initializeCountItems(newCount.id);
+        // Note: Don't initialize here, let the count tab handle initialization with template
         return newCount;
       },
       'Start Inventory Count',
@@ -257,7 +257,13 @@ export const useInventoryOperations = ({
 
   const completeInventoryCount = useCallback(async (countId: string): Promise<void> => {
     const result = await handleAsyncOperation(
-      () => inventoryCountsApi.update(countId, { status: 'completed' }),
+      async () => {
+        // Update count totals before completing
+        await inventoryCountsApi.updateCountTotals(countId);
+        
+        // Complete the count
+        return await inventoryCountsApi.update(countId, { status: 'completed' });
+      },
       'Complete Inventory Count',
       'Inventory count completed successfully'
     );
@@ -372,23 +378,8 @@ export const useInventoryOperations = ({
   const initializeCountItems = useCallback(async (countId: string, templateId?: string): Promise<void> => {
     await handleAsyncOperation(
       async () => {
-        if (templateId) {
-          const templateItems = await inventoryTemplatesApi.getTemplateItems(templateId);
-          
-          if (!templateItems || templateItems.length === 0) {
-            throw new Error('Selected template has no items configured');
-          }
-          
-          const countItems = templateItems.map(ti => ({
-            count_id: countId,
-            item_id: ti.item_id,
-            expected_quantity: ti.expected_quantity || 0,
-          }));
-          
-          await inventoryCountsApi.bulkCreateCountItems(countItems);
-        } else {
-          await inventoryCountsApi.initializeCountItems(countId);
-        }
+        // Use the centralized API method that handles both template and regular initialization
+        await inventoryCountsApi.initializeCountItems(countId, templateId);
       },
       'Initialize Count Items',
       'Count items initialized successfully'

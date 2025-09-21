@@ -76,29 +76,55 @@ export const inventoryCountsApi = {
     if (error) throw error;
   },
 
-  async initializeCountItems(countId: string): Promise<void> {
+  async initializeCountItems(countId: string, templateId?: string): Promise<void> {
     try {
-      // Get all active inventory items with organization filtering
-      const { data: items, error: itemsError } = await supabase
-        .from('inventory_items')
-        .select('id, current_stock, organization_id')
-        .eq('is_active', true);
+      let countItems: any[] = [];
 
-      if (itemsError) {
-        console.error('Error fetching inventory items for count initialization:', itemsError);
-        throw new Error(`Failed to fetch inventory items: ${itemsError.message}`);
+      if (templateId) {
+        // Initialize from template
+        const { data: templateItems, error: templateError } = await supabase
+          .from('inventory_template_items')
+          .select(`
+            item_id,
+            expected_quantity,
+            inventory_items!inner(id, current_stock, is_active)
+          `)
+          .eq('template_id', templateId)
+          .eq('inventory_items.is_active', true);
+
+        if (templateError) {
+          console.error('Error fetching template items:', templateError);
+          throw new Error(`Failed to fetch template items: ${templateError.message}`);
+        }
+
+        countItems = (templateItems || []).map(item => ({
+          count_id: countId,
+          item_id: item.item_id,
+          expected_quantity: item.expected_quantity || item.inventory_items.current_stock || 0,
+        }));
+      } else {
+        // Initialize from all active items
+        const { data: items, error: itemsError } = await supabase
+          .from('inventory_items')
+          .select('id, current_stock, organization_id')
+          .eq('is_active', true);
+
+        if (itemsError) {
+          console.error('Error fetching inventory items for count initialization:', itemsError);
+          throw new Error(`Failed to fetch inventory items: ${itemsError.message}`);
+        }
+
+        countItems = (items || []).map(item => ({
+          count_id: countId,
+          item_id: item.id,
+          expected_quantity: item.current_stock || 0,
+        }));
       }
 
-      if (!items || items.length === 0) {
-        console.warn('No active inventory items found for count initialization');
+      if (countItems.length === 0) {
+        console.warn('No items found for count initialization');
         return;
       }
-
-      const countItems = items.map(item => ({
-        count_id: countId,
-        item_id: item.id,
-        expected_quantity: item.current_stock || 0,
-      }));
 
       const { error } = await supabase
         .from('inventory_count_items')
@@ -109,9 +135,49 @@ export const inventoryCountsApi = {
         throw new Error(`Failed to initialize count items: ${error.message}`);
       }
 
+      // Update the count's total_items_count
+      await this.updateCountTotals(countId);
+
       console.log(`Successfully initialized ${countItems.length} count items for count ${countId}`);
     } catch (error) {
       console.error('Error in initializeCountItems:', error);
+      throw error;
+    }
+  },
+
+  async updateCountTotals(countId: string): Promise<void> {
+    try {
+      // Get count statistics
+      const { data: stats, error: statsError } = await supabase
+        .from('inventory_count_items')
+        .select('actual_quantity, expected_quantity')
+        .eq('count_id', countId);
+
+      if (statsError) throw statsError;
+
+      const totalItems = stats?.length || 0;
+      const completedItems = stats?.filter(item => item.actual_quantity !== null).length || 0;
+      const completionPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+      
+      // Calculate variance count
+      const varianceCount = stats?.filter(item => 
+        item.actual_quantity !== null && 
+        Math.abs((item.actual_quantity || 0) - (item.expected_quantity || 0)) > 0.01
+      ).length || 0;
+
+      // Update the count record
+      const { error: updateError } = await supabase
+        .from('inventory_counts')
+        .update({
+          total_items_count: totalItems,
+          completion_percentage: completionPercentage,
+          variance_count: varianceCount,
+        })
+        .eq('id', countId);
+
+      if (updateError) throw updateError;
+    } catch (error) {
+      console.error('Error updating count totals:', error);
       throw error;
     }
   },
@@ -143,14 +209,9 @@ export const inventoryCountsApi = {
 
         return supabase
           .from('inventory_count_items')
-          .upsert({
-            count_id: countId,
-            item_id: itemId,
-            expected_quantity: 0, // This will be updated by a trigger or separate call
-            ...updateData,
-          }, {
-            onConflict: 'count_id,item_id'
-          });
+          .update(updateData)
+          .eq('count_id', countId)
+          .eq('item_id', itemId);
       });
 
       // Execute all updates in parallel
@@ -162,6 +223,9 @@ export const inventoryCountsApi = {
         console.error('Bulk update errors:', errors);
         throw new Error(`Failed to update ${errors.length} items: ${errors[0].error?.message}`);
       }
+
+      // Update count totals after successful bulk update
+      await this.updateCountTotals(countId);
 
       console.log(`Successfully updated ${updates.length} count items`);
     } catch (error) {

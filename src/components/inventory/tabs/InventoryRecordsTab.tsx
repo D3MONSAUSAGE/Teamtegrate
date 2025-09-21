@@ -7,14 +7,18 @@ import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryAnalyticsDashboard } from '@/components/inventory/analytics/InventoryAnalyticsDashboard';
+import { CountDetailsDialog } from '../CountDetailsDialog';
 import { Search, Download, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { InventoryCount } from '@/contexts/inventory/types';
 
 export const InventoryRecordsTab: React.FC = () => {
   const { counts, alerts } = useInventory();
   const { hasRoleAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedCount, setSelectedCount] = useState<InventoryCount | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const filteredCounts = counts.filter(count => {
     const matchesSearch = searchTerm === '' || 
@@ -35,6 +39,11 @@ export const InventoryRecordsTab: React.FC = () => {
     if (variance === 0) return 'default';
     if (Math.abs(variance) <= 5) return 'secondary';
     return 'destructive';
+  };
+
+  const handleViewDetails = (count: InventoryCount) => {
+    setSelectedCount(count);
+    setIsDetailsDialogOpen(true);
   };
 
   return (
@@ -182,7 +191,11 @@ export const InventoryRecordsTab: React.FC = () => {
                       </div>
                     </div>
                     
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewDetails(count)}
+                    >
                       View Details
                     </Button>
                   </div>
@@ -195,6 +208,13 @@ export const InventoryRecordsTab: React.FC = () => {
 
       {/* Analytics Section */}
       <InventoryAnalyticsDashboard />
+
+      {/* Count Details Dialog */}
+      <CountDetailsDialog
+        open={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
+        count={selectedCount}
+      />
     </div>
   );
 };
