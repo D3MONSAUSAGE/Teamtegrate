@@ -2075,6 +2075,8 @@ export type Database = {
           id: string
           item_id: string
           notes: string | null
+          template_maximum_quantity: number | null
+          template_minimum_quantity: number | null
           variance: number | null
         }
         Insert: {
@@ -2086,6 +2088,8 @@ export type Database = {
           id?: string
           item_id: string
           notes?: string | null
+          template_maximum_quantity?: number | null
+          template_minimum_quantity?: number | null
           variance?: number | null
         }
         Update: {
@@ -2097,6 +2101,8 @@ export type Database = {
           id?: string
           item_id?: string
           notes?: string | null
+          template_maximum_quantity?: number | null
+          template_minimum_quantity?: number | null
           variance?: number | null
         }
         Relationships: [
