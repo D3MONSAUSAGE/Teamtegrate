@@ -144,8 +144,8 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
     const expectedCounts: Record<string, string> = {};
     filteredItems.forEach(item => {
       const countItem = countItems.find(ci => ci.item_id === item.id);
-      const expectedQty = countItem?.expected_quantity || item.current_stock || 0;
-      expectedCounts[item.id] = expectedQty.toString();
+      const inStockQty = countItem?.in_stock_quantity || item.current_stock || 0;
+      expectedCounts[item.id] = inStockQty.toString();
     });
     setLocalCounts(expectedCounts);
   };
@@ -160,14 +160,14 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
 
   const getItemData = (item: InventoryItem) => {
     const countItem = countItems.find(ci => ci.item_id === item.id);
-    const expectedQty = countItem?.expected_quantity || item.current_stock || 0;
+    const inStockQty = countItem?.in_stock_quantity || item.current_stock || 0;
     const localValue = localCounts[item.id] || '';
     const actualQty = localValue ? parseFloat(localValue) : null;
-    const variance = actualQty !== null && !isNaN(actualQty) ? actualQty - expectedQty : null;
+    const variance = actualQty !== null && !isNaN(actualQty) ? actualQty - inStockQty : null;
     const hasUnsavedChanges = localValue !== (countItem?.actual_quantity?.toString() || '');
     
     // Get stock status for the item using template values when available
-    const finalQuantity = actualQty !== null ? actualQty : expectedQty;
+    const finalQuantity = actualQty !== null ? actualQty : inStockQty;
     const stockStatus = getStockStatus(
       finalQuantity, 
       item.minimum_threshold, 
@@ -177,12 +177,12 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
     );
 
     return { 
-      expectedQty, 
+      inStockQty, 
       actualQty, 
       variance, 
       hasUnsavedChanges, 
       localValue, 
-      stockStatus, 
+      stockStatus,
       finalQuantity,
       countItem
     };
@@ -270,7 +270,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                   <TableHead className="w-[300px]">Item</TableHead>
                   <TableHead className="w-[80px] text-center">Min</TableHead>
                   <TableHead className="w-[80px] text-center">Max</TableHead>
-                  <TableHead className="w-[100px] text-center">Expected</TableHead>
+                  <TableHead className="w-[100px] text-center">In-Stock</TableHead>
                   <TableHead className="w-[120px] text-center">Actual Count</TableHead>
                   <TableHead className="w-[100px] text-center">Variance</TableHead>
                   <TableHead className="w-[120px] text-center">Stock Status</TableHead>
@@ -279,7 +279,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
               </TableHeader>
               <TableBody>
                 {filteredItems.map((item, index) => {
-                  const { expectedQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity, countItem } = getItemData(item);
+                  const { inStockQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity, countItem } = getItemData(item);
                   
                   return (
                     <TableRow key={item.id} className={cn(
@@ -312,7 +312,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                       </TableCell>
                       
                       <TableCell className="text-center">
-                        <div className="font-medium">{expectedQty}</div>
+                        <div className="font-medium">{inStockQty}</div>
                         <div className="text-xs text-muted-foreground">
                           {item.base_unit?.name || 'units'}
                         </div>

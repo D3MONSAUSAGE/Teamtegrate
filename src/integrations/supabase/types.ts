@@ -2071,8 +2071,8 @@ export type Database = {
           count_id: string
           counted_at: string | null
           counted_by: string | null
-          expected_quantity: number
           id: string
+          in_stock_quantity: number
           item_id: string
           notes: string | null
           template_maximum_quantity: number | null
@@ -2084,8 +2084,8 @@ export type Database = {
           count_id: string
           counted_at?: string | null
           counted_by?: string | null
-          expected_quantity: number
           id?: string
+          in_stock_quantity: number
           item_id: string
           notes?: string | null
           template_maximum_quantity?: number | null
@@ -2097,8 +2097,8 @@ export type Database = {
           count_id?: string
           counted_at?: string | null
           counted_by?: string | null
-          expected_quantity?: number
           id?: string
+          in_stock_quantity?: number
           item_id?: string
           notes?: string | null
           template_maximum_quantity?: number | null
@@ -2309,8 +2309,8 @@ export type Database = {
       inventory_template_items: {
         Row: {
           created_at: string
-          expected_quantity: number | null
           id: string
+          in_stock_quantity: number | null
           item_id: string
           maximum_quantity: number | null
           minimum_quantity: number | null
@@ -2319,8 +2319,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          expected_quantity?: number | null
           id?: string
+          in_stock_quantity?: number | null
           item_id: string
           maximum_quantity?: number | null
           minimum_quantity?: number | null
@@ -2329,8 +2329,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          expected_quantity?: number | null
           id?: string
+          in_stock_quantity?: number | null
           item_id?: string
           maximum_quantity?: number | null
           minimum_quantity?: number | null

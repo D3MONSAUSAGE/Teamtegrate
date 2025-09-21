@@ -63,7 +63,7 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
   const completedItems = countItems.filter(item => item.actual_quantity !== null);
   const totalVariance = countItems.reduce((sum, item) => {
     if (item.actual_quantity === null) return sum;
-    return sum + Math.abs((item.actual_quantity || 0) - (item.expected_quantity || 0));
+    return sum + Math.abs((item.actual_quantity || 0) - (item.in_stock_quantity || 0));
   }, 0);
 
   // Calculate stock status summary for completed items
@@ -234,11 +234,11 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                     <TableBody>
                       {countItems.map((item) => {
                         const variance = item.actual_quantity !== null 
-                          ? (item.actual_quantity || 0) - (item.expected_quantity || 0)
+                          ? (item.actual_quantity || 0) - (item.in_stock_quantity || 0)
                           : null;
                         const hasVariance = variance !== null && Math.abs(variance) > 0.01;
                         const inventoryItem = (item as any).inventory_items;
-                        const finalQuantity = item.actual_quantity !== null ? item.actual_quantity : (item.expected_quantity || 0);
+                        const finalQuantity = item.actual_quantity !== null ? item.actual_quantity : (item.in_stock_quantity || 0);
 
                         return (
                           <TableRow key={item.id} className={cn(
@@ -268,7 +268,7 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                             </TableCell>
                             
                             <TableCell className="text-center">
-                              <div className="font-medium">{item.expected_quantity}</div>
+                              <div className="font-medium">{item.in_stock_quantity}</div>
                               <div className="text-xs text-muted-foreground">units</div>
                             </TableCell>
                             

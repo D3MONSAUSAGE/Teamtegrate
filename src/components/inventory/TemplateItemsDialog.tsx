@@ -29,7 +29,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [expectedQuantity, setExpectedQuantity] = useState<number>(0);
+  const [inStockQuantity, setInStockQuantity] = useState<number>(0);
   const [minimumQuantity, setMinimumQuantity] = useState<number | undefined>(undefined);
   const [maximumQuantity, setMaximumQuantity] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,9 +62,9 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     
     setIsLoading(true);
     try {
-      await addItemToTemplate(templateId, selectedItem.id, expectedQuantity, minimumQuantity, maximumQuantity);
+      await addItemToTemplate(templateId, selectedItem.id, inStockQuantity, minimumQuantity, maximumQuantity);
       setSelectedItem(null);
-      setExpectedQuantity(0);
+      setInStockQuantity(0);
       setMinimumQuantity(undefined);
       setMaximumQuantity(undefined);
       toast({
@@ -222,18 +222,18 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                     <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label htmlFor="expected-qty" className="text-sm font-medium">Expected Quantity</Label>
-                      <Input
-                        id="expected-qty"
-                        type="number"
-                        min="0"
-                        value={expectedQuantity}
-                        onChange={(e) => setExpectedQuantity(Number(e.target.value))}
-                        placeholder="0"
-                        className="mt-1"
-                      />
-                    </div>
+                     <div>
+                       <Label htmlFor="in-stock-qty" className="text-sm font-medium">In-Stock Quantity</Label>
+                       <Input
+                         id="in-stock-qty"
+                         type="number"
+                         min="0"
+                         value={inStockQuantity}
+                         onChange={(e) => setInStockQuantity(Number(e.target.value))}
+                         placeholder="0"
+                         className="mt-1"
+                       />
+                     </div>
                     <div>
                       <Label htmlFor="min-qty" className="text-sm font-medium">Min Quantity (Optional)</Label>
                       <Input
@@ -310,10 +310,10 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="font-medium text-lg">{itemDetails.name}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              <span className="font-medium">Expected:</span> {templateItem.expected_quantity} • 
-                              <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
-                            </div>
+                             <div className="text-sm text-muted-foreground mt-1">
+                               <span className="font-medium">In-Stock:</span> {templateItem.in_stock_quantity} • 
+                               <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
+                             </div>
                             {templateItem.minimum_quantity !== null && (
                               <div className="text-xs text-muted-foreground mt-1">
                                 Min: {templateItem.minimum_quantity} • Max: {templateItem.maximum_quantity || 'N/A'}

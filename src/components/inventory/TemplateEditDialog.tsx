@@ -45,7 +45,7 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
   });
   const [editingItems, setEditingItems] = useState<Record<string, boolean>>({});
   const [itemUpdates, setItemUpdates] = useState<Record<string, {
-    expected_quantity: number;
+    in_stock_quantity: number;
     minimum_quantity?: number;
     maximum_quantity?: number;
   }>>({});
@@ -102,7 +102,7 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
       setItemUpdates(prev => ({
         ...prev,
         [itemId]: {
-          expected_quantity: templateItem.expected_quantity || 0,
+          in_stock_quantity: templateItem.in_stock_quantity || 0,
           minimum_quantity: templateItem.minimum_quantity || undefined,
           maximum_quantity: templateItem.maximum_quantity || undefined,
         }
@@ -249,18 +249,18 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
                               <div className="space-y-3">
                                 <div className="grid grid-cols-3 gap-2">
                                   <div>
-                                    <Label className="text-xs">Expected</Label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={updates?.expected_quantity || 0}
-                                      onChange={(e) => handleItemUpdate(
-                                        templateItem.item_id, 
-                                        'expected_quantity', 
-                                        Number(e.target.value)
-                                      )}
-                                      className="h-8"
-                                    />
+                                     <Label className="text-xs">In-Stock</Label>
+                                     <Input
+                                       type="number"
+                                       min="0"
+                                       value={updates?.in_stock_quantity || 0}
+                                       onChange={(e) => handleItemUpdate(
+                                         templateItem.item_id, 
+                                         'in_stock_quantity', 
+                                         Number(e.target.value)
+                                       )}
+                                       className="h-8"
+                                     />
                                   </div>
                                   <div>
                                     <Label className="text-xs">Min</Label>
@@ -315,13 +315,13 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
                               </div>
                             ) : (
                               <div className="flex items-center justify-between">
-                                <div className="text-sm space-y-1">
-                                  <div>Expected: <span className="font-medium">{templateItem.expected_quantity || 0}</span></div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Min: {templateItem.minimum_quantity ?? 'Not set'} • 
-                                    Max: {templateItem.maximum_quantity ?? 'Not set'}
-                                  </div>
-                                </div>
+                                 <div className="text-sm space-y-1">
+                                   <div>In-Stock: <span className="font-medium">{templateItem.in_stock_quantity || 0}</span></div>
+                                   <div className="text-xs text-muted-foreground">
+                                     Min: {templateItem.minimum_quantity ?? 'Not set'} • 
+                                     Max: {templateItem.maximum_quantity ?? 'Not set'}
+                                   </div>
+                                 </div>
                                 <Button
                                   size="sm"
                                   variant="outline"

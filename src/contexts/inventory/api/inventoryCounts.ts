@@ -85,19 +85,19 @@ export const inventoryCountsApi = {
       if (countError) throw countError;
 
       if (count.template_id) {
-        // Get template items with their expected quantities
+        // Get template items with their in-stock quantities
         const { data: templateItems, error: templateError } = await supabase
           .from('inventory_template_items')
-          .select('item_id, expected_quantity')
+          .select('item_id, in_stock_quantity')
           .eq('template_id', count.template_id);
 
         if (templateError) throw templateError;
 
-        // Update count items with correct expected quantities
+        // Update count items with correct in-stock quantities
         const updatePromises = templateItems.map(templateItem => 
           supabase
             .from('inventory_count_items')
-            .update({ expected_quantity: templateItem.expected_quantity })
+            .update({ in_stock_quantity: templateItem.in_stock_quantity })
             .eq('count_id', countId)
             .eq('item_id', templateItem.item_id)
         );
@@ -128,7 +128,7 @@ export const inventoryCountsApi = {
         const updatePromises = countItems.map(countItem => 
           supabase
             .from('inventory_count_items')
-            .update({ expected_quantity: countItem.inventory_items.current_stock || 0 })
+            .update({ in_stock_quantity: countItem.inventory_items.current_stock || 0 })
             .eq('count_id', countId)
             .eq('item_id', countItem.item_id)
         );
@@ -159,7 +159,7 @@ export const inventoryCountsApi = {
           .from('inventory_template_items')
           .select(`
             item_id,
-            expected_quantity,
+            in_stock_quantity,
             minimum_quantity,
             maximum_quantity,
             inventory_items!inner(id, current_stock, is_active)
@@ -175,7 +175,7 @@ export const inventoryCountsApi = {
         countItems = (templateItems || []).map(item => ({
           count_id: countId,
           item_id: item.item_id,
-          expected_quantity: item.expected_quantity || item.inventory_items.current_stock || 0,
+          in_stock_quantity: item.in_stock_quantity || item.inventory_items.current_stock || 0,
           template_minimum_quantity: item.minimum_quantity,
           template_maximum_quantity: item.maximum_quantity,
         }));
@@ -194,7 +194,7 @@ export const inventoryCountsApi = {
         countItems = (items || []).map(item => ({
           count_id: countId,
           item_id: item.id,
-          expected_quantity: item.current_stock || 0,
+          in_stock_quantity: item.current_stock || 0,
         }));
       }
 
@@ -227,7 +227,7 @@ export const inventoryCountsApi = {
       // Get count statistics
       const { data: stats, error: statsError } = await supabase
         .from('inventory_count_items')
-        .select('actual_quantity, expected_quantity')
+        .select('actual_quantity, in_stock_quantity')
         .eq('count_id', countId);
 
       if (statsError) throw statsError;
@@ -239,7 +239,7 @@ export const inventoryCountsApi = {
       // Calculate variance count
       const varianceCount = stats?.filter(item => 
         item.actual_quantity !== null && 
-        Math.abs((item.actual_quantity || 0) - (item.expected_quantity || 0)) > 0.01
+        Math.abs((item.actual_quantity || 0) - (item.in_stock_quantity || 0)) > 0.01
       ).length || 0;
 
       // Update the count record

@@ -56,7 +56,7 @@ export const inventoryTemplatesApi = {
   async addItemToTemplate(
     templateId: string, 
     itemId: string, 
-    expectedQuantity: number = 0,
+    inStockQuantity: number = 0,
     minimumQuantity?: number,
     maximumQuantity?: number,
     sortOrder: number = 0
@@ -66,7 +66,7 @@ export const inventoryTemplatesApi = {
       .insert([{
         template_id: templateId,
         item_id: itemId,
-        expected_quantity: expectedQuantity,
+        in_stock_quantity: inStockQuantity,
         minimum_quantity: minimumQuantity,
         maximum_quantity: maximumQuantity,
         sort_order: sortOrder
@@ -92,7 +92,7 @@ export const inventoryTemplatesApi = {
     templateId: string, 
     itemId: string, 
     updates: {
-      expected_quantity?: number;
+      in_stock_quantity?: number;
       minimum_quantity?: number;
       maximum_quantity?: number;
       sort_order?: number;

@@ -45,14 +45,14 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
 
   const currentItem = items[currentIndex];
   const countItem = countItems.find(ci => ci.item_id === currentItem?.id);
-  const expectedQty = countItem?.expected_quantity || currentItem?.current_stock || 0;
+  const inStockQty = countItem?.in_stock_quantity || currentItem?.current_stock || 0;
   const actualQty = countItem?.actual_quantity;
   const variance = actualQty !== null && actualQty !== undefined 
-    ? actualQty - expectedQty 
+    ? actualQty - inStockQty 
     : null;
   
   // Get stock status for current item
-  const finalQuantity = actualQty !== null ? actualQty : expectedQty;
+  const finalQuantity = actualQty !== null ? actualQty : inStockQty;
   const stockStatus = currentItem ? getStockStatus(
     finalQuantity, 
     currentItem.minimum_threshold, 
@@ -82,7 +82,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
   };
 
   const handleQuickAdjust = (adjustment: number) => {
-    const newValue = Math.max(0, expectedQty + adjustment);
+    const newValue = Math.max(0, inStockQty + adjustment);
     handleQuantityUpdate(newValue);
   };
 
@@ -140,8 +140,8 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
             {/* Expected vs Actual */}
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
-                <div className="text-2xl font-bold">{expectedQty}</div>
-                <div className="text-sm text-muted-foreground">Expected</div>
+                <div className="text-2xl font-bold">{inStockQty}</div>
+                <div className="text-sm text-muted-foreground">In-Stock</div>
               </div>
               <div className="text-center p-4 bg-primary/10 rounded-lg">
                 <div className="text-2xl font-bold">
@@ -192,7 +192,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => handleQuantityUpdate(expectedQty)}
+                onClick={() => handleQuantityUpdate(inStockQty)}
                 className="h-12"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />

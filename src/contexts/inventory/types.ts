@@ -89,7 +89,7 @@ export interface InventoryCountItem {
   id: string;
   count_id: string;
   item_id: string;
-  expected_quantity: number;
+  in_stock_quantity: number;
   actual_quantity?: number;
   variance?: number;
   notes?: string;
@@ -140,7 +140,7 @@ export interface InventoryTemplateItem {
   id: string;
   template_id: string;
   item_id: string;
-  expected_quantity: number;
+  in_stock_quantity: number;
   minimum_quantity?: number;
   maximum_quantity?: number;
   sort_order: number;
@@ -218,7 +218,7 @@ export interface InventoryContextType {
   getTemplateItems: (templateId: string) => Promise<InventoryTemplateItem[]>;
   addItemToTemplate: (templateId: string, itemId: string, expectedQuantity?: number, minimumQuantity?: number, maximumQuantity?: number, sortOrder?: number) => Promise<InventoryTemplateItem>;
   updateTemplateItem: (templateId: string, itemId: string, updates: {
-    expected_quantity?: number;
+    in_stock_quantity?: number;
     minimum_quantity?: number;
     maximum_quantity?: number;
     sort_order?: number;
