@@ -10,6 +10,7 @@ import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/type
 import { Package, Play, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
+import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 
@@ -37,9 +38,11 @@ export const InventoryCountTab: React.FC = () => {
         ? selectedTeam 
           ? `Count for ${selectedTeam.name}: ${template.name}`
           : `Count from template: ${template.name}` 
+        : selectedTeam
+        ? `Manual count for ${selectedTeam.name}`
         : 'Manual inventory count';
       
-      const count = await startInventoryCount(countName);
+      const count = await startInventoryCount(countName, selectedTeam?.id);
       setActiveCount(count.id);
       setActiveTemplate(template || null);
       
@@ -185,15 +188,16 @@ export const InventoryCountTab: React.FC = () => {
                 </Button>
               </TemplateCountSelectionDialog>
               
-              <Button 
-                onClick={() => handleStartCount()} 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-              >
-                <Package className="h-4 w-4 mr-2" />
-                Start Count (All Items)
-              </Button>
+              <ManualCountSelectionDialog onStartCount={(selectedTeam) => handleStartCount(undefined, selectedTeam)}>
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  size="lg"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Start Manual Count
+                </Button>
+              </ManualCountSelectionDialog>
             </div>
           </CardContent>
         </Card>
