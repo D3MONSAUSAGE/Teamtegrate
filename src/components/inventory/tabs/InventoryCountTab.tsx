@@ -149,9 +149,8 @@ export const InventoryCountTab: React.FC = () => {
     }
   }, [counts]);
 
-  // Helper functions for filtering counts by date
+  // Filter counts for today only
   const todayCounts = counts.filter(count => isToday(new Date(count.created_at)));
-  const recentCounts = counts.filter(count => !isToday(new Date(count.created_at)));
   
   const formatExecutionTime = (count: any) => {
     const startTime = format(new Date(count.created_at), 'MMM dd, yyyy \'at\' h:mm a');
@@ -199,140 +198,77 @@ export const InventoryCountTab: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Today's Counts */}
-        {todayCounts.length > 0 && (
+        {/* Daily Inventory Counts */}
+        {todayCounts.length > 0 ? (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Today's Counts
+                Daily Inventory Counts
               </CardTitle>
               <CardDescription>
                 Inventory counts started today
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {todayCounts.slice(0, 5).map((count) => (
-                  <div key={count.id} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium">
-                            {count.notes || `Count ${count.id.slice(0, 8)}`}
+              {todayCounts.length <= 5 ? (
+                <div className="space-y-3">
+                  {todayCounts.map((count) => (
+                    <div key={count.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium">
+                              {count.notes || `Count ${count.id.slice(0, 8)}`}
+                            </p>
+                            <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
+                              {count.status === 'completed' ? 'Completed' : 'In Progress'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {formatExecutionTime(count)}
                           </p>
-                          <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
-                            {count.status === 'completed' ? 'Completed' : 'In Progress'}
-                          </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatExecutionTime(count)}
-                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {todayCounts.length > 5 && (
-                  <ScrollArea className="h-32">
-                    <div className="space-y-3">
-                      {todayCounts.slice(5).map((count) => (
-                        <div key={count.id} className="p-4 border rounded-lg">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-medium">
-                                  {count.notes || `Count ${count.id.slice(0, 8)}`}
-                                </p>
-                                <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
-                                  {count.status === 'completed' ? 'Completed' : 'In Progress'}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {formatExecutionTime(count)}
+                  ))}
+                </div>
+              ) : (
+                <ScrollArea className="h-64">
+                  <div className="space-y-3">
+                    {todayCounts.map((count) => (
+                      <div key={count.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium">
+                                {count.notes || `Count ${count.id.slice(0, 8)}`}
                               </p>
+                              <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
+                                {count.status === 'completed' ? 'Completed' : 'In Progress'}
+                              </Badge>
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              {formatExecutionTime(count)}
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
+              <p className="text-muted-foreground">No inventory counts today</p>
+              <p className="text-sm text-muted-foreground mt-1">Start a new count to begin tracking</p>
             </CardContent>
           </Card>
         )}
-
-        {/* Recent Counts (Non-today) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Recent Inventory Counts
-            </CardTitle>
-            <CardDescription>
-              Previous inventory count history
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentCounts.length === 0 && todayCounts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No inventory counts yet</p>
-              </div>
-            ) : recentCounts.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <p className="text-sm">No previous counts to show</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentCounts.slice(0, 5).map((count) => (
-                  <div key={count.id} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium">
-                            {count.notes || `Count ${count.id.slice(0, 8)}`}
-                          </p>
-                          <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
-                            {count.status === 'completed' ? 'Completed' : 'In Progress'}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatExecutionTime(count)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {recentCounts.length > 5 && (
-                  <ScrollArea className="h-32">
-                    <div className="space-y-3">
-                      {recentCounts.slice(5).map((count) => (
-                        <div key={count.id} className="p-4 border rounded-lg">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-medium">
-                                  {count.notes || `Count ${count.id.slice(0, 8)}`}
-                                </p>
-                                <Badge variant={count.status === 'completed' ? 'default' : 'secondary'}>
-                                  {count.status === 'completed' ? 'Completed' : 'In Progress'}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {formatExecutionTime(count)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     );
   }
