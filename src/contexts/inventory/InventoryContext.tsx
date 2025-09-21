@@ -9,13 +9,25 @@ interface InventoryProviderProps {
 }
 
 export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }) => {
-  const inventoryData = useEnhancedInventoryManagement();
+  try {
+    const inventoryData = useEnhancedInventoryManagement();
+    
+    console.log('InventoryProvider - inventoryData:', inventoryData ? 'defined' : 'undefined');
+    
+    if (!inventoryData) {
+      console.error('InventoryProvider - useEnhancedInventoryManagement returned undefined');
+      return <div>Loading inventory...</div>;
+    }
 
-  return (
-    <InventoryContext.Provider value={inventoryData}>
-      {children}
-    </InventoryContext.Provider>
-  );
+    return (
+      <InventoryContext.Provider value={inventoryData}>
+        {children}
+      </InventoryContext.Provider>
+    );
+  } catch (error) {
+    console.error('InventoryProvider - Error in useEnhancedInventoryManagement:', error);
+    return <div>Error loading inventory: {error.message}</div>;
+  }
 };
 
 export const useInventory = (): InventoryContextType => {

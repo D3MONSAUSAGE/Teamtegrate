@@ -25,6 +25,8 @@ import {
 export const useEnhancedInventoryManagement = (): InventoryContextType => {
   const { user } = useAuth();
   
+  console.log('useEnhancedInventoryManagement - user:', user ? 'defined' : 'undefined', user?.organizationId);
+  
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [counts, setCounts] = useState<InventoryCount[]>([]);
@@ -127,7 +129,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
       const data = await inventoryCategoriesApi.getAll();
       setCategories(data);
     } catch (error) {
-      console.error('Error fetching inventory categories:', error);
+      console.warn('Categories not available yet, skipping:', error.message);
+      setCategories([]);
     } finally {
       setCategoriesLoading(false);
     }
@@ -140,7 +143,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
       const data = await inventoryUnitsApi.getAll();
       setUnits(data);
     } catch (error) {
-      console.error('Error fetching inventory units:', error);
+      console.warn('Units not available yet, skipping:', error.message);
+      setUnits([]);
     } finally {
       setUnitsLoading(false);
     }
@@ -319,7 +323,8 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
   // Load initial data
   useEffect(() => {
     if (user?.organizationId) {
-      Promise.all([
+      setLoading(true);
+      Promise.allSettled([
         refreshItems(),
         refreshTransactions(),
         refreshCounts(),
@@ -328,7 +333,17 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
         refreshTeamAssignments(),
         refreshCategories(),
         refreshUnits()
-      ]).finally(() => setLoading(false));
+      ]).then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const names = ['items', 'transactions', 'counts', 'alerts', 'templates', 'team assignments', 'categories', 'units'];
+            console.warn(`Failed to load ${names[index]}:`, result.reason);
+          }
+        });
+      }).finally(() => {
+        setLoading(false);
+        console.log('Inventory context initialization complete');
+      });
     }
   }, [user?.organizationId, refreshItems, refreshTransactions, refreshCounts, refreshAlerts, refreshTemplates, refreshTeamAssignments, refreshCategories, refreshUnits]);
 
