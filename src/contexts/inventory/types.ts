@@ -122,6 +122,15 @@ export interface InventoryTemplate {
   created_by: string;
   created_at: string;
   updated_at: string;
+  execution_frequency: 'manual' | 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annually';
+  execution_days: string[];
+  execution_time_start?: string;
+  execution_time_due?: string;
+  auto_assign_enabled: boolean;
+  notification_settings: Record<string, any>;
+  execution_window_hours: number;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category: string;
 }
 
 export interface InventoryTemplateItem {

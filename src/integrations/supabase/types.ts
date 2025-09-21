@@ -2344,35 +2344,62 @@ export type Database = {
       }
       inventory_templates: {
         Row: {
+          auto_assign_enabled: boolean | null
+          category: string | null
           created_at: string
           created_by: string
           description: string | null
+          execution_days: string[] | null
+          execution_frequency: string | null
+          execution_time_due: string | null
+          execution_time_start: string | null
+          execution_window_hours: number | null
           id: string
           is_active: boolean
           name: string
+          notification_settings: Json | null
           organization_id: string
+          priority: string | null
           team_id: string | null
           updated_at: string
         }
         Insert: {
+          auto_assign_enabled?: boolean | null
+          category?: string | null
           created_at?: string
           created_by: string
           description?: string | null
+          execution_days?: string[] | null
+          execution_frequency?: string | null
+          execution_time_due?: string | null
+          execution_time_start?: string | null
+          execution_window_hours?: number | null
           id?: string
           is_active?: boolean
           name: string
+          notification_settings?: Json | null
           organization_id: string
+          priority?: string | null
           team_id?: string | null
           updated_at?: string
         }
         Update: {
+          auto_assign_enabled?: boolean | null
+          category?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
+          execution_days?: string[] | null
+          execution_frequency?: string | null
+          execution_time_due?: string | null
+          execution_time_start?: string | null
+          execution_window_hours?: number | null
           id?: string
           is_active?: boolean
           name?: string
+          notification_settings?: Json | null
           organization_id?: string
+          priority?: string | null
           team_id?: string | null
           updated_at?: string
         }

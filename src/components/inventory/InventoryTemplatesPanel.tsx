@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Plus, FileText, Edit, Users, Package, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateItemsDialog } from './TemplateItemsDialog';
+import { EnhancedTemplateDialog } from './dialogs/EnhancedTemplateDialog';
 
 interface InventoryTemplatesPanelProps {
   selectedTeam: string;
@@ -21,6 +22,7 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEnhancedDialogOpen, setIsEnhancedDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +51,13 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
         description: templateDescription || undefined,
         is_active: true,
         created_by: user?.id || '',
+        execution_frequency: 'manual',
+        execution_days: [],
+        auto_assign_enabled: false,
+        notification_settings: {},
+        execution_window_hours: 24,
+        priority: 'medium',
+        category: 'general'
       });
 
       toast({
@@ -111,13 +120,22 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
           </p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Template
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            className="gap-2"
+            onClick={() => setIsEnhancedDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            New Template
+          </Button>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Quick Template
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Inventory Template</DialogTitle>
@@ -160,6 +178,7 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -171,7 +190,7 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
               <p className="text-muted-foreground text-center mb-4">
                 Create your first inventory template to get started
               </p>
-              <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+              <Button onClick={() => setIsEnhancedDialogOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create Template
               </Button>
@@ -236,6 +255,13 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
           ))
         )}
       </div>
+
+      {/* Enhanced Template Dialog */}
+      <EnhancedTemplateDialog
+        open={isEnhancedDialogOpen}
+        onOpenChange={setIsEnhancedDialogOpen}
+        selectedTeam={selectedTeam}
+      />
 
       {/* Template Items Dialog */}
       <TemplateItemsDialog
