@@ -51,83 +51,129 @@ interface InventoryNotificationRequest {
   timestamp: string;
 }
 
-// Template loading function
-async function loadEmailTemplate(templateName: string): Promise<string> {
-  try {
-    const response = await fetch(`https://raw.githubusercontent.com/teamtegrate/teamtegrate/main/src/emails/${templateName}`);
-    if (!response.ok) {
-      throw new Error(`Failed to load template: ${response.status}`);
-    }
-    return await response.text();
-  } catch (error) {
-    console.warn(`Failed to load template ${templateName}:`, error);
-    // Return fallback template
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="UTF-8"><title>{{subject}}</title></head>
-      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>📦 Inventory Count Submitted</h2>
-        <p><strong>Submitted by:</strong> {{submitterName}}</p>
-        <p><strong>Team:</strong> {{teamName}}</p>
-        <p><strong>Date:</strong> {{submissionDate}} at {{submissionTime}}</p>
-        <p><strong>Total items:</strong> {{totalItems}}</p>
-        <div style="margin: 20px 0;">
-          <a href="{{reviewUrl}}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">🔍 View Full Inventory Report</a>
-        </div>
-        <p style="color: #666; font-size: 14px;">This is an automated message from {{companyName}} – Inventory Management.</p>
-      </body>
-      </html>
-    `;
-  }
+interface InventoryEmailContext {
+  orgName: string;
+  logoUrl: string;
+  submittedBy: string;
+  teamName: string;
+  submittedDate: string;
+  totalItems: number;
+  countUrl: string;
+  highlights?: { name: string; expected: string|number; counted: string|number; delta: string|number; }[];
 }
 
-// Template processing function
-function processTemplate(template: string, variables: Record<string, any>): string {
-  let processed = template;
-  
-  // Handle simple variable replacements
-  Object.entries(variables).forEach(([key, value]) => {
-    const regex = new RegExp(`{{${key}}}`, 'g');
-    processed = processed.replace(regex, String(value || ''));
-  });
-  
-  // Handle conditional sections for showLowItemWarning
-  if (variables.showLowItemWarning) {
-    processed = processed.replace(/{{#showLowItemWarning}}([\s\S]*?){{\/showLowItemWarning}}/g, '$1');
-  } else {
-    processed = processed.replace(/{{#showLowItemWarning}}[\s\S]*?{{\/showLowItemWarning}}/g, '');
-  }
-  
-  // Handle itemPreview conditional sections
-  if (variables.itemPreview && variables.itemPreview.items && variables.itemPreview.items.length > 0) {
-    processed = processed.replace(/{{#itemPreview}}([\s\S]*?){{\/itemPreview}}/g, '$1');
-    
-    // Process items list
-    const itemsSection = processed.match(/{{#items}}([\s\S]*?){{\/items}}/);
-    if (itemsSection) {
-      const itemTemplate = itemsSection[1];
-      const itemsHtml = variables.itemPreview.items.map((item: any) => {
-        return itemTemplate
-          .replace(/{{name}}/g, item.name || '')
-          .replace(/{{quantity}}/g, item.quantity || '')
-          .replace(/{{unit}}/g, item.unit || '');
-      }).join('');
-      processed = processed.replace(/{{#items}}[\s\S]*?{{\/items}}/, itemsHtml);
-    }
-    
-    // Handle hasMoreItems conditional
-    if (variables.itemPreview.hasMoreItems) {
-      processed = processed.replace(/{{#hasMoreItems}}([\s\S]*?){{\/hasMoreItems}}/g, '$1');
-      processed = processed.replace(/{{remainingCount}}/g, String(variables.itemPreview.remainingCount || ''));
-    } else {
-      processed = processed.replace(/{{#hasMoreItems}}[\s\S]*?{{\/hasMoreItems}}/g, '');
-    }
-  } else {
-    processed = processed.replace(/{{#itemPreview}}[\s\S]*?{{\/itemPreview}}/g, '');
-  }
-  
-  return processed;
+// Enhanced HTML escaping function
+function esc(s?: string) {
+  return (s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]!));
+}
+
+// Professional inventory email template renderer
+function renderInventorySubmittedHTML(ctx: InventoryEmailContext): string {
+  const x = {
+    ...ctx,
+    orgName: esc(ctx.orgName),
+    submittedBy: esc(ctx.submittedBy),
+    teamName: esc(ctx.teamName),
+  };
+
+  return `<!-- preview text (hidden) -->
+<div style="display:none;max-height:0;overflow:hidden;">
+  Your inventory count was submitted and is ready for review.
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7fb;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;">
+        <!-- header -->
+        <tr>
+          <td style="padding:20px 24px;background:#0d3b66;color:#fff;">
+            <table role="presentation" width="100%"><tr>
+              <td align="left" style="font-size:18px;font-weight:600;">
+                <img src="${x.logoUrl}" alt="${x.orgName} logo" width="28" height="28" style="vertical-align:middle;border:0;margin-right:8px;">
+                ${x.orgName}
+              </td>
+              <td align="right" style="font-size:12px;opacity:.9;">Inventory</td>
+            </tr></table>
+          </td>
+        </tr>
+
+        <!-- title -->
+        <tr>
+          <td style="padding:28px 24px 0;color:#111;">
+            <h1 style="margin:0 0 6px;font-size:22px;line-height:1.3;">📦 Inventory Count Submitted</h1>
+            <p style="margin:0 0 12px;font-size:14px;color:#333;">
+              A new inventory count has been submitted and is ready for review.
+            </p>
+          </td>
+        </tr>
+
+        <!-- facts -->
+        <tr>
+          <td style="padding:8px 24px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef0f5;border-radius:8px;">
+              <tr>
+                <td style="padding:12px 14px;font-size:13px;color:#555;border-bottom:1px solid #eef0f5;width:160px;"><strong>Submitted by</strong></td>
+                <td style="padding:12px 14px;font-size:13px;color:#111;border-bottom:1px solid #eef0f5;">${x.submittedBy}</td>
+              </tr>
+              <tr>
+                <td style="padding:12px 14px;font-size:13px;color:#555;border-bottom:1px solid #eef0f5;"><strong>Team</strong></td>
+                <td style="padding:12px 14px;font-size:13px;color:#111;border-bottom:1px solid #eef0f5;">${x.teamName}</td>
+              </tr>
+              <tr>
+                <td style="padding:12px 14px;font-size:13px;color:#555;border-bottom:1px solid #eef0f5;"><strong>Date</strong></td>
+                <td style="padding:12px 14px;font-size:13px;color:#111;border-bottom:1px solid #eef0f5;">${x.submittedDate}</td>
+              </tr>
+              <tr>
+                <td style="padding:12px 14px;font-size:13px;color:#555;"><strong>Total items</strong></td>
+                <td style="padding:12px 14px;font-size:13px;color:#111;">${x.totalItems}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        ${ctx.highlights && ctx.highlights.length > 0 ? `
+        <!-- optional highlights -->
+        <tr>
+          <td style="padding:18px 24px 0;">
+            <h3 style="margin:0 0 8px;font-size:14px;color:#111;">Top variances</h3>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef0f5;border-radius:8px;">
+              <tr>
+                <td style="padding:10px 12px;font-size:12px;color:#555;"><strong>Item</strong></td>
+                <td style="padding:10px 12px;font-size:12px;color:#555;"><strong>Expected</strong></td>
+                <td style="padding:10px 12px;font-size:12px;color:#555;"><strong>Counted</strong></td>
+                <td style="padding:10px 12px;font-size:12px;color:#555;"><strong>Δ</strong></td>
+              </tr>
+              ${ctx.highlights.map(item => `
+              <tr>
+                <td style="padding:10px 12px;font-size:12px;color:#111;border-top:1px solid #eef0f5;">${esc(String(item.name))}</td>
+                <td style="padding:10px 12px;font-size:12px;color:#111;border-top:1px solid #eef0f5;">${esc(String(item.expected))}</td>
+                <td style="padding:10px 12px;font-size:12px;color:#111;border-top:1px solid #eef0f5;">${esc(String(item.counted))}</td>
+                <td style="padding:10px 12px;font-size:12px;color:#111;border-top:1px solid #eef0f5;">${esc(String(item.delta))}</td>
+              </tr>
+              `).join('')}
+            </table>
+          </td>
+        </tr>
+        ` : ''}
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:20px 24px 4px;">
+            <a href="${x.countUrl}" style="display:inline-block;background:#0d3b66;color:#fff;text-decoration:none;font-weight:600;border-radius:8px;padding:10px 16px;">Review count</a>
+          </td>
+        </tr>
+
+        <!-- footer -->
+        <tr>
+          <td style="padding:16px 24px;background:#fafbfe;border-top:1px solid #eef0f5;color:#6b7280;font-size:12px;">
+            This is an automated message from Teamtegrate — Inventory Management.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
 }
 
 // Date formatting functions
@@ -201,60 +247,46 @@ const handler = async (req: Request): Promise<Response> => {
       const submissionDate = formatDate(requestData.timestamp);
       const submissionTime = formatTime(requestData.timestamp);
       
-      // Enhanced subject line
-      const subject = `📦 Inventory Count – ${submitterName} – ${teamName} – ${submissionDate}`;
+      // Enhanced subject line with preheader
+      const subject = `📦 Inventory Count Submitted — ${submitterName} — ${teamName} — ${submissionDate}`;
       const url = `${base}/dashboard/inventory`;
 
-      // Fetch inventory items for preview (first 5 items)
-      let itemPreview = null;
+      // Fetch inventory items for variance highlights (top 5 with variances)
+      let highlights = null;
       try {
         const { data: items } = await supabase
           .from('inventory_count_items')
-          .select('item_name, counted_quantity, unit')
+          .select('item_name, counted_quantity, expected_quantity, unit')
           .eq('count_id', inv.id)
+          .neq('counted_quantity', 'expected_quantity')
+          .order('abs(counted_quantity - expected_quantity)', { ascending: false })
           .limit(5);
 
         if (items && items.length > 0) {
-          const previewItems = items.map(item => ({
+          highlights = items.map(item => ({
             name: item.item_name || 'Unknown Item',
-            quantity: item.counted_quantity || 0,
-            unit: item.unit || 'units'
+            expected: item.expected_quantity || 0,
+            counted: item.counted_quantity || 0,
+            delta: (item.counted_quantity || 0) - (item.expected_quantity || 0)
           }));
-
-          // Check if there are more items
-          const { count: totalItemsCount } = await supabase
-            .from('inventory_count_items')
-            .select('*', { count: 'exact', head: true })
-            .eq('count_id', inv.id);
-
-          const hasMoreItems = (totalItemsCount || 0) > 5;
-          const remainingCount = Math.max(0, (totalItemsCount || 0) - 5);
-
-          itemPreview = {
-            items: previewItems,
-            hasMoreItems,
-            remainingCount
-          };
         }
       } catch (error) {
-        console.warn('Failed to fetch inventory items for preview:', error);
+        console.warn('Failed to fetch inventory variance highlights:', error);
       }
 
-      // Load and process email template
-      const template = await loadEmailTemplate('inventory-submitted.html');
-      const templateVariables = {
-        companyName: 'Teamtegrate',
-        submitterName,
+      // Render professional email template
+      const emailContext: InventoryEmailContext = {
+        orgName: 'Teamtegrate',
+        logoUrl: 'https://teamtegrate.com/logo.png', // Placeholder - replace with actual logo URL
+        submittedBy: submitterName,
         teamName,
-        submissionDate,
-        submissionTime,
-        totalItems: `${totalItems}`,
-        reviewUrl: url,
-        showLowItemWarning: totalItems < 5,
-        itemPreview
+        submittedDate: `${submissionDate} at ${submissionTime}`,
+        totalItems,
+        countUrl: url,
+        highlights: highlights || undefined
       };
 
-      const html = processTemplate(template, templateVariables);
+      const html = renderInventorySubmittedHTML(emailContext);
 
       const sends = await Promise.allSettled(
         recipientList.map(async (toEmail) => {
