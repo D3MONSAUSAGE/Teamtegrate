@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const body: TicketNotificationRequest = await req.json();
-    console.log("Received ticket notification request:", body.type, body.ticket?.id);
+    console.log("[Notification Processing] Starting", body.type, "notification for ticket", body.ticket?.id);
 
     if (!resend) {
       console.warn("RESEND_API_KEY not configured, skipping email notification");
@@ -60,50 +60,72 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Load email template from file system and replace variables
-    const loadTemplate = async (templateName: string) => {
-      try {
-        const templatePath = `./src/emails/${templateName}.html`;
-        const templateContent = await Deno.readTextFile(templatePath);
-        
-        // Replace template variables
-        return templateContent
-          .replace(/\{\{ticketId\}\}/g, body.ticket.ticket_number || body.ticket.id)
-          .replace(/\{\{ticketTitle\}\}/g, body.ticket.title)
-          .replace(/\{\{ticketDescription\}\}/g, body.ticket.description || '')
-          .replace(/\{\{userName\}\}/g, body.user?.name || body.assignee?.name || 'User')
-          .replace(/\{\{brandName\}\}/g, Deno.env.get("BRAND_NAME") || "Teamtegrate")
-          .replace(/\{\{ticketUrl\}\}/g, `${Deno.env.get("SITE_URL") || "http://localhost:3000"}/dashboard/requests`);
-      } catch (error) {
-        console.warn(`Template ${templateName} not found, using fallback`);
-        return getFallbackTemplate(body.type, body);
-      }
-    };
+    // Use ticket_number for display, fallback to ID
+    const displayTicketId = body.ticket.ticket_number || body.ticket.id;
+    const brandName = Deno.env.get("BRAND_NAME") || "Teamtegrate";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://teamtegrate.com";
 
-    // Fallback template generator
-    const getFallbackTemplate = (type: string, data: TicketNotificationRequest) => {
-      const ticketId = data.ticket.ticket_number || data.ticket.id;
+    console.log("[Ticket Info] Using ticket number:", displayTicketId);
+
+    // Generate email template based on notification type
+    const generateEmailTemplate = (type: string, data: TicketNotificationRequest) => {
       const userName = data.user?.name || data.assignee?.name || 'User';
-      const brandName = Deno.env.get("BRAND_NAME") || "Teamtegrate";
       
+      const getTypeTitle = () => {
+        switch (type) {
+          case 'ticket_created': return 'Ticket Created';
+          case 'ticket_assigned': return 'Ticket Assigned';
+          case 'ticket_updated': return 'Ticket Updated';
+          case 'ticket_closed': return 'Ticket Resolved';
+          default: return 'Ticket Notification';
+        }
+      };
+
+      const getTypeMessage = () => {
+        switch (type) {
+          case 'ticket_created': return `Your support request has been received and assigned ticket number <strong>${displayTicketId}</strong>.`;
+          case 'ticket_assigned': return `You have been assigned ticket <strong>${displayTicketId}</strong>.`;
+          case 'ticket_updated': return `Ticket <strong>${displayTicketId}</strong> has been updated.`;
+          case 'ticket_closed': return `Ticket <strong>${displayTicketId}</strong> has been resolved.`;
+          default: return `This is regarding ticket <strong>${displayTicketId}</strong>.`;
+        }
+      };
+
       return `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Ticket Notification</title>
+          <title>${getTypeTitle()} - ${brandName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+            .ticket-info { background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 15px 0; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; }
+            .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }
+          </style>
         </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2>Ticket ${type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</h2>
-            <p>Hello ${userName},</p>
-            <p>This is regarding ticket <strong>${ticketId}</strong>:</p>
-            <div style="background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>${getTypeTitle()}</h2>
+              <p>Hello ${userName},</p>
+              <p>${getTypeMessage()}</p>
+            </div>
+            
+            <div class="ticket-info">
               <h3>${data.ticket.title}</h3>
               ${data.ticket.description ? `<p>${data.ticket.description}</p>` : ''}
-              <p><small>Status: ${data.ticket.status} | Priority: ${data.ticket.priority || 'Medium'}</small></p>
+              <p><small><strong>Status:</strong> ${data.ticket.status} | <strong>Priority:</strong> ${data.ticket.priority || 'Medium'}</small></p>
             </div>
-            <p>Thank you,<br>${brandName} Team</p>
+
+            <a href="${siteUrl}/dashboard/requests" class="btn">View Ticket Details</a>
+            
+            <div class="footer">
+              <p>Thank you for using ${brandName}.</p>
+              <p><small>This is an automated notification. Please do not reply to this email.</small></p>
+            </div>
           </div>
         </body>
         </html>
@@ -116,11 +138,12 @@ const handler = async (req: Request): Promise<Response> => {
     switch (body.type) {
       case 'ticket_created':
         if (body.user?.email) {
-          const html = await loadTemplate('ticket-created-user');
+          const html = generateEmailTemplate('ticket_created', body);
+          console.log("[Email] Sending ticket created notification to:", body.user.email);
           const result = await resend.emails.send({
-            from: `${Deno.env.get("BRAND_NAME") || "Teamtegrate"} <notifications@teamtegrate.com>`,
+            from: `${brandName} Support <notifications@teamtegrate.com>`,
             to: [body.user.email],
-            subject: `Ticket Created: ${body.ticket.ticket_number || body.ticket.id}`,
+            subject: `✅ Ticket ${displayTicketId} Created - ${brandName}`,
             html,
           });
           results.push({ recipient: body.user.email, result });
@@ -129,11 +152,12 @@ const handler = async (req: Request): Promise<Response> => {
 
       case 'ticket_assigned':
         if (body.assignee?.email) {
-          const html = await loadTemplate('ticket-assigned');
+          const html = generateEmailTemplate('ticket_assigned', body);
+          console.log("[Email] Sending ticket assigned notification to:", body.assignee.email);
           const result = await resend.emails.send({
-            from: `${Deno.env.get("BRAND_NAME") || "Teamtegrate"} <notifications@teamtegrate.com>`,
+            from: `${brandName} Support <notifications@teamtegrate.com>`,
             to: [body.assignee.email],
-            subject: `Ticket Assigned: ${body.ticket.ticket_number || body.ticket.id}`,
+            subject: `📋 Ticket ${displayTicketId} Assigned - ${brandName}`,
             html,
           });
           results.push({ recipient: body.assignee.email, result });
@@ -142,11 +166,12 @@ const handler = async (req: Request): Promise<Response> => {
 
       case 'ticket_updated':
         if (body.user?.email) {
-          const html = await loadTemplate('ticket-updated');
+          const html = generateEmailTemplate('ticket_updated', body);
+          console.log("[Email] Sending ticket updated notification to:", body.user.email);
           const result = await resend.emails.send({
-            from: `${Deno.env.get("BRAND_NAME") || "Teamtegrate"} <notifications@teamtegrate.com>`,
+            from: `${brandName} Support <notifications@teamtegrate.com>`,
             to: [body.user.email],
-            subject: `Ticket Updated: ${body.ticket.ticket_number || body.ticket.id}`,
+            subject: `🔄 Ticket ${displayTicketId} Updated - ${brandName}`,
             html,
           });
           results.push({ recipient: body.user.email, result });
@@ -155,11 +180,12 @@ const handler = async (req: Request): Promise<Response> => {
 
       case 'ticket_closed':
         if (body.user?.email) {
-          const html = await loadTemplate('ticket-closed');
+          const html = generateEmailTemplate('ticket_closed', body);
+          console.log("[Email] Sending ticket closed notification to:", body.user.email);
           const result = await resend.emails.send({
-            from: `${Deno.env.get("BRAND_NAME") || "Teamtegrate"} <notifications@teamtegrate.com>`,
+            from: `${brandName} Support <notifications@teamtegrate.com>`,
             to: [body.user.email],
-            subject: `Ticket Resolved: ${body.ticket.ticket_number || body.ticket.id}`,
+            subject: `✅ Ticket ${displayTicketId} Resolved - ${brandName}`,
             html,
           });
           results.push({ recipient: body.user.email, result });
@@ -170,11 +196,12 @@ const handler = async (req: Request): Promise<Response> => {
         console.warn(`Unknown notification type: ${body.type}`);
     }
 
-    console.log(`Sent ${results.length} email notifications for ${body.type}`);
+    console.log(`[Summary] Sent ${results.length} email notifications for ${body.type} with ticket ID: ${displayTicketId}`);
 
     return new Response(JSON.stringify({
       success: true,
       type: body.type,
+      ticket_number: displayTicketId,
       sent: results.length,
       results: results.map(r => ({ recipient: r.recipient, success: !r.result.error }))
     }), {
