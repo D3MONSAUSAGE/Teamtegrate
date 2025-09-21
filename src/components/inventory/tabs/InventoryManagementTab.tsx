@@ -43,7 +43,7 @@ export const InventoryManagementTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  // Always use list view only
   
   // Category dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -259,22 +259,6 @@ export const InventoryManagementTab: React.FC = () => {
                   </SelectContent>
                 </Select>
 
-                <div className="flex items-center border rounded-md">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
 
                 <Button onClick={handleAddItem}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -305,38 +289,28 @@ export const InventoryManagementTab: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className={viewMode === 'grid' ? 'flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-background' : 'space-y-4'}>
-                {viewMode === 'grid' ? (
-                  filteredAndSortedItems.map((item) => (
-                    <div key={item.id} className="flex-shrink-0 w-80">
-                      <ItemCard item={item} onClick={handleEditItem} />
-                    </div>
-                  ))
-                ) : (
-                  <Card>
-                    <div className="max-h-[600px] overflow-y-auto">
-                      <Table>
-                        <TableHeader>
-                           <TableRow>
-                             <TableHead>Name</TableHead>
-                             <TableHead>SKU</TableHead>
-                             <TableHead>Description</TableHead>
-                             <TableHead>Item Type</TableHead>
-                             <TableHead>Units</TableHead>
-                             <TableHead>Package Price</TableHead>
-                             <TableHead>Cost per Item</TableHead>
-                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredAndSortedItems.map((item) => (
-                            <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </Card>
-                )}
-              </div>
+              <Card>
+                <div className="max-h-[600px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                       <TableRow>
+                         <TableHead>Name</TableHead>
+                         <TableHead>SKU</TableHead>
+                         <TableHead>Description</TableHead>
+                         <TableHead>Item Type</TableHead>
+                         <TableHead>Units</TableHead>
+                         <TableHead>Package Price</TableHead>
+                         <TableHead>Cost per Item</TableHead>
+                       </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedItems.map((item) => (
+                        <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
             )}
           </div>
         </TabsContent>

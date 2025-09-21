@@ -29,17 +29,7 @@ export const useCountItemInput = ({
     lastSavedValue: initialValue
   });
 
-  // Update display value when initial value changes (from props)
-  useEffect(() => {
-    if (initialValue !== state.lastSavedValue) {
-      setState(prev => ({
-        ...prev,
-        displayValue: initialValue?.toString() || '',
-        lastSavedValue: initialValue,
-        hasError: false
-      }));
-    }
-  }, [initialValue, state.lastSavedValue]);
+  // Initialize display value only once on mount - don't reset while user is typing
 
   // Debounced API call
   const debouncedUpdate = useDebounce(async (value: number) => {
