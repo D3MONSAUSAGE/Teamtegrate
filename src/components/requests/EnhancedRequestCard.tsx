@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Request } from '@/types/requests';
+import { Request, REQUEST_CATEGORIES } from '@/types/requests';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
   Archive,
   MoreVertical
 } from 'lucide-react';
+import { categoryIcons, categoryBadgeColors } from '@/utils/categoryConfig';
 import { format, isAfter } from 'date-fns';
 import {
   DropdownMenu,
@@ -211,7 +212,7 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {request.ticket_number && (
                   <Badge variant="outline" className="font-mono text-xs">
                     {request.ticket_number}
@@ -224,6 +225,25 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
                   <Badge variant="destructive" className="animate-pulse">
                     OVERDUE
                   </Badge>
+                )}
+                {request.request_type && (
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const IconComponent = categoryIcons[request.request_type.category as keyof typeof categoryIcons] || CheckCircle;
+                      const badgeColor = categoryBadgeColors[request.request_type.category as keyof typeof categoryBadgeColors] || categoryBadgeColors.custom;
+                      const categoryName = REQUEST_CATEGORIES[request.request_type.category as keyof typeof REQUEST_CATEGORIES] || request.request_type.category;
+                      
+                      return (
+                        <Badge variant="outline" className={`text-xs flex items-center gap-1 ${badgeColor}`}>
+                          <IconComponent className="h-3 w-3" />
+                          {categoryName}
+                          {request.request_type.subcategory && (
+                            <span className="opacity-75">• {request.request_type.subcategory}</span>
+                          )}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 )}
               </div>
               <h3 className="font-semibold text-lg leading-none">{request.title}</h3>

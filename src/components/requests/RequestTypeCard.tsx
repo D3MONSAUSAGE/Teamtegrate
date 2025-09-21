@@ -1,32 +1,15 @@
-import { Calendar, Clock, DollarSign, FileText, Users, Settings, CheckCircle } from 'lucide-react';
+import { Calendar, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RequestType, REQUEST_CATEGORIES } from '@/types/requests';
 import { cn } from '@/lib/utils';
+import { categoryIcons, categoryColors } from '@/utils/categoryConfig';
 
 interface RequestTypeCardProps {
   requestType: RequestType;
   onClick: () => void;
   isSelected?: boolean;
 }
-
-const categoryIcons = {
-  time_schedule: Clock,
-  hr_admin: Users,
-  training: FileText,
-  financial: DollarSign,
-  it_access: Settings,
-  custom: CheckCircle
-};
-
-const categoryColors = {
-  time_schedule: 'from-blue-500/10 to-blue-600/10 border-blue-200 hover:border-blue-300',
-  hr_admin: 'from-green-500/10 to-green-600/10 border-green-200 hover:border-green-300',
-  training: 'from-purple-500/10 to-purple-600/10 border-purple-200 hover:border-purple-300',
-  financial: 'from-yellow-500/10 to-yellow-600/10 border-yellow-200 hover:border-yellow-300',
-  it_access: 'from-red-500/10 to-red-600/10 border-red-200 hover:border-red-300',
-  custom: 'from-gray-500/10 to-gray-600/10 border-gray-200 hover:border-gray-300'
-};
 
 export default function RequestTypeCard({ requestType, onClick, isSelected = false }: RequestTypeCardProps) {
   const IconComponent = categoryIcons[requestType.category as keyof typeof categoryIcons] || CheckCircle;
