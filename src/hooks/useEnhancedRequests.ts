@@ -86,7 +86,7 @@ export function useEnhancedRequests() {
         .from('requests')
         .select(`
           *,
-          request_type:request_types(id, name, category, description)
+          request_type:request_types(id, name, category, subcategory, description)
         `)
         .order('created_at', { ascending: false });
 
