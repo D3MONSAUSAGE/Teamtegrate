@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCount, InventoryCountItem } from '@/contexts/inventory/types';
-import { Package, Calendar, User, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Package, Calendar, User, AlertTriangle, CheckCircle, TrendingDown, TrendingUp, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { StockStatusBadge } from './StockStatusBadge';
+import { getStockStatusSummary } from '@/utils/stockStatus';
 
 interface CountDetailsDialogProps {
   open: boolean;
@@ -64,6 +66,15 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
     return sum + Math.abs((item.actual_quantity || 0) - (item.expected_quantity || 0));
   }, 0);
 
+  // Calculate stock status summary for completed items
+  const stockStatusSummary = getStockStatusSummary(
+    completedItems.map(item => ({
+      actualQuantity: item.actual_quantity || 0,
+      minimumThreshold: (item as any).inventory_items?.minimum_threshold,
+      maximumThreshold: (item as any).inventory_items?.maximum_threshold,
+    }))
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -79,7 +90,7 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
 
         <div className="space-y-6">
           {/* Count Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -141,6 +152,40 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4" />
+                  Under Stock
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">
+                  {stockStatusSummary.underStock}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Low inventory items
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Over Stock
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">
+                  {stockStatusSummary.overStock}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Excess inventory items
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Count Notes */}
@@ -175,9 +220,11 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                     <TableHeader className="sticky top-0 bg-background">
                       <TableRow>
                         <TableHead>Item</TableHead>
+                        <TableHead className="text-center">Min/Max</TableHead>
                         <TableHead className="text-center">Expected</TableHead>
                         <TableHead className="text-center">Actual</TableHead>
                         <TableHead className="text-center">Variance</TableHead>
+                        <TableHead className="text-center">Stock Status</TableHead>
                         <TableHead className="text-center">Status</TableHead>
                         <TableHead>Counted At</TableHead>
                       </TableRow>
@@ -188,6 +235,8 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                           ? (item.actual_quantity || 0) - (item.expected_quantity || 0)
                           : null;
                         const hasVariance = variance !== null && Math.abs(variance) > 0.01;
+                        const inventoryItem = (item as any).inventory_items;
+                        const finalQuantity = item.actual_quantity !== null ? item.actual_quantity : (item.expected_quantity || 0);
 
                         return (
                           <TableRow key={item.id} className={cn(
@@ -197,10 +246,19 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                             <TableCell>
                               <div className="space-y-1">
                                 <div className="font-medium">
-                                  {(item as any).inventory_items?.name || 'Unknown Item'}
+                                  {inventoryItem?.name || 'Unknown Item'}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  SKU: {(item as any).inventory_items?.sku || 'N/A'}
+                                  SKU: {inventoryItem?.sku || 'N/A'}
+                                </div>
+                              </div>
+                            </TableCell>
+                            
+                            <TableCell className="text-center">
+                              <div className="text-sm">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Target className="h-3 w-3 text-muted-foreground" />
+                                  <span>{inventoryItem?.minimum_threshold ?? '—'} / {inventoryItem?.maximum_threshold ?? '—'}</span>
                                 </div>
                               </div>
                             </TableCell>
@@ -224,12 +282,23 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                                   "flex items-center justify-center gap-1 font-medium",
                                   getVarianceColor(variance)
                                 )}>
-                                  {hasVariance && <AlertTriangle className="h-3 w-3" />}
+                                  {hasVariance && (
+                                    variance > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />
+                                  )}
                                   {variance > 0 ? '+' : ''}{variance.toFixed(2)}
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
+                            </TableCell>
+                            
+                            <TableCell className="text-center">
+                              <StockStatusBadge
+                                actualQuantity={finalQuantity}
+                                minimumThreshold={inventoryItem?.minimum_threshold}
+                                maximumThreshold={inventoryItem?.maximum_threshold}
+                                size="sm"
+                              />
                             </TableCell>
                             
                             <TableCell className="text-center">

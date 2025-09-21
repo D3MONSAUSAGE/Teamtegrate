@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
-import { CheckCircle, AlertTriangle, Package, Search, Loader2 } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Package, Search, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StockStatusBadge } from './StockStatusBadge';
+import { getStockStatus } from '@/utils/stockStatus';
 
 interface BatchCountInterfaceProps {
   countItems: InventoryCountItem[];
@@ -163,8 +165,12 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
     const actualQty = localValue ? parseFloat(localValue) : null;
     const variance = actualQty !== null && !isNaN(actualQty) ? actualQty - expectedQty : null;
     const hasUnsavedChanges = localValue !== (countItem?.actual_quantity?.toString() || '');
+    
+    // Get stock status for the item
+    const finalQuantity = actualQty !== null ? actualQty : expectedQty;
+    const stockStatus = getStockStatus(finalQuantity, item.minimum_threshold, item.maximum_threshold);
 
-    return { expectedQty, actualQty, variance, hasUnsavedChanges, localValue };
+    return { expectedQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity };
   };
 
   return (
@@ -247,20 +253,25 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
                   <TableHead className="w-[300px]">Item</TableHead>
+                  <TableHead className="w-[80px] text-center">Min</TableHead>
+                  <TableHead className="w-[80px] text-center">Max</TableHead>
                   <TableHead className="w-[100px] text-center">Expected</TableHead>
                   <TableHead className="w-[120px] text-center">Actual Count</TableHead>
                   <TableHead className="w-[100px] text-center">Variance</TableHead>
+                  <TableHead className="w-[120px] text-center">Stock Status</TableHead>
                   <TableHead className="w-[80px] text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredItems.map((item, index) => {
-                  const { expectedQty, actualQty, variance, hasUnsavedChanges, localValue } = getItemData(item);
+                  const { expectedQty, actualQty, variance, hasUnsavedChanges, localValue, stockStatus, finalQuantity } = getItemData(item);
                   
                   return (
                     <TableRow key={item.id} className={cn(
                       "group hover:bg-muted/50",
-                      hasUnsavedChanges && "bg-amber-50 border-amber-200"
+                      hasUnsavedChanges && "bg-amber-50 border-amber-200",
+                      stockStatus.isLowStock && "bg-red-50/50",
+                      stockStatus.isOverStock && "bg-orange-50/50"
                     )}>
                       <TableCell>
                         <div className="space-y-1">
@@ -270,6 +281,18 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                             {item.category?.name || 'No category'}
                             {item.location && <span> • {item.location}</span>}
                           </div>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-center">
+                        <div className="text-sm font-medium">
+                          {item.minimum_threshold ?? '—'}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-center">
+                        <div className="text-sm font-medium">
+                          {item.maximum_threshold ?? '—'}
                         </div>
                       </TableCell>
                       
@@ -309,12 +332,23 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                             variance < 0 ? "text-red-600" : 
                             "text-muted-foreground"
                           )}>
-                            {variance !== 0 && <AlertTriangle className="h-3 w-3" />}
+                            {variance !== 0 && (
+                              variance > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />
+                            )}
                             {variance > 0 ? '+' : ''}{variance}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
+                      </TableCell>
+                      
+                      <TableCell className="text-center">
+                        <StockStatusBadge
+                          actualQuantity={finalQuantity}
+                          minimumThreshold={item.minimum_threshold}
+                          maximumThreshold={item.maximum_threshold}
+                          size="sm"
+                        />
                       </TableCell>
                       
                       <TableCell className="text-center">

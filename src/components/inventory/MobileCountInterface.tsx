@@ -14,8 +14,12 @@ import {
   Minus, 
   Plus,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Target,
+  TrendingUp
 } from 'lucide-react';
+import { StockStatusBadge } from './StockStatusBadge';
+import { getStockStatus } from '@/utils/stockStatus';
 
 interface MobileCountInterfaceProps {
   countItems: InventoryCountItem[];
@@ -46,6 +50,10 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
   const variance = actualQty !== null && actualQty !== undefined 
     ? actualQty - expectedQty 
     : null;
+  
+  // Get stock status for current item
+  const finalQuantity = actualQty !== null ? actualQty : expectedQty;
+  const stockStatus = currentItem ? getStockStatus(finalQuantity, currentItem.minimum_threshold, currentItem.maximum_threshold) : null;
 
   const handleQuantityUpdate = (quantity: number) => {
     if (!currentItem) return;
@@ -115,6 +123,10 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
             <div>SKU: {currentItem.sku || 'N/A'}</div>
             <div>Category: {currentItem.category?.name || 'N/A'}</div>
             {currentItem.location && <div>Location: {currentItem.location}</div>}
+            <div className="flex items-center gap-2 text-sm">
+              <Target className="h-3 w-3" />
+              Min: {currentItem.minimum_threshold ?? 'N/A'} • Max: {currentItem.maximum_threshold ?? 'N/A'}
+            </div>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -132,6 +144,17 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
                 <div className="text-sm text-muted-foreground">Actual</div>
               </div>
             </div>
+
+            {/* Stock Status */}
+            {stockStatus && (
+              <div className="text-center">
+                <StockStatusBadge
+                  actualQuantity={finalQuantity}
+                  minimumThreshold={currentItem.minimum_threshold}
+                  maximumThreshold={currentItem.maximum_threshold}
+                />
+              </div>
+            )}
 
             {/* Variance Alert */}
             {variance !== null && variance !== 0 && (
