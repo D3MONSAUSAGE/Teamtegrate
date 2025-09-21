@@ -9,14 +9,14 @@ import { Progress } from '@/components/ui/progress';
 import ModernSectionCard from '@/components/dashboard/ModernSectionCard';
 import { SimpleMeetingDialog } from '@/components/meetings/SimpleMeetingDialog';
 import { MeetingInvitationCard } from '@/components/meetings/MeetingInvitationCard';
-import { useMeetingRequests } from '@/hooks/useMeetingRequests';
+import { useEnhancedMeetingManagement } from '@/hooks/useEnhancedMeetingManagement';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 
 const MeetingsPage = () => {
   const { user } = useAuth();
-  const { meetingRequests, loading } = useMeetingRequests();
+  const { meetings, isLoading: loading } = useEnhancedMeetingManagement();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('upcoming');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -27,10 +27,10 @@ const MeetingsPage = () => {
   const shouldShowLoading = loading || isProfileLoading;
 
   const filterMeetings = (type: string) => {
-    if (!meetingRequests) return [];
+    if (!meetings) return [];
 
     const now = new Date();
-    const filteredMeetings = meetingRequests.filter(meeting => {
+    const filteredMeetings = meetings.filter(meeting => {
       const matchesSearch = meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         meeting.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         meeting.organizer_name?.toLowerCase().includes(searchQuery.toLowerCase());

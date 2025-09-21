@@ -7,8 +7,8 @@ import { SmartConflictDetector } from '@/components/meetings/SmartConflictDetect
 import { MeetingHealthDashboard } from '@/components/meetings/MeetingHealthDashboard';
 import { MeetingFiltersBar } from '@/components/meetings/MeetingFiltersBar';
 import { MeetingRequestWithParticipants } from '@/types/meeting';
-import { useMeetingRequests } from '@/hooks/useMeetingRequests';
-import { useMeetingFilters } from '@/hooks/useMeetingFilters';
+import { useMeetingFilters as useOriginalMeetingFilters } from '@/hooks/useMeetingFilters';
+import { useEnhancedMeetingManagement } from '@/hooks/useEnhancedMeetingManagement';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, Calendar } from 'lucide-react';
@@ -16,8 +16,8 @@ import { AlertTriangle, Calendar } from 'lucide-react';
 const FreshMeetingsPage = () => {
   console.log('🚀 ENHANCED MEETINGS PAGE: Rendering with real data integration');
   
-  const { meetingRequests, loading } = useMeetingRequests();
-  const { filters, filteredMeetings, updateFilters, resetFilters, meetingCounts } = useMeetingFilters(meetingRequests);
+  const { meetings, isLoading: loading } = useEnhancedMeetingManagement();
+  const { filters, filteredMeetings, updateFilters, resetFilters, meetingCounts } = useOriginalMeetingFilters(meetings);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingRequestWithParticipants | null>(null);
   
   const upcomingMeetings = filteredMeetings.filter(m => 
