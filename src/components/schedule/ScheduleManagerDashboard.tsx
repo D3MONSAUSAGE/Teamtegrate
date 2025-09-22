@@ -7,6 +7,7 @@ import { Calendar, Users, Clock, Settings, Plus, TrendingUp, Target, Activity } 
 import { EmployeeScheduleManager } from './EmployeeScheduleManager';
 import { ScheduleTemplateManager } from './ScheduleTemplateManager';
 import { TeamScheduleSelector } from './TeamScheduleSelector';
+import { TimeEntryApprovalList } from '@/components/time-approvals/TimeEntryApprovalList';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import ModernScheduleHeader from './modern/ModernScheduleHeader';
@@ -133,29 +134,36 @@ const ScheduleManagerDashboard: React.FC = () => {
       {/* Main Schedule Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="flex items-center justify-between">
-          <TabsList className="bg-background/50 backdrop-blur-sm border border-border/50 shadow-lg">
-            <TabsTrigger 
-              value="calendar" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="employees" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Team Management
-            </TabsTrigger>
-            <TabsTrigger 
-              value="schedules" 
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Templates
-            </TabsTrigger>
-          </TabsList>
+        <TabsList className="bg-background/50 backdrop-blur-sm border border-border/50 shadow-lg">
+          <TabsTrigger 
+            value="calendar" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Schedule Overview
+          </TabsTrigger>
+          <TabsTrigger 
+            value="employees" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Team Management
+          </TabsTrigger>
+          <TabsTrigger 
+            value="time-approvals" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Time Approvals
+          </TabsTrigger>
+          <TabsTrigger 
+            value="schedules" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-accent/10 data-[state=active]:text-primary transition-all duration-300"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Templates
+          </TabsTrigger>
+        </TabsList>
           
           <Button 
             variant="outline" 
@@ -185,6 +193,10 @@ const ScheduleManagerDashboard: React.FC = () => {
 
         <TabsContent value="employees" className="space-y-6 animate-fade-in">
           <EmployeeScheduleManager />
+        </TabsContent>
+
+        <TabsContent value="time-approvals" className="space-y-6 animate-fade-in">
+          <TimeEntryApprovalList selectedTeamId={selectedTeamId} />
         </TabsContent>
 
         <TabsContent value="schedules" className="space-y-6 animate-fade-in">

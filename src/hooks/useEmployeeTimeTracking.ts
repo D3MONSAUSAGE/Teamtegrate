@@ -30,6 +30,11 @@ export interface TimeEntry {
   notes?: string;
   created_at: string;
   organization_id: string;
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  approval_notes?: string;
+  approval_rejected_reason?: string;
 }
 
 export interface CurrentSession {
@@ -283,8 +288,27 @@ export const useEmployeeTimeTracking = () => {
             email: user!.email
           }
         });
+  // Also send notification for managers when entry needs approval
+  try {
+    await notifications.notifyTimeEntryNeedsApproval({
+      orgId: user.organizationId,
+      teamId: teamId || null,
+      entry: {
+        id: data.id,
+        user_id: user.id,
+        user_name: user.name,
+        duration_minutes: durationMinutes,
+        work_date: format(new Date(), 'yyyy-MM-dd'),
+        notes: data.notes || undefined
+      },
+      actor: {
+        id: user.id,
+        name: user.name || user.email,
+        email: user.email
+      }
+    });
       } catch (notificationError) {
-        console.warn('Failed to send clock-out notification:', notificationError);
+        console.warn('Failed to send approval notification:', notificationError);
       }
       
     } catch (error) {
@@ -453,6 +477,56 @@ export const useEmployeeTimeTracking = () => {
     endBreak,
     fetchDailySummary,
     fetchWeeklyEntries,
-    autoCloseStaleSessionsAPI
+    autoCloseStaleSessionsAPI,
+    // Approval functions for managers
+    approveTimeEntry: async (entryId: string, notes?: string) => {
+      if (!user?.id) return;
+      
+      try {
+      const { data, error } = await supabase.rpc('manage_time_entry_approval', {
+        entry_id: entryId,
+        manager_id: user.id,
+        new_status: 'approved',
+        approval_notes_text: notes || null
+      }) as { data: { success?: boolean; error?: string }, error: any };
+
+      if (error) throw error;
+      
+      if (data?.success) {
+          toast.success('Time entry approved');
+          await fetchWeeklyEntries();
+        } else {
+          throw new Error(data?.error);
+        }
+      } catch (error) {
+        console.error('Error approving entry:', error);
+        toast.error('Failed to approve time entry');
+      }
+    },
+    
+    rejectTimeEntry: async (entryId: string, reason: string) => {
+      if (!user?.id || !reason) return;
+      
+      try {
+        const { data, error } = await supabase.rpc('manage_time_entry_approval', {
+          entry_id: entryId,
+          manager_id: user.id,
+          new_status: 'rejected',
+          rejection_reason: reason
+        }) as { data: { success?: boolean; error?: string }, error: any };
+
+        if (error) throw error;
+        
+        if (data?.success) {
+          toast.success('Time entry rejected');
+          await fetchWeeklyEntries();
+        } else {
+          throw new Error(data?.error);
+        }
+      } catch (error) {
+        console.error('Error rejecting entry:', error);
+        toast.error('Failed to reject time entry');
+      }
+    }
   };
 };

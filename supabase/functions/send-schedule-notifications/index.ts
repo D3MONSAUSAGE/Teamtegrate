@@ -11,7 +11,8 @@ const corsHeaders = {
 
 interface ScheduleNotificationPayload {
   type: 'schedule_shift_assigned' | 'schedule_shift_updated' | 'schedule_shift_canceled' |
-        'schedule_time_entry_opened' | 'schedule_time_entry_closed';
+        'schedule_time_entry_opened' | 'schedule_time_entry_closed' | 
+        'time_entry_approved' | 'time_entry_rejected' | 'time_entry_needs_approval';
   orgId: string;
   teamId?: string | null;
   shift?: any;
@@ -19,6 +20,10 @@ interface ScheduleNotificationPayload {
   actor: { id: string; name: string; email: string };
   timestamp: string;
   dedupeKey: string;
+  // For approval events
+  approver?: { id: string; name: string; email: string };
+  approval_notes?: string;
+  rejection_reason?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -262,6 +267,58 @@ function generateEmailContent(payload: ScheduleNotificationPayload): { subject: 
             ${payload.entry?.notes ? `<li><strong>Notes:</strong> ${payload.entry.notes}</li>` : ''}
           </ul>
           <p>This is an automated notification from your time tracking system.</p>
+        `
+      };
+
+    case 'time_entry_approved':
+      return {
+        subject: `Time Entry Approved - ${new Date(payload.entry?.work_date || '').toLocaleDateString()}`,
+        content: `
+          <h2>Time Entry Approved</h2>
+          <p>Hi {{recipient_name}},</p>
+          <p>Your time entry has been approved:</p>
+          <ul>
+            <li><strong>Date:</strong> ${new Date(payload.entry?.work_date || '').toLocaleDateString()}</li>
+            <li><strong>Duration:</strong> ${payload.entry?.duration_minutes || 0} minutes</li>
+            <li><strong>Approved by:</strong> ${payload.approver?.name || 'Manager'}</li>
+            ${payload.approval_notes ? `<li><strong>Notes:</strong> ${payload.approval_notes}</li>` : ''}
+          </ul>
+          <p>This time entry is now approved and will be included in payroll calculations.</p>
+        `
+      };
+
+    case 'time_entry_rejected':
+      return {
+        subject: `Time Entry Rejected - ${new Date(payload.entry?.work_date || '').toLocaleDateString()}`,
+        content: `
+          <h2>Time Entry Rejected</h2>
+          <p>Hi {{recipient_name}},</p>
+          <p>Unfortunately, your time entry has been rejected:</p>
+          <ul>
+            <li><strong>Date:</strong> ${new Date(payload.entry?.work_date || '').toLocaleDateString()}</li>
+            <li><strong>Duration:</strong> ${payload.entry?.duration_minutes || 0} minutes</li>
+            <li><strong>Rejected by:</strong> ${payload.approver?.name || 'Manager'}</li>
+            <li><strong>Reason:</strong> ${payload.rejection_reason || 'No reason provided'}</li>
+          </ul>
+          <p>Please contact your manager for clarification or to resubmit a corrected entry.</p>
+        `
+      };
+
+    case 'time_entry_needs_approval':
+      return {
+        subject: `Time Entry Needs Approval - ${payload.entry?.user_name || 'Employee'}`,
+        content: `
+          <h2>Time Entry Requires Approval</h2>
+          <p>Hi {{recipient_name}},</p>
+          <p>${payload.entry?.user_name || 'An employee'} has submitted a time entry that requires your approval:</p>
+          <ul>
+            <li><strong>Employee:</strong> ${payload.entry?.user_name || 'Unknown'}</li>
+            <li><strong>Date:</strong> ${new Date(payload.entry?.work_date || '').toLocaleDateString()}</li>
+            <li><strong>Duration:</strong> ${payload.entry?.duration_minutes || 0} minutes</li>
+            <li><strong>Team:</strong> ${teamName}</li>
+            ${payload.entry?.notes ? `<li><strong>Notes:</strong> ${payload.entry.notes}</li>` : ''}
+          </ul>
+          <p>Please log in to the system to review and approve this time entry.</p>
         `
       };
 

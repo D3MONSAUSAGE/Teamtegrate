@@ -40,12 +40,12 @@ const TimeTrackingPage = () => {
         <TabsContent value="time-entries" className="space-y-6">
           <div>
             <h3 className="text-lg font-semibold mb-4">
-              {canManageTeams ? 'Time Entries & Correction Requests' : 'My Time Entries'}
+              {canManageTeams ? 'Time Entries & Approval Status' : 'My Time Entries & Approval Status'}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
               {canManageTeams 
-                ? 'Manage time entries and review correction requests. Team members can request corrections that will be routed through the proper approval chain.'
-                : 'View your historical time entries and submit correction requests. Requests will be routed to your manager for approval.'
+                ? 'View team time entries, their approval status, and manage correction requests.'
+                : 'View your time entries with approval status and submit correction requests if needed.'
               }
             </p>
             <PastTimeEntriesManager />

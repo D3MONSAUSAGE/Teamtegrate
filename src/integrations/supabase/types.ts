@@ -7093,6 +7093,9 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          approval_notes: string | null
+          approval_rejected_reason: string | null
+          approval_status: Database["public"]["Enums"]["approval_status"]
           approved_at: string | null
           approved_by: string | null
           clock_in: string
@@ -7115,6 +7118,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_notes?: string | null
+          approval_rejected_reason?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_status"]
           approved_at?: string | null
           approved_by?: string | null
           clock_in?: string
@@ -7137,6 +7143,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_notes?: string | null
+          approval_rejected_reason?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_status"]
           approved_at?: string | null
           approved_by?: string | null
           clock_in?: string
@@ -8686,6 +8695,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      bulk_approve_time_entries: {
+        Args: {
+          approval_notes_text?: string
+          entry_ids: string[]
+          manager_id: string
+        }
+        Returns: Json
+      }
       calculate_execution_score: {
         Args: { execution_id_param: string }
         Returns: number
@@ -8910,6 +8927,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_pending_time_approvals: {
+        Args: { manager_user_id: string; team_filter_id?: string }
+        Returns: {
+          clock_in: string
+          clock_out: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          notes: string
+          team_id: string
+          team_name: string
+          user_email: string
+          user_id: string
+          user_name: string
+          work_date: string
+        }[]
+      }
       get_project_comment_stats: {
         Args: { project_id_param: string }
         Returns: Json
@@ -9047,6 +9081,16 @@ export type Database = {
           | { operation: string; table_name: string; user_id: string }
         Returns: undefined
       }
+      manage_time_entry_approval: {
+        Args: {
+          approval_notes_text?: string
+          entry_id: string
+          manager_id: string
+          new_status: Database["public"]["Enums"]["approval_status"]
+          rejection_reason?: string
+        }
+        Returns: Json
+      }
       manual_sync_meeting_to_google: {
         Args:
           | { action_param?: string; meeting_id_param: string }
@@ -9168,6 +9212,7 @@ export type Database = {
       }
     }
     Enums: {
+      approval_status: "pending" | "approved" | "rejected"
       assignment_type: "individual" | "team" | "role_based"
       assignment_type_v2: "individual" | "team" | "role"
       checklist_priority: "low" | "medium" | "high" | "critical"
@@ -9329,6 +9374,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      approval_status: ["pending", "approved", "rejected"],
       assignment_type: ["individual", "team", "role_based"],
       assignment_type_v2: ["individual", "team", "role"],
       checklist_priority: ["low", "medium", "high", "critical"],

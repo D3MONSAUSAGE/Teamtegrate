@@ -707,4 +707,84 @@ export const notifications = {
   error: (message: string) => toast.error(message),
   info: (message: string) => toast.info(message),
   warning: (message: string) => toast.warning(message)
+  // Add approval notification functions
+  notifyTimeEntryNeedsApproval: async (eventData: {
+    orgId: string;
+    teamId?: string | null;
+    entry: {
+      id: string;
+      user_id: string;
+      user_name: string;
+      duration_minutes: number;
+      work_date: string;
+      notes?: string;
+    };
+    actor: { id: string; name: string; email: string };
+  }) => {
+    await supabase.functions.invoke('send-schedule-notifications', {
+      body: {
+        type: 'time_entry_needs_approval',
+        orgId: eventData.orgId,
+        teamId: eventData.teamId,
+        entry: eventData.entry,
+        actor: eventData.actor,
+        timestamp: new Date().toISOString(),
+        dedupeKey: `time_entry_needs_approval_${eventData.entry.id}_${Date.now()}`
+      }
+    });
+  },
+
+  notifyTimeEntryApproved: async (eventData: {
+    orgId: string;
+    teamId?: string | null;
+    entry: {
+      id: string;
+      user_id: string;
+      user_name: string;
+      duration_minutes: number;
+      work_date: string;
+    };
+    approver: { id: string; name: string; email: string };
+    approval_notes?: string;
+  }) => {
+    await supabase.functions.invoke('send-schedule-notifications', {
+      body: {
+        type: 'time_entry_approved',
+        orgId: eventData.orgId,
+        teamId: eventData.teamId,
+        entry: eventData.entry,
+        approver: eventData.approver,
+        approval_notes: eventData.approval_notes,
+        timestamp: new Date().toISOString(),
+        dedupeKey: `time_entry_approved_${eventData.entry.id}_${Date.now()}`
+      }
+    });
+  },
+
+  notifyTimeEntryRejected: async (eventData: {
+    orgId: string;
+    teamId?: string | null;
+    entry: {
+      id: string;
+      user_id: string;
+      user_name: string;
+      duration_minutes: number;
+      work_date: string;
+    };
+    approver: { id: string; name: string; email: string };
+    rejection_reason: string;
+  }) => {
+    await supabase.functions.invoke('send-schedule-notifications', {
+      body: {
+        type: 'time_entry_rejected',
+        orgId: eventData.orgId,
+        teamId: eventData.teamId,
+        entry: eventData.entry,
+        approver: eventData.approver,
+        rejection_reason: eventData.rejection_reason,
+        timestamp: new Date().toISOString(),
+        dedupeKey: `time_entry_rejected_${eventData.entry.id}_${Date.now()}`
+      }
+    });
+  }
 };
