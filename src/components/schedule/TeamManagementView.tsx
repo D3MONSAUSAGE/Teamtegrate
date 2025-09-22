@@ -26,7 +26,7 @@ import { useTeams } from '@/hooks/useTeams';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { TeamScheduleSelector } from './TeamScheduleSelector';
 import { TimeEntryApprovalList } from '@/components/time-approvals/TimeEntryApprovalList';
-import { EmployeeScheduleManager } from './EmployeeScheduleManager';
+import { TeamWeeklyScheduleView } from './TeamWeeklyScheduleView';
 import { Input } from '@/components/ui/input';
 import ModernMetricCard from './modern/ModernMetricCard';
 
@@ -175,7 +175,7 @@ export const TeamManagementView: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="schedules" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Schedules
+            Team Schedule
           </TabsTrigger>
           <TabsTrigger value="approvals" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
@@ -246,7 +246,7 @@ export const TeamManagementView: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="schedules" className="space-y-6">
-          <EmployeeScheduleManager />
+          <TeamWeeklyScheduleView selectedTeamId={selectedTeamId} />
         </TabsContent>
 
         <TabsContent value="approvals" className="space-y-6">

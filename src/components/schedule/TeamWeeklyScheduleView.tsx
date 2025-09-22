@@ -1,0 +1,326 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { WeekPicker } from '@/components/ui/week-picker';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Clock, 
+  Users, 
+  Download, 
+  Search,
+  AlertTriangle,
+  CheckCircle,
+  Calendar
+} from 'lucide-react';
+import { useTeamWeeklySchedules } from '@/hooks/useTeamWeeklySchedules';
+import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+interface TeamWeeklyScheduleViewProps {
+  selectedTeamId: string | null;
+}
+
+export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
+  selectedTeamId
+}) => {
+  const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+
+  const { 
+    teamSchedules, 
+    teamMetrics, 
+    isLoading, 
+    error,
+    exportSchedule
+  } = useTeamWeeklySchedules(
+    selectedTeamId,
+    format(weekStart, 'yyyy-MM-dd'),
+    format(weekEnd, 'yyyy-MM-dd')
+  );
+
+  // Filter team members by search query
+  const filteredSchedules = useMemo(() => {
+    if (!searchQuery.trim()) return teamSchedules;
+    
+    return teamSchedules.filter(member => 
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [teamSchedules, searchQuery]);
+
+  // Generate week days for header
+  const weekDays = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(weekStart, i));
+    }
+    return days;
+  }, [weekStart]);
+
+  const handleExport = async () => {
+    try {
+      await exportSchedule();
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
+  const getShiftDisplay = (shift: any) => {
+    const startTime = format(new Date(`2000-01-01T${shift.scheduled_start_time}`), 'HH:mm');
+    const endTime = format(new Date(`2000-01-01T${shift.scheduled_end_time}`), 'HH:mm');
+    const duration = shift.duration_hours || 0;
+    
+    return {
+      timeRange: `${startTime}-${endTime}`,
+      duration: `${duration}h`,
+      status: shift.status
+    };
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200';
+      case 'missed': return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200';
+      case 'in_progress': return 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200';
+      case 'scheduled': return 'bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-gray-200';
+      default: return 'bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-gray-200';
+    }
+  };
+
+  if (!selectedTeamId) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Users className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-lg font-medium text-muted-foreground mb-2">Select a Team</p>
+          <p className="text-sm text-muted-foreground/70 text-center max-w-sm">
+            Choose a team from the dropdown above to view their weekly schedule.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex-1">
+          <WeekPicker
+            selectedWeek={selectedWeek}
+            onWeekChange={setSelectedWeek}
+          />
+        </div>
+        <div className="flex gap-3 items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search team members..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={isLoading}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Team Metrics Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Hours</p>
+                <p className="text-2xl font-bold">{teamMetrics?.totalHours || 0}h</p>
+              </div>
+              <Clock className="h-8 w-8 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Active Members</p>
+                <p className="text-2xl font-bold">{teamMetrics?.activeMembers || 0}</p>
+              </div>
+              <Users className="h-8 w-8 text-accent" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Coverage Gaps</p>
+                <p className="text-2xl font-bold text-warning">{teamMetrics?.coverageGaps || 0}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-warning" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Completion Rate</p>
+                <p className="text-2xl font-bold text-success">{teamMetrics?.completionRate || 0}%</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-success" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Team Schedule Grid */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Team Weekly Schedule
+          </CardTitle>
+          <CardDescription>
+            Complete overview of team member schedules and projected hours
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <p className="text-lg font-medium text-destructive mb-2">Failed to load schedule</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+          ) : filteredSchedules.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">No Schedules Found</p>
+              <p className="text-sm text-muted-foreground">
+                No team members have schedules for the selected week.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4 font-medium text-muted-foreground sticky left-0 bg-background z-10 min-w-[200px]">
+                      Team Member
+                    </th>
+                    {weekDays.map((day) => (
+                      <th key={day.toISOString()} className="text-center p-4 font-medium text-muted-foreground min-w-[150px]">
+                        <div className="flex flex-col">
+                          <span className="text-sm">{format(day, 'EEE')}</span>
+                          <span className="text-xs text-muted-foreground/70">{format(day, 'MMM d')}</span>
+                        </div>
+                      </th>
+                    ))}
+                    <th className="text-center p-4 font-medium text-muted-foreground min-w-[120px]">
+                      Total Hours
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSchedules.map((member) => (
+                    <tr key={member.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4 sticky left-0 bg-background z-10">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{member.name}</span>
+                          <span className="text-sm text-muted-foreground">{member.email}</span>
+                        </div>
+                      </td>
+                      {weekDays.map((day) => {
+                        const daySchedules = member.schedules.filter(schedule => 
+                          isSameDay(new Date(schedule.scheduled_date), day)
+                        );
+                        
+                        return (
+                          <td key={day.toISOString()} className="p-2 text-center">
+                            {daySchedules.length === 0 ? (
+                              <div className="text-muted-foreground text-xs">-</div>
+                            ) : (
+                              <div className="space-y-1">
+                                {daySchedules.map((shift, index) => {
+                                  const display = getShiftDisplay(shift);
+                                  return (
+                                    <div key={index} className="text-xs">
+                                      <Badge 
+                                        variant="outline" 
+                                        className={cn("text-xs", getStatusColor(shift.status))}
+                                      >
+                                        {display.timeRange}
+                                      </Badge>
+                                      <div className="text-muted-foreground mt-1">
+                                        {display.duration}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="p-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="font-semibold text-lg">{member.totalHours}h</span>
+                          {member.overtimeHours > 0 && (
+                            <Badge variant="destructive" className="text-xs mt-1">
+                              +{member.overtimeHours}h OT
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-muted/30 font-semibold">
+                    <td className="p-4 sticky left-0 bg-muted/30 z-10">
+                      Team Totals
+                    </td>
+                    {weekDays.map((day) => {
+                      const dayTotal = filteredSchedules.reduce((total, member) => {
+                        const daySchedules = member.schedules.filter(schedule => 
+                          isSameDay(new Date(schedule.scheduled_date), day)
+                        );
+                        return total + daySchedules.reduce((sum, shift) => sum + (shift.duration_hours || 0), 0);
+                      }, 0);
+                      
+                      return (
+                        <td key={day.toISOString()} className="p-4 text-center">
+                          <span className="font-semibold">{dayTotal}h</span>
+                        </td>
+                      );
+                    })}
+                    <td className="p-4 text-center">
+                      <span className="font-semibold text-lg">{teamMetrics?.totalHours || 0}h</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
