@@ -288,12 +288,45 @@ const handler = async (req: Request): Promise<Response> => {
 
       const html = renderInventorySubmittedHTML(emailContext);
 
-      const sends = await Promise.allSettled(
-        recipientList.map(async (toEmail) => {
-          const out = await sendViaResend(apiKey, from, toEmail, subject, html);
-          return { to: toEmail, ok: true, id: out?.id ?? null };
-        })
-      );
+      // Sequential sending with rate limiting to avoid Resend 429s
+      const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+      const RATE_MS = 600;       // under Resend 2 req/sec (safe margin)
+      const MAX_RETRIES = 2;     // small backoff on 429s
+
+      const results: Array<{to:string; ok:boolean; id?:string|null; error?:string}> = [];
+
+      for (let i = 0; i < recipientList.length; i++) {
+        const to = recipientList[i];
+
+        if (i > 0) await sleep(RATE_MS); // throttle
+
+        let attempt = 0;
+        let ok = false;
+        let lastErr: any = null;
+        let messageId: string | null = null;
+
+        while (attempt <= MAX_RETRIES && !ok) {
+          try {
+            const out = await sendViaResend(apiKey, from, to, subject, html);
+            messageId = out?.id ?? null;
+            ok = true;
+          } catch (e: any) {
+            lastErr = e;
+            const status = e?.status ?? e?.response?.status ?? '';
+            if (String(status) === '429') {
+              await sleep(RATE_MS * (attempt + 1)); // simple backoff
+              attempt++;
+            } else {
+              break; // non-429 error: do not retry
+            }
+          }
+        }
+
+        results.push({ to, ok, id: messageId, error: ok ? undefined : String(lastErr) });
+        console.log('INV_EMAIL_SEND', { to, ok, id: messageId, attempt, error: ok ? null : String(lastErr) });
+      }
+
+      const sends = results;
 
       const results = sends.map((r) =>
         r.status === "fulfilled" ? r.value : { ok: false, error: String(r.reason) }
