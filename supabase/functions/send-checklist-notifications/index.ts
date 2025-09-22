@@ -1,40 +1,53 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@4.0.0";
+import { Resend } from "npm:resend@2.0.0";
 
+// Dynamic CORS headers (copied from send-ticket-notifications)
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Vary': 'Origin',
 };
 
 interface NotificationPayload {
-  kind: 'checklist_submitted' | 'checklist_verified' | 'checklist_rejected';
+  type: 'checklist_upcoming' | 'checklist_completed';
   recipients: string[];
-  instance: {
+  orgName: string;
+  logoUrl?: string;
+  teamName: string;
+  checklist: {
     id: string;
-    display_code?: string;
-    name: string;
-    team_name?: string;
-    date: string;
+    title: string;
+    priority?: string;
+  };
+  run: {
+    id: string;
+    startTime?: string;
+    endTime?: string;
+    windowLabel: string;
   };
   actor: {
-    name: string;
-    email: string;
-  };
-  org: {
+    id: string;
     name: string;
   };
+  metrics?: {
+    percentComplete?: number;
+    itemsTotal?: number;
+    itemsDone?: number;
+  };
+  completedBy?: string;
+  notes?: string;
 }
 
 interface NotificationResponse {
   success: boolean;
-  emailsSent: number;
-  failures: string[];
+  sent: number;
+  total: number;
+  failures?: string[];
   correlationId: string;
 }
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@lovable.dev';
-const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://localhost:5173';
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -48,66 +61,45 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`📧 Checklist notification started`, { correlationId });
 
     const payload: NotificationPayload = await req.json();
-    const { kind, recipients, instance, actor, org } = payload;
+    const { type, recipients, orgName, teamName, checklist, run, actor, metrics, completedBy, notes } = payload;
 
     // Deduplicate recipients
     const uniqueRecipients = Array.from(new Set(recipients.map(email => email.toLowerCase().trim())));
     
-    console.log(`📧 Sending ${kind} notifications to ${uniqueRecipients.length} recipients`, { 
+    console.log(`📧 Sending ${type} notifications to ${uniqueRecipients.length} recipients`, { 
       correlationId,
-      instance: instance.display_code || instance.id 
+      checklist: checklist.id,
+      run: run.id
     });
 
-    // Check for duplicate sends
-    const eventId = `${kind}:${instance.id}`;
-    
-    // Create email content based on kind
-    const { subject, html } = generateEmailContent(kind, instance, actor, org);
+    // Generate email content
+    const { subject, html } = generateEmailContent(type, payload);
 
-    // Fan out emails with Promise.allSettled for resilience
-    const emailPromises = uniqueRecipients.map(async (email) => {
-      try {
-        const emailResponse = await resend.emails.send({
-          from: `${org.name} <${fromEmail}>`,
-          to: [email],
-          subject,
-          html,
-          reply_to: fromEmail
-        });
-
-        console.log(`✅ Email sent to ${email}`, { correlationId, emailId: emailResponse.data?.id });
-        return { success: true, email, id: emailResponse.data?.id };
-      } catch (error) {
-        console.error(`❌ Failed to send email to ${email}:`, error, { correlationId });
-        return { success: false, email, error: error.message };
-      }
-    });
+    // Send emails with Promise.allSettled (fan-out pattern)
+    const emailPromises = uniqueRecipients.map(email => 
+      sendEmail(email, subject, html, correlationId)
+    );
 
     const results = await Promise.allSettled(emailPromises);
     
-    let emailsSent = 0;
-    const failures: string[] = [];
+    // Process results
+    const sent = results.filter(r => r.status === 'fulfilled').length;
+    const failures = results
+      .filter(r => r.status === 'rejected')
+      .map(r => r.reason?.message || 'Unknown error');
 
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled' && result.value.success) {
-        emailsSent++;
-      } else {
-        const email = uniqueRecipients[index];
-        const errorMsg = result.status === 'rejected' 
-          ? result.reason 
-          : (result.value as any).error;
-        failures.push(`${email}: ${errorMsg}`);
-      }
+    // Log results
+    console.log(`CHECKLIST_NOTIFY { type: ${type}, checklistId: ${checklist.id}, runId: ${run.id}, sent: ${sent}, total: ${uniqueRecipients.length} }`, {
+      correlationId
     });
 
     const response: NotificationResponse = {
-      success: failures.length === 0,
-      emailsSent,
-      failures,
+      success: sent > 0,
+      sent,
+      total: uniqueRecipients.length,
+      failures: failures.length > 0 ? failures : undefined,
       correlationId
     };
-
-    console.log(`📧 Notification completed:`, response);
 
     return new Response(JSON.stringify(response), {
       status: 200,
@@ -118,16 +110,13 @@ serve(async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('❌ Notification failed:', error, { correlationId });
+    console.error('❌ Checklist notification failed:', error, { correlationId });
     
-    const response: NotificationResponse = {
+    return new Response(JSON.stringify({
       success: false,
-      emailsSent: 0,
-      failures: [`System error: ${error.message}`],
+      error: error.message,
       correlationId
-    };
-
-    return new Response(JSON.stringify(response), {
+    }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
@@ -137,91 +126,159 @@ serve(async (req: Request): Promise<Response> => {
   }
 });
 
-function generateEmailContent(
-  kind: string, 
-  instance: NotificationPayload['instance'], 
-  actor: NotificationPayload['actor'], 
-  org: NotificationPayload['org']
-) {
-  const baseStyles = `
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    line-height: 1.6;
-    color: #334155;
-  `;
+async function sendEmail(to: string, subject: string, html: string, correlationId: string): Promise<void> {
+  try {
+    const response = await resend.emails.send({
+      from: "Teamtegrate <notifications@teamtegrate.com>",
+      to: [to],
+      subject,
+      html,
+    });
 
-  const linkStyles = `
-    display: inline-block;
-    padding: 12px 24px;
-    background: #3b82f6;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 600;
-    margin: 16px 0;
-  `;
-
-  const displayCode = instance.display_code || instance.id.substring(0, 8).toUpperCase();
-  const viewUrl = `${appBaseUrl}/checklists/${instance.id}`;
-
-  switch (kind) {
-    case 'checklist_submitted':
-      return {
-        subject: `✅ Checklist Submitted: ${instance.name} – ${instance.team_name} – ${instance.date}`,
-        html: `
-          <div style="${baseStyles}">
-            <h1>Checklist Submitted for Verification</h1>
-            <p><strong>Code:</strong> ${displayCode}</p>
-            <p><strong>Checklist:</strong> ${instance.name}</p>
-            <p><strong>Team:</strong> ${instance.team_name}</p>
-            <p><strong>Date:</strong> ${instance.date}</p>
-            <p><strong>Submitted by:</strong> ${actor.name}</p>
-            <a href="${viewUrl}" style="${linkStyles}">Review & Verify Checklist</a>
-            <p style="color: #64748b; font-size: 14px;">
-              This checklist has been completed and is awaiting your verification.
-            </p>
-          </div>
-        `
-      };
-
-    case 'checklist_verified':
-      return {
-        subject: `🔒 Checklist Verified: ${instance.name} – ${instance.team_name} – ${instance.date}`,
-        html: `
-          <div style="${baseStyles}">
-            <h1>Checklist Verified</h1>
-            <p><strong>Code:</strong> ${displayCode}</p>
-            <p><strong>Checklist:</strong> ${instance.name}</p>
-            <p><strong>Team:</strong> ${instance.team_name}</p>
-            <p><strong>Date:</strong> ${instance.date}</p>
-            <p><strong>Verified by:</strong> ${actor.name}</p>
-            <a href="${viewUrl}" style="${linkStyles}">View Verified Checklist</a>
-            <p style="color: #059669; font-size: 14px;">
-              ✅ Your checklist has been successfully verified and completed.
-            </p>
-          </div>
-        `
-      };
-
-    case 'checklist_rejected':
-      return {
-        subject: `⚠️ Checklist Requires Attention: ${instance.name} – ${instance.team_name}`,
-        html: `
-          <div style="${baseStyles}">
-            <h1>Checklist Requires Attention</h1>
-            <p><strong>Code:</strong> ${displayCode}</p>
-            <p><strong>Checklist:</strong> ${instance.name}</p>
-            <p><strong>Team:</strong> ${instance.team_name}</p>
-            <p><strong>Date:</strong> ${instance.date}</p>
-            <p><strong>Reviewed by:</strong> ${actor.name}</p>
-            <a href="${viewUrl}" style="${linkStyles}">Review & Resubmit Checklist</a>
-            <p style="color: #dc2626; font-size: 14px;">
-              ⚠️ This checklist needs corrections before it can be verified. Please review the feedback and resubmit.
-            </p>
-          </div>
-        `
-      };
-
-    default:
-      throw new Error(`Unknown notification kind: ${kind}`);
+    console.log(`📧 Email sent successfully to ${to}:`, response.id, { correlationId });
+  } catch (error) {
+    console.error(`📧 Failed to send email to ${to}:`, error, { correlationId });
+    throw error;
   }
+}
+
+function generateEmailContent(type: string, payload: NotificationPayload): { subject: string; html: string } {
+  const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://teamtegrate.com';
+  const checklistUrl = `${appBaseUrl}/checklists/runs/${payload.run.id}`;
+  
+  const baseStyles = {
+    container: "font-family: Inter, Segoe UI, Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden;",
+    header: "padding: 20px 24px; background: #0d3b66; color: #fff;",
+    body: "padding: 28px 24px 8px; color: #111;",
+    footer: "padding: 16px 24px; background: #fafbfe; border-top: 1px solid #eef0f5; color: #6b7280; font-size: 12px;",
+    button: "display: inline-block; background: #0d3b66; color: #fff; text-decoration: none; font-weight: 600; border-radius: 8px; padding: 10px 16px;",
+  };
+
+  let subject: string;
+  let preheader: string;
+  let mainContent: string;
+  let icon: string;
+
+  if (type === 'checklist_upcoming') {
+    subject = `📝 Upcoming Checklist — ${payload.teamName} — ${payload.checklist.title} — ${payload.run.windowLabel}`;
+    preheader = 'Starts soon. Please prepare to run the checklist.';
+    icon = '📝';
+    mainContent = `
+      <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Checklist starting soon</h1>
+      <p style="margin:0 0 16px;font-size:14px;color:#333;">
+        The checklist <strong>"${esc(payload.checklist.title)}"</strong> for ${esc(payload.teamName)} is scheduled to start at <strong>${payload.run.windowLabel}</strong>.
+      </p>
+      
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+        <tr>
+          <td style="font-size:14px;color:#555;"><strong>Team:</strong></td>
+          <td style="font-size:14px;color:#111;padding-left:8px;">${esc(payload.teamName)}</td>
+        </tr>
+        <tr>
+          <td style="font-size:14px;color:#555;"><strong>Time Window:</strong></td>
+          <td style="font-size:14px;color:#111;padding-left:8px;">${esc(payload.run.windowLabel)}</td>
+        </tr>
+        ${payload.checklist.priority ? `
+        <tr>
+          <td style="font-size:14px;color:#555;"><strong>Priority:</strong></td>
+          <td style="font-size:14px;color:#111;padding-left:8px;">${esc(payload.checklist.priority)}</td>
+        </tr>
+        ` : ''}
+      </table>
+      
+      <p style="margin:16px 0 8px;font-size:12px;color:#666;">Please ensure you're ready to complete the checklist during the scheduled time.</p>
+    `;
+  } else { // checklist_completed
+    subject = `✅ Checklist Completed — ${payload.teamName} — ${payload.checklist.title}`;
+    preheader = 'Checklist has been submitted. Review details and verification.';
+    icon = '✅';
+    mainContent = `
+      <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Checklist completed</h1>
+      <p style="margin:0 0 16px;font-size:14px;color:#333;">
+        The checklist <strong>"${esc(payload.checklist.title)}"</strong> for ${esc(payload.teamName)} has been submitted${payload.completedBy ? ` by ${esc(payload.completedBy)}` : ''}.
+      </p>
+      
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+        <tr>
+          <td style="font-size:14px;color:#555;"><strong>Team:</strong></td>
+          <td style="font-size:14px;color:#111;padding-left:8px;">${esc(payload.teamName)}</td>
+        </tr>
+        ${payload.metrics ? `
+        <tr>
+          <td style="font-size:14px;color:#555;"><strong>Completion:</strong></td>
+          <td style="font-size:14px;color:#111;padding-left:8px;">${payload.metrics.percentComplete || 0}% (${payload.metrics.itemsDone || 0}/${payload.metrics.itemsTotal || 0} items)</td>
+        </tr>
+        ` : ''}
+        ${payload.completedBy ? `
+        <tr>
+          <td style="font-size:14px;color:#555;"><strong>Completed by:</strong></td>
+          <td style="font-size:14px;color:#111;padding-left:8px;">${esc(payload.completedBy)}</td>
+        </tr>
+        ` : ''}
+      </table>
+      
+      ${payload.notes ? `
+      <div style="background: #f8f9fa; padding: 12px; margin: 16px 0; border-radius: 8px; border-left: 3px solid #0d3b66;">
+        <p style="margin:0;font-size:14px;color:#333;"><strong>Notes:</strong> ${esc(payload.notes)}</p>
+      </div>
+      ` : ''}
+      
+      <p style="margin:16px 0 8px;font-size:12px;color:#666;">Review the completed checklist and verify if required.</p>
+    `;
+  }
+
+  const html = `
+    <!-- preview text (hidden) -->
+    <div style="display:none;max-height:0;overflow:hidden;">${preheader}</div>
+    
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7fb;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="${baseStyles.container}">
+            <!-- header -->
+            <tr>
+              <td style="${baseStyles.header}">
+                <table role="presentation" width="100%"><tr>
+                  <td align="left" style="font-size:18px;font-weight:600;">
+                    ${payload.logoUrl ? `<img src="${payload.logoUrl}" alt="${esc(payload.orgName)} logo" width="28" height="28" style="vertical-align:middle;border:0;margin-right:8px;">` : ''}
+                    ${esc(payload.orgName)}
+                  </td>
+                  <td align="right" style="font-size:12px;opacity:.9;">${icon} Checklist</td>
+                </tr></table>
+              </td>
+            </tr>
+
+            <!-- body -->
+            <tr>
+              <td style="${baseStyles.body}">
+                ${mainContent}
+                
+                <!-- CTA -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 4px;">
+                  <tr>
+                    <td>
+                      <a href="${checklistUrl}" style="${baseStyles.button}">Open checklist</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- footer -->
+            <tr>
+              <td style="${baseStyles.footer}">
+                Teamtegrate Checklists • ${esc(payload.orgName)}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return { subject, html };
+}
+
+function esc(str?: string): string {
+  return (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]!));
 }

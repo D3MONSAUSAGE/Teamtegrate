@@ -180,6 +180,25 @@ class ChecklistInstanceService {
         .eq('id', params.instanceId);
 
       await notificationService.sendSubmitted(params.instanceId);
+      
+      // Send completion notification
+      const recipients = await getChecklistRecipients({
+        orgId: instance.org_id,
+        teamId: instance.team_id
+      });
+      
+      if (recipients.length > 0) {
+        await notifications.notifyChecklistCompleted({
+          checklist: { id: instance.id, title: instance.template?.name || 'Checklist' },
+          run: { id: instance.id, windowLabel: 'Today' },
+          team: { id: instance.team_id, name: 'Team' },
+          org: { id: instance.org_id, name: 'Organization' },
+          recipients,
+          actor: { id: params.actor.id, name: params.actor.name },
+          metrics: { percentComplete: 100, itemsTotal: 1, itemsDone: 1 },
+          completedBy: params.actor.name
+        });
+      }
     }
 
     return instance;

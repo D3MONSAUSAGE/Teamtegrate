@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { getChecklistRecipients } from './recipients';
 
 interface NotificationRecipient {
   id: string;
@@ -318,6 +319,199 @@ export const notifications = {
     }
   },
 
+  
+  // Checklist Upcoming - notify team managers and assignees before execution window
+  async notifyChecklistUpcoming(params: {
+    checklist: { id: string; title: string; priority?: string };
+    run: { id: string; startTime?: string; endTime?: string; windowLabel: string };
+    team: { id?: string; name: string };
+    org: { id: string; name: string };
+    recipients: { id: string; email: string; name: string }[];
+    actor: { id: string; name: string };
+  }) {
+    try {
+      const { checklist, run, team, org, recipients, actor } = params;
+      const dedupeKey = `${org.id}:${team.id || 'no-team'}:checklist_upcoming:${checklist.id}:${run.id}`;
+      
+      console.log(`[Notifications] Triggering checklist upcoming notifications: ${checklist.id}`, { dedupeKey });
+
+      // 1. Insert in-app notification with dedupe check - check if exists first
+      const existingNotification = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('organization_id', org.id)
+        .eq('type', 'checklist_upcoming')
+        .eq('metadata->>dedupe_key', dedupeKey)
+        .maybeSingle();
+
+      if (!existingNotification.data) {
+        // Insert in-app notifications for each recipient
+        const inAppNotifications = recipients.map(recipient => ({
+          user_id: recipient.id,
+          organization_id: org.id,
+          type: 'checklist_upcoming',
+          title: `Upcoming checklist "${checklist.title}" — ${team.name}`,
+          content: `Scheduled for ${run.windowLabel}. Please prepare to complete the checklist.`,
+          metadata: {
+            dedupe_key: dedupeKey,
+            checklistId: checklist.id,
+            checklistTitle: checklist.title,
+            teamId: team.id,
+            teamName: team.name,
+            runId: run.id,
+            windowLabel: run.windowLabel,
+            startTime: run.startTime,
+            endTime: run.endTime
+          },
+          is_read: false
+        }));
+
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert(inAppNotifications);
+
+        if (insertError && insertError.code !== '23505') { // Ignore unique constraint violations
+          console.error('[Notifications] Failed to insert in-app notifications:', insertError);
+        }
+      }
+
+      // 2. Call edge function for emails
+      const { data, error } = await supabase.functions.invoke('send-checklist-notifications', {
+        body: {
+          type: 'checklist_upcoming',
+          recipients: recipients.map(r => r.email),
+          orgName: org.name,
+          teamName: team.name,
+          checklist: {
+            id: checklist.id,
+            title: checklist.title,
+            priority: checklist.priority
+          },
+          run: {
+            id: run.id,
+            startTime: run.startTime,
+            endTime: run.endTime,
+            windowLabel: run.windowLabel
+          },
+          actor: {
+            id: actor.id,
+            name: actor.name
+          }
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to send checklist upcoming notifications:', error);
+        throw error;
+      }
+
+      console.log(`CHECKLIST_NOTIFY { type: checklist_upcoming, checklistId: ${checklist.id}, runId: ${run.id}, sent: ${recipients.length}, total: ${recipients.length} }`);
+    } catch (error) {
+      console.error('[Notifications] Error in notifyChecklistUpcoming:', error);
+      // Don't throw - notifications should not break the main flow
+    }
+  },
+
+  // Checklist Completed - notify team managers and admins after submission
+  async notifyChecklistCompleted(params: {
+    checklist: { id: string; title: string; priority?: string };
+    run: { id: string; startTime?: string; endTime?: string; windowLabel: string };
+    team: { id?: string; name: string };
+    org: { id: string; name: string };
+    recipients: { id: string; email: string; name: string }[];
+    actor: { id: string; name: string };
+    metrics?: { percentComplete?: number; itemsTotal?: number; itemsDone?: number };
+    completedBy?: string;
+    notes?: string;
+  }) {
+    try {
+      const { checklist, run, team, org, recipients, actor, metrics, completedBy, notes } = params;
+      const dedupeKey = `${org.id}:${team.id || 'no-team'}:checklist_completed:${checklist.id}:${run.id}`;
+      
+      console.log(`[Notifications] Triggering checklist completed notifications: ${checklist.id}`, { dedupeKey });
+
+      // 1. Insert in-app notification with dedupe check - check if exists first
+      const existingNotification = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('organization_id', org.id)
+        .eq('type', 'checklist_completed')
+        .eq('metadata->>dedupe_key', dedupeKey)
+        .maybeSingle();
+
+      if (!existingNotification.data) {
+        // Insert in-app notifications for each recipient
+        const inAppNotifications = recipients.map(recipient => ({
+          user_id: recipient.id,
+          organization_id: org.id,
+          type: 'checklist_completed',
+          title: `Completed checklist "${checklist.title}" — ${team.name}`,
+          content: `${metrics?.percentComplete || 0}% complete (${metrics?.itemsDone || 0}/${metrics?.itemsTotal || 0} items)${completedBy ? ` by ${completedBy}` : ''}`,
+          metadata: {
+            dedupe_key: dedupeKey,
+            checklistId: checklist.id,
+            checklistTitle: checklist.title,
+            teamId: team.id,
+            teamName: team.name,
+            runId: run.id,
+            windowLabel: run.windowLabel,
+            percentComplete: metrics?.percentComplete,
+            itemsTotal: metrics?.itemsTotal,
+            itemsDone: metrics?.itemsDone,
+            completedBy,
+            notes
+          },
+          is_read: false
+        }));
+
+        const { error: insertError } = await supabase
+          .from('notifications')
+          .insert(inAppNotifications);
+
+        if (insertError && insertError.code !== '23505') { // Ignore unique constraint violations
+          console.error('[Notifications] Failed to insert in-app notifications:', insertError);
+        }
+      }
+
+      // 2. Call edge function for emails
+      const { data, error } = await supabase.functions.invoke('send-checklist-notifications', {
+        body: {
+          type: 'checklist_completed',
+          recipients: recipients.map(r => r.email),
+          orgName: org.name,
+          teamName: team.name,
+          checklist: {
+            id: checklist.id,
+            title: checklist.title,
+            priority: checklist.priority
+          },
+          run: {
+            id: run.id,
+            startTime: run.startTime,
+            endTime: run.endTime,
+            windowLabel: run.windowLabel
+          },
+          actor: {
+            id: actor.id,
+            name: actor.name
+          },
+          metrics,
+          completedBy,
+          notes
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to send checklist completed notifications:', error);
+        throw error;
+      }
+
+      console.log(`CHECKLIST_NOTIFY { type: checklist_completed, checklistId: ${checklist.id}, runId: ${run.id}, sent: ${recipients.length}, total: ${recipients.length} }`);
+    } catch (error) {
+      console.error('[Notifications] Error in notifyChecklistCompleted:', error);
+      // Don't throw - notifications should not break the main flow
+    }
+  },
   
   // Simple success/error notifications for UI feedback
   success: (message: string) => toast.success(message),
