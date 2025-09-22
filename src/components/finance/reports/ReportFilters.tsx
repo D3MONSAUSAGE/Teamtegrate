@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { TimeRangeSelector } from '@/components/reports/personal/TimeRangeSelector';
+import { TimeRangeSelector } from '@/components/reports/TimeRangeSelector';
 import { EnhancedTeamSelector } from '@/components/finance/reports/EnhancedTeamSelector';
 import { TeamNameResolver } from '@/components/finance/reports/TeamNameResolver';
-import { UserSelector } from '@/components/reports/core/UserSelector';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { DateRange } from 'react-day-picker';
@@ -63,15 +63,6 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
             />
           </div>
           
-          {onUserChange && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Select User</label>
-              <UserSelector
-                selectedUserId={selectedUserId || null}
-                onUserChange={onUserChange}
-              />
-            </div>
-          )}
         </div>
       )}
 
