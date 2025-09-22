@@ -70,6 +70,7 @@ export const useComprehensiveReports = ({
 
   const comprehensiveQuery = useQuery({
     queryKey: ['comprehensive-reports', validUserId, startDate, endDate, granularity],
+    staleTime: 30000, // 30 seconds
     queryFn: async (): Promise<ComprehensiveReportData[]> => {
       if (!validUserId) return [];
       
@@ -107,6 +108,7 @@ export const useComprehensiveReports = ({
 
   const dailyCompletionQuery = useQuery({
     queryKey: ['daily-completion', validUserId, startDate, endDate],
+    staleTime: 30000, // 30 seconds
     queryFn: async (): Promise<DailyCompletionData[]> => {
       if (!validUserId) return [];
       

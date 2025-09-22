@@ -1,3 +1,4 @@
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -149,11 +150,12 @@ export interface DailyDetailData {
 
 export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskReportsParams) => {
   const { user } = useAuth();
-  const range = computeDateRange(timeRange, dateRange);
+  const range = React.useMemo(() => computeDateRange(timeRange, dateRange), [timeRange, dateRange]);
 
   // Daily completion data
   const dailyQuery = useQuery({
-    queryKey: ['daily-reports', range, teamId, userId],
+    queryKey: ['daily-reports', range.startDate, range.endDate, teamId, userId],
+    staleTime: 30000, // 30 seconds
     queryFn: async (): Promise<DailyCompletionData[]> => {
       console.log(`Fetching daily reports for userId: ${userId}, teamId: ${teamId}, range: ${range.startDate} to ${range.endDate}`);
       
@@ -247,7 +249,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
   // Weekly overview data
   const weeklyQuery = useQuery({
-    queryKey: ['weekly-reports', range, teamId, userId],
+    queryKey: ['weekly-reports', range.startDate, range.endDate, teamId, userId],
+    staleTime: 30000, // 30 seconds
     queryFn: async (): Promise<WeeklyOverviewData[]> => {
       console.log(`Fetching weekly reports for userId: ${userId}, teamId: ${teamId}`);
       
@@ -309,7 +312,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
   // Team effectiveness (simplified)
   const teamQuery = useQuery({
-    queryKey: ['team-reports', range],
+    queryKey: ['team-reports', range.startDate, range.endDate],
+    staleTime: 60000, // 1 minute
     queryFn: async (): Promise<TeamEffectivenessData[]> => {
       const { data, error } = await supabase
         .from('tasks')
@@ -359,7 +363,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
   // Project analytics
   const projectQuery = useQuery({
-    queryKey: ['project-reports', range],
+    queryKey: ['project-reports', range.startDate, range.endDate],
+    staleTime: 60000, // 1 minute
     queryFn: async (): Promise<ProjectAnalyticsData[]> => {
       const { data, error } = await supabase
         .from('tasks')
@@ -412,7 +417,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
   });
 
   // Daily detail query for specific date
-  const getDailyTaskDetails = async (selectedDate: string): Promise<DailyDetailData | null> => {
+  const getDailyTaskDetails = React.useCallback(async (selectedDate: string): Promise<DailyDetailData | null> => {
     if (!user?.organizationId) return null;
 
     console.log(`Fetching daily details for date: ${selectedDate}, userId: ${userId}`);
@@ -578,7 +583,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
       medium_priority_count,
       low_priority_count
     };
-  };
+  }, [user?.organizationId, teamId, userId]); // Add dependencies for useCallback
 
   return {
     dailyData: dailyQuery.data || [],

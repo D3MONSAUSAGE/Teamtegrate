@@ -30,7 +30,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
     userId,
   });
 
-  // Load data when date changes
+  // Load data when date or user changes, but not when getDailyTaskDetails changes
   React.useEffect(() => {
     const loadDailyData = async () => {
       if (!selectedDate) return;
@@ -51,7 +51,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
     };
 
     loadDailyData();
-  }, [selectedDate, userId, getDailyTaskDetails]);
+  }, [selectedDate, userId]); // Remove getDailyTaskDetails from dependencies
 
   return (
     <div className="space-y-6">

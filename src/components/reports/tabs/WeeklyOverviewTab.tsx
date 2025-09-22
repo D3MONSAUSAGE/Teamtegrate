@@ -62,7 +62,7 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
     userId,
   });
 
-  const handleDayClick = async (date: string) => {
+  const handleDayClick = React.useCallback(async (date: string) => {
     setSelectedDate(date);
     setDetailLoading(true);
     setDailyDetailData(null);
@@ -76,7 +76,7 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
     } finally {
       setDetailLoading(false);
     }
-  };
+  }, [getDailyTaskDetails]); // Keep getDailyTaskDetails as dependency since it's stable now
 
   // Prepare data for charts
   const chartData = React.useMemo(() => {
