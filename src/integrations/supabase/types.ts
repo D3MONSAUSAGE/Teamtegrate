@@ -857,6 +857,128 @@ export type Database = {
           },
         ]
       }
+      checklist_instances_v2: {
+        Row: {
+          created_at: string | null
+          date: string
+          executed_at: string | null
+          executed_by: string | null
+          id: string
+          manager_note: string | null
+          org_id: string
+          reject_reason: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: Database["public"]["Enums"]["checklist_status_v2"]
+          team_id: string | null
+          template_id: string
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          manager_note?: string | null
+          org_id: string
+          reject_reason?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["checklist_status_v2"]
+          team_id?: string | null
+          template_id: string
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          manager_note?: string | null
+          org_id?: string
+          reject_reason?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["checklist_status_v2"]
+          team_id?: string | null
+          template_id?: string
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_instances_v2_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_item_entries_v2: {
+        Row: {
+          created_at: string | null
+          executed_status: string | null
+          id: string
+          instance_id: string
+          note: string | null
+          photo_urls: string[] | null
+          position: number
+          template_item_id: string
+          updated_at: string | null
+          value: Json | null
+          verified_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          executed_status?: string | null
+          id?: string
+          instance_id: string
+          note?: string | null
+          photo_urls?: string[] | null
+          position: number
+          template_item_id: string
+          updated_at?: string | null
+          value?: Json | null
+          verified_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          executed_status?: string | null
+          id?: string
+          instance_id?: string
+          note?: string | null
+          photo_urls?: string[] | null
+          position?: number
+          template_item_id?: string
+          updated_at?: string | null
+          value?: Json | null
+          verified_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_item_entries_v2_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_instances_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_item_entries_v2_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_template_items_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_items: {
         Row: {
           checklist_id: string
@@ -900,6 +1022,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      checklist_template_items_v2: {
+        Row: {
+          created_at: string | null
+          default_value: Json | null
+          id: string
+          instructions: string | null
+          label: string
+          position: number
+          requires_note: boolean | null
+          requires_photo: boolean | null
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_value?: Json | null
+          id?: string
+          instructions?: string | null
+          label: string
+          position: number
+          requires_note?: boolean | null
+          requires_photo?: boolean | null
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          default_value?: Json | null
+          id?: string
+          instructions?: string | null
+          label?: string
+          position?: number
+          requires_note?: boolean | null
+          requires_photo?: boolean | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_items_v2_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_templates_v2: {
+        Row: {
+          assignment_type: Database["public"]["Enums"]["assignment_type_v2"]
+          created_at: string | null
+          created_by: string
+          description: string | null
+          end_time: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          org_id: string
+          priority: string | null
+          require_verification: boolean | null
+          role_key: string | null
+          scheduled_days: string[] | null
+          scoring_enabled: boolean | null
+          start_time: string | null
+          team_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assignment_type?: Database["public"]["Enums"]["assignment_type_v2"]
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          org_id: string
+          priority?: string | null
+          require_verification?: boolean | null
+          role_key?: string | null
+          scheduled_days?: string[] | null
+          scoring_enabled?: boolean | null
+          start_time?: string | null
+          team_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assignment_type?: Database["public"]["Enums"]["assignment_type_v2"]
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          org_id?: string
+          priority?: string | null
+          require_verification?: boolean | null
+          role_key?: string | null
+          scheduled_days?: string[] | null
+          scoring_enabled?: boolean | null
+          start_time?: string | null
+          team_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       checklists: {
         Row: {
@@ -1482,6 +1708,27 @@ export type Database = {
           request_status_changed?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      email_outbox: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          payload: Json
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          payload: Json
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          payload?: Json
+          sent_at?: string | null
         }
         Relationships: []
       }
@@ -4009,6 +4256,36 @@ export type Database = {
           },
         ]
       }
+      organization_checklist_settings: {
+        Row: {
+          allow_self_verify: boolean | null
+          auto_expire_hours: number | null
+          created_at: string | null
+          id: string
+          organization_id: string
+          require_photos: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_self_verify?: boolean | null
+          auto_expire_hours?: number | null
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          require_photos?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_self_verify?: boolean | null
+          auto_expire_hours?: number | null
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          require_photos?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       organization_invites: {
         Row: {
           created_at: string
@@ -4093,18 +4370,21 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          timezone: string | null
         }
         Insert: {
           created_at?: string
           created_by: string
           id?: string
           name: string
+          timezone?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string
           id?: string
           name?: string
+          timezone?: string | null
         }
         Relationships: []
       }
@@ -8346,6 +8626,19 @@ export type Database = {
           },
         ]
       }
+      v_team_checklist_scores: {
+        Row: {
+          date: string | null
+          executed_instances: number | null
+          execution_pct: number | null
+          org_id: string | null
+          team_id: string | null
+          total_instances: number | null
+          verification_pct: number | null
+          verified_instances: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_role_update: {
@@ -8584,6 +8877,10 @@ export type Database = {
           total_tasks: number
         }[]
       }
+      get_instance_display_code: {
+        Args: { instance_id: string }
+        Returns: string
+      }
       get_organization_stats: {
         Args: { org_id: string }
         Returns: Json
@@ -8641,6 +8938,10 @@ export type Database = {
       get_team_stats: {
         Args: { org_id: string }
         Returns: Json
+      }
+      get_template_code: {
+        Args: { template_id: string }
+        Returns: string
       }
       get_user_accessible_projects: {
         Args: Record<PropertyKey, never>
@@ -8847,8 +9148,15 @@ export type Database = {
     }
     Enums: {
       assignment_type: "individual" | "team" | "role_based"
+      assignment_type_v2: "individual" | "team" | "role"
       checklist_priority: "low" | "medium" | "high" | "critical"
       checklist_status: "draft" | "active" | "inactive" | "archived"
+      checklist_status_v2:
+        | "pending"
+        | "submitted"
+        | "verified"
+        | "rejected"
+        | "expired"
       execution_status:
         | "pending"
         | "in_progress"
@@ -9001,8 +9309,16 @@ export const Constants = {
   public: {
     Enums: {
       assignment_type: ["individual", "team", "role_based"],
+      assignment_type_v2: ["individual", "team", "role"],
       checklist_priority: ["low", "medium", "high", "critical"],
       checklist_status: ["draft", "active", "inactive", "archived"],
+      checklist_status_v2: [
+        "pending",
+        "submitted",
+        "verified",
+        "rejected",
+        "expired",
+      ],
       execution_status: [
         "pending",
         "in_progress",
