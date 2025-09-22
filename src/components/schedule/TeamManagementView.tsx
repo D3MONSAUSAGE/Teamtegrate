@@ -27,6 +27,7 @@ import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { TeamScheduleSelector } from './TeamScheduleSelector';
 import { TimeEntryApprovalList } from '@/components/time-approvals/TimeEntryApprovalList';
 import { TeamWeeklyScheduleView } from './TeamWeeklyScheduleView';
+import { WeeklyScheduleCreator } from './WeeklyScheduleCreator';
 import { Input } from '@/components/ui/input';
 import ModernMetricCard from './modern/ModernMetricCard';
 
@@ -40,7 +41,7 @@ export const TeamManagementView: React.FC = () => {
     fetchEmployeeSchedules,
     isLoading 
   } = useScheduleManagement();
-  const [activeSubTab, setActiveSubTab] = useState('overview');
+  const [activeSubTab, setActiveSubTab] = useState('create-schedule');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Calculate team-specific metrics
@@ -169,9 +170,9 @@ export const TeamManagementView: React.FC = () => {
       {/* Management Tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Overview
+          <TabsTrigger value="create-schedule" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Create Schedule
           </TabsTrigger>
           <TabsTrigger value="schedules" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -187,62 +188,8 @@ export const TeamManagementView: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Team Schedule Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Schedule Overview</CardTitle>
-                <CardDescription>
-                  Team schedule summary for this week
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium">Completed Shifts</span>
-                    <span className="text-sm text-green-600 font-semibold">{teamMetrics.completedShifts}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium">Missed Shifts</span>
-                    <span className="text-sm text-red-600 font-semibold">{teamMetrics.missedShifts}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium">Coverage Rate</span>
-                    <span className="text-sm text-primary font-semibold">{teamMetrics.coverage}%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>
-                  Common management tasks
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Create New Schedule
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Team Members
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Review Time Entries
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Reports
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="create-schedule" className="space-y-6">
+          <WeeklyScheduleCreator selectedTeamId={selectedTeamId} />
         </TabsContent>
 
         <TabsContent value="schedules" className="space-y-6">
