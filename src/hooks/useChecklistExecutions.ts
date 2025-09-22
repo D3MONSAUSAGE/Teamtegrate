@@ -279,13 +279,20 @@ export const useVerifyChecklistExecution = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-checklist-executions'] });
       queryClient.invalidateQueries({ queryKey: ['checklist-execution-history'] });
       toast({
         title: "Verified",
         description: "Checklist execution verified successfully",
       });
+      
+      // Send completion notification email (verification finalizes the checklist)
+      try {
+        await notifyChecklistCompleted(data.id);
+      } catch (error) {
+        console.error('notifyChecklistCompleted (verify) failed:', error);
+      }
     },
   });
 };
@@ -329,7 +336,7 @@ export const useManagerCompleteAndVerify = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-checklist-executions'] });
       queryClient.invalidateQueries({ queryKey: ['checklist-execution-history'] });
       queryClient.invalidateQueries({ queryKey: ['pending-verifications'] });
@@ -337,6 +344,13 @@ export const useManagerCompleteAndVerify = () => {
         title: "Completed & Verified",
         description: "Checklist has been completed and verified successfully",
       });
+      
+      // Send completion notification email (manager complete + verify in one action)
+      try {
+        await notifyChecklistCompleted(data.id);
+      } catch (error) {
+        console.error('notifyChecklistCompleted (managerCompleteAndVerify) failed:', error);
+      }
     },
   });
 };
