@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
+import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
 import { CountComparisonDialog } from './CountComparisonDialog';
@@ -25,8 +26,22 @@ import { cn } from '@/lib/utils';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions } = useInventory();
-  const { hasRoleAccess } = useAuth();
+  const { hasRoleAccess, user } = useAuth();
   const { metrics, chartData } = useEnhancedInventoryAnalytics(counts, alerts, items, transactions);
+  const { teams } = useTeamsByOrganization(user?.organizationId);
+
+  // Create team name mapping
+  const teamNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (teams || []).forEach(team => map.set(team.id, team.name));
+    return map;
+  }, [teams]);
+
+  // Helper function to get team display name
+  const getTeamDisplayName = (teamId?: string | null) => {
+    if (!teamId) return 'All Teams';
+    return teamNameById.get(teamId) || teamId;
+  };
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -43,7 +58,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const filteredCounts = counts.filter(count => {
     const matchesSearch = searchTerm === '' || 
       count.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ('Team ' + count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
+      getTeamDisplayName(count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesTeam = selectedTeam === '' || count.team_id === selectedTeam;
     
@@ -334,12 +349,10 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                                     {count.status.replace('_', ' ').toUpperCase()}
                                   </Badge>
                                   
-                                  {count.team_id && (
-                                    <Badge variant="outline" className="gap-1">
-                                      <Users className="h-3 w-3" />
-                                      Team {count.team_id}
-                                    </Badge>
-                                  )}
+                                  <Badge variant="outline" className="gap-1">
+                                    <Users className="h-3 w-3" />
+                                    {getTeamDisplayName(count.team_id)}
+                                  </Badge>
                                   
                                   {count.variance_count > 0 && (
                                     <Badge variant={getVarianceColor(count.variance_count)} className="gap-1">
