@@ -4,8 +4,9 @@
   "description": "Complete team collaboration platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#3b82f6",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#F8FAFC",
+  "theme_color": "#0F172A",
   "orientation": "portrait-primary",
   "categories": ["business", "productivity"],
   "icons": [
