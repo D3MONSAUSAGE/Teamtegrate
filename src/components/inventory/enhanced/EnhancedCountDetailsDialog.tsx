@@ -142,12 +142,12 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="details" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="details">Item Details</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="financial">Financial</TabsTrigger>
             <TabsTrigger value="comparison">Comparison</TabsTrigger>
-            <TabsTrigger value="details">Item Details</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -518,9 +518,9 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Summary Stats */}
+                    {/* Summary Stats with Financial Totals */}
                     <div className="px-6 py-4 bg-muted/50 border-b">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">Total Items:</span>
                           <span className="ml-2 font-medium">{countItems.length}</span>
@@ -528,6 +528,21 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
                         <div>
                           <span className="text-muted-foreground">Counted:</span>
                           <span className="ml-2 font-medium">{completedItems.length}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Total Value:</span>
+                          <span className="ml-2 font-medium text-green-600">
+                            {formatCurrency(financialMetrics.totalValue)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Cost Impact:</span>
+                          <span className={cn(
+                            "ml-2 font-medium",
+                            financialMetrics.costImpact >= 0 ? "text-green-600" : "text-red-600"
+                          )}>
+                            {financialMetrics.costImpact >= 0 ? '+' : ''}{formatCurrency(financialMetrics.costImpact)}
+                          </span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Min/Max Violations:</span>
