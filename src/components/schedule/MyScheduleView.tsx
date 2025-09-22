@@ -16,7 +16,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useScheduleManagement, EmployeeSchedule } from '@/hooks/useScheduleManagement';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
-import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours, addWeeks, startOfDay, endOfDay } from 'date-fns';
 import ModernMetricCard from './modern/ModernMetricCard';
 import { EmployeeTimeStatusBadge } from '@/components/employee/EmployeeTimeStatusBadge';
 import { WeeklyTimeEntriesCard } from './WeeklyTimeEntriesCard';
@@ -30,18 +30,27 @@ export const MyScheduleView: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      const weekStart = format(startOfWeek(selectedWeek), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(selectedWeek), 'yyyy-MM-dd');
+      // Use Monday as the start of the week
+      const weekStart = format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const weekEnd = format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       fetchEmployeeSchedules(weekStart, weekEnd);
       // Fetch time entries for the selected week
-      fetchWeeklyEntries(startOfWeek(selectedWeek));
+      fetchWeeklyEntries(startOfWeek(selectedWeek, { weekStartsOn: 1 }));
     }
   }, [user, selectedWeek, fetchEmployeeSchedules, fetchWeeklyEntries]);
 
   const mySchedules = employeeSchedules.filter(schedule => schedule.employee_id === user?.id);
-  const upcomingShifts = mySchedules.filter(schedule => 
-    new Date(schedule.scheduled_start_time) > new Date() && schedule.status === 'scheduled'
-  );
+  
+  // Get next week's schedules (Monday to Sunday)
+  const nextWeekStart = startOfWeek(addWeeks(new Date(), 1));
+  const nextWeekEnd = endOfWeek(nextWeekStart);
+  const upcomingShifts = mySchedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.scheduled_date);
+    return scheduleDate >= startOfDay(nextWeekStart) && 
+           scheduleDate <= endOfDay(nextWeekEnd) && 
+           schedule.status === 'scheduled';
+  });
+  
   const completedShifts = mySchedules.filter(schedule => schedule.status === 'completed');
   const totalScheduledHours = mySchedules.reduce((total, schedule) => {
     const start = new Date(schedule.scheduled_start_time);
@@ -80,7 +89,8 @@ export const MyScheduleView: React.FC = () => {
   };
 
   const renderWeeklySchedule = () => {
-    const weekStart = startOfWeek(selectedWeek);
+    // Ensure Monday is the first day of the week
+    const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
     return (
@@ -235,7 +245,7 @@ export const MyScheduleView: React.FC = () => {
                 Previous
               </Button>
               <div className="text-sm font-medium px-4 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
-                {format(startOfWeek(selectedWeek), 'MMM d')} - {format(endOfWeek(selectedWeek), 'MMM d, yyyy')}
+                {format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}
               </div>
               <Button
                 variant="outline"
@@ -256,23 +266,23 @@ export const MyScheduleView: React.FC = () => {
       {/* Weekly Time Entries */}
       <WeeklyTimeEntriesCard
         entries={weeklyEntries}
-        weekStart={startOfWeek(selectedWeek)}
-        weekEnd={endOfWeek(selectedWeek)}
+        weekStart={startOfWeek(selectedWeek, { weekStartsOn: 1 })}
+        weekEnd={endOfWeek(selectedWeek, { weekStartsOn: 1 })}
       />
 
       {/* Time Entry Correction Requests */}
       <TimeEntryCorrectionManager />
 
-      {/* Upcoming Shifts Detail */}
+      {/* Next Week's Shifts Detail */}
       {upcomingShifts.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Upcoming Shifts
+              Next Week's Schedule
             </CardTitle>
             <CardDescription>
-              Your next scheduled shifts
+              Your shifts for {format(nextWeekStart, 'MMM d')} - {format(nextWeekEnd, 'MMM d, yyyy')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -36,7 +36,7 @@ export interface CreateCorrectionRequest {
   employee_reason: string;
   manager_id?: string;
   corrections: Array<{
-    time_entry_id: string;
+    time_entry_id: string | null; // Allow null for missing day corrections
     original_clock_in: string | null;
     original_clock_out: string | null;
     original_notes: string | null;

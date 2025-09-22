@@ -10,12 +10,15 @@ import {
   CheckCircle2, 
   XCircle, 
   AlertCircle,
-  TimerReset
+  TimerReset,
+  CalendarX,
+  Plus
 } from 'lucide-react';
 import { TimeEntry } from '@/hooks/useEmployeeTimeTracking';
-import { format } from 'date-fns';
+import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import TimeEntryRow from './TimeEntryRow';
 import { TimeEntryCorrectionRequestForm } from '@/components/time-entries/TimeEntryCorrectionRequestForm';
+import { MissingDayTimeEntryForm } from './MissingDayTimeEntryForm';
 import { useTimeEntryCorrectionRequests, CreateCorrectionRequest } from '@/hooks/useTimeEntryCorrectionRequests';
 
 interface WeeklyTimeEntriesCardProps {
@@ -31,6 +34,8 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
 }) => {
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
+  const [showMissingDayForm, setShowMissingDayForm] = useState(false);
+  const [selectedMissingDate, setSelectedMissingDate] = useState<Date | null>(null);
   const { createCorrectionRequest, myRequests, isLoading } = useTimeEntryCorrectionRequests();
 
   // Filter out active sessions (entries without clock_out)
@@ -112,6 +117,24 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
     }, 0) / 60;
   };
 
+  // Get missing days (days with no time entries)
+  const getMissingDays = () => {
+    const weekDates = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(weekStart), i));
+    return weekDates.filter(date => {
+      const hasEntry = completedEntries.some(entry => 
+        isSameDay(new Date(entry.clock_in), date)
+      );
+      return !hasEntry && date <= new Date(); // Only show past/current days as missing
+    });
+  };
+
+  const missingDays = getMissingDays();
+
+  const handleMissingDayRequest = (date: Date) => {
+    setSelectedMissingDate(date);
+    setShowMissingDayForm(true);
+  };
+
   return (
     <>
       <Card>
@@ -190,6 +213,33 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
                 ))}
               </div>
 
+              {/* Missing Days Section */}
+              {missingDays.length > 0 && (
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <h4 className="font-medium mb-3 flex items-center gap-2 text-yellow-800 dark:text-yellow-300">
+                    <CalendarX className="w-4 h-4" />
+                    Missing Time Entries
+                  </h4>
+                  <div className="text-sm text-yellow-700 dark:text-yellow-400 mb-3">
+                    The following days have no time entries. You can request to add them:
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {missingDays.map((date) => (
+                      <Button
+                        key={date.toISOString()}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMissingDayRequest(date)}
+                        className="justify-between bg-yellow-100 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+                      >
+                        <span>{format(date, 'EEE, MMM d')}</span>
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {existingRequests.length > 0 && (
                 <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
                   <h4 className="font-medium mb-2 flex items-center gap-2">
@@ -210,6 +260,13 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
         open={showCorrectionForm}
         onOpenChange={setShowCorrectionForm}
         selectedEntries={getSelectedEntriesData()}
+        onSubmit={handleSubmitCorrections}
+      />
+
+      <MissingDayTimeEntryForm
+        open={showMissingDayForm}
+        onOpenChange={setShowMissingDayForm}
+        selectedDate={selectedMissingDate || new Date()}
         onSubmit={handleSubmitCorrections}
       />
     </>
