@@ -96,7 +96,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
 
       {/* Quick Summary Cards */}
       {dailyDetailData && !detailLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -117,6 +117,18 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
                   <p className="text-2xl font-bold text-blue-600">{dailyDetailData.created_tasks.length}</p>
                 </div>
                 <Plus className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assigned</p>
+                  <p className="text-2xl font-bold text-purple-600">{dailyDetailData.assigned_tasks.length}</p>
+                </div>
+                <Plus className="h-8 w-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>

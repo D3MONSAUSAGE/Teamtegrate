@@ -184,47 +184,7 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {format(new Date(selectedDate), 'EEEE, MMMM do, yyyy')}
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <span className="text-2xl font-bold text-primary">{data.completion_score}%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Daily Score</p>
-            </div>
-          </div>
-        </CardTitle>
-      </CardHeader>
       <CardContent className="space-y-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="text-center p-3 border rounded-lg">
-            <div className="text-lg font-bold text-green-600">{data.completed_tasks.length}</div>
-            <div className="text-xs text-muted-foreground">Completed</div>
-          </div>
-          <div className="text-center p-3 border rounded-lg">
-            <div className="text-lg font-bold text-blue-600">{data.created_tasks.length}</div>
-            <div className="text-xs text-muted-foreground">Created</div>
-          </div>
-          <div className="text-center p-3 border rounded-lg">
-            <div className="text-lg font-bold text-purple-600">{data.assigned_tasks.length}</div>
-            <div className="text-xs text-muted-foreground">Assigned</div>
-          </div>
-          <div className="text-center p-3 border rounded-lg">
-            <div className="text-lg font-bold text-orange-600">{data.overdue_tasks.length}</div>
-            <div className="text-xs text-muted-foreground">Overdue</div>
-          </div>
-          <div className="text-center p-3 border rounded-lg">
-            <div className="text-lg font-bold text-gray-600">{data.pending_tasks.length}</div>
-            <div className="text-xs text-muted-foreground">Pending</div>
-          </div>
-        </div>
 
         {/* Priority Breakdown */}
         <div className="space-y-3">
