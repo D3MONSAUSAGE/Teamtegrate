@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { useDebounce } from '@/utils/performanceUtils';
 import { toast } from 'sonner';
+import { notifications } from '@/lib/notifications';
 
 export interface ScheduleTemplate {
   id: string;
@@ -247,6 +248,31 @@ export const useScheduleManagement = () => {
       }
       
       toast.success('Employee schedule created successfully');
+
+      // Send notification for shift assignment
+      try {
+        await notifications.notifyShiftAssigned({
+          orgId: user.organizationId,
+          teamId: data.team_id || null,
+          shift: {
+            id: data.id,
+            title: `${data.users?.name || 'Employee'} - ${data.scheduled_start_time} to ${data.scheduled_end_time}`,
+            starts_at: new Date(`${data.scheduled_date}T${data.scheduled_start_time}`).toISOString(),
+            ends_at: new Date(`${data.scheduled_date}T${data.scheduled_end_time}`).toISOString(),
+            notes: data.notes || undefined,
+            assigned_user_id: data.employee_id,
+            team_name: data.teams?.name || undefined
+          },
+          actor: {
+            id: user.id,
+            name: user.name || user.email,
+            email: user.email
+          }
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send shift assignment notification:', notificationError);
+      }
+      
       return data;
     } catch (err) {
       console.error('Error in createEmployeeSchedule:', err);
@@ -261,19 +287,58 @@ export const useScheduleManagement = () => {
 
   // Update employee schedule (for actual times)
   const updateEmployeeSchedule = async (id: string, updates: Partial<EmployeeSchedule>) => {
+    if (!user) return;
+
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('employee_schedules')
         .update(updates)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          users!employee_id (
+            id,
+            name,
+            email
+          ),
+          teams!team_id (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) throw error;
+      
       setEmployeeSchedules(prev => 
         prev.map(schedule => schedule.id === id ? { ...schedule, ...data } : schedule)
       );
+
+      // Send notification for shift update
+      try {
+        await notifications.notifyShiftUpdated({
+          orgId: user.organizationId,
+          teamId: data.team_id || null,
+          shift: {
+            id: data.id,
+            title: `${data.users?.name || 'Employee'} - ${data.scheduled_start_time} to ${data.scheduled_end_time}`,
+            starts_at: new Date(`${data.scheduled_date}T${data.scheduled_start_time}`).toISOString(),
+            ends_at: new Date(`${data.scheduled_date}T${data.scheduled_end_time}`).toISOString(),
+            notes: data.notes || undefined,
+            assigned_user_id: data.employee_id,
+            team_name: data.teams?.name || undefined
+          },
+          actor: {
+            id: user.id,
+            name: user.name || user.email,
+            email: user.email
+          }
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send shift update notification:', notificationError);
+      }
+
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update employee schedule');

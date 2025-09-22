@@ -92,6 +92,9 @@ verify_jwt = true
 [functions.send-checklist-notifications]
 verify_jwt = true
 
+[functions.send-schedule-notifications]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325

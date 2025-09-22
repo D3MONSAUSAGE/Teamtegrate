@@ -513,6 +513,195 @@ export const notifications = {
     }
   },
   
+  // ========================= SCHEDULE NOTIFICATIONS =========================
+
+  // Shift Assigned - notify assigned user + team managers + org admins
+  async notifyShiftAssigned({ 
+    orgId, teamId, shift, actor 
+  }: {
+    orgId: string;
+    teamId?: string | null;
+    shift: { id: string; title: string; starts_at: string; ends_at: string; location?: string; notes?: string; assigned_user_id?: string; team_name?: string };
+    actor: { id: string; name: string; email: string };
+  }) {
+    try {
+      const dedupeKey = `${orgId}:${teamId || 'no-team'}:schedule:schedule_shift_assigned:${shift.id}`;
+      console.log(`[SCHED_NOTIFY] Triggering shift assigned notifications: ${shift.id}`, { dedupeKey });
+
+      // Get recipients for in-app notifications
+      const recipients: Array<{ id: string; name: string; email: string }> = [];
+      
+      if (shift.assigned_user_id) {
+        const { data: assignedUser } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .eq('id', shift.assigned_user_id)
+          .single();
+        
+        if (assignedUser) recipients.push(assignedUser);
+      }
+
+      // Create in-app notifications
+      if (recipients.length > 0) {
+        const { data: existingNotification } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('organization_id', orgId)
+          .eq('type', 'schedule_shift_assigned')
+          .eq('metadata->>dedupe_key', dedupeKey)
+          .maybeSingle();
+
+        if (!existingNotification) {
+          const inAppNotifications = recipients.map(recipient => ({
+            user_id: recipient.id,
+            organization_id: orgId,
+            type: 'schedule_shift_assigned',
+            title: `New Shift Assignment - ${shift.title}`,
+            content: `You've been assigned a new shift: ${shift.title} on ${new Date(shift.starts_at).toLocaleDateString()}`,
+            metadata: {
+              dedupe_key: dedupeKey,
+              teamId,
+              entityId: shift.id,
+              timestamp: new Date().toISOString()
+            },
+            is_read: false
+          }));
+
+          await supabase.from('notifications').insert(inAppNotifications);
+        }
+      }
+
+      // Invoke edge function for emails
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.functions.invoke('send-schedule-notifications', {
+        body: {
+          type: 'schedule_shift_assigned',
+          orgId,
+          teamId,
+          shift,
+          actor,
+          timestamp: new Date().toISOString(),
+          dedupeKey
+        },
+        headers: { 
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('[SCHED_NOTIFY] Error in notifyShiftAssigned:', error);
+      // Don't throw - notifications should not break the main flow
+    }
+  },
+
+  // Shift Updated - notify assigned user + team managers + org admins
+  async notifyShiftUpdated({ 
+    orgId, teamId, shift, actor 
+  }: {
+    orgId: string;
+    teamId?: string | null;
+    shift: { id: string; title: string; starts_at: string; ends_at: string; location?: string; notes?: string; assigned_user_id?: string; team_name?: string };
+    actor: { id: string; name: string; email: string };
+  }) {
+    try {
+      const dedupeKey = `${orgId}:${teamId || 'no-team'}:schedule:schedule_shift_updated:${shift.id}`;
+      console.log(`[SCHED_NOTIFY] Triggering shift updated notifications: ${shift.id}`, { dedupeKey });
+
+      // Invoke edge function for emails
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.functions.invoke('send-schedule-notifications', {
+        body: {
+          type: 'schedule_shift_updated',
+          orgId,
+          teamId,
+          shift,
+          actor,
+          timestamp: new Date().toISOString(),
+          dedupeKey
+        },
+        headers: { 
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('[SCHED_NOTIFY] Error in notifyShiftUpdated:', error);
+      // Don't throw - notifications should not break the main flow
+    }
+  },
+
+  // Time Entry Opened (Clock In) - notify managers
+  async notifyTimeEntryOpened({ 
+    orgId, teamId, entry, actor 
+  }: {
+    orgId: string;
+    teamId?: string | null;
+    entry: { id: string; user_id: string; user_name?: string; clock_in: string; notes?: string; team_name?: string; shift_id?: string };
+    actor: { id: string; name: string; email: string };
+  }) {
+    try {
+      const dedupeKey = `${orgId}:${teamId || 'no-team'}:schedule:schedule_time_entry_opened:${entry.id}`;
+      console.log(`[SCHED_NOTIFY] Triggering time entry opened notifications: ${entry.id}`, { dedupeKey });
+
+      // Invoke edge function for emails
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.functions.invoke('send-schedule-notifications', {
+        body: {
+          type: 'schedule_time_entry_opened',
+          orgId,
+          teamId,
+          entry,
+          actor,
+          timestamp: new Date().toISOString(),
+          dedupeKey
+        },
+        headers: { 
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('[SCHED_NOTIFY] Error in notifyTimeEntryOpened:', error);
+      // Don't throw - notifications should not break the main flow
+    }
+  },
+
+  // Time Entry Closed (Clock Out) - notify managers
+  async notifyTimeEntryClosed({ 
+    orgId, teamId, entry, actor 
+  }: {
+    orgId: string;
+    teamId?: string | null;
+    entry: { id: string; user_id: string; user_name?: string; clock_in: string; clock_out?: string; duration_minutes?: number; notes?: string; team_name?: string; shift_id?: string };
+    actor: { id: string; name: string; email: string };
+  }) {
+    try {
+      const dedupeKey = `${orgId}:${teamId || 'no-team'}:schedule:schedule_time_entry_closed:${entry.id}`;
+      console.log(`[SCHED_NOTIFY] Triggering time entry closed notifications: ${entry.id}`, { dedupeKey });
+
+      // Invoke edge function for emails
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.functions.invoke('send-schedule-notifications', {
+        body: {
+          type: 'schedule_time_entry_closed',
+          orgId,
+          teamId,
+          entry,
+          actor,
+          timestamp: new Date().toISOString(),
+          dedupeKey
+        },
+        headers: { 
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('[SCHED_NOTIFY] Error in notifyTimeEntryClosed:', error);
+      // Don't throw - notifications should not break the main flow
+    }
+  },
+  
   // Simple success/error notifications for UI feedback
   success: (message: string) => toast.success(message),
   error: (message: string) => toast.error(message),

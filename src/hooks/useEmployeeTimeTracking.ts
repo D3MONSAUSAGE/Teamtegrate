@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { startOfWeek, addDays, format } from 'date-fns';
+import { notifications } from '@/lib/notifications';
 
 export interface DailySummary {
   id: string;
@@ -164,7 +165,7 @@ export const useEmployeeTimeTracking = () => {
   }, [user?.id]);
 
   // Clock in function
-  const clockIn = useCallback(async (notes?: string) => {
+  const clockIn = useCallback(async (notes?: string, teamId?: string, shiftId?: string) => {
     if (!user?.organizationId || isLoading) return;
 
     try {
@@ -179,6 +180,8 @@ export const useEmployeeTimeTracking = () => {
         .insert([{
           user_id: user.id,
           organization_id: user.organizationId,
+          team_id: teamId || null,
+          shift_id: shiftId || null,
           notes: notes || null
         }])
         .select()
@@ -189,6 +192,30 @@ export const useEmployeeTimeTracking = () => {
       toast.success('Clocked in successfully');
       await fetchCurrentSession();
       await fetchDailySummary();
+
+      // Send notification for clock in
+      try {
+        await notifications.notifyTimeEntryOpened({
+          orgId: user.organizationId,
+          teamId: teamId || null,
+          entry: {
+            id: data.id,
+            user_id: user.id,
+            user_name: user.name,
+            clock_in: data.clock_in,
+            notes: data.notes || undefined,
+            team_name: teamId ? 'Team' : undefined, // You could fetch actual team name here
+            shift_id: data.shift_id || undefined
+          },
+          actor: {
+            id: user.id,
+            name: user.name || user.email,
+            email: user.email
+          }
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send clock-in notification:', notificationError);
+      }
       
     } catch (error) {
       console.error('Clock in error:', error);
@@ -197,23 +224,31 @@ export const useEmployeeTimeTracking = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, user?.organizationId, isLoading, autoCloseStaleSessionsAPI, fetchCurrentSession, fetchDailySummary]);
+  }, [user?.id, user?.organizationId, user?.name, user?.email, isLoading, autoCloseStaleSessionsAPI, fetchCurrentSession, fetchDailySummary]);
 
   // Clock out function
-  const clockOut = useCallback(async (notes?: string) => {
+  const clockOut = useCallback(async (notes?: string, breakMinutes: number = 0) => {
     if (!currentSession.sessionId || isLoading) return;
 
     try {
       setIsLoading(true);
       setLastError(null);
 
-      const { error } = await supabase
+      const clockOutTime = new Date().toISOString();
+      const { data, error } = await supabase
         .from('time_entries')
         .update({ 
-          clock_out: new Date().toISOString(),
+          clock_out: clockOutTime,
           notes: notes || null 
         })
-        .eq('id', currentSession.sessionId);
+        .eq('id', currentSession.sessionId)
+        .select(`
+          *,
+          users!user_id (
+            name, email
+          )
+        `)
+        .single();
 
       if (error) throw error;
 
@@ -221,6 +256,36 @@ export const useEmployeeTimeTracking = () => {
       await fetchCurrentSession();
       await fetchDailySummary();
       await fetchWeeklyEntries();
+
+      // Send notification for clock out
+      try {
+        const clockInTime = new Date(data.clock_in);
+        const clockOutTimeObj = new Date(clockOutTime);
+        const durationMinutes = Math.floor((clockOutTimeObj.getTime() - clockInTime.getTime()) / 60000);
+
+        await notifications.notifyTimeEntryClosed({
+          orgId: user!.organizationId,
+          teamId: data.team_id || null,
+          entry: {
+            id: data.id,
+            user_id: user!.id,
+            user_name: user!.name,
+            clock_in: data.clock_in,
+            clock_out: clockOutTime,
+            duration_minutes: durationMinutes,
+            notes: data.notes || undefined,
+            team_name: data.team_id ? 'Team' : undefined, // You could fetch actual team name here
+            shift_id: data.shift_id || undefined
+          },
+          actor: {
+            id: user!.id,
+            name: user!.name || user!.email,
+            email: user!.email
+          }
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send clock-out notification:', notificationError);
+      }
       
     } catch (error) {
       console.error('Clock out error:', error);
@@ -229,7 +294,7 @@ export const useEmployeeTimeTracking = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentSession.sessionId, isLoading, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
+  }, [currentSession.sessionId, isLoading, user, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
 
   // Start break function
   const startBreak = useCallback(async (breakType: 'Coffee' | 'Lunch' | 'Rest') => {
