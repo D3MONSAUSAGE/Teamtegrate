@@ -288,27 +288,31 @@ export const useEmployeeTimeTracking = () => {
             email: user!.email
           }
         });
-  // Also send notification for managers when entry needs approval
-  try {
-    await notifications.notifyTimeEntryNeedsApproval({
-      orgId: user.organizationId,
-      teamId: teamId || null,
-      entry: {
-        id: data.id,
-        user_id: user.id,
-        user_name: user.name,
-        duration_minutes: durationMinutes,
-        work_date: format(new Date(), 'yyyy-MM-dd'),
-        notes: data.notes || undefined
-      },
-      actor: {
-        id: user.id,
-        name: user.name || user.email,
-        email: user.email
-      }
-    });
+
+        // Also send notification for managers when entry needs approval
+        try {
+          await notifications.notifyTimeEntryNeedsApproval({
+            orgId: user.organizationId,
+            teamId: data.team_id || null,
+            entry: {
+              id: data.id,
+              user_id: user.id,
+              user_name: user.name,
+              duration_minutes: durationMinutes,
+              work_date: format(new Date(), 'yyyy-MM-dd'),
+              notes: data.notes || undefined
+            },
+            actor: {
+              id: user.id,
+              name: user.name || user.email,
+              email: user.email
+            }
+          });
+        } catch (notificationError) {
+          console.warn('Failed to send approval notification:', notificationError);
+        }
       } catch (notificationError) {
-        console.warn('Failed to send approval notification:', notificationError);
+        console.warn('Failed to send clock out notification:', notificationError);
       }
       
     } catch (error) {

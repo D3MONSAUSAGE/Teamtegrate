@@ -706,7 +706,8 @@ export const notifications = {
   success: (message: string) => toast.success(message),
   error: (message: string) => toast.error(message),
   info: (message: string) => toast.info(message),
-  warning: (message: string) => toast.warning(message)
+  warning: (message: string) => toast.warning(message),
+  
   // Add approval notification functions
   notifyTimeEntryNeedsApproval: async (eventData: {
     orgId: string;
