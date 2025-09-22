@@ -19,11 +19,13 @@ import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours } from 'date-fns';
 import ModernMetricCard from './modern/ModernMetricCard';
 import { EmployeeTimeStatusBadge } from '@/components/employee/EmployeeTimeStatusBadge';
+import { WeeklyTimeEntriesCard } from './WeeklyTimeEntriesCard';
+import { TimeEntryCorrectionManager } from './TimeEntryCorrectionManager';
 
 export const MyScheduleView: React.FC = () => {
   const { user } = useAuth();
   const { employeeSchedules, fetchEmployeeSchedules, isLoading } = useScheduleManagement();
-  const { weeklyEntries, clockIn, clockOut } = useEmployeeTimeTracking();
+  const { weeklyEntries, clockIn, clockOut, fetchWeeklyEntries } = useEmployeeTimeTracking();
   const [selectedWeek, setSelectedWeek] = useState(new Date());
 
   useEffect(() => {
@@ -31,8 +33,10 @@ export const MyScheduleView: React.FC = () => {
       const weekStart = format(startOfWeek(selectedWeek), 'yyyy-MM-dd');
       const weekEnd = format(endOfWeek(selectedWeek), 'yyyy-MM-dd');
       fetchEmployeeSchedules(weekStart, weekEnd);
+      // Fetch time entries for the selected week
+      fetchWeeklyEntries(startOfWeek(selectedWeek));
     }
-  }, [user, selectedWeek, fetchEmployeeSchedules]);
+  }, [user, selectedWeek, fetchEmployeeSchedules, fetchWeeklyEntries]);
 
   const mySchedules = employeeSchedules.filter(schedule => schedule.employee_id === user?.id);
   const upcomingShifts = mySchedules.filter(schedule => 
@@ -248,6 +252,16 @@ export const MyScheduleView: React.FC = () => {
           {renderWeeklySchedule()}
         </CardContent>
       </Card>
+
+      {/* Weekly Time Entries */}
+      <WeeklyTimeEntriesCard
+        entries={weeklyEntries}
+        weekStart={startOfWeek(selectedWeek)}
+        weekEnd={endOfWeek(selectedWeek)}
+      />
+
+      {/* Time Entry Correction Requests */}
+      <TimeEntryCorrectionManager />
 
       {/* Upcoming Shifts Detail */}
       {upcomingShifts.length > 0 && (
