@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
-import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
+import { useTeamContext } from '@/hooks/useTeamContext';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
 import { CountComparisonDialog } from './CountComparisonDialog';
@@ -28,14 +28,14 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions } = useInventory();
   const { hasRoleAccess, user } = useAuth();
   const { metrics, chartData } = useEnhancedInventoryAnalytics(counts, alerts, items, transactions);
-  const { teams } = useTeamsByOrganization(user?.organizationId);
+  const { selectedTeam, userTeams } = useTeamContext();
 
   // Create team name mapping
   const teamNameById = useMemo(() => {
     const map = new Map<string, string>();
-    (teams || []).forEach(team => map.set(team.id, team.name));
+    userTeams.forEach(team => map.set(team.id, team.name));
     return map;
-  }, [teams]);
+  }, [userTeams]);
 
   // Helper function to get team display name
   const getTeamDisplayName = (teamId?: string | null) => {
@@ -44,7 +44,6 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   };
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedCount, setSelectedCount] = useState<InventoryCount | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isComparisonDialogOpen, setIsComparisonDialogOpen] = useState(false);
@@ -60,7 +59,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       count.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getTeamDisplayName(count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesTeam = selectedTeam === '' || count.team_id === selectedTeam;
+    const matchesTeam = !selectedTeam || count.team_id === selectedTeam.id;
     
     const matchesStatus = statusFilter === 'all' || count.status === statusFilter;
     
@@ -134,7 +133,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             size="sm"
             onClick={() => {
               setExportCountId(undefined);
-              setExportTeamId(selectedTeam || undefined);
+              setExportTeamId(selectedTeam?.id || undefined);
               setShowInventoryExport(true);
             }}
           >

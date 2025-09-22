@@ -6,13 +6,15 @@ import { InventoryCountTab } from '@/components/inventory/tabs/InventoryCountTab
 import { InventoryManagementTab } from '@/components/inventory/tabs/InventoryManagementTab';
 import { InventoryRecordsTab } from '@/components/inventory/tabs/InventoryRecordsTab';
 import { InventoryProvider } from '@/contexts/inventory';
+import { TeamProvider } from '@/components/team/TeamProvider';
 
 const InventoryPage: React.FC = () => {
   const { hasRoleAccess } = useAuth();
 
   return (
-    <InventoryProvider>
-      <div className="container mx-auto p-6 space-y-6">
+    <TeamProvider>
+      <InventoryProvider>
+        <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center space-x-2 mb-6">
           <Package className="h-8 w-8 text-primary" />
           <div>
@@ -55,8 +57,9 @@ const InventoryPage: React.FC = () => {
             <InventoryRecordsTab />
           </TabsContent>
         </Tabs>
-      </div>
-    </InventoryProvider>
+        </div>
+      </InventoryProvider>
+    </TeamProvider>
   );
 };
 
