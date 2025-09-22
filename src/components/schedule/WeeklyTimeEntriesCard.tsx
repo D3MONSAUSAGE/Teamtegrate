@@ -38,8 +38,9 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
   const [selectedMissingDate, setSelectedMissingDate] = useState<Date | null>(null);
   const { createCorrectionRequest, myRequests, isLoading } = useTimeEntryCorrectionRequests();
 
-  // Filter out active sessions (entries without clock_out)
+  // Separate completed and active entries
   const completedEntries = entries.filter(entry => entry.clock_out);
+  const activeEntries = entries.filter(entry => !entry.clock_out);
 
   // Get existing correction requests for these entries
   const existingRequests = myRequests.filter(request => 
@@ -216,6 +217,27 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    {/* Active entries first */}
+                    {activeEntries.filter(entry => 
+                      format(new Date(entry.clock_in), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+                    ).map(entry => (
+                      <div key={entry.id} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                          <div className="text-xs font-medium text-green-700">
+                            Active: {format(new Date(entry.clock_in), 'HH:mm')} - now
+                          </div>
+                          <div className="text-xs text-green-600">
+                            ({Math.floor((Date.now() - new Date(entry.clock_in).getTime()) / 60000)}m)
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-300">
+                          Active
+                        </Badge>
+                      </div>
+                    ))}
+                    
+                    {/* Completed entries */}
                     {dayEntries.length > 0 ? (
                       <div className="space-y-2">
                         {dayEntries.map((entry) => (
@@ -236,27 +258,32 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center mb-2">
-                          <Clock className="w-4 h-4 text-muted-foreground/60" />
-                        </div>
-                        <div className="text-xs text-muted-foreground/70 font-medium mb-3">
-                          No time entries found
-                        </div>
-                        {isPastDay && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMissingDayRequest(day)}
-                            className="text-xs flex items-center gap-1"
-                          >
-                            <Plus className="w-3 h-3" />
-                            Request Entry
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                     ) : (
+                       // Check if there are any entries (active or completed) for this day
+                       activeEntries.filter(entry => 
+                         format(new Date(entry.clock_in), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+                       ).length === 0 ? (
+                         <div className="flex flex-col items-center justify-center py-8 text-center">
+                           <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center mb-2">
+                             <Clock className="w-4 h-4 text-muted-foreground/60" />
+                           </div>
+                           <div className="text-xs text-muted-foreground/70 font-medium mb-3">
+                             No time entries found
+                           </div>
+                           {isPastDay && (
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => handleMissingDayRequest(day)}
+                               className="text-xs flex items-center gap-1"
+                             >
+                               <Plus className="w-3 h-3" />
+                               Request Entry
+                             </Button>
+                           )}
+                         </div>
+                       ) : null
+                     )}
                   </CardContent>
                 </Card>
               );
