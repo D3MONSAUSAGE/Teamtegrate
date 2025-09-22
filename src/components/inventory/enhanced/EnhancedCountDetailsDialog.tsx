@@ -131,7 +131,7 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
@@ -557,7 +557,7 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
                       </div>
                     </div>
 
-                    <div className="max-h-[600px] overflow-auto">
+                    <div className="max-h-[600px] overflow-auto overflow-x-auto">
                       <Table>
                         <TableHeader className="sticky top-0 bg-background border-b-2">
                           <TableRow>
