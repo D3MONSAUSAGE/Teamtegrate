@@ -77,9 +77,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     return matchesSearch && matchesTeam && matchesStatus && matchesDate;
   });
 
-  // Sort counts by most recent first
+  // Sort counts by most recent first (by creation time)
   const sortedCounts = [...filteredCounts].sort((a, b) => 
-    new Date(b.count_date).getTime() - new Date(a.count_date).getTime()
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
   const handleViewDetails = (count: InventoryCount) => {
