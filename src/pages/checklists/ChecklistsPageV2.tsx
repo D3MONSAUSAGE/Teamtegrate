@@ -17,7 +17,7 @@ const ChecklistsPageV2: React.FC = () => {
 
   // Fetch today's checklist instances
   const { data: instances = [], isLoading } = useQuery({
-    queryKey: ['checklist-instances-today', user?.organization_id],
+    queryKey: ['checklist-instances-today', user?.organizationId],
     queryFn: () => checklistInstanceService.listForToday(user?.organizationId || ''),
     enabled: !!user?.organizationId,
     refetchInterval: 60000, // Refetch every minute for real-time updates
@@ -25,7 +25,7 @@ const ChecklistsPageV2: React.FC = () => {
 
   // Fetch team summary
   const { data: summary = [] } = useQuery({
-    queryKey: ['checklist-summary-today', user?.organization_id],
+    queryKey: ['checklist-summary-today', user?.organizationId],
     queryFn: () => checklistInstanceService.getTodaySummary(user?.organizationId || ''),
     enabled: !!user?.organizationId,
     refetchInterval: 60000,

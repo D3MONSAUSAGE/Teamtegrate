@@ -2,22 +2,26 @@ import { checklistInstanceService, ExecuteChecklistParams, VerifyChecklistParams
 import { z } from 'zod';
 
 // Validation schemas
+const ExecuteChecklistItemSchema = z.object({
+  entryId: z.string().uuid(),
+  executed_status: z.enum(['pass', 'fail', 'na']),
+  value: z.any().optional(),
+  note: z.string().max(2000).optional(),
+  photo_urls: z.array(z.string().url()).optional(),
+});
+
 const ExecuteChecklistSchema = z.object({
-  items: z.array(z.object({
-    entryId: z.string().uuid(),
-    executed_status: z.enum(['pass', 'fail', 'na']),
-    value: z.any().optional(),
-    note: z.string().max(2000).optional(),
-    photo_urls: z.array(z.string().url()).optional(),
-  })),
+  items: z.array(ExecuteChecklistItemSchema),
   submit: z.boolean(),
 });
 
+const VerifyChecklistItemSchema = z.object({
+  entryId: z.string().uuid(),
+  verified_status: z.enum(['pass', 'fail', 'na']),
+});
+
 const VerifyChecklistSchema = z.object({
-  items: z.array(z.object({
-    entryId: z.string().uuid(),
-    verified_status: z.enum(['pass', 'fail', 'na']),
-  })),
+  items: z.array(VerifyChecklistItemSchema),
   decision: z.enum(['approve', 'reject']),
   managerNote: z.string().max(2000).optional(),
 });
@@ -56,7 +60,7 @@ export const executeChecklist = async (
   
   const params: ExecuteChecklistParams = {
     instanceId,
-    items: validatedData.items,
+    items: validatedData.items as ExecuteChecklistParams['items'],
     submit: validatedData.submit,
     actor
   };
@@ -77,7 +81,7 @@ export const verifyChecklist = async (
   
   const params: VerifyChecklistParams = {
     instanceId,
-    items: validatedData.items,
+    items: validatedData.items as VerifyChecklistParams['items'],
     decision: validatedData.decision,
     managerNote: validatedData.managerNote,
     actor
