@@ -262,12 +262,13 @@ export const useEmployeeTimeTracking = () => {
       await fetchDailySummary();
       await fetchWeeklyEntries();
 
-      // Send notification for clock out
+      // Send notifications
       try {
         const clockInTime = new Date(data.clock_in);
         const clockOutTimeObj = new Date(clockOutTime);
         const durationMinutes = Math.floor((clockOutTimeObj.getTime() - clockInTime.getTime()) / 60000);
 
+        // Send clock out notification
         await notifications.notifyTimeEntryClosed({
           orgId: user!.organizationId,
           teamId: data.team_id || null,
@@ -279,7 +280,7 @@ export const useEmployeeTimeTracking = () => {
             clock_out: clockOutTime,
             duration_minutes: durationMinutes,
             notes: data.notes || undefined,
-            team_name: data.team_id ? 'Team' : undefined, // You could fetch actual team name here
+            team_name: data.team_id ? 'Team' : undefined,
             shift_id: data.shift_id || undefined
           },
           actor: {
@@ -289,30 +290,26 @@ export const useEmployeeTimeTracking = () => {
           }
         });
 
-        // Also send notification for managers when entry needs approval
-        try {
-          await notifications.notifyTimeEntryNeedsApproval({
-            orgId: user.organizationId,
-            teamId: data.team_id || null,
-            entry: {
-              id: data.id,
-              user_id: user.id,
-              user_name: user.name,
-              duration_minutes: durationMinutes,
-              work_date: format(new Date(), 'yyyy-MM-dd'),
-              notes: data.notes || undefined
-            },
-            actor: {
-              id: user.id,
-              name: user.name || user.email,
-              email: user.email
-            }
-          });
-        } catch (notificationError) {
-          console.warn('Failed to send approval notification:', notificationError);
-        }
+        // Send approval notification for managers
+        await notifications.notifyTimeEntryNeedsApproval({
+          orgId: user.organizationId,
+          teamId: data.team_id || null,
+          entry: {
+            id: data.id,
+            user_id: user.id,
+            user_name: user.name,
+            duration_minutes: durationMinutes,
+            work_date: format(new Date(), 'yyyy-MM-dd'),
+            notes: data.notes || undefined
+          },
+          actor: {
+            id: user.id,
+            name: user.name || user.email,
+            email: user.email
+          }
+        });
       } catch (notificationError) {
-        console.warn('Failed to send clock out notification:', notificationError);
+        console.warn('Failed to send notifications:', notificationError);
       }
       
     } catch (error) {
