@@ -47,13 +47,18 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
   const [scheduleData, setScheduleData] = useState<WeeklyScheduleData>({});
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   
-  // Calculate week dates
-  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  // Calculate week dates - memoized to prevent unnecessary recalculations
+  const weekStart = useMemo(() => startOfWeek(selectedWeek, { weekStartsOn: 1 }), [selectedWeek]);
+  const weekEnd = useMemo(() => endOfWeek(selectedWeek, { weekStartsOn: 1 }), [selectedWeek]);
+  const weekDays = useMemo(() => {
+    return eachDayOfInterval({ start: weekStart, end: weekEnd });
+  }, [weekStart, weekEnd]);
   
   // Initialize schedule data when week or team changes
   useEffect(() => {
+    // Only initialize if we have team members and they've changed
+    if (teamMembers.length === 0) return;
+    
     const initialData: WeeklyScheduleData = {};
     weekDays.forEach(day => {
       const dateKey = format(day, 'yyyy-MM-dd');
@@ -62,8 +67,14 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
         initialData[dateKey][member.id] = null;
       });
     });
-    setScheduleData(initialData);
-  }, [selectedWeek, teamMembers]);
+    
+    // Only update if the structure actually changed
+    setScheduleData(prev => {
+      const hasChanged = Object.keys(prev).length !== weekDays.length || 
+                        teamMembers.some(member => !prev[Object.keys(prev)[0]]?.[member.id] === undefined);
+      return hasChanged ? initialData : prev;
+    });
+  }, [selectedWeek, teamMembers.length, weekDays]);
 
   // Calculate total hours for each employee
   const employeeHours = useMemo(() => {
