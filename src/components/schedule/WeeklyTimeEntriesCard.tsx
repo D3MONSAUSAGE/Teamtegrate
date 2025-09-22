@@ -219,11 +219,8 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
                     {dayEntries.length > 0 ? (
                       <div className="space-y-2">
                         {dayEntries.map((entry) => (
-                          <div
-                            key={entry.id}
-                            className="p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
+                          <div key={entry.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-b-0 hover:bg-accent/30 transition-colors">
+                            <div className="flex items-center gap-2">
                               <Checkbox
                                 checked={selectedEntries.has(entry.id)}
                                 onCheckedChange={(checked) => handleEntrySelection(entry.id, checked as boolean)}
@@ -231,18 +228,11 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
                               <div className="text-xs font-medium">
                                 {format(new Date(entry.clock_in), 'HH:mm')} - {format(new Date(entry.clock_out || ''), 'HH:mm')}
                               </div>
-                            </div>
-                            <div className="flex items-center justify-between">
                               <div className="text-xs text-muted-foreground">
-                                {entry.duration_minutes ? `${Math.round(entry.duration_minutes / 60 * 10) / 10}h` : ''}
+                                ({entry.duration_minutes ? `${Math.round(entry.duration_minutes / 60 * 10) / 10}h` : ''})
                               </div>
-                              {getApprovalStatusBadge(entry)}
                             </div>
-                            {entry.notes && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate">
-                                {entry.notes}
-                              </div>
-                            )}
+                            {getApprovalStatusBadge(entry)}
                           </div>
                         ))}
                       </div>
