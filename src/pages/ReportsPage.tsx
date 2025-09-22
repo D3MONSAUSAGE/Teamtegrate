@@ -105,6 +105,7 @@ export const ReportsPage: React.FC = () => {
             <DailyCompletionTab 
               userId={selectedUserId || user.id}
               userName={selectedUserId ? 'Selected User' : user.name || 'Current User'}
+              selectedDate={dateRange?.from || new Date()}
             />
           )}
           

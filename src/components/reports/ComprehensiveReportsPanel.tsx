@@ -45,6 +45,7 @@ export const ComprehensiveReportsPanel: React.FC<ComprehensiveReportsPanelProps>
           <DailyCompletionTab 
             userId={userId}
             userName={userName}
+            selectedDate={dateRange?.from || new Date()}
           />
         </TabsContent>
 

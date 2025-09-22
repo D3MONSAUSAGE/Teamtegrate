@@ -13,13 +13,14 @@ import { toast } from 'sonner';
 interface DailyCompletionTabProps {
   userId: string;
   userName: string;
+  selectedDate: Date;
 }
 
 export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
   userId,
-  userName
+  userName,
+  selectedDate
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dailyDetailData, setDailyDetailData] = useState<DailyDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -54,43 +55,16 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Date Picker Header */}
+      {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Daily Task Report
-              </CardTitle>
-              <p className="text-muted-foreground mt-1">
-                {userName} • {format(selectedDate, 'EEEE, MMMM do, yyyy')}
-              </p>
-            </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Daily Task Report
+          </CardTitle>
+          <p className="text-muted-foreground">
+            {userName} • {format(selectedDate, 'EEEE, MMMM do, yyyy')}
+          </p>
         </CardHeader>
       </Card>
 
