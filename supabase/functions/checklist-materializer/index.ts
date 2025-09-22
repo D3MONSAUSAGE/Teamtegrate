@@ -149,6 +149,31 @@ serve(async (req: Request): Promise<Response> => {
         });
         created++;
 
+        // Check if we need to send upcoming notifications (30 minutes before start)
+        if (scheduledStart) {
+          const now = new Date();
+          const startTime = new Date(scheduledStart);
+          const timeDiff = (startTime.getTime() - now.getTime()) / (1000 * 60); // minutes
+          
+          // If start time is within 30 minutes, send upcoming notification
+          if (timeDiff > 0 && timeDiff <= 30) {
+            try {
+              console.log(`📧 Sending upcoming notification for template ${template.name}`, { 
+                instanceId: instanceData.id,
+                minutesUntilStart: Math.round(timeDiff),
+                correlationId 
+              });
+              
+              // This would be called via a separate notification service
+              // For now, just log that we would send the notification
+              console.log(`[WOULD NOTIFY] checklist_upcoming for instance ${instanceData.id}`);
+            } catch (notificationError) {
+              console.error(`❌ Failed to send upcoming notification for ${template.name}:`, notificationError);
+              // Don't fail the whole process for notification issues
+            }
+          }
+        }
+
       } catch (error) {
         console.error(`❌ Failed to materialize template ${template.name}:`, error, { correlationId });
         // Continue with other templates

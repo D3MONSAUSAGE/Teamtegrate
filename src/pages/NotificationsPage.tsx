@@ -65,11 +65,13 @@ const NotificationsPage = () => {
       case 'correction_request':
       case 'meeting_invitation':
       case 'bug_report':
+      case 'checklist_upcoming':
         return 'high';
       case 'task_assignment':
       case 'project_team_addition':
       case 'schedule_assignment':
       case 'reminder':
+      case 'checklist_completed':
         return 'medium';
       case 'chat_message':
       case 'chat_invitation':
@@ -90,6 +92,8 @@ const NotificationsPage = () => {
       case 'meeting_invitation':
       case 'schedule_assignment':
       case 'reminder':
+      case 'checklist_upcoming':
+      case 'checklist_completed':
         return 'work';
       case 'chat_message':
       case 'chat_invitation':
@@ -135,6 +139,10 @@ const NotificationsPage = () => {
         return 'bg-red-100 text-red-700 border-red-200';
       case 'schedule_assignment':
         return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'checklist_upcoming':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'checklist_completed':
+        return 'bg-green-100 text-green-700 border-green-200';
       case 'info':
         return 'bg-gray-100 text-gray-700 border-gray-200';
       default:
@@ -184,6 +192,10 @@ const NotificationsPage = () => {
         return 'Reminder';
       case 'schedule_assignment':
         return 'Schedule';
+      case 'checklist_upcoming':
+        return 'Upcoming Checklist';
+      case 'checklist_completed':
+        return 'Completed Checklist';
       case 'info':
         return 'Info';
       default:
@@ -349,6 +361,10 @@ const NotificationsPage = () => {
         break;
       case 'schedule_assignment':
         navigate('/dashboard/schedule');
+        break;
+      case 'checklist_upcoming':
+      case 'checklist_completed':
+        navigate('/dashboard/checklists');
         break;
       case 'info':
         navigate('/dashboard');

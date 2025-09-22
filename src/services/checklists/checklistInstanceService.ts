@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { notificationService } from './notificationService';
+import { getChecklistRecipients } from '@/lib/notifications/recipients';
+import { notifications } from '@/lib/notifications';
 
 export interface ChecklistInstance {
   id: string;
