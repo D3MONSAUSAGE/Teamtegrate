@@ -10,7 +10,8 @@ import {
   AlertTriangle, 
   Plus,
   Target,
-  TrendingUp
+  TrendingUp,
+  UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -31,6 +32,10 @@ export interface DailyDetailData {
   completion_score: number;
   completed_tasks: DailyTaskDetail[];
   created_tasks: DailyTaskDetail[];
+  assigned_tasks: (DailyTaskDetail & {
+    assigned_to_name?: string;
+    assigned_by_name?: string;
+  })[];
   overdue_tasks: DailyTaskDetail[];
   pending_tasks: DailyTaskDetail[];
   total_tasks: number;
@@ -128,10 +133,11 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
     );
   }
 
-  const TaskList = ({ tasks, title, icon }: { 
-    tasks: DailyTaskDetail[]; 
+  const TaskList = ({ tasks, title, icon, showAssignmentInfo = false }: { 
+    tasks: (DailyTaskDetail & { assigned_to_name?: string; assigned_by_name?: string; })[]; 
     title: string; 
     icon: React.ReactNode;
+    showAssignmentInfo?: boolean;
   }) => (
     <div className="space-y-3">
       <h4 className="font-medium flex items-center gap-2">
@@ -153,6 +159,9 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
                   )}
                   {task.description && (
                     <p className="text-xs text-muted-foreground line-clamp-1">{task.description}</p>
+                  )}
+                  {showAssignmentInfo && 'assigned_to_name' in task && task.assigned_to_name && (
+                    <p className="text-xs text-purple-600">Assigned to: {task.assigned_to_name}</p>
                   )}
                 </div>
               </div>
@@ -194,7 +203,7 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center p-3 border rounded-lg">
             <div className="text-lg font-bold text-green-600">{data.completed_tasks.length}</div>
             <div className="text-xs text-muted-foreground">Completed</div>
@@ -202,6 +211,10 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
           <div className="text-center p-3 border rounded-lg">
             <div className="text-lg font-bold text-blue-600">{data.created_tasks.length}</div>
             <div className="text-xs text-muted-foreground">Created</div>
+          </div>
+          <div className="text-center p-3 border rounded-lg">
+            <div className="text-lg font-bold text-purple-600">{data.assigned_tasks.length}</div>
+            <div className="text-xs text-muted-foreground">Assigned</div>
           </div>
           <div className="text-center p-3 border rounded-lg">
             <div className="text-lg font-bold text-orange-600">{data.overdue_tasks.length}</div>
@@ -255,6 +268,13 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
             tasks={data.created_tasks} 
             title="Tasks Created Today" 
             icon={<Plus className="h-4 w-4 text-blue-500" />}
+          />
+          
+          <TaskList 
+            tasks={data.assigned_tasks} 
+            title="Tasks Assigned Today" 
+            icon={<UserPlus className="h-4 w-4 text-purple-500" />}
+            showAssignmentInfo={true}
           />
           
           <TaskList 

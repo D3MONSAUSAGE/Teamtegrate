@@ -106,6 +106,19 @@ export interface DailyDetailData {
     completed_at?: string;
     project_title?: string;
   }>;
+  assigned_tasks: Array<{
+    task_id: string;
+    title: string;
+    description?: string;
+    priority: 'High' | 'Medium' | 'Low';
+    status: 'To Do' | 'In Progress' | 'Completed' | 'Archived';
+    deadline: string;
+    created_at: string;
+    completed_at?: string;
+    project_title?: string;
+    assigned_to_name?: string;
+    assigned_by_name?: string;
+  }>;
   overdue_tasks: Array<{
     task_id: string;
     title: string;
@@ -424,6 +437,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         user_id,
         team_id,
         organization_id,
+        assigned_to_id,
+        assigned_to_ids,
         projects!left(title)
       `)
       .eq('organization_id', user.organizationId);
@@ -477,6 +492,27 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         project_title: task.projects?.[0]?.title
       }));
 
+    // Tasks assigned on the selected date
+    const assigned_tasks = data
+      .filter(task => 
+        format(new Date(task.created_at), 'yyyy-MM-dd') === selectedDateStr &&
+        (task.assigned_to_id || (task.assigned_to_ids && task.assigned_to_ids.length > 0)) &&
+        task.assigned_to_id !== task.user_id // Don't include self-assigned tasks
+      )
+      .map(task => ({
+        task_id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority as 'High' | 'Medium' | 'Low',
+        status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+        deadline: task.deadline,
+        created_at: task.created_at,
+        completed_at: task.completed_at,
+        project_title: task.projects?.[0]?.title,
+        assigned_to_name: task.assigned_to_id ? 'Assigned User' : 'Team Assignment',
+        assigned_by_name: 'Manager' // Could be enhanced to track actual assigner
+      }));
+
     // Tasks due on the selected date (not completed)
     const pending_tasks = data
       .filter(task => 
@@ -514,7 +550,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
       }));
 
     // Calculate priority counts from all relevant tasks
-    const all_relevant_tasks = [...completed_tasks, ...created_tasks, ...pending_tasks];
+    const all_relevant_tasks = [...completed_tasks, ...created_tasks, ...assigned_tasks, ...pending_tasks];
     const high_priority_count = all_relevant_tasks.filter(t => t.priority === 'High').length;
     const medium_priority_count = all_relevant_tasks.filter(t => t.priority === 'Medium').length;
     const low_priority_count = all_relevant_tasks.filter(t => t.priority === 'Low').length;
@@ -534,6 +570,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
       completion_score,
       completed_tasks,
       created_tasks,
+      assigned_tasks,
       overdue_tasks,
       pending_tasks,
       total_tasks: all_relevant_tasks.length,
