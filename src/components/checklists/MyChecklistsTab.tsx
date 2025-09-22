@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useMyChecklistExecutions, useTeamChecklistExecutionsForDate } from '@/hooks/useChecklistExecutions';
+import { useMyChecklistExecutions, useTeamChecklistExecutionsForDate, useStartChecklistExecution } from '@/hooks/useChecklistExecutions';
 import { ChecklistExecutionDialog } from './ChecklistExecutionDialog';
 import { CompactDailyStats } from './CompactDailyStats';
 import ChecklistTimeStatusBadge from './ChecklistTimeStatusBadge';
@@ -15,6 +15,7 @@ import { CalendarIcon, Clock, CheckCircle, AlertCircle, Play, ClipboardList, Use
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { TeamSelect } from '@/components/ui/team-select';
 import { useTeams } from '@/hooks/useTeams';
@@ -23,6 +24,7 @@ import { useMultipleChecklistTimeWindows } from '@/hooks/useChecklistTimeWindow'
 
 export const MyChecklistsTab: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedExecution, setSelectedExecution] = useState<ChecklistExecution | null>(null);
   const [executionDialogOpen, setExecutionDialogOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
@@ -35,6 +37,7 @@ export const MyChecklistsTab: React.FC = () => {
   const { data: teamExecutions, isLoading: teamExecutionsLoading } = useTeamChecklistExecutionsForDate(
     isAdmin && selectedTeamId && selectedTeamId !== 'all' ? selectedTeamId : undefined
   );
+  const startExecution = useStartChecklistExecution();
 
   // Determine which data to show
   const executions = isAdmin && selectedTeamId && selectedTeamId !== 'all' ? teamExecutions : myExecutions;
@@ -60,16 +63,41 @@ export const MyChecklistsTab: React.FC = () => {
     return aPriority - bPriority;
   });
 
-  const handleStartExecution = (execution: ChecklistExecution) => {
+  const handleStartExecution = async (execution: ChecklistExecution) => {
     const { canStart, reason } = canStartChecklistExecution(execution, true);
     
     if (!canStart && reason) {
-      // Show a toast or alert about why it can't be started
+      toast({
+        title: "Cannot Start Checklist",
+        description: reason,
+        variant: "destructive",
+      });
       return;
     }
     
-    setSelectedExecution(execution);
-    setExecutionDialogOpen(true);
+    // If execution is pending, start it immediately
+    if (execution.status === 'pending') {
+      try {
+        await startExecution.mutateAsync(execution.id);
+        toast({
+          title: "Checklist Started",
+          description: "You can now complete the checklist items.",
+        });
+        // Open dialog with the started execution
+        setSelectedExecution({ ...execution, status: 'in_progress' as const, started_at: new Date().toISOString() });
+        setExecutionDialogOpen(true);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to start checklist. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // For non-pending executions, just open the dialog
+      setSelectedExecution(execution);
+      setExecutionDialogOpen(true);
+    }
   };
 
   const getStatusIcon = (status: string) => {
