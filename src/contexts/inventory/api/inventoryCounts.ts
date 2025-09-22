@@ -24,26 +24,14 @@ export const inventoryCountsApi = {
   },
 
   async update(id: string, updates: Partial<InventoryCount>): Promise<InventoryCount> {
-    console.log('🔄 Updating inventory count:', { id, updates });
-    
     const { data, error } = await supabase
       .from('inventory_counts')
       .update(updates)
       .eq('id', id)
       .select()
-      .maybeSingle();
+      .single();
 
-    if (error) {
-      console.error('❌ Inventory count update failed:', { error, id, updates });
-      throw error;
-    }
-
-    if (!data) {
-      console.error('🔒 RLS Policy blocked inventory count update:', { id, updates });
-      throw new Error('Unable to update inventory count. You may not have permission to modify this count, or it may not exist.');
-    }
-
-    console.log('✅ Inventory count updated successfully:', data);
+    if (error) throw error;
     return data as InventoryCount;
   },
 

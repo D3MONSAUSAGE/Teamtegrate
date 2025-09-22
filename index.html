@@ -24,8 +24,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico" />
     
     <!-- Theme -->
-    <meta name="theme-color" content="#0F172A" />
-    <meta name="msapplication-navbutton-color" content="#0F172A">
+    <meta name="theme-color" content="#86b7d3" />
+    <meta name="msapplication-navbutton-color" content="#86b7d3">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Preload fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -63,6 +64,11 @@
         -moz-user-select: none;
         -ms-user-select: none;
         user-select: none;
+        /* Safe area support */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
         /* Prevent overscroll bounce on iOS */
         overscroll-behavior: none;
       }

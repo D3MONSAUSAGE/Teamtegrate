@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { notifications } from '@/lib/notifications';
 import { useNotifications } from '@/hooks/use-notifications';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
-import { useStandalone } from '@/hooks/useStandalone';
 import NavbarBrand from './navbar/NavbarBrand';
 import NotificationButton from './navbar/NotificationButton';
 import UserMenu from './navbar/UserMenu';
@@ -15,7 +14,6 @@ const Navbar = memo(() => {
   const navigate = useNavigate();
   const { markAsRead, fetchNotifications } = useNotifications();
   const { isMobile } = useSidebar();
-  const isStandalone = useStandalone();
 
   // Remove duplicate notification fetch - handled in useNotifications hook
 
@@ -67,7 +65,7 @@ const Navbar = memo(() => {
   if (!user) return null;
 
   return (
-    <nav className={`bg-background/80 border-b border-border transition-colors ${isStandalone ? 'app-header' : ''}`}>
+    <nav className="bg-white dark:bg-background border-b border-gray-200 dark:border-gray-800 safe-area-top">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
         <div className="flex items-center gap-3">
           {/* Show sidebar trigger on all screen sizes */}

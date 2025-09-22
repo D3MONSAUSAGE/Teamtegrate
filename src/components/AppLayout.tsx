@@ -8,7 +8,6 @@ import { TaskProvider } from '@/contexts/task';
 import { UnifiedDataProvider } from '@/contexts/UnifiedDataContext';
 import { TeamProvider } from '@/components/team/TeamProvider';
 import { MeetingProvider } from '@/contexts/meeting';
-import { useStandalone } from '@/hooks/useStandalone';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -65,7 +64,6 @@ LoadingScreen.displayName = 'LoadingScreen';
 
 const AppLayout = memo(() => {
   const location = useLocation();
-  const isStandalone = useStandalone();
 
   console.log('🏠 AppLayout: Rendering for path:', location.pathname);
 
@@ -80,7 +78,7 @@ const AppLayout = memo(() => {
           <TaskProvider>
             <TeamProvider>
               <MeetingProvider>
-                <div className={`app-full-height bg-background w-full flex overflow-hidden ${isStandalone ? 'standalone-app' : ''}`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="min-h-screen-mobile bg-background w-full flex overflow-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                   <Sidebar />
                   <MainContent>
                     {(() => {

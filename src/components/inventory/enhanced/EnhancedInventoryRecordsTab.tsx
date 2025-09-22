@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
-import { useTeamContext } from '@/hooks/useTeamContext';
+import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
 import { CountComparisonDialog } from './CountComparisonDialog';
@@ -28,26 +28,14 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions } = useInventory();
   const { hasRoleAccess, user } = useAuth();
   const { metrics, chartData } = useEnhancedInventoryAnalytics(counts, alerts, items, transactions);
-  const { selectedTeam, userTeams, setSelectedTeam } = useTeamContext();
-
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🔍 Team Selection Debug:', {
-      selectedTeam: selectedTeam?.name || 'All Teams',
-      selectedTeamId: selectedTeam?.id || null,
-      userTeams: userTeams.map(t => ({ id: t.id, name: t.name })),
-      totalCounts: counts.length,
-      countsWithTeam: counts.filter(c => c.team_id).length,
-      countsWithoutTeam: counts.filter(c => !c.team_id).length
-    });
-  }, [selectedTeam, userTeams, counts]);
+  const { teams } = useTeamsByOrganization(user?.organizationId);
 
   // Create team name mapping
   const teamNameById = useMemo(() => {
     const map = new Map<string, string>();
-    userTeams.forEach(team => map.set(team.id, team.name));
+    (teams || []).forEach(team => map.set(team.id, team.name));
     return map;
-  }, [userTeams]);
+  }, [teams]);
 
   // Helper function to get team display name
   const getTeamDisplayName = (teamId?: string | null) => {
@@ -56,6 +44,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   };
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedCount, setSelectedCount] = useState<InventoryCount | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isComparisonDialogOpen, setIsComparisonDialogOpen] = useState(false);
@@ -71,11 +60,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       count.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getTeamDisplayName(count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Enhanced team filtering logic:
-    // - If no team is selected (All Teams), show all records
-    // - If a specific team is selected, show only records assigned to that team
-    // - Records with team_id = null are considered "unassigned" and only show when "All Teams" is selected
-    const matchesTeam = !selectedTeam ? true : count.team_id === selectedTeam.id;
+    const matchesTeam = selectedTeam === '' || count.team_id === selectedTeam;
     
     const matchesStatus = statusFilter === 'all' || count.status === statusFilter;
     
@@ -92,9 +77,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     return matchesSearch && matchesTeam && matchesStatus && matchesDate;
   });
 
-  // Sort counts by most recent first (by creation time)
+  // Sort counts by most recent first
   const sortedCounts = [...filteredCounts].sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    new Date(b.count_date).getTime() - new Date(a.count_date).getTime()
   );
 
   const handleViewDetails = (count: InventoryCount) => {
@@ -149,7 +134,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             size="sm"
             onClick={() => {
               setExportCountId(undefined);
-              setExportTeamId(selectedTeam?.id || undefined);
+              setExportTeamId(selectedTeam || undefined);
               setShowInventoryExport(true);
             }}
           >
@@ -182,18 +167,10 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                 </div>
                 
                 {hasRoleAccess('admin') && (
-                  <div className="space-y-2">
-                    <TeamSelector 
-                      showAllOption={true}
-                      placeholder="Filter by team"
-                    />
-                    {/* Debug info for team selection */}
-                    {selectedTeam && (
-                      <div className="text-xs text-muted-foreground">
-                        Filtering by: {selectedTeam.name} (ID: {selectedTeam.id.slice(0, 8)}...)
-                      </div>
-                    )}
-                  </div>
+                  <TeamSelector 
+                    showAllOption={true}
+                    placeholder="Filter by team"
+                  />
                 )}
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -339,15 +316,8 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                 <Calendar className="h-5 w-5" />
                 Enhanced Inventory Count History
               </CardTitle>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <div>Showing {filteredCounts.length} of {counts.length} records with financial insights and team comparisons</div>
-                <div className="flex gap-4 text-xs">
-                  <span>Team Filter: {selectedTeam ? selectedTeam.name : 'All Teams'}</span>
-                  <span>•</span>
-                  <span>Assigned Records: {counts.filter(c => c.team_id).length}</span>
-                  <span>•</span>
-                  <span>Unassigned Records: {counts.filter(c => !c.team_id).length}</span>
-                </div>
+              <div className="text-sm text-muted-foreground">
+                Showing {filteredCounts.length} records with financial insights and team comparisons
               </div>
             </CardHeader>
             <CardContent>

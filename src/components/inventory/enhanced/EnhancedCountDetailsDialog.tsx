@@ -566,7 +566,7 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
                             <TableHead className="text-center w-[100px]">Category</TableHead>
                             <TableHead className="text-center w-[80px]">Min Stock</TableHead>
                             <TableHead className="text-center w-[80px]">Max Stock</TableHead>
-                            <TableHead className="text-center w-[80px]">In Stock</TableHead>
+                            <TableHead className="text-center w-[80px]">Expected</TableHead>
                             <TableHead className="text-center w-[80px]">Actual</TableHead>
                             <TableHead className="text-center w-[100px]">Variance</TableHead>
                             <TableHead className="text-center w-[100px]">Unit Cost</TableHead>
@@ -682,7 +682,7 @@ export const EnhancedCountDetailsDialog: React.FC<EnhancedCountDetailsDialogProp
                                   </div>
                                 </TableCell>
                                 
-                                {/* In Stock */}
+                                {/* Expected */}
                                 <TableCell className="text-center">
                                   <div className="font-medium">{item.in_stock_quantity}</div>
                                 </TableCell>

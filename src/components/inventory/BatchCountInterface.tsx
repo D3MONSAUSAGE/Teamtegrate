@@ -140,14 +140,14 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
     setLocalCounts({});
   };
 
-  const handleFillInStock = () => {
-    const inStockCounts: Record<string, string> = {};
+  const handleFillExpected = () => {
+    const expectedCounts: Record<string, string> = {};
     filteredItems.forEach(item => {
       const countItem = countItems.find(ci => ci.item_id === item.id);
       const inStockQty = countItem?.in_stock_quantity || item.current_stock || 0;
-      inStockCounts[item.id] = inStockQty.toString();
+      expectedCounts[item.id] = inStockQty.toString();
     });
-    setLocalCounts(inStockCounts);
+    setLocalCounts(expectedCounts);
   };
 
   const getPendingUpdatesCount = () => {
@@ -241,8 +241,8 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                 )}
                 Submit {getPendingUpdatesCount()} Updates
               </Button>
-              <Button variant="outline" onClick={handleFillInStock} size="sm">
-                Fill In Stock Values
+              <Button variant="outline" onClick={handleFillExpected} size="sm">
+                Fill Expected Values
               </Button>
               <Button variant="outline" onClick={handleClearAll} size="sm">
                 Clear All

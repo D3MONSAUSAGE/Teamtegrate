@@ -61,9 +61,6 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering ticket created notifications: ${ticket.id}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      
       // Call edge function to handle email + push notifications
       const { data, error } = await supabase.functions.invoke('send-ticket-notifications', {
         body: {
@@ -71,8 +68,7 @@ export const notifications = {
           ticket,
           user,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -92,9 +88,6 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering ticket assigned notifications: ${ticket.id} to ${assignee.id}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke('send-ticket-notifications', {
         body: {
           type: 'ticket_assigned',
@@ -102,8 +95,7 @@ export const notifications = {
           assignee,
           actor,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -122,9 +114,6 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering ticket updated notifications: ${ticket.id} from ${oldStatus} to ${newStatus}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke('send-ticket-notifications', {
         body: {
           type: 'ticket_updated',
@@ -134,8 +123,7 @@ export const notifications = {
           actor,
           message,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -154,9 +142,6 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering ticket closed notifications: ${ticket.id}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke('send-ticket-notifications', {
         body: {
           type: 'ticket_closed',
@@ -164,8 +149,7 @@ export const notifications = {
           resolution,
           actor,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -184,17 +168,13 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering ticket completed notifications: ${ticket.id}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke('send-ticket-notifications', {
         body: {
           type: 'ticket_completed',
           ticket,
           actor,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -222,9 +202,6 @@ export const notifications = {
 
         console.log(`[Notifications] Sending task assignment email to: ${assignee.email}`);
 
-        // Get session for JWT authentication
-        const { data: { session } } = await supabase.auth.getSession();
-
         const { data, error } = await supabase.functions.invoke('send-task-notifications', {
           body: {
             kind: 'task_assigned',
@@ -241,8 +218,7 @@ export const notifications = {
               email: actor.email,
               name: actor.name
             }
-          },
-          headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+          }
         });
 
         if (error) {
@@ -261,9 +237,6 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering task status changed notifications: ${task.id} from ${oldStatus} to ${newStatus}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke('send-task-notifications', {
         body: {
           type: 'task_status_changed',
@@ -273,8 +246,7 @@ export const notifications = {
           actor,
           assignees,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -293,17 +265,13 @@ export const notifications = {
     try {
       console.log(`[Notifications] Triggering inventory template completed notifications: ${count.id}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke('send-inventory-notifications', {
         body: {
           type: 'template_completed',
           count,
           completedBy,
           timestamp: new Date().toISOString()
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -334,12 +302,8 @@ export const notifications = {
 
       console.log(`[Notifications] Sending inventory submission emails to ${emails.length} recipients: ${inventory.id}`);
 
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-
       const { data, error } = await supabase.functions.invoke("send-inventory-notifications", {
         body: { kind: "inventory_count_submitted", recipients: emails, inventory, timestamp: new Date().toISOString() },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
       });
 
       if (error) {
@@ -412,9 +376,6 @@ export const notifications = {
       }
 
       // 2. Call edge function for emails
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke('send-checklist-notifications', {
         body: {
           type: 'checklist_upcoming',
@@ -436,8 +397,7 @@ export const notifications = {
             id: actor.id,
             name: actor.name
           }
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {
@@ -514,9 +474,6 @@ export const notifications = {
       }
 
       // 2. Call edge function for emails
-      // Get session for JWT authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke('send-checklist-notifications', {
         body: {
           type: 'checklist_completed',
@@ -541,8 +498,7 @@ export const notifications = {
           metrics,
           completedBy,
           notes
-        },
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` }
+        }
       });
 
       if (error) {

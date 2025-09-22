@@ -22,12 +22,6 @@ export const useInventoryErrorHandler = () => {
       } else if (error.message.includes('violates row-level security')) {
         userMessage = 'You do not have permission to perform this action.';
         errorCode = 'PERMISSION_ERROR';
-      } else if (error.message.includes('Unable to update inventory count')) {
-        userMessage = error.message; // Use the improved message from the API
-        errorCode = 'RLS_POLICY_ERROR';
-      } else if (error.message.includes('JSON object requested, multiple (or no) rows returned')) {
-        userMessage = 'Unable to complete the operation. This may be due to insufficient permissions or the record may no longer exist.';
-        errorCode = 'RLS_ACCESS_ERROR';
       } else if (error.message.includes('duplicate key')) {
         userMessage = 'This item already exists. Please use a different name or SKU.';
         errorCode = 'DUPLICATE_ERROR';
