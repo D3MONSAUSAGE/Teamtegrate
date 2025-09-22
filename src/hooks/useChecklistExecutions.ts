@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChecklistExecution, ChecklistExecutionItem } from '@/types/checklist';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { notifyChecklistCompleted } from '@/services/checklists/checklistNotificationBridge';
 
 export const useMyChecklistExecutions = (date?: string) => {
   const { user } = useAuth();
@@ -196,13 +197,20 @@ export const useCompleteChecklistExecution = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-checklist-executions'] });
       queryClient.invalidateQueries({ queryKey: ['checklist-execution-history'] });
       toast({
         title: "Completed",
         description: "Checklist execution completed successfully",
       });
+      
+      // Send completion notification email
+      try {
+        await notifyChecklistCompleted(data.id);
+      } catch (error) {
+        console.error('Failed to send completion notification:', error);
+      }
     },
   });
 };
