@@ -439,7 +439,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         organization_id,
         assigned_to_id,
         assigned_to_ids,
-        projects!left(title)
+        project_id
       `)
       .eq('organization_id', user.organizationId);
 
@@ -473,7 +473,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: task.projects?.[0]?.title
+        project_title: null // Removed project join for now
       }));
 
     const created_tasks = data
@@ -489,7 +489,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: task.projects?.[0]?.title
+        project_title: null // Removed project join for now
       }));
 
     // Tasks assigned on the selected date
@@ -508,7 +508,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: task.projects?.[0]?.title,
+        project_title: null, // Removed project join for now
         assigned_to_name: task.assigned_to_id ? 'Assigned User' : 'Team Assignment',
         assigned_by_name: 'Manager' // Could be enhanced to track actual assigner
       }));
@@ -528,7 +528,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: task.projects?.[0]?.title
+        project_title: null // Removed project join for now
       }));
 
     // Tasks overdue as of the selected date
@@ -546,7 +546,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: task.projects?.[0]?.title
+        project_title: null // Removed project join for now
       }));
 
     // Calculate priority counts from all relevant tasks
