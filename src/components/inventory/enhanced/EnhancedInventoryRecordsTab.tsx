@@ -28,7 +28,19 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions } = useInventory();
   const { hasRoleAccess, user } = useAuth();
   const { metrics, chartData } = useEnhancedInventoryAnalytics(counts, alerts, items, transactions);
-  const { selectedTeam, userTeams } = useTeamContext();
+  const { selectedTeam, userTeams, setSelectedTeam } = useTeamContext();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔍 Team Selection Debug:', {
+      selectedTeam: selectedTeam?.name || 'All Teams',
+      selectedTeamId: selectedTeam?.id || null,
+      userTeams: userTeams.map(t => ({ id: t.id, name: t.name })),
+      totalCounts: counts.length,
+      countsWithTeam: counts.filter(c => c.team_id).length,
+      countsWithoutTeam: counts.filter(c => !c.team_id).length
+    });
+  }, [selectedTeam, userTeams, counts]);
 
   // Create team name mapping
   const teamNameById = useMemo(() => {
@@ -59,7 +71,11 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       count.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getTeamDisplayName(count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesTeam = !selectedTeam || count.team_id === selectedTeam.id;
+    // Enhanced team filtering logic:
+    // - If no team is selected (All Teams), show all records
+    // - If a specific team is selected, show only records assigned to that team
+    // - Records with team_id = null are considered "unassigned" and only show when "All Teams" is selected
+    const matchesTeam = !selectedTeam ? true : count.team_id === selectedTeam.id;
     
     const matchesStatus = statusFilter === 'all' || count.status === statusFilter;
     
@@ -166,10 +182,18 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                 </div>
                 
                 {hasRoleAccess('admin') && (
-                  <TeamSelector 
-                    showAllOption={true}
-                    placeholder="Filter by team"
-                  />
+                  <div className="space-y-2">
+                    <TeamSelector 
+                      showAllOption={true}
+                      placeholder="Filter by team"
+                    />
+                    {/* Debug info for team selection */}
+                    {selectedTeam && (
+                      <div className="text-xs text-muted-foreground">
+                        Filtering by: {selectedTeam.name} (ID: {selectedTeam.id.slice(0, 8)}...)
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -315,8 +339,15 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                 <Calendar className="h-5 w-5" />
                 Enhanced Inventory Count History
               </CardTitle>
-              <div className="text-sm text-muted-foreground">
-                Showing {filteredCounts.length} records with financial insights and team comparisons
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div>Showing {filteredCounts.length} of {counts.length} records with financial insights and team comparisons</div>
+                <div className="flex gap-4 text-xs">
+                  <span>Team Filter: {selectedTeam ? selectedTeam.name : 'All Teams'}</span>
+                  <span>•</span>
+                  <span>Assigned Records: {counts.filter(c => c.team_id).length}</span>
+                  <span>•</span>
+                  <span>Unassigned Records: {counts.filter(c => !c.team_id).length}</span>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
