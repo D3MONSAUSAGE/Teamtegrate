@@ -326,12 +326,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log('INV_EMAIL_SEND', { to, ok, id: messageId, attempt, error: ok ? null : String(lastErr) });
       }
 
-      const sends = results;
-
-      const results = sends.map((r) =>
-        r.status === "fulfilled" ? r.value : { ok: false, error: String(r.reason) }
-      );
-      const sent = results.filter((r: any) => r.ok).length;
+      const sent = results.filter(r => r.ok).length;
 
       console.log("INVENTORY_EMAIL_RESULTS", { inventory_id: inv.id, team_id: inv.team_id, sent, total: recipientList.length, results });
       return new Response(JSON.stringify({ ok: sent > 0, sent, total: recipientList.length, results }), { status: 200, headers: CORS });
