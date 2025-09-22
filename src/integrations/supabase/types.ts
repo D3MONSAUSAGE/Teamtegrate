@@ -8683,6 +8683,14 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_time_entry: {
+        Args: {
+          approval_action: string
+          approval_notes?: string
+          entry_id: string
+        }
+        Returns: Json
+      }
       audit_organization_data: {
         Args: Record<PropertyKey, never>
         Returns: {

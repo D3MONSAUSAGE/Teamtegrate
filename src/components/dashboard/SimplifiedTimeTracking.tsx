@@ -1,6 +1,7 @@
 import React from 'react';
 import { WeeklyScheduleSummary } from './WeeklyScheduleSummary';
 import StreamlinedTimeControls from './StreamlinedTimeControls';
+import { EmployeeTimeStatusCard } from '@/components/employee/EmployeeTimeStatusCard';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
@@ -10,6 +11,7 @@ export const SimplifiedTimeTracking: React.FC = () => {
   
   const {
     currentSession,
+    weeklyEntries,
     isLoading: timeTrackingLoading,
     lastError,
     clockIn,
@@ -38,6 +40,22 @@ export const SimplifiedTimeTracking: React.FC = () => {
     breakType: currentSession?.breakType,
   };
 
+  // Get recent time entries for status display
+  const recentEntries = weeklyEntries
+    .filter(entry => entry.clock_out) // Only completed entries
+    .slice(0, 10)
+    .map(entry => ({
+      id: entry.id,
+      clock_in: entry.clock_in,
+      clock_out: entry.clock_out!,
+      duration_minutes: entry.duration_minutes || 0,
+      notes: entry.notes,
+      approval_status: (entry.approval_status || 'pending') as 'pending' | 'approved' | 'rejected',
+      approved_by: entry.approved_by,
+      approved_at: entry.approved_at,
+      approval_notes: entry.approval_notes
+    }));
+
   return (
     <div className="space-y-6">
       {/* Weekly Schedule Summary */}
@@ -61,6 +79,16 @@ export const SimplifiedTimeTracking: React.FC = () => {
       ) : (
         <StreamlinedTimeControls />
       )}
+
+      {/* Employee Time Status Display */}
+      <EmployeeTimeStatusCard 
+        entries={recentEntries}
+        isLoading={timeTrackingLoading}
+        onRequestCorrection={(entryId) => {
+          // TODO: Implement correction request functionality
+          console.log('Request correction for entry:', entryId);
+        }}
+      />
     </div>
   );
 };

@@ -17,6 +17,8 @@ import { formatHoursMinutes } from '@/utils/timeUtils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { approvalNotifications } from '@/lib/notifications/approvalNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 interface TimeEntry {
@@ -46,6 +48,7 @@ export const TimeEntryApprovalCard: React.FC<TimeEntryApprovalCardProps> = ({
   entry,
   onApprovalChange
 }) => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showNotesInput, setShowNotesInput] = useState(false);
@@ -57,15 +60,46 @@ export const TimeEntryApprovalCard: React.FC<TimeEntryApprovalCardProps> = ({
       return;
     }
 
+    if (!user) {
+      toast.error('Authentication required');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await supabase.rpc('approve_time_entry', {
+      const { data, error } = await supabase.rpc('approve_time_entry', {
         entry_id: entry.id,
         approval_action: action,
         approval_notes: action === 'reject' ? approvalNotes : null
-      });
+      } as any);
 
       if (error) throw error;
+
+      // Send notification based on action
+      const notificationData = {
+        orgId: user.organizationId,
+        teamId: entry.team_id || null,
+        entry: {
+          id: entry.id,
+          user_id: entry.user_id,
+          user_name: entry.user?.name || 'Unknown',
+          duration_minutes: entry.duration_minutes,
+          work_date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+          notes: entry.notes
+        },
+        actor: {
+          id: user.id,
+          name: user.name || user.email,
+          email: user.email
+        },
+        approval_notes: action === 'reject' ? approvalNotes : undefined
+      };
+
+      if (action === 'approve') {
+        await approvalNotifications.notifyTimeEntryApproved(notificationData);
+      } else {
+        await approvalNotifications.notifyTimeEntryRejected(notificationData);
+      }
 
       toast.success(`Time entry ${action}d successfully`);
       onApprovalChange?.();
