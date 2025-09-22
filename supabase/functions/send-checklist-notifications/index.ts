@@ -63,8 +63,20 @@ serve(async (req: Request): Promise<Response> => {
     const payload: NotificationPayload = await req.json();
     const { type, recipients, orgName, teamName, checklist, run, actor, metrics, completedBy, notes } = payload;
 
+    // Normalize recipients
+    let recipients_list: string[] = Array.isArray(recipients)
+      ? recipients
+      : (payload.to ? [payload.to] : []);
+    recipients_list = recipients_list.map(e => String(e).toLowerCase().trim()).filter(Boolean);
+
+    // Optional override for safe testing
+    const TEST_RECIPIENTS = Deno.env.get("TEST_RECIPIENTS");
+    if (TEST_RECIPIENTS) {
+      recipients_list = TEST_RECIPIENTS.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
     // Deduplicate recipients
-    const uniqueRecipients = Array.from(new Set(recipients.map(email => email.toLowerCase().trim())));
+    const uniqueRecipients = Array.from(new Set(recipients_list));
     
     console.log(`📧 Sending ${type} notifications to ${uniqueRecipients.length} recipients`, { 
       correlationId,

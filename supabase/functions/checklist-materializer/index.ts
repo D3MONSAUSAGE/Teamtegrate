@@ -164,9 +164,110 @@ serve(async (req: Request): Promise<Response> => {
                 correlationId 
               });
               
-              // This would be called via a separate notification service
-              // For now, just log that we would send the notification
-              console.log(`[WOULD NOTIFY] checklist_upcoming for instance ${instanceData.id}`);
+              // Build stable idempotency key
+              const dedupeKey = `${template.org_id}:${template.team_id || 'no-team'}:checklist_upcoming:${template.id}:${instanceData.id}`;
+
+              // 1. Skip if an in-app notification with same key already exists
+              const { data: existing } = await supabase
+                .from("notifications")
+                .select("id")
+                .eq("type", "checklist_upcoming")
+                .contains("metadata", { dedupe_key: dedupeKey })
+                .maybeSingle();
+
+              if (!existing) {
+                // 2. Resolve recipients: team managers + org admins/superadmins (TEAM-BASED, no locations)
+                const { data: teamRow } = await supabase
+                  .from("teams")
+                  .select("id,name,manager_id")
+                  .eq("id", template.team_id)
+                  .maybeSingle();
+                
+                const teamName = teamRow?.name ?? "Team";
+                const managerIds = teamRow?.manager_id ? [teamRow.manager_id] : [];
+
+                const { data: managers } = await supabase
+                  .from("users").select("id,email,name")
+                  .in("id", managerIds);
+
+                const { data: admins } = await supabase
+                  .from("users").select("id,email,name")
+                  .eq("organization_id", template.org_id)
+                  .in("role", ["admin","superadmin"]);
+
+                const uniqueRecipients = Array.from(
+                  new Map(
+                    [...(managers ?? []), ...(admins ?? [])]
+                      .filter(u => !!u?.email)
+                      .map(u => [u.email.toLowerCase().trim(), u])
+                  ).values()
+                );
+
+                // 3. Insert in-app notification (idempotent)
+                const formatTime = (time: string) => {
+                  const [hour, minute] = time.split(':').map(Number);
+                  const date = new Date();
+                  date.setHours(hour, minute);
+                  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                };
+                
+                const windowLabel = template.start_time && template.end_time 
+                  ? `${formatTime(template.start_time)}–${formatTime(template.end_time)}`
+                  : 'Today';
+
+                const payload = {
+                  checklistId: template.id,
+                  checklistTitle: template.name,
+                  teamId: template.team_id,
+                  teamName,
+                  runId: instanceData.id,
+                  windowLabel,
+                  startTime: scheduledStart,
+                  endTime: scheduledEnd,
+                  url: `https://app.teamtegrate.com/checklists/runs/${instanceData.id}`
+                };
+
+                const { error: insertErr } = await supabase.from("notifications").insert([{
+                  type: "checklist_upcoming",
+                  organization_id: template.org_id,
+                  recipient_ids: uniqueRecipients.map(r => r.id),
+                  payload,
+                  metadata: { dedupe_key: dedupeKey }
+                }]);
+                
+                if (insertErr && insertErr.code !== "23505") {
+                  console.error("[UPCOMING] notifications insert failed", insertErr);
+                }
+
+                // 4. Email fan-out via our existing edge function
+                const to = uniqueRecipients.map(r => r.email);
+                const body = {
+                  type: "checklist_upcoming",
+                  recipients: to,
+                  orgName: template.organizations?.name || 'Organization',
+                  teamName,
+                  checklist: { id: template.id, title: template.name, priority: template.priority },
+                  run: { id: instanceData.id, windowLabel, startTime: scheduledStart, endTime: scheduledEnd },
+                  metrics: { percentComplete: 0, itemsTotal: templateItems?.length || 0, itemsDone: 0 }
+                };
+
+                const res = await fetch(`${supabaseUrl}/functions/v1/send-checklist-notifications`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body)
+                });
+
+                console.log("CHECKLIST_NOTIFY", {
+                  type: "checklist_upcoming",
+                  checklistId: template.id,
+                  runId: instanceData.id,
+                  sent: res.ok,
+                  total: to.length,
+                  dedupeKey
+                });
+              } else {
+                console.log("[UPCOMING] deduped", dedupeKey);
+              }
             } catch (notificationError) {
               console.error(`❌ Failed to send upcoming notification for ${template.name}:`, notificationError);
               // Don't fail the whole process for notification issues

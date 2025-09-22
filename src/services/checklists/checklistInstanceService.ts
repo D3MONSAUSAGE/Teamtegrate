@@ -183,21 +183,56 @@ class ChecklistInstanceService {
 
       await notificationService.sendSubmitted(params.instanceId);
       
-      // Send completion notification
+      // Fetch template/team/org (lightweight)
+      const [{ data: template }, { data: team }, { data: org }] = await Promise.all([
+        supabase.from("checklist_templates_v2").select("id,name,priority,assignment_type").eq("id", instance.template_id).maybeSingle(),
+        supabase.from("teams").select("id,name").eq("id", instance.team_id).maybeSingle(),
+        supabase.from("organizations").select("id,name,timezone").eq("id", instance.org_id).maybeSingle()
+      ]);
+
+      // Actual metrics from entries
+      const { data: entries } = await supabase
+        .from("checklist_item_entries_v2")
+        .select("id,executed_status")
+        .eq("instance_id", instance.id);
+
+      const itemsTotal = entries?.length ?? 0;
+      const itemsDone = (entries ?? []).filter(e => e.executed_status && e.executed_status !== "unchecked").length;
+      const percentComplete = itemsTotal ? Math.round((itemsDone / itemsTotal) * 100) : 0;
+
+      // Window label (reuse existing formatter)
+      const formatTime = (time: string) => {
+        try {
+          const timeStr = time.includes('T') ? time.split('T')[1]?.substring(0, 5) : time;
+          if (!timeStr) return '';
+          const [hour, minute] = timeStr.split(':').map(Number);
+          const date = new Date();
+          date.setHours(hour, minute);
+          return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        } catch { return time; }
+      };
+      
+      const windowLabel = instance.scheduled_start && instance.scheduled_end 
+        ? `${formatTime(instance.scheduled_start)}–${formatTime(instance.scheduled_end)}`
+        : 'Today';
+
+      // Recipients (team managers + admins, + assignees if assignment_type === 'individual')
       const recipients = await getChecklistRecipients({
         orgId: instance.org_id,
-        teamId: instance.team_id
+        teamId: instance.team_id,
+        assignmentType: template?.assignment_type === 'individual' ? 'individual' : 'team',
+        assigneeIds: [] // include if you support individual assignees
       });
       
       if (recipients.length > 0) {
         await notifications.notifyChecklistCompleted({
-          checklist: { id: instance.id, title: instance.template?.name || 'Checklist' },
-          run: { id: instance.id, windowLabel: 'Today' },
-          team: { id: instance.team_id, name: 'Team' },
-          org: { id: instance.org_id, name: 'Organization' },
+          checklist: { id: instance.template_id, title: template?.name ?? "Checklist", priority: template?.priority ?? "medium" },
+          run: { id: instance.id, windowLabel, startTime: instance.scheduled_start, endTime: instance.scheduled_end },
+          team: { id: instance.team_id, name: team?.name ?? "Team" },
+          org: { id: instance.org_id, name: org?.name ?? "Organization" },
           recipients,
           actor: { id: params.actor.id, name: params.actor.name },
-          metrics: { percentComplete: 100, itemsTotal: 1, itemsDone: 1 },
+          metrics: { percentComplete, itemsTotal, itemsDone },
           completedBy: params.actor.name
         });
       }
