@@ -30,12 +30,12 @@ export const MyScheduleView: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      // Use Monday as the start of the week
+      // Use Monday as the start of the week for schedules
       const weekStart = format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       const weekEnd = format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       fetchEmployeeSchedules(weekStart, weekEnd);
-      // Fetch time entries for the selected week
-      fetchWeeklyEntries(startOfWeek(selectedWeek, { weekStartsOn: 1 }));
+      // Fetch time entries for the current week (not selectedWeek)
+      fetchWeeklyEntries(startOfWeek(new Date(), { weekStartsOn: 1 }));
     }
   }, [user, selectedWeek, fetchEmployeeSchedules, fetchWeeklyEntries]);
 
@@ -263,11 +263,11 @@ export const MyScheduleView: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Weekly Time Entries */}
+      {/* Weekly Time Entries - Current Week */}
       <WeeklyTimeEntriesCard
         entries={weeklyEntries}
-        weekStart={startOfWeek(selectedWeek, { weekStartsOn: 1 })}
-        weekEnd={endOfWeek(selectedWeek, { weekStartsOn: 1 })}
+        weekStart={startOfWeek(new Date(), { weekStartsOn: 1 })}
+        weekEnd={endOfWeek(new Date(), { weekStartsOn: 1 })}
       />
 
       {/* Time Entry Correction Requests */}
