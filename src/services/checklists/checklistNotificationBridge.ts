@@ -91,31 +91,36 @@ export async function notifyChecklistCompleted(executionId: string): Promise<voi
 
     // 9. Send email notification via edge function
     const emailPayload = {
-      kind: 'checklist_completed',
+      type: 'checklist_completed',
       recipients: recipients.map(r => r.email),
-      instance: {
+      orgName: org?.name || 'Organization',
+      teamName: 'Team', // old system may not store team; safe default
+      checklist: {
+        id: execution.checklist_id,
+        title: execution.checklist?.name || 'Unknown Checklist',
+        priority: execution.checklist?.priority || 'medium'
+      },
+      run: {
         id: executionId,
-        display_code: `CHK-${execution.execution_date.replace(/-/g, '')}-${executionId.substring(0, 6)}`,
-        name: execution.checklist?.name || 'Unknown Checklist',
-        team_name: 'Team',
-        date: execution.execution_date,
-        window_label: windowLabel,
-        metrics: {
-          percent_complete: percentComplete,
-          items_total: itemsTotal,
-          items_done: itemsDone
-        }
+        windowLabel: windowLabel
       },
       actor: {
-        name: execution.assigned_user?.name || 'User',
-        email: execution.assigned_user?.email || 'user@example.com'
+        id: execution.assigned_to_user_id,
+        name: execution.assigned_user?.name || 'User'
       },
-      org: {
-        name: org?.name || 'Organization'
+      metrics: {
+        percentComplete: percentComplete,
+        itemsTotal: itemsTotal,
+        itemsDone: itemsDone
       },
+      completedBy: execution.assigned_user?.name || 'User',
       notes: execution.notes,
       dedupe_key: dedupeKey
     };
+
+    console.log('[notify] checklist_completed bridge → edge', {
+      execId: executionId, dedupeKey, recipients: emailPayload.recipients.length
+    });
 
     // 10. Send via edge function
     const { error: functionError } = await supabase.functions.invoke('send-checklist-notifications', {

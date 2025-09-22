@@ -61,7 +61,10 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`📧 Checklist notification started`, { correlationId });
 
     const payload: NotificationPayload = await req.json();
+    payload.type = payload.type || payload.kind; // tolerate old callers
     const { type, recipients, orgName, teamName, checklist, run, actor, metrics, completedBy, notes } = payload;
+    
+    console.log('[send-checklist-notifications] start', { type, correlationId });
 
     // Normalize recipients
     let recipients_list: string[] = Array.isArray(recipients)
