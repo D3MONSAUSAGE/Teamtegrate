@@ -160,7 +160,7 @@ export const InventoryAnalyticsDashboard: React.FC = () => {
             <CardHeader>
               <CardTitle>Variance Analysis (14 Days)</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Tracking discrepancies between expected and actual counts
+                Tracking discrepancies between in-stock and actual counts
               </p>
             </CardHeader>
             <CardContent>

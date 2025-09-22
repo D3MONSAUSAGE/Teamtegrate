@@ -223,7 +223,7 @@ export const CountDetailsDialog: React.FC<CountDetailsDialogProps> = ({
                       <TableRow>
                         <TableHead>Item</TableHead>
                         <TableHead className="text-center">Min/Max</TableHead>
-                        <TableHead className="text-center">Expected</TableHead>
+                        <TableHead className="text-center">In Stock</TableHead>
                         <TableHead className="text-center">Actual</TableHead>
                         <TableHead className="text-center">Variance</TableHead>
                         <TableHead className="text-center">Stock Status</TableHead>

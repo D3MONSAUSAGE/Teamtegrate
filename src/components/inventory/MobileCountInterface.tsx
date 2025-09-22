@@ -137,7 +137,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Expected vs Actual */}
+            {/* In Stock vs Actual */}
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-2xl font-bold">{inStockQty}</div>
