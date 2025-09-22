@@ -15,6 +15,27 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
 
   const userTeams = teams as Team[];
 
+  // Load saved team selection from localStorage on mount
+  useEffect(() => {
+    const savedTeamId = localStorage.getItem('selectedTeamId');
+    if (savedTeamId && userTeams.length > 0) {
+      const savedTeam = userTeams.find(team => team.id === savedTeamId);
+      if (savedTeam) {
+        setSelectedTeam(savedTeam);
+      }
+    }
+  }, [userTeams]);
+
+  // Enhanced setSelectedTeam with localStorage persistence
+  const setSelectedTeamWithPersistence = (team: Team | null) => {
+    setSelectedTeam(team);
+    if (team) {
+      localStorage.setItem('selectedTeamId', team.id);
+    } else {
+      localStorage.removeItem('selectedTeamId');
+    }
+  };
+
   const canManageTeam = (teamId: string) => {
     if (!user) return false;
     if (user.role === 'superadmin' || user.role === 'admin') return true;
@@ -73,7 +94,7 @@ export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   return (
     <TeamContext.Provider value={{
       selectedTeam,
-      setSelectedTeam,
+      setSelectedTeam: setSelectedTeamWithPersistence,
       userTeams,
       canManageTeam,
       isTeamMember,
