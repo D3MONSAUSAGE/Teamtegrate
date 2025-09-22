@@ -92,12 +92,6 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {format(new Date(selectedDate), 'EEEE, MMMM do, yyyy')}
-          </CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
             <div className="h-20 bg-muted rounded"></div>
@@ -112,12 +106,6 @@ export const DailyTaskDetailView: React.FC<DailyTaskDetailViewProps> = ({
   if (!data) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {format(new Date(selectedDate), 'EEEE, MMMM do, yyyy')}
-          </CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="text-center py-8">
             <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
