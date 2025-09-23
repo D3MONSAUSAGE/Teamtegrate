@@ -28,6 +28,8 @@ import Index from "@/pages/Index";
 import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsPage from "@/pages/ReportsPage";
+import ReportsDashboard from "@/pages/ReportsDashboard";
+import TaskReportsPage from "@/pages/TaskReportsPage";
 import FinancePage from "@/pages/FinancePage";
 import MeetingsPage from "@/pages/MeetingsPage";
 import TrainingPage from "@/pages/TrainingPage";
@@ -98,7 +100,8 @@ function App() {
                    <Route path="organization/request-types" element={<RoleProtectedRoute requiredRole="manager"><RequestTypesPage /></RoleProtectedRoute>} />
                    <Route path="employee-actions" element={<RoleProtectedRoute requiredRole="manager"><EmployeeActionsPage /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
-                  <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
+                  <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
+                  <Route path="reports/tasks" element={<RoleProtectedRoute requiredRole="manager"><TaskReportsPage /></RoleProtectedRoute>} />
                    <Route path="finance" element={<FinancePage />} />
                    <Route path="inventory" element={<InventoryPage />} />
                     <Route path="meetings" element={<MeetingsPage />} />
