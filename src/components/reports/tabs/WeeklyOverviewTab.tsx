@@ -19,6 +19,8 @@ import { useComprehensiveReports, ReportGranularity } from '@/hooks/useComprehen
 import { useTaskReports } from '@/hooks/useTaskReports';
 import { DailyCompletionChart } from '@/components/reports/weekly/DailyCompletionChart';
 import { DailyTaskDetailView, DailyDetailData } from '@/components/reports/weekly/DailyTaskDetailView';
+import { WeekNavigation } from '@/components/reports/WeekNavigation';
+import { MetricsCard } from '@/components/reports/MetricsCard';
 import { downloadCSV } from '@/utils/exportUtils';
 import { toast } from 'sonner';
 
@@ -40,6 +42,7 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dailyDetailData, setDailyDetailData] = useState<DailyDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
 
   const {
     comprehensiveData,
@@ -231,6 +234,11 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <WeekNavigation
+                selectedWeek={selectedWeek}
+                onWeekChange={setSelectedWeek}
+              />
+              
               <Select value={granularity} onValueChange={(value: ReportGranularity) => setGranularity(value)}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -263,63 +271,37 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Tasks Completed</p>
-                <p className="text-2xl font-bold">{summary.completed_tasks}</p>
-                <p className="text-xs text-muted-foreground">of {summary.total_tasks} total</p>
-              </div>
-              <Target className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricsCard
+          title="Tasks Completed"
+          value={summary.completed_tasks}
+          icon={<Target className="h-5 w-5 text-white" />}
+          colorClass="bg-success text-success-foreground"
+          trend={{ value: 12, label: "of " + summary.total_tasks + " total" }}
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completion Rate</p>
-                <p className="text-2xl font-bold">{summary.completion_rate}%</p>
-                <Badge variant={summary.completion_rate >= 80 ? "default" : "secondary"} className="text-xs">
-                  {summary.completion_rate >= 80 ? 'Excellent' : 'Good'}
-                </Badge>
-              </div>
-              <TrendingUp className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricsCard
+          title="Completion Rate"
+          value={`${summary.completion_rate}%`}
+          icon={<TrendingUp className="h-5 w-5 text-white" />}
+          colorClass="bg-primary text-primary-foreground"
+          trend={{ value: summary.completion_rate >= 80 ? 8 : -2, label: summary.completion_rate >= 80 ? 'Excellent' : 'Good' }}
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Hours Worked</p>
-                <p className="text-2xl font-bold">{summary.total_hours}h</p>
-                <p className="text-xs text-muted-foreground">
-                  Avg {Math.round((summary.total_hours / Math.max(dailyCompletionData.length, 1)) * 100) / 100}h/day
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricsCard
+          title="Hours Worked"
+          value={`${summary.total_hours}h`}
+          icon={<Clock className="h-5 w-5 text-white" />}
+          colorClass="bg-info text-info-foreground"
+          trend={{ value: 5, label: `Avg ${Math.round((summary.total_hours / Math.max(dailyCompletionData.length, 1)) * 100) / 100}h/day` }}
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Projects</p>
-                <p className="text-2xl font-bold">{summary.total_projects}</p>
-                <p className="text-xs text-muted-foreground">
-                  Score: {summary.avg_productivity_score}
-                </p>
-              </div>
-              <Users className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+        <MetricsCard
+          title="Active Projects"
+          value={summary.total_projects}
+          icon={<Users className="h-5 w-5 text-white" />}
+          colorClass="bg-purple-500 text-white"
+          trend={{ value: 0, label: `Score: ${summary.avg_productivity_score}` }}
+        />
       </div>
 
       {/* Weekly Charts */}

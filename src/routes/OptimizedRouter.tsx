@@ -47,7 +47,6 @@ const TeamDetailPage = lazy(() => import('@/pages/TeamDetailPage'));
 const DedicatedTeamManagement = lazy(() => import('@/components/team/management/DedicatedTeamManagement'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
-const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 const TimeTrackingPage = lazy(() => import('@/pages/TimeTrackingPage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const DocumentsPage = lazy(() => import('@/pages/DocumentsPage'));

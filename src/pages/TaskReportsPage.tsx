@@ -141,6 +141,7 @@ export const TaskReportsPage: React.FC = () => {
                   userId={selectedUserId || user.id}
                   userName={selectedUserId ? 'Selected User' : user.name || 'Current User'}
                   selectedDate={dateRange?.from || new Date()}
+                  onDateChange={(date) => setDateRange({ from: date, to: date })}
                 />
               </TabsContent>
 

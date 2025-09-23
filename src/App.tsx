@@ -27,7 +27,6 @@ import LandingPage from "@/pages/LandingPage";
 import Index from "@/pages/Index";
 import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import FocusZonePage from "@/pages/FocusZonePage";
-import ReportsPage from "@/pages/ReportsPage";
 import ReportsDashboard from "@/pages/ReportsDashboard";
 import TaskReportsPage from "@/pages/TaskReportsPage";
 import FinancePage from "@/pages/FinancePage";

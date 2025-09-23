@@ -5,7 +5,6 @@ import LoadingFallback from '@/components/LoadingFallback';
 // Lazy load heavy components
 const CalendarPage = React.lazy(() => import('./CalendarPage'));
 const FocusZonePage = React.lazy(() => import('./FocusZonePage'));
-const ReportsPage = React.lazy(() => import('./ReportsPage'));
 const DocumentsPage = React.lazy(() => import('./DocumentsPage'));
 const ChatPage = React.lazy(() => import('./ChatPage'));
 const TeamPage = React.lazy(() => import('./TeamPage'));
@@ -27,12 +26,6 @@ export const LazyCalendarPage = () => (
 export const LazyFocusPage = () => (
   <Suspense fallback={<LoadingFallback />}>
     <FocusZonePage />
-  </Suspense>
-);
-
-export const LazyReportsPage = () => (
-  <Suspense fallback={<LoadingFallback />}>
-    <ReportsPage />
   </Suspense>
 );
 
