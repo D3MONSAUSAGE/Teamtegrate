@@ -19,6 +19,7 @@ import { UserCard } from './UserCard';
 import { Team } from '@/types/teams';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 import { useUserJobRoles } from '@/hooks/useUserJobRoles';
+import { TeamUserManagementModal } from './TeamUserManagementModal';
 
 interface OrganizationUser {
   id: string;
@@ -61,10 +62,12 @@ const getTeamRoleBadgeVariant = (role: string) => {
 
 export const TeamHierarchyCard: React.FC<TeamHierarchyCardProps> = ({ team, allUsers }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const { teamMembers, isLoading } = useRealTeamMembers(team.id);
 
-  // Find team manager from users
-  const teamManager = allUsers.find(user => user.id === team.manager_id);
+  // Find team managers from team_memberships (not from teams.manager_id)
+  const teamManagers = teamMembers.filter(member => member.role === 'manager');
 
   return (
     <Card className="border">
@@ -100,18 +103,22 @@ export const TeamHierarchyCard: React.FC<TeamHierarchyCardProps> = ({ team, allU
                     <Users className="h-4 w-4" />
                     <span>{team.member_count} members</span>
                   </div>
-                  {teamManager && (
+                  {teamManagers.length > 0 && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs">Manager:</span>
-                      <div className="flex items-center gap-1">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={teamManager.avatar_url} />
-                          <AvatarFallback className="text-xs">
-                            {teamManager.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{teamManager.name}</span>
-                      </div>
+                      {teamManagers.length === 1 ? (
+                        <div className="flex items-center gap-1">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={teamManagers[0].avatar_url} />
+                            <AvatarFallback className="text-xs">
+                              {teamManagers[0].name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{teamManagers[0].name}</span>
+                        </div>
+                      ) : (
+                        <span className="font-medium">{teamManagers.length} managers</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -158,9 +165,16 @@ export const TeamHierarchyCard: React.FC<TeamHierarchyCardProps> = ({ team, allU
                       if (roleComparison !== 0) return roleComparison;
                       return a.name.localeCompare(b.name);
                     })
-                    .map(member => (
-                      <TeamMemberCard key={member.id} member={member} />
-                    ))
+                     .map(member => (
+                       <TeamMemberCard 
+                         key={member.id} 
+                         member={member} 
+                         onClick={() => {
+                           setSelectedUser(member);
+                           setIsUserModalOpen(true);
+                         }}
+                       />
+                     ))
                   }
                 </div>
               )}
@@ -168,6 +182,20 @@ export const TeamHierarchyCard: React.FC<TeamHierarchyCardProps> = ({ team, allU
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+      
+      {/* User Management Modal */}
+      <TeamUserManagementModal
+        open={isUserModalOpen}
+        onOpenChange={setIsUserModalOpen}
+        user={selectedUser}
+        allTeamMemberships={selectedUser ? teamMembers
+          .filter(m => m.id === selectedUser.id)
+          .map(m => ({
+            team_id: m.team_id,
+            team_name: m.team_name,
+            role: m.role
+          })) : []}
+      />
     </Card>
   );
 };
@@ -185,13 +213,17 @@ interface TeamMemberCardProps {
     completedTasks: number;
     completionRate: number;
   };
+  onClick?: () => void;
 }
 
-const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member }) => {
+const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, onClick }) => {
   const { userJobRoles } = useUserJobRoles(member.id);
 
   return (
-    <div className="bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow">
+    <div 
+      className="bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow cursor-pointer hover:bg-muted/30" 
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">

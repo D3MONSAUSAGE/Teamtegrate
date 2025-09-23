@@ -47,8 +47,7 @@ interface CreateTeamDialogProps {
 
 interface TeamMemberSelection {
   user: User;
-  role: 'manager' | 'member';
-  isTeamLeader: boolean;
+  role: 'manager' | 'member' | 'admin';
 }
 
 const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
@@ -62,34 +61,26 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   const [formData, setFormData] = useState<CreateTeamData>({
     name: '',
     description: '',
-    manager_id: '',
   });
   const [selectedMembers, setSelectedMembers] = useState<TeamMemberSelection[]>([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [includeAdmins, setIncludeAdmins] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
 
-  // Filter users who can be managers
-  const potentialManagers = users.filter(user => 
-    ['admin', 'manager', 'superadmin'].includes(user.role)
-  );
-
-  // Filter available users for member selection (excluding already selected manager)
+  // Filter available users for member selection
   const availableUsers = users.filter(user => {
-    const isNotManager = user.id !== formData.manager_id;
     const matchesSearch = memberSearch === '' || 
       user.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
       user.email.toLowerCase().includes(memberSearch.toLowerCase());
     const notAlreadySelected = !selectedMembers.some(member => member.user.id === user.id);
-    return isNotManager && matchesSearch && notAlreadySelected;
+    return matchesSearch && notAlreadySelected;
   });
 
   // Organization admins for optional inclusion
   const orgAdmins = users.filter(user => 
     ['admin', 'superadmin'].includes(user.role) && 
-    user.id !== formData.manager_id &&
     !selectedMembers.some(member => member.user.id === user.id)
   );
 
@@ -113,21 +104,14 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
     } else {
       setSelectedMembers([...selectedMembers, {
         user,
-        role: 'member',
-        isTeamLeader: false
+        role: 'member'
       }]);
     }
   };
 
-  const handleRoleChange = (userId: string, role: 'manager' | 'member') => {
+  const handleRoleChange = (userId: string, role: 'manager' | 'member' | 'admin') => {
     setSelectedMembers(selectedMembers.map(member =>
       member.user.id === userId ? { ...member, role } : member
-    ));
-  };
-
-  const handleTeamLeaderToggle = (userId: string) => {
-    setSelectedMembers(selectedMembers.map(member =>
-      member.user.id === userId ? { ...member, isTeamLeader: !member.isTeamLeader } : member
     ));
   };
 
@@ -138,7 +122,6 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
       // Create the team first
       const team = await createTeam({
         ...formData,
-        manager_id: formData.manager_id === 'none' ? undefined : formData.manager_id || undefined,
       });
 
       if (team) {
@@ -147,8 +130,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
           await addTeamMember(
             team.id, 
             memberSelection.user.id, 
-            memberSelection.role,
-            memberSelection.isTeamLeader ? 'team_leader' : undefined
+            memberSelection.role
           );
         });
 
@@ -164,7 +146,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
       }
       
       // Reset form
-      setFormData({ name: '', description: '', manager_id: '' });
+      setFormData({ name: '', description: '' });
       setSelectedMembers([]);
       setCurrentStep(1);
       setMemberSearch('');
@@ -176,7 +158,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   };
 
   const handleClose = () => {
-    setFormData({ name: '', description: '', manager_id: '' });
+    setFormData({ name: '', description: '' });
     setSelectedMembers([]);
     setCurrentStep(1);
     setMemberSearch('');
@@ -187,16 +169,15 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   const canProceed = () => {
     switch (currentStep) {
       case 1: return formData.name.trim() !== '';
-      case 2: return true; // Manager is optional
-      case 3: return true; // Members are optional
-      case 4: return true; // Summary/confirmation
+      case 2: return true; // Members are optional
+      case 3: return true; // Summary/confirmation
       default: return false;
     }
   };
 
-  const getRoleIcon = (role: string, isTeamLeader?: boolean) => {
-    if (isTeamLeader) return <Shield className="h-4 w-4 text-blue-600" />;
+  const getRoleIcon = (role: string) => {
     if (role === 'manager') return <Crown className="h-4 w-4 text-yellow-600" />;
+    if (role === 'admin') return <Shield className="h-4 w-4 text-blue-600" />;
     return <UserIcon className="h-4 w-4 text-muted-foreground" />;
   };
 
@@ -230,49 +211,6 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
         );
 
       case 2:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label className="text-base font-medium">Team Manager</Label>
-              <p className="text-sm text-muted-foreground mb-4">
-                Select a manager for this team (optional)
-              </p>
-            </div>
-            
-            {usersError ? (
-              <div className="text-sm text-destructive">
-                Failed to load users: {usersError}
-              </div>
-            ) : (
-              <Select
-                value={formData.manager_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, manager_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a manager (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No manager assigned</SelectItem>
-                  {potentialManagers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={user.avatar_url} />
-                          <AvatarFallback className="text-xs">
-                            {user.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        {user.name} ({user.role})
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        );
-
-      case 3:
         return (
           <div className="space-y-4">
             <div>
@@ -314,16 +252,19 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <Checkbox
-                              id={`leader-${memberSelection.user.id}`}
-                              checked={memberSelection.isTeamLeader}
-                              onCheckedChange={() => handleTeamLeaderToggle(memberSelection.user.id)}
-                            />
-                            <Label htmlFor={`leader-${memberSelection.user.id}`} className="text-xs">
-                              Team Leader
-                            </Label>
-                          </div>
+                          <Select
+                            value={memberSelection.role}
+                            onValueChange={(role) => handleRoleChange(memberSelection.user.id, role as 'manager' | 'member' | 'admin')}
+                          >
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">Member</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="manager">Manager</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -387,7 +328,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="space-y-4">
             <div>
@@ -414,27 +355,15 @@ const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
                 <Separator />
 
                 <div>
-                  <Label className="text-sm font-medium">Manager</Label>
-                  <p className="text-sm">
-                    {formData.manager_id && formData.manager_id !== 'none' 
-                      ? potentialManagers.find(u => u.id === formData.manager_id)?.name || 'Unknown'
-                      : 'No manager assigned'
-                    }
-                  </p>
-                </div>
-
-                <Separator />
-
-                <div>
                   <Label className="text-sm font-medium">Members ({selectedMembers.length + (includeAdmins ? orgAdmins.length : 0)})</Label>
                   <div className="space-y-1 mt-2">
                     {selectedMembers.map((memberSelection) => (
                       <div key={memberSelection.user.id} className="flex items-center gap-2 text-sm">
-                        {getRoleIcon(memberSelection.role, memberSelection.isTeamLeader)}
+                        {getRoleIcon(memberSelection.role)}
                         <span>{memberSelection.user.name}</span>
-                        {memberSelection.isTeamLeader && (
-                          <Badge variant="secondary" className="text-xs">Team Leader</Badge>
-                        )}
+                        <Badge variant="secondary" className="text-xs capitalize">
+                          {memberSelection.role}
+                        </Badge>
                       </div>
                     ))}
                     {includeAdmins && orgAdmins.map((admin) => (
