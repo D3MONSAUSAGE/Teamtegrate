@@ -43,7 +43,7 @@ export function useDailyReport(filter: ReportFilter) {
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    enabled: !!filter.orgId && filter.view === 'daily',
+    enabled: !!filter.orgId && !!filter.dateISO && filter.view === 'daily',
   });
 }
 
@@ -56,7 +56,7 @@ export function useWeeklyReport(filter: ReportFilter) {
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    enabled: !!filter.orgId && filter.view === 'weekly' && !!filter.weekStartISO,
+    enabled: !!filter.orgId && !!filter.weekStartISO && filter.view === 'weekly',
   });
 }
 

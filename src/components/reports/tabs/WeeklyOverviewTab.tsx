@@ -17,25 +17,21 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { useComprehensiveReports, ReportGranularity } from '@/hooks/useComprehensiveReports';
 import { useTaskReports } from '@/hooks/useTaskReports';
+import { useWeeklyReport } from '@/hooks/useTaskReports';
 import { DailyCompletionChart } from '@/components/reports/weekly/DailyCompletionChart';
 import { DailyTaskDetailView, DailyDetailData } from '@/components/reports/weekly/DailyTaskDetailView';
 import { WeekNavigation } from '@/components/reports/WeekNavigation';
 import { MetricsCard } from '@/components/reports/MetricsCard';
 import { downloadCSV } from '@/utils/exportUtils';
+import type { ReportFilter } from '@/types/reports';
 import { toast } from 'sonner';
 
 interface WeeklyOverviewTabProps {
-  userId: string;
-  userName: string;
-  timeRange: string;
-  dateRange?: DateRange;
+  filter: ReportFilter;
 }
 
 export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
-  userId,
-  userName,
-  timeRange,
-  dateRange,
+  filter,
 }) => {
   const [granularity, setGranularity] = useState<ReportGranularity>('daily');
   const [exportType, setExportType] = useState<'daily' | 'weekly' | 'comprehensive'>('comprehensive');
@@ -44,11 +40,23 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
 
+  // Use new centralized weekly report hook
+  const { data: weeklyData, isLoading: weeklyLoading } = useWeeklyReport(filter);
+
+  // Fallback to comprehensive reports for additional data (backward compatibility)
+  const userId = filter.userId || '';
+  const userName = filter.userId ? 'Selected User' : 'All Users';
+  const timeRange = '7 days'; // Default for backward compatibility
+  const dateRange: DateRange | undefined = filter.dateISO ? {
+    from: new Date(filter.dateISO),
+    to: new Date(filter.dateISO)
+  } : undefined;
+
   const {
     comprehensiveData,
     dailyCompletionData,
     summary,
-    isLoading,
+    isLoading: comprehensiveLoading,
     error,
     range,
   } = useComprehensiveReports({
@@ -58,12 +66,14 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
     granularity,
   });
 
-  // Get the task reports hook for daily details
+  // Get the task reports hook for daily details (legacy)
   const { getDailyTaskDetails } = useTaskReports({
     timeRange,
     dateRange,
     userId,
   });
+
+  const isLoading = weeklyLoading || comprehensiveLoading;
 
   const handleDayClick = React.useCallback(async (date: string) => {
     setSelectedDate(date);

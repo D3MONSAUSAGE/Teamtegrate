@@ -69,12 +69,23 @@ export const useReportFilters = () => {
 
   // Memoized unified filter object
   const filter = useMemo<ReportFilter>(() => {
+    // Don't create filter if essential data is missing
+    if (!user?.organizationId) {
+      return {
+        orgId: '',
+        view: activeTab,
+        dateISO: '',
+        weekStartISO: '',
+        timezone: 'UTC'
+      };
+    }
+
     const baseDate = dateRange?.from || new Date();
     const dateISO = format(baseDate, 'yyyy-MM-dd');
     const weekStartISO = format(startOfWeek(baseDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
     return {
-      orgId: user?.organizationId || '',
+      orgId: user.organizationId,
       teamIds: selectedTeamId ? [selectedTeamId] : undefined,
       userId: selectedUserId || undefined,
       view: activeTab,
@@ -105,6 +116,6 @@ export const useReportFilters = () => {
     // New unified filter system
     filter,
     activeTab,
-    setActiveTab,
+    setActiveTab: (value: string) => setActiveTab(value as 'daily' | 'weekly'),
   };
 };
