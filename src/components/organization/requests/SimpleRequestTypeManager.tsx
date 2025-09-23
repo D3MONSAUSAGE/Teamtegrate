@@ -31,7 +31,7 @@ export default function SimpleRequestTypeManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<SimpleRequestType | null>(null);
 
-  const canManage = hasRoleAccess(user?.role, 'manager');
+  const canManage = hasRoleAccess(user?.role, 'admin');
 
   useEffect(() => {
     fetchRequestTypes();
@@ -96,11 +96,61 @@ export default function SimpleRequestTypeManager() {
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete "${type.name}"? This action cannot be undone.`)) {
-      return;
-    }
-
     try {
+      // Check for subcategories if this is a parent category
+      const { data: subcategoriesData, error: subError } = await supabase
+        .from('request_types')
+        .select('id, name')
+        .eq('parent_category_id', type.id)
+        .eq('organization_id', user?.organizationId);
+
+      if (subError) throw subError;
+
+      // Check for existing requests that use this category
+      const { data: requestsData, error: requestError } = await supabase
+        .from('requests')
+        .select('id')
+        .eq('request_type_id', type.id)
+        .eq('organization_id', user?.organizationId);
+
+      if (requestError) throw requestError;
+
+      const subcategoriesCount = subcategoriesData?.length || 0;
+      const existingRequestsCount = requestsData?.length || 0;
+
+      // Build warning message
+      let warningMessage = `Are you sure you want to delete "${type.name}"?`;
+      
+      if (existingRequestsCount > 0) {
+        toast.error(`Cannot delete "${type.name}" - it has ${existingRequestsCount} existing request(s). Please deactivate instead of deleting.`);
+        return;
+      }
+
+      if (subcategoriesCount > 0) {
+        warningMessage += `\n\nThis will also delete ${subcategoriesCount} subcategory(ies):`;
+        subcategoriesData?.forEach(sub => {
+          warningMessage += `\n• ${sub.name}`;
+        });
+        warningMessage += '\n\nThis action cannot be undone.';
+      } else {
+        warningMessage += '\n\nThis action cannot be undone.';
+      }
+
+      if (!confirm(warningMessage)) {
+        return;
+      }
+
+      // Delete subcategories first (cascade deletion)
+      if (subcategoriesCount > 0) {
+        const { error: deleteSubError } = await supabase
+          .from('request_types')
+          .delete()
+          .eq('parent_category_id', type.id);
+
+        if (deleteSubError) throw deleteSubError;
+      }
+
+      // Delete the main category
       const { error } = await supabase
         .from('request_types')
         .delete()
@@ -108,11 +158,16 @@ export default function SimpleRequestTypeManager() {
 
       if (error) throw error;
 
-      toast.success('Request type deleted successfully');
+      const successMessage = subcategoriesCount > 0 
+        ? `Request type "${type.name}" and ${subcategoriesCount} subcategory(ies) deleted successfully`
+        : `Request type "${type.name}" deleted successfully`;
+      
+      toast.success(successMessage);
       fetchRequestTypes();
     } catch (error) {
       console.error('Error deleting request type:', error);
-      toast.error('Failed to delete request type');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to delete request type: ${errorMessage}`);
     }
   };
 
