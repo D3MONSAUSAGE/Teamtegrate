@@ -14,14 +14,18 @@ interface ReportFiltersState {
 }
 
 const STORAGE_KEY = 'report-filters';
+const STORAGE_VERSION = '1.1'; // Increment to clear old corrupted state
 
 export const useReportFilters = () => {
   const { user } = useAuth();
   const { userTimezone } = useUserTimezone();
   
+  // Default to null for superadmins/admins (All Teams view)
+  const defaultTeamId = user && ['superadmin', 'admin'].includes(user.role) ? null : null;
+  
   const [timeRange, setTimeRange] = useState('7 days');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(defaultTeamId);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly'>('daily');
 
@@ -30,21 +34,38 @@ export const useReportFilters = () => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed: ReportFiltersState = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        
+        // Check version and clear if outdated
+        if (parsed.version !== STORAGE_VERSION) {
+          console.log('Clearing outdated filter state');
+          sessionStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        
         setTimeRange(parsed.timeRange);
         setDateRange(parsed.dateRange);
-        setSelectedTeamId(parsed.selectedTeamId);
+        
+        // For superadmins/admins, always default to null (All Teams) unless explicitly set
+        if (user && ['superadmin', 'admin'].includes(user.role)) {
+          setSelectedTeamId(parsed.selectedTeamId === undefined ? null : parsed.selectedTeamId);
+        } else {
+          setSelectedTeamId(parsed.selectedTeamId);
+        }
+        
         setSelectedUserId(parsed.selectedUserId);
       }
     } catch (error) {
       console.warn('Failed to load saved report filters:', error);
+      sessionStorage.removeItem(STORAGE_KEY);
     }
-  }, []);
+  }, [user?.role]);
 
   // Save filters to session storage when they change
   useEffect(() => {
     try {
-      const filtersState: ReportFiltersState = {
+      const filtersState = {
+        version: STORAGE_VERSION,
         timeRange,
         dateRange,
         selectedTeamId,
@@ -84,7 +105,7 @@ export const useReportFilters = () => {
     const dateISO = format(baseDate, 'yyyy-MM-dd');
     const weekStartISO = format(startOfWeek(baseDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
-    return {
+    const filterObj = {
       orgId: user.organizationId,
       teamIds: selectedTeamId ? [selectedTeamId] : undefined,
       userId: selectedUserId || undefined,
@@ -93,8 +114,21 @@ export const useReportFilters = () => {
       weekStartISO,
       timezone: userTimezone || 'UTC',
     };
+
+    // Debug logging
+    console.log('🔍 Filter Debug:', {
+      selectedTeamId,
+      selectedUserId,
+      teamIds: filterObj.teamIds,
+      userId: filterObj.userId,
+      userRole: user.role,
+      dateISO: filterObj.dateISO
+    });
+
+    return filterObj;
   }, [
     user?.organizationId,
+    user?.role,
     selectedTeamId,
     selectedUserId,
     activeTab,

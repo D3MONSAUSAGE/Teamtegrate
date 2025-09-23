@@ -35,8 +35,10 @@ export const EnhancedTeamSelector: React.FC<EnhancedTeamSelectorProps> = ({
   }, [teams, isAdminOrSuperAdmin, isManager, user.id]);
 
   // Auto-select team for managers if they have only one team
+  // Do NOT auto-select for admins/superadmins - they should see "All Teams" by default
   React.useEffect(() => {
-    if (isManager && availableTeams.length === 1 && !selectedTeamId) {
+    if (isManager && availableTeams.length === 1 && selectedTeamId === null) {
+      console.log('Auto-selecting team for manager:', availableTeams[0].name);
       onTeamChange(availableTeams[0].id);
     }
   }, [isManager, availableTeams, selectedTeamId, onTeamChange]);
@@ -91,7 +93,7 @@ export const EnhancedTeamSelector: React.FC<EnhancedTeamSelectorProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Select Team:</span>
             <Select
-              value={selectedTeamId || ''}
+              value={selectedTeamId || 'all'}
               onValueChange={(value) => onTeamChange(value === 'all' ? null : value)}
             >
               <SelectTrigger className="w-[200px]">
