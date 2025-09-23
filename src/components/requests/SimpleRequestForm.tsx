@@ -143,7 +143,24 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
             onValueChange={(value) => form.setValue('request_type_id', value)}
           >
             <SelectTrigger className="h-12">
-              <SelectValue placeholder="Select a request type" />
+              <SelectValue placeholder="Select a request type">
+                {selectedRequestType && (
+                  <div className="flex items-center gap-2">
+                    {selectedRequestType.is_subcategory ? (
+                      <span>
+                        {simpleRequestTypes.find(rt => rt.id === selectedRequestType.parent_id)?.name} 
+                        <span className="text-muted-foreground mx-2">›</span>
+                        {selectedRequestType.name}
+                      </span>
+                    ) : (
+                      <span>{selectedRequestType.name}</span>
+                    )}
+                    {selectedRequestType.requires_approval && (
+                      <Badge variant="outline" className="text-xs">Approval Required</Badge>
+                    )}
+                  </div>
+                )}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {simpleRequestTypes
