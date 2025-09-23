@@ -147,6 +147,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
           icon={<AlertTriangle className="h-4 w-4 text-warning" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No pending tasks for today"
+          maxHeight="400px"
         />
         
         <ScrollableTaskContainer
@@ -155,6 +156,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
           icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No overdue tasks"
+          maxHeight="400px"
         />
         
         <ScrollableTaskContainer
@@ -163,6 +165,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
           icon={<CheckCircle className="h-4 w-4 text-success" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No completed tasks today"
+          maxHeight="400px"
         />
       </div>
 
@@ -174,6 +177,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
           icon={<Plus className="h-4 w-4 text-primary" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No tasks created today"
+          maxHeight="400px"
         />
         
         <ScrollableTaskContainer
@@ -182,6 +186,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
           icon={<UserPlus className="h-4 w-4 text-purple-500" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No tasks assigned today"
+          maxHeight="400px"
         />
       </div>
 

@@ -25,6 +25,7 @@ export interface DailyTaskDetail {
   created_at: string;
   completed_at?: string;
   project_title?: string;
+  warning_period_hours?: number;
 }
 
 export interface DailyDetailData {
