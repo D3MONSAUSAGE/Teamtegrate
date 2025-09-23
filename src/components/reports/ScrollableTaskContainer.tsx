@@ -30,31 +30,31 @@ const getPriorityStyles = (priority: string) => {
   switch(priority) {
     case 'High': 
       return {
-        gradient: '[background:var(--task-gradient-high)]',
-        glow: 'shadow-lg hover:shadow-xl shadow-red-500/10 hover:shadow-red-500/20',
-        border: 'border-red-200/30 dark:border-red-800/30 hover:border-red-300/50 dark:hover:border-red-700/50',
-        dot: 'bg-red-500'
+        gradient: 'bg-red-50/20 dark:bg-red-950/10',
+        glow: 'shadow-sm hover:shadow-md shadow-red-100/8 hover:shadow-red-200/15',
+        border: 'border-red-200/25 dark:border-red-800/25 hover:border-red-300/35 dark:hover:border-red-700/35',
+        dot: 'bg-red-400'
       };
     case 'Medium': 
       return {
-        gradient: '[background:var(--task-gradient-medium)]',
-        glow: 'shadow-lg hover:shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20',
-        border: 'border-amber-200/30 dark:border-amber-800/30 hover:border-amber-300/50 dark:hover:border-amber-700/50',
-        dot: 'bg-amber-500'
+        gradient: 'bg-amber-50/20 dark:bg-amber-950/10',
+        glow: 'shadow-sm hover:shadow-md shadow-amber-100/8 hover:shadow-amber-200/15',
+        border: 'border-amber-200/25 dark:border-amber-800/25 hover:border-amber-300/35 dark:hover:border-amber-700/35',
+        dot: 'bg-amber-400'
       };
     case 'Low': 
       return {
-        gradient: '[background:var(--task-gradient-low)]',
-        glow: 'shadow-lg hover:shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20',
-        border: 'border-blue-200/30 dark:border-blue-800/30 hover:border-blue-300/50 dark:hover:border-blue-700/50',
-        dot: 'bg-blue-500'
+        gradient: 'bg-blue-50/20 dark:bg-blue-950/10',
+        glow: 'shadow-sm hover:shadow-md shadow-blue-100/8 hover:shadow-blue-200/15',
+        border: 'border-blue-200/25 dark:border-blue-800/25 hover:border-blue-300/35 dark:hover:border-blue-700/35',
+        dot: 'bg-blue-400'
       };
     default: 
       return {
-        gradient: '[background:var(--task-gradient-default)]',
-        glow: 'shadow-lg hover:shadow-xl shadow-gray-500/10 hover:shadow-gray-500/20',
-        border: 'border-border/50 hover:border-border',
-        dot: 'bg-gray-400'
+        gradient: 'bg-muted/10',
+        glow: 'shadow-sm hover:shadow-md shadow-muted-foreground/5 hover:shadow-muted-foreground/10',
+        border: 'border-border/40 hover:border-border/60',
+        dot: 'bg-muted-foreground/60'
       };
   }
 };
@@ -132,29 +132,28 @@ export const ScrollableTaskContainer: React.FC<ScrollableTaskContainerProps> = (
                     "backdrop-blur-sm p-4",
                     onTaskClick && "cursor-pointer",
                     
-                    // Professional styling based on task state
-                    // Completed state (green glow) - takes precedence
-                    isCompleted && [
-                      "ring-2 ring-green-500/40 shadow-xl shadow-green-500/20",
-                      "[background:linear-gradient(135deg,hsl(142_76%_36%/0.1),hsl(142_69%_58%/0.15),hsl(142_76%_36%/0.08))]",
-                      "border-green-400/60 dark:border-green-500/50"
-                    ],
-                    
-                    // Overdue state (red glow) - takes precedence over priority
-                    !isCompleted && isOverdue && [
-                      "ring-2 ring-red-500/40 shadow-xl shadow-red-500/20",
-                      "[background:linear-gradient(135deg,hsl(0_84%_60%/0.1),hsl(15_78%_65%/0.15),hsl(0_84%_60%/0.08))]",
-                      "border-red-400/60 dark:border-red-500/50",
-                      "animate-pulse"
-                    ],
-                    
-                    // Warning state (amber glow) - priority over normal priority
-                    !isCompleted && !isOverdue && isWarning && [
-                      "ring-2 ring-amber-500/40 shadow-xl shadow-amber-500/20",
-                      "[background:linear-gradient(135deg,hsl(45_93%_47%/0.1),hsl(48_89%_50%/0.15),hsl(45_93%_47%/0.08))]",
-                      "border-amber-400/60 dark:border-amber-500/50",
-                      "animate-pulse"
-                    ],
+                     // Refined, classy styling based on task state
+                     // Completed state (subtle green accent) - takes precedence
+                     isCompleted && [
+                       "ring-1 ring-emerald-200/25 shadow-sm shadow-emerald-100/10",
+                       "bg-emerald-50/30 dark:bg-emerald-950/20",
+                       "border-emerald-200/40 dark:border-emerald-800/30"
+                     ],
+                     
+                     // Overdue state (refined red accent) - takes precedence over priority
+                     !isCompleted && isOverdue && [
+                       "ring-1 ring-red-200/25 shadow-md shadow-red-100/15",
+                       "bg-red-50/30 dark:bg-red-950/20",
+                       "border-red-200/40 dark:border-red-800/30",
+                       "animate-pulse [animation-duration:3s]"
+                     ],
+                     
+                     // Warning state (elegant amber accent) - priority over normal priority
+                     !isCompleted && !isOverdue && isWarning && [
+                       "ring-1 ring-amber-200/25 shadow-sm shadow-amber-100/12",
+                       "bg-amber-50/25 dark:bg-amber-950/20",
+                       "border-amber-200/35 dark:border-amber-800/30"
+                     ],
                     
                     // Normal priority-based styling
                     !isCompleted && !isOverdue && !isWarning && [
@@ -171,28 +170,28 @@ export const ScrollableTaskContainer: React.FC<ScrollableTaskContainerProps> = (
                       <div className="flex items-center gap-3 mb-2">
                         <div className="flex items-center gap-2">
                           {/* Priority dot */}
-                          <div className={cn(
-                            "w-2 h-2 rounded-full flex-shrink-0",
-                            isCompleted ? "bg-green-500" :
-                            isOverdue ? "bg-red-500 animate-pulse" :
-                            isWarning ? "bg-amber-500 animate-pulse" :
-                            priorityStyles.dot
-                          )} />
+                           <div className={cn(
+                             "w-2 h-2 rounded-full flex-shrink-0 shadow-sm",
+                             isCompleted ? "bg-emerald-400" :
+                             isOverdue ? "bg-red-400" :
+                             isWarning ? "bg-amber-400" :
+                             priorityStyles.dot
+                           )} />
                           {getStatusIcon(task.status)}
                         </div>
                         <p className="font-semibold text-sm truncate">{task.title}</p>
                         
                         {/* Status badges */}
-                        {isOverdue && (
-                          <Badge variant="destructive" className="text-xs px-1.5 py-0.5 animate-pulse">
-                            OVERDUE
-                          </Badge>
-                        )}
-                        {!isOverdue && isWarning && (
-                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-800 animate-pulse">
-                            DUE SOON
-                          </Badge>
-                        )}
+                         {isOverdue && (
+                           <Badge variant="destructive" className="text-xs px-1.5 py-0.5 bg-red-100/80 text-red-700">
+                             OVERDUE
+                           </Badge>
+                         )}
+                         {!isOverdue && isWarning && (
+                           <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-amber-100/80 text-amber-700">
+                             DUE SOON
+                           </Badge>
+                         )}
                       </div>
                       
                       {/* Project info */}

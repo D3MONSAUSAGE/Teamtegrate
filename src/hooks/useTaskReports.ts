@@ -166,14 +166,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
   // Apply filters based on priority: user selection overrides team selection
   if (userId) {
-    // Convert userId to UUID if it's a string name like "Francisco"
-    let actualUserId = userId;
-    if (userId === "Francisco" || userId === "francisco") {
-      actualUserId = "3cb3ba4f-0ae9-4906-bd68-7d02f687c82d";
-    }
-    
     // When user is selected, show all their tasks regardless of team assignment
-    query = query.eq('user_id', actualUserId);
+    query = query.eq('user_id', userId);
     // Simplified date filtering for user-specific reports
     query = query
       .gte('deadline', range.startDate)
@@ -261,14 +255,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
   // Apply filters based on priority: user selection overrides team selection
   if (userId) {
-    // Convert userId to UUID if it's a string name like "Francisco"
-    let actualUserId = userId;
-    if (userId === "Francisco" || userId === "francisco") {
-      actualUserId = "3cb3ba4f-0ae9-4906-bd68-7d02f687c82d";
-    }
-    
     // When user is selected, show all their tasks regardless of team assignment
-    query = query.eq('user_id', actualUserId);
+    query = query.eq('user_id', userId);
     // Simplified date filtering for user-specific reports
     query = query
       .gte('created_at', range.startDate)
@@ -422,12 +410,6 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
     console.log(`Fetching daily details for date: ${selectedDate}, userId: ${userId}`);
     
-    // Convert userId to UUID if it's a string name like "Francisco"
-    let actualUserId = userId;
-    if (userId === "Francisco" || userId === "francisco") {
-      actualUserId = "3cb3ba4f-0ae9-4906-bd68-7d02f687c82d";
-    }
-    
     let query = supabase
       .from('tasks')
       .select(`
@@ -449,8 +431,8 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
       .eq('organization_id', user.organizationId);
 
     // Apply user/team filters
-    if (actualUserId) {
-      query = query.eq('user_id', actualUserId);
+    if (userId) {
+      query = query.eq('user_id', userId);
     } else if (teamId) {
       query = query.eq('team_id', teamId);
     }
