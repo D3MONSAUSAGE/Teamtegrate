@@ -410,6 +410,10 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
 
     console.log(`Fetching daily details for date: ${selectedDate}, userId: ${userId}`);
     
+    // Fetch all tasks with broader date range to ensure we capture all relevant data
+    const startOfMonth = format(subDays(new Date(selectedDate), 30), 'yyyy-MM-dd');
+    const endOfMonth = format(new Date(selectedDate), 'yyyy-MM-dd');
+    
     let query = supabase
       .from('tasks')
       .select(`
@@ -428,29 +432,52 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         assigned_to_ids,
         project_id
       `)
-      .eq('organization_id', user.organizationId);
+      .eq('organization_id', user.organizationId)
+      .or(`deadline.gte.${startOfMonth},created_at.gte.${startOfMonth},completed_at.gte.${startOfMonth}`);
 
-    // Apply user/team filters
+    // Apply user/team filters with proper priority
     if (userId) {
-      query = query.eq('user_id', userId);
+      // For user-specific reports, show tasks assigned to this user
+      query = query.or(`user_id.eq.${userId},assigned_to_id.eq.${userId}`);
     } else if (teamId) {
       query = query.eq('team_id', teamId);
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching daily task details:', error);
+      throw error;
+    }
 
-    if (!data) return null;
+    if (!data || data.length === 0) {
+      console.log('No tasks found for the query');
+      return {
+        date: selectedDate,
+        completion_score: 0,
+        completed_tasks: [],
+        created_tasks: [],
+        assigned_tasks: [],
+        overdue_tasks: [],
+        pending_tasks: [],
+        total_tasks: 0,
+        high_priority_count: 0,
+        medium_priority_count: 0,
+        low_priority_count: 0
+      };
+    }
 
+    console.log(`Found ${data.length} total tasks to process`);
+    
     const selectedDateObj = new Date(selectedDate);
     const selectedDateStr = format(selectedDateObj, 'yyyy-MM-dd');
     
-    // Categorize tasks based on the selected date
+    // Tasks completed ON the selected date
     const completed_tasks = data
-      .filter(task => 
-        task.completed_at && 
-        format(new Date(task.completed_at), 'yyyy-MM-dd') === selectedDateStr
-      )
+      .filter(task => {
+        if (!task.completed_at) return false;
+        const completedDate = format(new Date(task.completed_at), 'yyyy-MM-dd');
+        return completedDate === selectedDateStr;
+      })
       .map(task => ({
         task_id: task.id,
         title: task.title,
@@ -460,13 +487,15 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: null // Removed project join for now
+        project_title: null
       }));
 
+    // Tasks created ON the selected date
     const created_tasks = data
-      .filter(task => 
-        format(new Date(task.created_at), 'yyyy-MM-dd') === selectedDateStr
-      )
+      .filter(task => {
+        const createdDate = format(new Date(task.created_at), 'yyyy-MM-dd');
+        return createdDate === selectedDateStr;
+      })
       .map(task => ({
         task_id: task.id,
         title: task.title,
@@ -476,16 +505,16 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: null // Removed project join for now
+        project_title: null
       }));
 
-    // Tasks assigned on the selected date
+    // Tasks with assignment activity on the selected date
     const assigned_tasks = data
-      .filter(task => 
-        format(new Date(task.created_at), 'yyyy-MM-dd') === selectedDateStr &&
-        (task.assigned_to_id || (task.assigned_to_ids && task.assigned_to_ids.length > 0)) &&
-        task.assigned_to_id !== task.user_id // Don't include self-assigned tasks
-      )
+      .filter(task => {
+        const createdDate = format(new Date(task.created_at), 'yyyy-MM-dd');
+        const hasAssignment = task.assigned_to_id || (task.assigned_to_ids && task.assigned_to_ids.length > 0);
+        return createdDate === selectedDateStr && hasAssignment && task.assigned_to_id !== task.user_id;
+      })
       .map(task => ({
         task_id: task.id,
         title: task.title,
@@ -495,17 +524,17 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: null, // Removed project join for now
-        assigned_to_name: task.assigned_to_id ? 'Assigned User' : 'Team Assignment',
-        assigned_by_name: 'Manager' // Could be enhanced to track actual assigner
+        project_title: null,
+        assigned_to_name: 'Assigned User',
+        assigned_by_name: 'Manager'
       }));
 
-    // Tasks due on the selected date (not completed)
+    // Tasks DUE on the selected date (not completed)
     const pending_tasks = data
-      .filter(task => 
-        format(new Date(task.deadline), 'yyyy-MM-dd') === selectedDateStr && 
-        task.status !== 'Completed'
-      )
+      .filter(task => {
+        const deadlineDate = format(new Date(task.deadline), 'yyyy-MM-dd');
+        return deadlineDate === selectedDateStr && task.status !== 'Completed';
+      })
       .map(task => ({
         task_id: task.id,
         title: task.title,
@@ -515,15 +544,17 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: null // Removed project join for now
+        project_title: null
       }));
 
-    // Tasks overdue as of the selected date
+    // Tasks OVERDUE as of the selected date (deadline before selected date, not completed)
     const overdue_tasks = data
-      .filter(task => 
-        format(new Date(task.deadline), 'yyyy-MM-dd') < selectedDateStr && 
-        task.status !== 'Completed'
-      )
+      .filter(task => {
+        if (task.status === 'Completed') return false;
+        const deadlineDate = new Date(task.deadline);
+        const selectedDate = new Date(selectedDateStr);
+        return deadlineDate < selectedDate;
+      })
       .map(task => ({
         task_id: task.id,
         title: task.title,
@@ -533,24 +564,30 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
         deadline: task.deadline,
         created_at: task.created_at,
         completed_at: task.completed_at,
-        project_title: null // Removed project join for now
+        project_title: null
       }));
 
-    // Calculate priority counts from all relevant tasks
-    const all_relevant_tasks = [...completed_tasks, ...created_tasks, ...assigned_tasks, ...pending_tasks];
+    console.log(`Task breakdown: Completed: ${completed_tasks.length}, Created: ${created_tasks.length}, Assigned: ${assigned_tasks.length}, Pending: ${pending_tasks.length}, Overdue: ${overdue_tasks.length}`);
+
+    // Calculate priority counts from tasks relevant to this date
+    const all_relevant_tasks = [...completed_tasks, ...created_tasks, ...pending_tasks];
     const high_priority_count = all_relevant_tasks.filter(t => t.priority === 'High').length;
     const medium_priority_count = all_relevant_tasks.filter(t => t.priority === 'Medium').length;
     const low_priority_count = all_relevant_tasks.filter(t => t.priority === 'Low').length;
     
-    // Calculate completion score (tasks due on this date vs completed on this date)
+    // Calculate completion score: tasks completed today vs tasks due today
     const tasksDueToday = pending_tasks.length + completed_tasks.filter(t => 
       format(new Date(t.deadline), 'yyyy-MM-dd') === selectedDateStr
     ).length;
-    const tasksCompletedToday = completed_tasks.length;
+    const tasksCompletedToday = completed_tasks.filter(t => 
+      format(new Date(t.deadline), 'yyyy-MM-dd') === selectedDateStr
+    ).length;
     
     const completion_score = tasksDueToday > 0 
       ? Math.round((tasksCompletedToday / tasksDueToday) * 100)
-      : 0;
+      : tasksCompletedToday > 0 ? 100 : 0;
+
+    console.log(`Completion score: ${completion_score}% (${tasksCompletedToday}/${tasksDueToday} tasks)`);
 
     return {
       date: selectedDateStr,
@@ -565,7 +602,7 @@ export const useTaskReports = ({ timeRange, dateRange, teamId, userId }: TaskRep
       medium_priority_count,
       low_priority_count
     };
-  }, [user?.organizationId, teamId, userId]); // Add dependencies for useCallback
+  }, [user?.organizationId, teamId, userId]);
 
   return {
     dailyData: dailyQuery.data || [],
