@@ -21,6 +21,7 @@ import {
 import { StockStatusBadge } from './StockStatusBadge';
 import { getStockStatus } from '@/utils/stockStatus';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { ScannerOverlay } from './ScannerOverlay';
 import { toast } from 'sonner';
 
 interface MobileCountInterfaceProps {
@@ -45,7 +46,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
   
-  const { scanBarcode, isScanning } = useBarcodeScanner();
+  const { scanBarcode, isScanning, stopScanning } = useBarcodeScanner();
 
   const currentItem = items[currentIndex];
   const countItem = countItems.find(ci => ci.item_id === currentItem?.id);
@@ -135,7 +136,14 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <>
+      <ScannerOverlay
+        isScanning={isScanning}
+        onClose={stopScanning}
+        instructions={`Scan barcode for: ${currentItem.name}`}
+      />
+      
+      <div className="space-y-4">
       {/* Progress Header */}
       <Card>
         <CardHeader className="pb-4">
@@ -329,5 +337,6 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };

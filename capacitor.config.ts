@@ -39,8 +39,8 @@ const config: CapacitorConfig = {
     Camera: {
       permissions: ['camera', 'photos'],
     },
-    BarcodeScanner: {
-      cameraPermission: 'Camera permission is required to scan barcodes',
+    CapacitorBarcodeScanner: {
+      // Config for community barcode scanner
     },
   },
 };
