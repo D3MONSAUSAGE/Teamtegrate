@@ -35,6 +35,11 @@ export const updateTask = async (
     // Normalize assignment data for consistent storage
     let assignmentData = {};
     
+    // Check if assignment fields are being updated
+    const assignmentChanged = 
+      (updates.assignedToIds !== undefined && JSON.stringify(updates.assignedToIds) !== JSON.stringify(existingTask.assignedToIds)) ||
+      (updates.assignedToId !== undefined && updates.assignedToId !== existingTask.assignedToId);
+    
     if (updatedTask.assignedToIds && updatedTask.assignedToIds.length > 0) {
       // We have multi-assignment data
       const isSingleAssignment = updatedTask.assignedToIds.length === 1;
@@ -44,6 +49,8 @@ export const updateTask = async (
         assigned_to_names: updatedTask.assignedToNames || [],
         // For single assignment, also populate single field for backward compatibility
         assigned_to_id: isSingleAssignment ? updatedTask.assignedToIds[0] : null,
+        // Update assigned_at if assignment changed
+        ...(assignmentChanged ? { assigned_at: now.toISOString() } : {})
       };
     } else if (updatedTask.assignedToId) {
       // Legacy single assignment - normalize to both formats
@@ -51,6 +58,8 @@ export const updateTask = async (
         assigned_to_id: updatedTask.assignedToId,
         assigned_to_ids: [updatedTask.assignedToId],
         assigned_to_names: updatedTask.assignedToName ? [updatedTask.assignedToName] : [],
+        // Update assigned_at if assignment changed
+        ...(assignmentChanged ? { assigned_at: now.toISOString() } : {})
       };
     } else {
       // No assignment
@@ -58,6 +67,8 @@ export const updateTask = async (
         assigned_to_id: null,
         assigned_to_ids: [],
         assigned_to_names: [],
+        // Clear assigned_at if assignment removed
+        ...(assignmentChanged ? { assigned_at: null } : {})
       };
     }
     

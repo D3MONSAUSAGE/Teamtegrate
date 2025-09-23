@@ -55,6 +55,7 @@ export const addTask = async (
         assignmentData = {
           assigned_to_ids: validIds,
           assigned_to_names: validNames,
+          assigned_at: now.toISOString(),
           // For single assignment, also populate single field for backward compatibility
           assigned_to_id: isSingleAssignment ? validIds[0] : null,
         };
@@ -72,6 +73,7 @@ export const addTask = async (
         assigned_to_id: newTask.assignedToId,
         assigned_to_ids: [newTask.assignedToId],
         assigned_to_names: newTask.assignedToName ? [newTask.assignedToName] : [],
+        assigned_at: now.toISOString(),
       };
     } else {
       // No assignment or empty assignment
@@ -79,6 +81,7 @@ export const addTask = async (
         assigned_to_id: null,
         assigned_to_ids: [],
         assigned_to_names: [],
+        assigned_at: null,
       };
     }
     

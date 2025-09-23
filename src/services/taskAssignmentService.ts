@@ -26,6 +26,7 @@ export class TaskAssignmentService {
       const updateData: any = {
         assigned_to_ids: userIds,
         assigned_to_names: userNames,
+        assigned_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
@@ -133,6 +134,7 @@ export class TaskAssignmentService {
           assigned_to_id: null,
           assigned_to_ids: [],
           assigned_to_names: [],
+          assigned_at: null,
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId)
@@ -206,6 +208,7 @@ export class TaskAssignmentService {
           assigned_to_ids: finalUserIds,
           assigned_to_names: finalUserNames,
           assigned_to_id: finalUserIds.length === 1 ? finalUserIds[0] : null,
+          assigned_at: finalUserIds.length > 0 ? new Date().toISOString() : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId)

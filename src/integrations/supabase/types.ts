@@ -6667,6 +6667,7 @@ export type Database = {
       tasks: {
         Row: {
           archived_at: string | null
+          assigned_at: string | null
           assigned_to_id: string | null
           assigned_to_ids: string[] | null
           assigned_to_names: string[] | null
@@ -6706,6 +6707,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          assigned_at?: string | null
           assigned_to_id?: string | null
           assigned_to_ids?: string[] | null
           assigned_to_names?: string[] | null
@@ -6745,6 +6747,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          assigned_at?: string | null
           assigned_to_id?: string | null
           assigned_to_ids?: string[] | null
           assigned_to_names?: string[] | null
@@ -9138,22 +9141,21 @@ export type Database = {
         Returns: Json
       }
       rpc_task_report_user_day: {
-        Args: {
-          p_day: string
-          p_org: string
-          p_team?: string[]
-          p_tz?: string
-          p_user: string
-        }
-        Returns: {
-          assigned: number
-          completed: number
-          created: number
-          current_due: number
-          daily_score: number
-          overdue: number
-          total_due_today: number
-        }[]
+        Args:
+          | {
+              p_date_iso: string
+              p_org_id: string
+              p_timezone?: string
+              p_user_id: string
+            }
+          | {
+              p_day: string
+              p_org: string
+              p_team?: string[]
+              p_tz?: string
+              p_user: string
+            }
+        Returns: Json
       }
       rpc_task_report_user_week: {
         Args: {
