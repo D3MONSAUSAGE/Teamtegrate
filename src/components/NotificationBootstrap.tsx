@@ -5,7 +5,9 @@ import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 // Web push notifications removed - using FCM for all platforms
 import { usePWAPrompt } from '@/hooks/usePWAPrompt';
-import { Capacitor } from '@capacitor/core';
+
+// Simple web-only check instead of Capacitor import
+const isNative = false; // Always false for web-only builds
 
 /**
  * Headless component that initializes comprehensive notification functionality
@@ -18,18 +20,14 @@ import { Capacitor } from '@capacitor/core';
  * - iPhone Safari: PWA prompts + enhanced web notifications
  */
 export function NotificationBootstrap() {
-  const isNative = Capacitor.isNativePlatform();
+  // Initialize notification channels for Android (native only) - disabled for web
+  // useNotificationChannels();
   
-  // Initialize notification channels for Android (native only)
-  useNotificationChannels();
-  
-  // Initialize Firebase Cloud Messaging for native push notifications
+  // Initialize Firebase Cloud Messaging for push notifications
   useFirebaseMessaging();
   
   // Initialize enhanced system notifications with dropdown support
   useSystemNotifications();
-  
-  // Web push notifications now handled by FCM
   
   // Initialize PWA installation prompts and detection
   usePWAPrompt();
