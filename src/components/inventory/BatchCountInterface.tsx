@@ -241,9 +241,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                 )}
                 Submit {getPendingUpdatesCount()} Updates
               </Button>
-              <Button variant="outline" onClick={handleFillExpected} size="sm">
-                Fill Expected Values
-              </Button>
               <Button variant="outline" onClick={handleClearAll} size="sm">
                 Clear All
               </Button>

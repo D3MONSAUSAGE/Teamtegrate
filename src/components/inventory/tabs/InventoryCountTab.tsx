@@ -7,11 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Clock, X } from 'lucide-react';
+import { Package, Play, CheckCircle, Clock, X, Smartphone, Tablet, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
+import { MobileCountInterface } from '../MobileCountInterface';
+import { StreamlinedMobileCount } from '../StreamlinedMobileCount';
+import { QuickScanInterface } from '../QuickScanInterface';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +30,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 
+type CountInterface = 'batch' | 'mobile' | 'streamlined' | 'quickscan';
+
 
 export const InventoryCountTab: React.FC = () => {
   const { items, counts, templates, startInventoryCount, completeInventoryCount, cancelInventoryCount, initializeCountItems } = useInventory();
@@ -38,6 +43,8 @@ export const InventoryCountTab: React.FC = () => {
   const [templateItems, setTemplateItems] = useState<any[]>([]);
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [countInterface, setCountInterface] = useState<CountInterface>('batch');
+  const [showQuickScan, setShowQuickScan] = useState(false);
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
   
@@ -112,6 +119,28 @@ export const InventoryCountTab: React.FC = () => {
       });
     } finally {
       setLoadingCountItems(false);
+    }
+  };
+
+  const handleUpdateCount = async (itemId: string, actualQuantity: number) => {
+    if (!activeCount) return;
+    
+    try {
+      await inventoryCountsApi.bulkUpdateCountItems(activeCount, [{ itemId, actualQuantity }]);
+      
+      // Update local state
+      setCountItems(prev => prev.map(item => 
+        item.item_id === itemId 
+          ? { ...item, actual_quantity: actualQuantity, counted_at: new Date().toISOString() }
+          : item
+      ));
+    } catch (error) {
+      console.error('Failed to update count:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update inventory count',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -191,6 +220,14 @@ export const InventoryCountTab: React.FC = () => {
       });
     }
   };
+
+  // Auto-detect mobile device
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+    if (isMobile && countInterface === 'batch') {
+      setCountInterface('streamlined');
+    }
+  }, []);
 
   useEffect(() => {
     // Check if there's an active count on load
@@ -376,6 +413,15 @@ export const InventoryCountTab: React.FC = () => {
                 Complete Count
               </Button>
               
+              <Button 
+                variant="outline"
+                onClick={() => setShowQuickScan(true)}
+                size="default"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Quick Scan
+              </Button>
+              
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="default">
@@ -409,22 +455,104 @@ export const InventoryCountTab: React.FC = () => {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
+            
+            {/* Interface Selection */}
+            <div className="border-t pt-4 mt-6">
+              <p className="text-sm font-medium mb-3">Count Interface:</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button
+                  variant={countInterface === 'batch' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCountInterface('batch')}
+                  className="text-xs"
+                >
+                  <Tablet className="h-3 w-3 mr-1" />
+                  Batch
+                </Button>
+                <Button
+                  variant={countInterface === 'mobile' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCountInterface('mobile')}
+                  className="text-xs"
+                >
+                  <Smartphone className="h-3 w-3 mr-1" />
+                  Mobile
+                </Button>
+                <Button
+                  variant={countInterface === 'streamlined' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCountInterface('streamlined')}
+                  className="text-xs"
+                >
+                  <Smartphone className="h-3 w-3 mr-1" />
+                  Focused
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowQuickScan(true)}
+                  className="text-xs"
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  Quick Scan
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
 
-      {/* Batch Count Interface */}
-      <BatchCountInterface
-        countItems={countItems}
-        items={countableItems}
-        onBulkUpdate={handleBulkUpdateCount}
-        onCompleteCount={handleCompleteCount}
-        progress={progress}
-        completedItems={completedItems}
-        totalItems={totalItems}
-        isLoading={loadingCountItems}
-      />
+      {/* Quick Scan Interface */}
+      {showQuickScan && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <QuickScanInterface
+            countItems={countItems}
+            items={countableItems}
+            onUpdateCount={handleUpdateCount}
+            onBulkUpdate={handleBulkUpdateCount}
+            onClose={() => setShowQuickScan(false)}
+          />
+        </div>
+      )}
+
+      {/* Count Interface */}
+      {countInterface === 'batch' && (
+        <BatchCountInterface
+          countItems={countItems}
+          items={countableItems}
+          onBulkUpdate={handleBulkUpdateCount}
+          onCompleteCount={handleCompleteCount}
+          progress={progress}
+          completedItems={completedItems}
+          totalItems={totalItems}
+          isLoading={loadingCountItems}
+        />
+      )}
+
+      {countInterface === 'mobile' && (
+        <MobileCountInterface
+          countItems={countItems}
+          items={countableItems}
+          onUpdateCount={handleUpdateCount}
+          onCompleteCount={handleCompleteCount}
+          progress={progress}
+          completedItems={completedItems}
+          totalItems={totalItems}
+        />
+      )}
+
+      {countInterface === 'streamlined' && (
+        <StreamlinedMobileCount
+          countItems={countItems}
+          items={countableItems}
+          onUpdateCount={handleUpdateCount}
+          onCompleteCount={handleCompleteCount}
+          progress={progress}
+          completedItems={completedItems}
+          totalItems={totalItems}
+        />
+      )}
     </div>
   );
 };

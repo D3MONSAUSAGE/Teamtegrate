@@ -172,15 +172,14 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
             <Package className="h-5 w-5" />
             {currentItem.name}
           </CardTitle>
-          <CardDescription className="space-y-1">
-            <div>SKU: {currentItem.sku || 'N/A'}</div>
-            <div>Category: {currentItem.category?.name || 'N/A'}</div>
-            {currentItem.location && <div>Location: {currentItem.location}</div>}
-            <div className="flex items-center gap-2 text-sm">
-              <Target className="h-3 w-3" />
-              Min: {countItem?.template_minimum_quantity ?? currentItem.minimum_threshold ?? 'N/A'} • Max: {countItem?.template_maximum_quantity ?? currentItem.maximum_threshold ?? 'N/A'}
-            </div>
-          </CardDescription>
+            <CardDescription>
+              {currentItem.sku && (
+                <div className="flex items-center justify-center gap-1 text-sm">
+                  <Package className="h-3 w-3" />
+                  {currentItem.sku}
+                </div>
+              )}
+            </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
