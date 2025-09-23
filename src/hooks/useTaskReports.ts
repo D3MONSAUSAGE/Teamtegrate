@@ -164,8 +164,8 @@ export const useTaskReports = (params: any) => {
 
     // Apply user/team filters with proper priority
     if (params.userId) {
-      // For user-specific reports, show tasks assigned to this user
-      query = query.or(`user_id.eq.${params.userId},assigned_to_id.eq.${params.userId}`);
+      // For user-specific reports, show tasks assigned to this user (single or multi-assignment)
+      query = query.or(`user_id.eq.${params.userId},assigned_to_id.eq.${params.userId},assigned_to_ids.cs.{${params.userId}}`);
     } else if (params.teamId) {
       query = query.eq('team_id', params.teamId);
     }
