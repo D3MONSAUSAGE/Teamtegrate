@@ -9137,6 +9137,43 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      rpc_task_report_user_day: {
+        Args: {
+          p_day: string
+          p_org: string
+          p_team?: string[]
+          p_tz?: string
+          p_user: string
+        }
+        Returns: {
+          assigned: number
+          completed: number
+          created: number
+          current_due: number
+          daily_score: number
+          overdue: number
+          total_due_today: number
+        }[]
+      }
+      rpc_task_report_user_week: {
+        Args: {
+          p_org: string
+          p_team?: string[]
+          p_tz?: string
+          p_user: string
+          p_week_start: string
+        }
+        Returns: {
+          assigned: number
+          completed: number
+          created: number
+          current_due: number
+          daily_score: number
+          day_date: string
+          overdue: number
+          total_due: number
+        }[]
+      }
       send_daily_emails_and_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
