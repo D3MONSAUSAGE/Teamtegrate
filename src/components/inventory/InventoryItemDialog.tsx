@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { InventoryCategoryDialog } from './InventoryCategoryDialog';
 import { InventoryUnitDialog } from './InventoryUnitDialog';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton';
+import { validateSKUUniqueness } from '@/utils/skuGenerator';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -23,7 +25,11 @@ const inventoryItemSchema = z.object({
   purchase_unit: z.string().optional(),
   conversion_factor: z.coerce.number().positive('Units per package must be greater than 0').optional(),
   purchase_price: z.coerce.number().min(0, 'Package price must be 0 or greater').optional(),
-  sku: z.string().optional(),
+  sku: z.string().optional().refine(async (sku) => {
+    if (!sku || sku.trim() === '') return true;
+    // This validation will be handled by the SKUValidationIndicator component
+    return true;
+  }, 'SKU validation failed'),
   barcode: z.string().optional(),
   location: z.string().optional(),
 });
@@ -118,6 +124,19 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     // Prevent multiple submissions
     if (isSubmitting || loading) {
       return;
+    }
+    
+    // Validate SKU uniqueness before submission
+    if (values.sku && values.sku.trim() !== '') {
+      const skuValidation = await validateSKUUniqueness(values.sku, itemId || undefined);
+      if (!skuValidation.isUnique) {
+        form.setError('sku', {
+          type: 'manual',
+          message: skuValidation.message || 'SKU must be unique'
+        });
+        toast.error(skuValidation.message || 'SKU is already in use');
+        return;
+      }
     }
     
     setIsSubmitting(true);
@@ -220,9 +239,24 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>SKU</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter SKU" {...field} />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="Enter SKU or generate one" {...field} />
+                      </FormControl>
+                      <SKUGeneratorButton
+                        categoryId={form.watch('category_id')}
+                        categories={categories}
+                        currentSKU={field.value}
+                        onSKUGenerated={(sku) => form.setValue('sku', sku)}
+                        excludeId={itemId || undefined}
+                        disabled={isSubmitting || loading}
+                      />
+                    </div>
+                    <SKUValidationIndicator
+                      sku={field.value}
+                      excludeId={itemId || undefined}
+                      className="mt-1"
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
