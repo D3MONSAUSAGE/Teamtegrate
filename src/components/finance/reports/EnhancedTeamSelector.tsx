@@ -1,5 +1,5 @@
 import React from 'react';
-import { StandardTeamSelector } from '@/components/teams';
+import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 
 interface EnhancedTeamSelectorProps {
   selectedTeamId: string | null;
@@ -15,7 +15,7 @@ export const EnhancedTeamSelector: React.FC<EnhancedTeamSelectorProps> = ({
   onTeamChange 
 }) => {
   return (
-    <StandardTeamSelector
+    <UnifiedTeamSelector
       selectedTeamId={selectedTeamId}
       onTeamChange={onTeamChange}
       variant="card"
