@@ -32,7 +32,6 @@ export const InventoryManagementTab: React.FC = () => {
     unitsLoading,
     deleteCategory, 
     deleteUnit, 
-    deleteItem,
     createCategory, 
     createUnit 
   } = useInventory();
@@ -174,17 +173,6 @@ export const InventoryManagementTab: React.FC = () => {
     }
   };
 
-  const handleDeleteItem = async (itemId: string) => {
-    if (confirm('Are you sure you want to delete this item?')) {
-      try {
-        await deleteItem(itemId);
-        toast.success('Item deleted successfully');
-      } catch (error) {
-        toast.error('Failed to delete item');
-      }
-    }
-  };
-
   if (!hasRoleAccess('manager')) {
     return (
       <div className="text-center py-8">
@@ -303,19 +291,13 @@ export const InventoryManagementTab: React.FC = () => {
                           <TableHead>Purchase Unit</TableHead>
                           <TableHead>Package Price</TableHead>
                           <TableHead>Cost per Item</TableHead>
-                          <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
                      </TableHeader>
-                     <TableBody>
-                       {filteredAndSortedItems.map((item) => (
-                         <ItemTableRow 
-                           key={item.id} 
-                           item={item} 
-                           onEdit={handleEditItem} 
-                           onDelete={handleDeleteItem}
-                         />
-                       ))}
-                     </TableBody>
+                    <TableBody>
+                      {filteredAndSortedItems.map((item) => (
+                        <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
+                      ))}
+                    </TableBody>
                   </Table>
                 </div>
               </Card>

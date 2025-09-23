@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Clock, X } from 'lucide-react';
+import { Package, Play, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
@@ -16,7 +16,7 @@ import { format, isToday, differenceInMinutes } from 'date-fns';
 
 
 export const InventoryCountTab: React.FC = () => {
-  const { items, counts, templates, startInventoryCount, completeInventoryCount, cancelInventoryCount, initializeCountItems } = useInventory();
+  const { items, counts, templates, startInventoryCount, completeInventoryCount, initializeCountItems } = useInventory();
   const { toast } = useToast();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
@@ -149,29 +149,6 @@ export const InventoryCountTab: React.FC = () => {
       toast({
         title: 'Error',
         description: 'Failed to complete inventory count',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleCancelCount = async () => {
-    if (!activeCount) return;
-    
-    try {
-      await cancelInventoryCount(activeCount);
-      setActiveCount(null);
-      setActiveTemplate(null);
-      setCountItems([]);
-      setTemplateItems([]);
-      toast({
-        title: 'Count Cancelled',
-        description: 'Inventory count has been cancelled',
-      });
-    } catch (error) {
-      console.error('Failed to cancel count:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to cancel inventory count',
         variant: 'destructive',
       });
     }
@@ -359,14 +336,6 @@ export const InventoryCountTab: React.FC = () => {
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Complete Count
-              </Button>
-              <Button 
-                onClick={handleCancelCount}
-                variant="outline"
-                className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel Count
               </Button>
             </div>
           </div>

@@ -71,7 +71,7 @@ export interface InventoryCount {
   id: string;
   organization_id: string;
   count_date: string;
-  status: 'in_progress' | 'completed' | 'cancelled';
+  status: 'in_progress' | 'completed';
   conducted_by: string;
   notes?: string;
   created_at: string;
@@ -198,7 +198,6 @@ export interface InventoryContextType {
   startInventoryCount: (notes?: string, teamId?: string, templateId?: string) => Promise<InventoryCount>;
   updateCountItem: (countId: string, itemId: string, actualQuantity: number, notes?: string) => Promise<void>;
   completeInventoryCount: (countId: string) => Promise<void>;
-  cancelInventoryCount: (countId: string) => Promise<void>;
   
   resolveAlert: (alertId: string) => Promise<void>;
   

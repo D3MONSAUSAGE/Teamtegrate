@@ -56,99 +56,36 @@ export const inventoryTemplatesApi = {
   async addItemToTemplate(
     templateId: string, 
     itemId: string, 
-    inStockQuantity: number = 1,
+    inStockQuantity: number = 0,
     minimumQuantity?: number,
     maximumQuantity?: number,
     sortOrder: number = 0
   ): Promise<InventoryTemplateItem> {
-    console.log('Adding item to template API call:', {
-      templateId, 
-      itemId, 
-      inStockQuantity, 
-      minimumQuantity, 
-      maximumQuantity, 
-      sortOrder
-    });
-    
-    try {
-      const user = await supabase.auth.getUser();
-      console.log('Current user in API:', user.data.user?.id);
-      console.log('User metadata:', user.data.user?.user_metadata);
-      
-      const { data, error } = await supabase
-        .from('inventory_template_items')
-        .insert([{
-          template_id: templateId,
-          item_id: itemId,
-          in_stock_quantity: inStockQuantity,
-          minimum_quantity: minimumQuantity || null,
-          maximum_quantity: maximumQuantity || null,
-          sort_order: sortOrder
-        }])
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from('inventory_template_items')
+      .insert([{
+        template_id: templateId,
+        item_id: itemId,
+        in_stock_quantity: inStockQuantity,
+        minimum_quantity: minimumQuantity,
+        maximum_quantity: maximumQuantity,
+        sort_order: sortOrder
+      }])
+      .select()
+      .single();
 
-      console.log('Insert response:', { data, error });
-
-      if (error) {
-        console.error('Error adding item to template:', error);
-        
-        // Provide better error messages for common issues
-        if (error.code === 'PGRST301') {
-          throw new Error('You do not have permission to add items to this template. Please contact your administrator.');
-        }
-        
-        if (error.message?.includes('violates row-level security')) {
-          throw new Error('Permission denied: You cannot add items to this template.');
-        }
-        
-        if (error.message?.includes('duplicate key')) {
-          throw new Error('This item is already in the template.');
-        }
-        
-        if (error.message?.includes('check_quantity_logic') || error.message?.includes('violates check constraint')) {
-          throw new Error('Invalid quantity combination. Please ensure: minimum ≤ in-stock ≤ maximum, and all values are non-negative.');
-        }
-        
-        throw new Error(`Failed to add item to template: ${error.message}`);
-      }
-      
-      console.log('Item successfully added to template:', data);
-      return data as InventoryTemplateItem;
-    } catch (error: any) {
-      console.error('Template item creation error:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data as InventoryTemplateItem;
   },
 
   async removeItemFromTemplate(templateId: string, itemId: string): Promise<void> {
-    console.log('Removing item from template API call:', { templateId, itemId });
-    
-    try {
-      const { data, error } = await supabase
-        .from('inventory_template_items')
-        .delete()
-        .eq('template_id', templateId)
-        .eq('item_id', itemId)
-        .select();
+    const { error } = await supabase
+      .from('inventory_template_items')
+      .delete()
+      .eq('template_id', templateId)
+      .eq('item_id', itemId);
 
-      console.log('Delete response:', { data, error });
-
-      if (error) {
-        console.error('Error removing item from template:', error);
-        
-        if (error.code === 'PGRST301' || error.message?.includes('violates row-level security')) {
-          throw new Error('Permission denied: You cannot remove items from this template.');
-        }
-        
-        throw new Error(`Failed to remove item from template: ${error.message}`);
-      }
-      
-      console.log('Item successfully removed from template');
-    } catch (error: any) {
-      console.error('Template item removal error:', error);
-      throw error;
-    }
+    if (error) throw error;
   },
 
   async updateTemplateItem(
@@ -161,30 +98,16 @@ export const inventoryTemplatesApi = {
       sort_order?: number;
     }
   ): Promise<InventoryTemplateItem> {
-    try {
-      const { data, error } = await supabase
-        .from('inventory_template_items')
-        .update(updates)
-        .eq('template_id', templateId)
-        .eq('item_id', itemId)
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from('inventory_template_items')
+      .update(updates)
+      .eq('template_id', templateId)
+      .eq('item_id', itemId)
+      .select()
+      .single();
 
-      if (error) {
-        console.error('Error updating template item:', error);
-        
-        if (error.code === 'PGRST301' || error.message?.includes('violates row-level security')) {
-          throw new Error('Permission denied: You cannot modify this template item.');
-        }
-        
-        throw new Error(`Failed to update template item: ${error.message}`);
-      }
-      
-      return data as InventoryTemplateItem;
-    } catch (error: any) {
-      console.error('Template item update error:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data as InventoryTemplateItem;
   },
 
   async assignToTeam(templateId: string, teamId: string, assignedBy: string): Promise<TeamInventoryAssignment> {
