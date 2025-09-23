@@ -1675,6 +1675,102 @@ export type Database = {
           },
         ]
       }
+      duplicate_sku_backup: {
+        Row: {
+          barcode: string | null
+          base_unit_id: string | null
+          calculated_unit_price: number | null
+          category: string | null
+          category_id: string | null
+          conversion_factor: number | null
+          created_at: string | null
+          created_by: string | null
+          current_stock: number | null
+          description: string | null
+          expected_cost: number | null
+          id: string | null
+          is_active: boolean | null
+          is_template: boolean | null
+          location: string | null
+          maximum_threshold: number | null
+          minimum_threshold: number | null
+          name: string | null
+          organization_id: string | null
+          purchase_price: number | null
+          purchase_unit: string | null
+          reorder_point: number | null
+          sku: string | null
+          sort_order: number | null
+          supplier_info: Json | null
+          template_name: string | null
+          unit_cost: number | null
+          unit_of_measure: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          base_unit_id?: string | null
+          calculated_unit_price?: number | null
+          category?: string | null
+          category_id?: string | null
+          conversion_factor?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          current_stock?: number | null
+          description?: string | null
+          expected_cost?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          is_template?: boolean | null
+          location?: string | null
+          maximum_threshold?: number | null
+          minimum_threshold?: number | null
+          name?: string | null
+          organization_id?: string | null
+          purchase_price?: number | null
+          purchase_unit?: string | null
+          reorder_point?: number | null
+          sku?: string | null
+          sort_order?: number | null
+          supplier_info?: Json | null
+          template_name?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          base_unit_id?: string | null
+          calculated_unit_price?: number | null
+          category?: string | null
+          category_id?: string | null
+          conversion_factor?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          current_stock?: number | null
+          description?: string | null
+          expected_cost?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          is_template?: boolean | null
+          location?: string | null
+          maximum_threshold?: number | null
+          minimum_threshold?: number | null
+          name?: string | null
+          organization_id?: string | null
+          purchase_price?: number | null
+          purchase_unit?: string | null
+          reorder_point?: number | null
+          sku?: string | null
+          sort_order?: number | null
+          supplier_info?: Json | null
+          template_name?: string | null
+          unit_cost?: number | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_events: {
         Row: {
           created_at: string | null
