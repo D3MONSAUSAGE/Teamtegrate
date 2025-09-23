@@ -54,27 +54,29 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Filter counts based on search, team, date, and status
-  const filteredCounts = counts.filter(count => {
-    const matchesSearch = searchTerm === '' || 
-      count.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getTeamDisplayName(count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesTeam = selectedTeam === '' || count.team_id === selectedTeam;
-    
-    const matchesStatus = statusFilter === 'all' || count.status === statusFilter;
-    
-    // Date filtering
-    let matchesDate = true;
-    if (dateFilter !== 'all') {
-      const countDate = new Date(count.count_date);
-      const now = new Date();
-      const daysAgo = parseInt(dateFilter);
-      const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-      matchesDate = countDate >= filterDate;
-    }
-    
-    return matchesSearch && matchesTeam && matchesStatus && matchesDate;
-  });
+  const filteredCounts = useMemo(() => {
+    return counts.filter(count => {
+      const matchesSearch = searchTerm === '' || 
+        count.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getTeamDisplayName(count.team_id)?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesTeam = selectedTeam === '' || count.team_id === selectedTeam;
+      
+      const matchesStatus = statusFilter === 'all' || count.status === statusFilter;
+      
+      // Date filtering
+      let matchesDate = true;
+      if (dateFilter !== 'all') {
+        const countDate = new Date(count.count_date);
+        const now = new Date();
+        const daysAgo = parseInt(dateFilter);
+        const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+        matchesDate = countDate >= filterDate;
+      }
+      
+      return matchesSearch && matchesTeam && matchesStatus && matchesDate;
+    });
+  }, [counts, searchTerm, selectedTeam, statusFilter, dateFilter, getTeamDisplayName]);
 
   // Filter team-based analytics data
   const filteredAlertsForAnalytics = useMemo(() => {
