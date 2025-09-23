@@ -256,6 +256,18 @@ export const useInventoryOperations = ({
     );
   }, [user?.id, handleAsyncOperation]);
 
+  const cancelInventoryCount = useCallback(async (countId: string, reason?: string): Promise<void> => {
+    const result = await handleAsyncOperation(
+      () => inventoryCountsApi.cancelInventoryCount(countId, reason),
+      'Cancel Inventory Count',
+      'Inventory count cancelled successfully'
+    );
+    
+    if (result !== null) {
+      await refreshCounts();
+    }
+  }, [handleAsyncOperation, refreshCounts]);
+
   const completeInventoryCount = useCallback(async (countId: string): Promise<void> => {
     const result = await handleAsyncOperation(
       async () => {
@@ -607,6 +619,7 @@ export const useInventoryOperations = ({
     startInventoryCount,
     updateCountItem,
     completeInventoryCount,
+    cancelInventoryCount,
     initializeCountItems,
     repairCountExpectedQuantities,
     

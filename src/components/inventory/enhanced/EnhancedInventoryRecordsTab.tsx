@@ -96,6 +96,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     switch (status) {
       case 'completed': return 'default';
       case 'in_progress': return 'secondary';
+      case 'cancelled': return 'destructive';
       default: return 'outline';
     }
   };
@@ -181,6 +182,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
@@ -346,7 +348,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                   <Badge variant={getStatusColor(count.status)}>
-                                    {count.status.replace('_', ' ').toUpperCase()}
+                                    {count.status === 'cancelled' ? 'CANCELLED' : count.status.replace('_', ' ').toUpperCase()}
                                   </Badge>
                                   
                                   <Badge variant="outline" className="gap-1">
@@ -402,7 +404,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
                                 {count.notes && (
                                   <div className="mt-3 p-2 bg-muted/30 rounded text-sm">
-                                    <span className="font-medium">Notes: </span>
+                                    <span className="font-medium">
+                                      {count.status === 'cancelled' ? 'Cancellation Reason: ' : 'Notes: '}
+                                    </span>
                                     {count.notes}
                                   </div>
                                 )}

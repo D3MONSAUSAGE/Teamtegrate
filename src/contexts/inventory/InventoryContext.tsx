@@ -51,6 +51,7 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
     startInventoryCount: async () => { throw new Error('Organization required'); },
     updateCountItem: async () => { throw new Error('Organization required'); },
     completeInventoryCount: async () => { throw new Error('Organization required'); },
+    cancelInventoryCount: async () => { throw new Error('Organization required'); },
     resolveAlert: async () => { throw new Error('Organization required'); },
     createCategory: async () => { throw new Error('Organization required'); },
     updateCategory: async () => { throw new Error('Organization required'); },

@@ -7,16 +7,29 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Clock } from 'lucide-react';
+import { Package, Play, CheckCircle, Clock, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 
 
 export const InventoryCountTab: React.FC = () => {
-  const { items, counts, templates, startInventoryCount, completeInventoryCount, initializeCountItems } = useInventory();
+  const { items, counts, templates, startInventoryCount, completeInventoryCount, cancelInventoryCount, initializeCountItems } = useInventory();
   const { toast } = useToast();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
@@ -24,6 +37,7 @@ export const InventoryCountTab: React.FC = () => {
   const [countItems, setCountItems] = useState<InventoryCountItem[]>([]);
   const [templateItems, setTemplateItems] = useState<any[]>([]);
   const [loadingCountItems, setLoadingCountItems] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
   
@@ -130,6 +144,30 @@ export const InventoryCountTab: React.FC = () => {
     }
   };
 
+
+  const handleCancelCount = async () => {
+    if (!activeCount) return;
+    
+    try {
+      await cancelInventoryCount(activeCount, cancelReason || undefined);
+      setActiveCount(null);
+      setActiveTemplate(null);
+      setCountItems([]);
+      setTemplateItems([]);
+      setCancelReason('');
+      toast({
+        title: 'Success',
+        description: 'Inventory count cancelled successfully',
+      });
+    } catch (error) {
+      console.error('Failed to cancel count:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to cancel inventory count',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleCompleteCount = async () => {
     if (!activeCount) return;
@@ -337,6 +375,39 @@ export const InventoryCountTab: React.FC = () => {
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Complete Count
               </Button>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="default">
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel Count
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel Inventory Count</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to cancel this inventory count? This action cannot be undone and no stock will be updated.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="space-y-2">
+                    <Label htmlFor="cancel-reason">Cancellation Reason (Optional)</Label>
+                    <Textarea
+                      id="cancel-reason"
+                      placeholder="Enter reason for cancellation..."
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setCancelReason('')}>Keep Counting</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCancelCount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Cancel Count
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </CardContent>
