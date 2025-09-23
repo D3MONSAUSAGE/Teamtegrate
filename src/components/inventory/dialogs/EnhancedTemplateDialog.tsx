@@ -150,10 +150,17 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
         created_by: user.id
       });
 
-      // Add items to the template
-      for (const { item, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder } of formData.selectedItems) {
-        await addItemToTemplate(template.id, item.id, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder);
-      }
+      // Add items to the template with better error handling
+      const itemPromises = formData.selectedItems.map(async ({ item, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder }) => {
+        try {
+          await addItemToTemplate(template.id, item.id, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder);
+        } catch (error) {
+          console.error(`Failed to add item ${item.name} to template:`, error);
+          throw error;
+        }
+      });
+      
+      await Promise.all(itemPromises);
 
       toast({
         title: 'Success',

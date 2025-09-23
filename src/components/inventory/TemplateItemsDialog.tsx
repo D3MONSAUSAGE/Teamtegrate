@@ -63,6 +63,8 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await addItemToTemplate(templateId, selectedItem.id, inStockQuantity, minimumQuantity, maximumQuantity);
+      // Force refresh of template items to ensure UI updates
+      await refreshTemplateItems();
       setSelectedItem(null);
       setInStockQuantity(0);
       setMinimumQuantity(undefined);
@@ -72,6 +74,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
         description: "Item added to template",
       });
     } catch (error) {
+      console.error('Error adding item to template:', error);
       toast({
         title: "Error",
         description: "Failed to add item to template",
@@ -86,11 +89,14 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await addItemToTemplate(templateId, item.id, 0);
+      // Force refresh of template items to ensure UI updates
+      await refreshTemplateItems();
       toast({
         title: "Success",
         description: `${item.name} added to template`,
       });
     } catch (error) {
+      console.error('Error in quick add:', error);
       toast({
         title: "Error",
         description: "Failed to add item to template",
@@ -105,11 +111,14 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await removeItemFromTemplate(templateId, itemId);
+      // Force refresh of template items to ensure UI updates
+      await refreshTemplateItems();
       toast({
         title: "Success",
         description: "Item removed from template",
       });
     } catch (error) {
+      console.error('Error removing item from template:', error);
       toast({
         title: "Error",
         description: "Failed to remove item from template",

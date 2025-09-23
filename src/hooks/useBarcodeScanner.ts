@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import jsQR from 'jsqr';
+// jsQR removed to fix memory issues
 
 export interface BarcodeScanResult {
   text: string;
@@ -70,18 +70,8 @@ export const useBarcodeScanner = () => {
         }
         return null;
       } else {
-        // Web fallback using camera and jsQR
-        const image = await Camera.getPhoto({
-          quality: 90,
-          allowEditing: false,
-          resultType: CameraResultType.DataUrl,
-          source: CameraSource.Camera,
-        });
-
-        if (image.dataUrl) {
-          return await decodeQRFromDataUrl(image.dataUrl);
-        }
-        return null;
+        // Web fallback - simplified camera input
+        throw new Error('Web barcode scanning temporarily disabled. Please enter barcode manually.');
       }
     } catch (error: any) {
       console.error('Barcode scanning failed:', error);
@@ -121,35 +111,4 @@ export const useBarcodeScanner = () => {
   };
 };
 
-// Helper function to decode QR code from data URL using jsQR
-const decodeQRFromDataUrl = async (dataUrl: string): Promise<BarcodeScanResult | null> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(null);
-        return;
-      }
-
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-      if (code) {
-        resolve({
-          text: code.data,
-          format: 'QR_CODE'
-        });
-      } else {
-        resolve(null);
-      }
-    };
-    img.onerror = () => resolve(null);
-    img.src = dataUrl;
-  });
-};
+// Helper function removed - jsQR dependency removed to fix memory issues
