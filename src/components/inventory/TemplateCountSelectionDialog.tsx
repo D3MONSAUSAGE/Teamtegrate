@@ -29,7 +29,7 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
 }) => {
   const { user } = useAuth();
   const { teams, isLoading: teamsLoading } = useTeams();
-  const { templates, teamAssignments } = useInventory();
+  const { templates, teamAssignments, templateItems } = useInventory();
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -134,46 +134,58 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
                 </p>
               </div>
             ) : (
-              availableTemplates.map((template) => (
-                <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      {template.name}
-                      <Badge variant="outline">
-                        Template
-                      </Badge>
-                    </CardTitle>
-                    {template.description && (
-                      <CardDescription className="line-clamp-2">
-                        {template.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Package className="h-4 w-4" />
-                        Items
-                      </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {teamAssignments.filter(a => a.template_id === template.id).length} teams
-                        </span>
+              availableTemplates.map((template) => {
+                const templateItemsForTemplate = templateItems.filter(item => item.template_id === template.id);
+                const itemCount = templateItemsForTemplate.length;
+                
+                return (
+                  <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center justify-between">
+                        {template.name}
+                        <Badge variant="outline">
+                          Template
+                        </Badge>
+                      </CardTitle>
+                      {template.description && (
+                        <CardDescription className="line-clamp-2">
+                          {template.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Package className="h-4 w-4" />
+                            {itemCount} item{itemCount !== 1 ? 's' : ''}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            {teamAssignments.filter(a => a.template_id === template.id).length} teams
+                          </span>
+                        </div>
+                        
+                        {itemCount === 0 && (
+                          <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded flex items-center gap-1">
+                            ⚠️ This template has no items. Add items before counting.
+                          </div>
+                        )}
+                        
+                        <Button 
+                          onClick={() => handleStartCount(template)}
+                          className="w-full"
+                          size="sm"
+                          disabled={itemCount === 0}
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          Start Count
+                        </Button>
                       </div>
-                      
-                      <Button 
-                        onClick={() => handleStartCount(template)}
-                        className="w-full"
-                        size="sm"
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Count
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         </div>

@@ -34,6 +34,20 @@ export const InventoryCountTab: React.FC = () => {
 
   const handleStartCount = async (template?: InventoryTemplate, selectedTeam?: { id: string; name: string }) => {
     try {
+      // Validate template has items before starting count
+      if (template) {
+        const templateItems = await inventoryCountsApi.getTemplateItems(template.id);
+        if (!templateItems || templateItems.length === 0) {
+          toast({
+            title: 'Template Empty',
+            description: `Template "${template.name}" has no items. Please add items to the template before starting a count.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        setTemplateItems(templateItems);
+      }
+
       const countName = template 
         ? selectedTeam 
           ? `Count for ${selectedTeam.name}: ${template.name}`
@@ -42,18 +56,15 @@ export const InventoryCountTab: React.FC = () => {
         ? `Manual count for ${selectedTeam.name}`
         : 'Manual inventory count';
       
-      const count = await startInventoryCount(countName, selectedTeam?.id);
+      // Pass template ID to startInventoryCount
+      const count = await startInventoryCount(countName, selectedTeam?.id, template?.id);
       setActiveCount(count.id);
       setActiveTemplate(template || null);
       
+      // Initialize count items with proper template ID
       if (template) {
-        // Initialize count with template items
         await inventoryCountsApi.initializeCountItems(count.id, template.id);
-        // Load template items
-        const items = await inventoryCountsApi.getTemplateItems(template.id);
-        setTemplateItems(items);
       } else {
-        // Initialize count with all items
         await inventoryCountsApi.initializeCountItems(count.id);
       }
       
@@ -61,7 +72,7 @@ export const InventoryCountTab: React.FC = () => {
       
       toast({
         title: 'Count Started',
-        description: `Started counting ${template ? `template "${template.name}"` : 'all items'}${selectedTeam ? ` for ${selectedTeam.name}` : ''}`,
+        description: `Started counting ${template ? `template "${template.name}" with ${templateItems?.length || '0'} items` : 'all items'}${selectedTeam ? ` for ${selectedTeam.name}` : ''}`,
       });
     } catch (error) {
       console.error('Failed to start count:', error);
@@ -293,14 +304,14 @@ export const InventoryCountTab: React.FC = () => {
             </span>
             <Badge variant="secondary">In Progress</Badge>
           </CardTitle>
-          <CardDescription>
-            Count started on {new Date(activeCountRecord?.count_date || '').toLocaleDateString()}
-            {activeTemplate && (
-              <span className="block text-xs mt-1">
-                Template-based count • {templateItems.length} items
-              </span>
-            )}
-          </CardDescription>
+            <CardDescription>
+              Count started on {new Date(activeCountRecord?.count_date || '').toLocaleDateString()}
+              {activeTemplate && (
+                <span className="block text-xs mt-1">
+                  Template-based count: "{activeTemplate.name}" • {templateItems.length} items
+                </span>
+              )}
+            </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

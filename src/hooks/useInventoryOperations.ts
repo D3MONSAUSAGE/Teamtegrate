@@ -259,6 +259,19 @@ export const useInventoryOperations = ({
   const completeInventoryCount = useCallback(async (countId: string): Promise<void> => {
     const result = await handleAsyncOperation(
       async () => {
+        // Validate that there are items to complete
+        const { data: countItems, error: countItemsError } = await supabase
+          .from('inventory_count_items')
+          .select('id, actual_quantity')
+          .eq('count_id', countId);
+
+        if (countItemsError) throw countItemsError;
+        
+        const countedItems = countItems?.filter(item => item.actual_quantity !== null) || [];
+        if (countedItems.length === 0) {
+          throw new Error('Cannot complete count: No items have been counted yet');
+        }
+
         // Update count totals before completing
         await inventoryCountsApi.updateCountTotals(countId);
         
