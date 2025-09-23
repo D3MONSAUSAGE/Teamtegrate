@@ -176,10 +176,65 @@ export const createMeetingRequestAPI = async (params: CreateMeetingParams) => {
 
   await supabase.from('notifications').insert(notifications);
 
+  // Fetch organizer and participant details for email notification
+  try {
+    const { data: organizerData } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .eq('id', user.id)
+      .single();
+
+    const { data: participantData } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .in('id', participantIds);
+
+    if (organizerData && participantData) {
+      // Send meeting invitation emails
+      const emailPayload = {
+        version: 'v1',
+        type: 'created',
+        organizer: {
+          id: organizerData.id,
+          email: organizerData.email,
+          name: organizerData.name
+        },
+        participants: participantData.map(p => ({
+          id: p.id,
+          email: p.email,
+          name: p.name
+        })),
+        meeting: {
+          id: meeting.id,
+          title: title,
+          location: location,
+          startISO: startTime.toISOString(),
+          endISO: endTime.toISOString(),
+          notes: description
+        }
+      };
+
+      // Generate idempotency key
+      const idempotencyKey = `${meeting.id}:created:${startTime.toISOString()}:${participantIds.sort().join(',')}`;
+
+      await supabase.functions.invoke('send-meeting-notifications', {
+        body: emailPayload,
+        headers: {
+          'Idempotency-Key': idempotencyKey
+        }
+      });
+
+      console.log('Meeting invitation emails sent successfully');
+    }
+  } catch (emailError) {
+    console.error('Failed to send meeting invitation emails:', emailError);
+    // Don't fail the meeting creation if emails fail
+  }
+
   // Enhanced success message based on Google Calendar status
   const successMessage = hasGoogleCalendar 
-    ? "Meeting created and syncing to Google Calendar. Participants will receive Google Calendar invites."
-    : "Meeting request sent successfully. Connect Google Calendar to automatically send calendar invites.";
+    ? "Meeting created and syncing to Google Calendar. Participants will receive email invitations and Google Calendar invites."
+    : "Meeting request sent successfully. Participants will receive email invitations. Connect Google Calendar to automatically send calendar invites.";
 
   toast({
     title: "Success",

@@ -78,29 +78,66 @@ export const respondToMeetingAPI = async (params: RespondToMeetingParams) => {
       console.log('✅ Organizer notification created successfully');
     }
 
-    // Send email notification using edge function
+    // Send email notification using the new professional edge function
     try {
-      console.log('📧 Sending email notification to organizer');
+      console.log('📧 Sending professional email notification to organizer');
       
-      const { error: emailError } = await supabase.functions.invoke('send-meeting-notification', {
-        body: {
-          organizer_email: meeting.organizer_name,
-          organizer_name: meeting.organizer_name,
-          participant_name: participantName,
-          meeting_title: meeting.title,
-          meeting_start_time: meeting.start_time,
-          meeting_location: meeting.location,
-          response_type: response
-        }
-      });
+      // Fetch organizer email details
+      const { data: organizerData } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('id', meeting.organizer_id)
+        .single();
 
-      if (emailError) {
-        console.error('❌ Failed to send email notification:', emailError);
+      if (organizerData) {
+        const emailPayload = {
+          version: 'v1',
+          type: 'response',
+          organizer: {
+            id: organizerData.id,
+            email: organizerData.email,
+            name: organizerData.name
+          },
+          participants: [{
+            id: participant.user_id,
+            email: participant.user_email || '',
+            name: participant.user_name
+          }],
+          meeting: {
+            id: meeting.id,
+            title: meeting.title,
+            location: meeting.location,
+            startISO: meeting.start_time,
+            endISO: meeting.end_time,
+            notes: meeting.description
+          },
+          responder: {
+            id: participant.user_id,
+            name: participant.user_name,
+            response: response
+          }
+        };
+
+        // Generate idempotency key for response
+        const idempotencyKey = `${meeting.id}:response:${participant.user_id}:${response}:${Date.now()}`;
+
+        const { error: emailError } = await supabase.functions.invoke('send-meeting-notifications', {
+          body: emailPayload,
+          headers: {
+            'Idempotency-Key': idempotencyKey
+          }
+        });
+
+        if (emailError) {
+          console.error('❌ Failed to send professional email notification:', emailError);
+        } else {
+          console.log('✅ Professional email notification sent successfully');
+        }
       } else {
-        console.log('✅ Email notification sent successfully');
+        console.warn('⚠️ Could not fetch organizer email details');
       }
     } catch (emailError) {
-      console.error('❌ Error sending email notification:', emailError);
+      console.error('❌ Error sending professional email notification:', emailError);
     }
   }
 };
