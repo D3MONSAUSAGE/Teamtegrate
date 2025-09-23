@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { UserCard } from './UserCard';
 import { Team } from '@/types/teams';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
+import AddAdminToTeamsDialog from './AddAdminToTeamsDialog';
 
 interface OrganizationUser {
   id: string;
@@ -55,70 +56,91 @@ export const AdminHierarchySection: React.FC<AdminHierarchySectionProps> = ({
   searchTerm 
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [addToTeamsDialogOpen, setAddToTeamsDialogOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<OrganizationUser | null>(null);
 
   if (adminUsers.length === 0 && searchTerm) {
     return null; // Don't show empty section when searching
   }
 
   return (
-    <Card className="border-l-4 border-l-primary">
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <CardHeader className="pb-3">
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer group">
-              <CardTitle className="flex items-center gap-2">
-                {isExpanded ? (
-                  <ChevronDown className="h-5 w-5 transition-transform" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 transition-transform" />
-                )}
-                <Crown className="h-5 w-5 text-primary" />
-                Admin Hierarchy
-                <Badge variant="secondary" className="ml-2">
-                  {adminUsers.length} Admins
-                </Badge>
-              </CardTitle>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Promote User
-                </Button>
+    <div>
+      <Card className="border-l-4 border-l-primary">
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between cursor-pointer group">
+                <CardTitle className="flex items-center gap-2">
+                  {isExpanded ? (
+                    <ChevronDown className="h-5 w-5 transition-transform" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 transition-transform" />
+                  )}
+                  <Crown className="h-5 w-5 text-primary" />
+                  Admin Hierarchy
+                  <Badge variant="secondary" className="ml-2">
+                    {adminUsers.length} Admins
+                  </Badge>
+                </CardTitle>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Promote User
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CollapsibleTrigger>
-        </CardHeader>
-        
-        <CollapsibleContent>
-          <CardContent className="space-y-4">
-            {adminUsers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Crown className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No admin users found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {adminUsers.map(admin => (
-                  <AdminUserCard 
-                    key={admin.id} 
-                    admin={admin} 
-                    teams={teams}
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+            </CollapsibleTrigger>
+          </CardHeader>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              {adminUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Crown className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                  <p>No admin users found</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {adminUsers.map(admin => (
+                    <AdminUserCard 
+                      key={admin.id} 
+                      admin={admin} 
+                      teams={teams}
+                      onAddToTeams={(admin) => {
+                        setSelectedAdmin(admin);
+                        setAddToTeamsDialogOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Add to Teams Dialog */}
+      <AddAdminToTeamsDialog
+        admin={selectedAdmin}
+        open={addToTeamsDialogOpen}
+        onOpenChange={setAddToTeamsDialogOpen}
+        onAdminAdded={() => {
+          // Refresh could be handled by parent component if needed
+          setAddToTeamsDialogOpen(false);
+          setSelectedAdmin(null);
+        }}
+      />
+    </div>
   );
 };
 
 interface AdminUserCardProps {
   admin: OrganizationUser;
   teams: Team[];
+  onAddToTeams: (admin: OrganizationUser) => void;
 }
 
-const AdminUserCard: React.FC<AdminUserCardProps> = ({ admin, teams }) => {
+const AdminUserCard: React.FC<AdminUserCardProps> = ({ admin, teams, onAddToTeams }) => {
   const { teamMembers } = useRealTeamMembers();
   
   // Find teams where this admin is a member
@@ -180,7 +202,12 @@ const AdminUserCard: React.FC<AdminUserCardProps> = ({ admin, teams }) => {
         
         {/* Quick Actions */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-xs">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs"
+            onClick={() => onAddToTeams(admin)}
+          >
             Add to Team
           </Button>
           <Button variant="ghost" size="sm" className="text-xs">
