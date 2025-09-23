@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Scan, Loader2 } from 'lucide-react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { ScannerOverlay } from './ScannerOverlay';
+import { CameraPermissionDialog } from './CameraPermissionDialog';
+import { requestCameraAccess } from '@/utils/deviceUtils';
 import { toast } from 'sonner';
 
 interface BarcodeInputProps {
@@ -19,43 +21,56 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
   onChange,
   placeholder = "Enter or scan barcode",
   className,
-  onScanSuccess
+  onScanSuccess,
 }) => {
-  const { scanBarcode, isScanning, stopScanning, hasPermission, requestPermissions, videoElement } = useBarcodeScanner();
-  
-  const handleScan = async () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const { scanBarcode, stopScanning, isScanning, videoElement } = useBarcodeScanner();
+
+  const handleScanRequest = () => {
+    setShowPermissionDialog(true);
+  };
+
+  const handlePermissionGranted = async () => {
     try {
-      // Check permissions first
-      if (hasPermission === false) {
-        const granted = await requestPermissions();
-        if (!granted) {
-          toast.error('Camera permission is required to scan barcodes');
-          return;
-        }
+      setIsLoading(true);
+      setShowPermissionDialog(false);
+      console.log('🎯 Starting barcode scan with permission...');
+
+      // Request camera access first
+      const cameraResult = await requestCameraAccess();
+      
+      if (!cameraResult.success) {
+        toast.error(cameraResult.error || 'Failed to access camera');
+        return;
       }
 
-      const result = await scanBarcode();
+      const result = await scanBarcode(cameraResult.stream);
       
       if (result) {
+        console.log('✅ Barcode scan successful:', result);
         onChange(result.text);
         onScanSuccess?.(result.text);
-        toast.success('Barcode scanned successfully!');
+        toast.success(`Barcode scanned: ${result.text}`);
+      } else {
+        console.log('❌ No barcode detected');
+        toast.error('No barcode detected. Please try again or enter manually.');
       }
     } catch (error) {
-      console.error('Scan error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to scan barcode');
+      console.error('❌ Barcode scan error:', error);
+      toast.error(`Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handlePermissionDenied = () => {
+    setShowPermissionDialog(false);
+    toast.info('You can enter the barcode manually in the input field.');
+  };
+
   return (
-    <>
-      <ScannerOverlay
-        isScanning={isScanning}
-        onClose={stopScanning}
-        instructions="Position the barcode within the frame"
-        videoElement={videoElement}
-      />
-      
+    <div className="space-y-4">
       <div className="flex gap-2">
         <Input
           type="text"
@@ -67,17 +82,32 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
         <Button
           type="button"
           variant="outline"
-          onClick={handleScan}
-          disabled={isScanning}
-          className="flex-shrink-0"
+          size="sm"
+          onClick={handleScanRequest}
+          disabled={isLoading || isScanning}
+          className="shrink-0"
         >
-          {isScanning ? (
+          {isLoading || isScanning ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Scan className="h-4 w-4" />
           )}
         </Button>
       </div>
-    </>
+
+      <ScannerOverlay
+        isScanning={isScanning}
+        onClose={stopScanning}
+        videoElement={videoElement}
+        instructions="Position the barcode within the scanning frame"
+      />
+
+      <CameraPermissionDialog
+        open={showPermissionDialog}
+        onOpenChange={setShowPermissionDialog}
+        onPermissionGranted={handlePermissionGranted}
+        onPermissionDenied={handlePermissionDenied}
+      />
+    </div>
   );
 };
