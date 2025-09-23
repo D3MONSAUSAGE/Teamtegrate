@@ -60,11 +60,23 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleAddItem = async () => {
     if (!selectedItem) return;
     
+    console.log('Dialog: Starting to add item to template', {
+      templateId,
+      selectedItemId: selectedItem.id,
+      selectedItemName: selectedItem.name,
+      inStockQuantity,
+      minimumQuantity,
+      maximumQuantity
+    });
+    
     setIsLoading(true);
     try {
+      console.log('Dialog: Calling addItemToTemplate...');
       await addItemToTemplate(templateId, selectedItem.id, inStockQuantity, minimumQuantity, maximumQuantity);
+      console.log('Dialog: Successfully added item, refreshing template items...');
       // Refresh template items after successful addition
       await refreshTemplateItems();
+      console.log('Dialog: Template items refreshed successfully');
       setSelectedItem(null);
       setInStockQuantity(0);
       setMinimumQuantity(undefined);
@@ -74,7 +86,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
         description: "Item added to template",
       });
     } catch (error: any) {
-      console.error('Error adding item to template:', error);
+      console.error('Dialog: Error adding item to template:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add item to template",
@@ -86,17 +98,26 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   };
 
   const handleQuickAdd = async (item: InventoryItem) => {
+    console.log('Dialog: Quick adding item to template', {
+      templateId,
+      itemId: item.id,
+      itemName: item.name
+    });
+    
     setIsLoading(true);
     try {
+      console.log('Dialog: Calling addItemToTemplate (quick add)...');
       await addItemToTemplate(templateId, item.id, 0);
+      console.log('Dialog: Successfully added item (quick add), refreshing template items...');
       // Refresh template items after successful addition
       await refreshTemplateItems();
+      console.log('Dialog: Template items refreshed successfully (quick add)');
       toast({
         title: "Success",
         description: `${item.name} added to template`,
       });
     } catch (error: any) {
-      console.error('Error adding item to template (quick add):', error);
+      console.error('Dialog: Error adding item to template (quick add):', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add item to template",

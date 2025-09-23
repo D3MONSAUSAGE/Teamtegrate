@@ -61,7 +61,20 @@ export const inventoryTemplatesApi = {
     maximumQuantity?: number,
     sortOrder: number = 0
   ): Promise<InventoryTemplateItem> {
+    console.log('Adding item to template API call:', {
+      templateId, 
+      itemId, 
+      inStockQuantity, 
+      minimumQuantity, 
+      maximumQuantity, 
+      sortOrder
+    });
+    
     try {
+      const user = await supabase.auth.getUser();
+      console.log('Current user in API:', user.data.user?.id);
+      console.log('User metadata:', user.data.user?.user_metadata);
+      
       const { data, error } = await supabase
         .from('inventory_template_items')
         .insert([{
@@ -74,6 +87,8 @@ export const inventoryTemplatesApi = {
         }])
         .select()
         .single();
+
+      console.log('Insert response:', { data, error });
 
       if (error) {
         console.error('Error adding item to template:', error);
@@ -94,6 +109,7 @@ export const inventoryTemplatesApi = {
         throw new Error(`Failed to add item to template: ${error.message}`);
       }
       
+      console.log('Item successfully added to template:', data);
       return data as InventoryTemplateItem;
     } catch (error: any) {
       console.error('Template item creation error:', error);
@@ -102,12 +118,17 @@ export const inventoryTemplatesApi = {
   },
 
   async removeItemFromTemplate(templateId: string, itemId: string): Promise<void> {
+    console.log('Removing item from template API call:', { templateId, itemId });
+    
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('inventory_template_items')
         .delete()
         .eq('template_id', templateId)
-        .eq('item_id', itemId);
+        .eq('item_id', itemId)
+        .select();
+
+      console.log('Delete response:', { data, error });
 
       if (error) {
         console.error('Error removing item from template:', error);
@@ -118,6 +139,8 @@ export const inventoryTemplatesApi = {
         
         throw new Error(`Failed to remove item from template: ${error.message}`);
       }
+      
+      console.log('Item successfully removed from template');
     } catch (error: any) {
       console.error('Template item removal error:', error);
       throw error;
