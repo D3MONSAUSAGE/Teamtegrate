@@ -22,6 +22,7 @@ import AccessControlManager from '@/components/organization/access-control/Acces
 import { devLog } from '@/utils/devLogger';
 import { logger } from '@/utils/logger';
 import RequestTypeManager from '@/components/organization/requests/RequestTypeManager';
+import { OrganizationHierarchyView } from '@/components/organization/hierarchy/OrganizationHierarchyView';
 
 interface UserToEdit {
   id: string;
@@ -241,7 +242,7 @@ const OrganizationDashboard = () => {
 
               {/* Team Management Tab */}
               <TabsContent value="teams" className="space-y-6">
-                <TeamManagementSection />
+                <OrganizationHierarchyView />
               </TabsContent>
 
               {/* Job Roles Tab */}
