@@ -51,7 +51,7 @@ const AddAdminToTeamsDialog: React.FC<AddAdminToTeamsDialogProps> = ({
   onAdminAdded,
 }) => {
   const { teams, isLoading: teamsLoading } = useTeamAccess();
-  const { bulkAddTeamMembers } = useTeamMemberOperations();
+  const { addTeamMember } = useTeamMemberOperations();
   const { teamMembers } = useRealTeamMembers();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -107,17 +107,17 @@ const AddAdminToTeamsDialog: React.FC<AddAdminToTeamsDialogProps> = ({
 
     setIsSubmitting(true);
     try {
+      console.log('Adding admin to teams:', { adminId: admin.id, selectedTeams: Array.from(selectedTeams.entries()) });
+      
       // Add admin to each selected team with their specific role
-      const addPromises = Array.from(selectedTeams.entries()).map(([teamId, role]) =>
-        bulkAddTeamMembers(teamId, [{
-          userId: admin.id,
-          role,
-          // Give system role override for admins/superadmins being added as team admins
-          systemRoleOverride: (admin.role === 'superadmin' || admin.role === 'admin') && role === 'admin' 
-            ? admin.role 
-            : undefined
-        }])
-      );
+      const addPromises = Array.from(selectedTeams.entries()).map(([teamId, role]) => {
+        const systemRoleOverride = (admin.role === 'superadmin' || admin.role === 'admin') && role === 'admin' 
+          ? admin.role 
+          : undefined;
+        
+        console.log('Adding to team:', { teamId, userId: admin.id, role, systemRoleOverride });
+        return addTeamMember(teamId, admin.id, role, systemRoleOverride);
+      });
 
       await Promise.all(addPromises);
 
@@ -128,7 +128,8 @@ const AddAdminToTeamsDialog: React.FC<AddAdminToTeamsDialogProps> = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding admin to teams:', error);
-      toast.error('Failed to add admin to teams');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to add admin to teams: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
