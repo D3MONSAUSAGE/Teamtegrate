@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInventory } from '@/contexts/inventory';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Calculator, Plus } from 'lucide-react';
+import { Package, Calculator, Plus, Scan } from 'lucide-react';
 import { toast } from 'sonner';
 import { InventoryCategoryDialog } from './InventoryCategoryDialog';
 import { InventoryUnitDialog } from './InventoryUnitDialog';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -46,6 +47,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { scanBarcode, isScanning } = useBarcodeScanner();
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -169,6 +172,19 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     }
   };
 
+  const handleBarcodesScan = async () => {
+    try {
+      const result = await scanBarcode();
+      if (result) {
+        form.setValue('barcode', result.text);
+        toast.success('Barcode scanned successfully');
+      }
+    } catch (error) {
+      console.error('Barcode scan error:', error);
+      toast.error('Failed to scan barcode. Please try again.');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -218,9 +234,20 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Barcode</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter barcode" {...field} />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="Enter barcode" {...field} />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleBarcodesScan}
+                        disabled={isScanning}
+                      >
+                        <Scan className={`h-4 w-4 ${isScanning ? 'animate-pulse' : ''}`} />
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

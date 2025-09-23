@@ -36,5 +36,11 @@ const config: CapacitorConfig = {
     FirebaseMessaging: {
       deliveryMetrics: true,
     },
+    Camera: {
+      permissions: ['camera', 'photos'],
+    },
+    BarcodeScanner: {
+      cameraPermission: 'Camera permission is required to scan barcodes',
+    },
   },
 };
