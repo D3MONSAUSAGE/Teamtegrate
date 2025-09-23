@@ -1,6 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
-import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
-import { Capacitor } from '@capacitor/core';
+
+// Dynamic imports to avoid bundling issues
+const getCapacitorModules = async () => {
+  try {
+    const [{ BarcodeScanner }, { Capacitor }] = await Promise.all([
+      import('@capacitor-community/barcode-scanner'),
+      import('@capacitor/core')
+    ]);
+    return { BarcodeScanner, Capacitor };
+  } catch (error) {
+    // Capacitor not available (web environment)
+    return null;
+  }
+};
 
 export interface BarcodeScanResult {
   text: string;
@@ -13,13 +25,15 @@ export const useBarcodeScanner = () => {
 
   const requestPermissions = useCallback(async () => {
     try {
-      if (!Capacitor.isNativePlatform()) {
+      const modules = await getCapacitorModules();
+      
+      if (!modules || !modules.Capacitor.isNativePlatform()) {
         // For web development, we'll assume permission is granted
         setHasPermission(true);
         return true;
       }
 
-      const status = await BarcodeScanner.checkPermission({ force: true });
+      const status = await modules.BarcodeScanner.checkPermission({ force: true });
       
       if (status.granted) {
         setHasPermission(true);
@@ -33,7 +47,7 @@ export const useBarcodeScanner = () => {
 
       if (status.asked) {
         // Wait for user response
-        const newStatus = await BarcodeScanner.checkPermission({ force: false });
+        const newStatus = await modules.BarcodeScanner.checkPermission({ force: false });
         const granted = newStatus.granted;
         setHasPermission(granted);
         return granted;
@@ -50,8 +64,9 @@ export const useBarcodeScanner = () => {
   const scanBarcode = useCallback(async (): Promise<BarcodeScanResult | null> => {
     try {
       setIsScanning(true);
+      const modules = await getCapacitorModules();
 
-      if (!Capacitor.isNativePlatform()) {
+      if (!modules || !modules.Capacitor.isNativePlatform()) {
         // Web fallback - show manual input for now
         const text = prompt('Enter barcode manually (scanner not available in web preview):');
         if (text) {
@@ -70,7 +85,7 @@ export const useBarcodeScanner = () => {
       // Hide the web content to show camera
       document.body.classList.add('scanner-active');
 
-      const result = await BarcodeScanner.startScan();
+      const result = await modules.BarcodeScanner.startScan();
 
       if (result.hasContent) {
         return {
@@ -87,8 +102,10 @@ export const useBarcodeScanner = () => {
       setIsScanning(false);
       // Restore web content visibility
       document.body.classList.remove('scanner-active');
-      if (Capacitor.isNativePlatform()) {
-        BarcodeScanner.stopScan();
+      
+      const modules = await getCapacitorModules();
+      if (modules && modules.Capacitor.isNativePlatform()) {
+        modules.BarcodeScanner.stopScan();
       }
     }
   }, [hasPermission, requestPermissions]);
@@ -98,8 +115,9 @@ export const useBarcodeScanner = () => {
       setIsScanning(false);
       document.body.classList.remove('scanner-active');
       
-      if (Capacitor.isNativePlatform()) {
-        await BarcodeScanner.stopScan();
+      const modules = await getCapacitorModules();
+      if (modules && modules.Capacitor.isNativePlatform()) {
+        await modules.BarcodeScanner.stopScan();
       }
     } catch (error) {
       console.error('Error stopping scanner:', error);
@@ -109,9 +127,11 @@ export const useBarcodeScanner = () => {
   // Check initial permission status
   useEffect(() => {
     const checkInitialPermission = async () => {
-      if (Capacitor.isNativePlatform()) {
+      const modules = await getCapacitorModules();
+      
+      if (modules && modules.Capacitor.isNativePlatform()) {
         try {
-          const status = await BarcodeScanner.checkPermission({ force: false });
+          const status = await modules.BarcodeScanner.checkPermission({ force: false });
           setHasPermission(status.granted);
         } catch (error) {
           console.error('Error checking initial permission:', error);
