@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Search, Plus, X, Package, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Search, Plus, X, Package, ArrowRight, ShoppingCart, AlertCircle } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { useToast } from '@/hooks/use-toast';
 import { InventoryItem, InventoryTemplateItem } from '@/contexts/inventory/types';
+import { validateQuantityLogic, getSafeQuickAddDefaults } from '@/utils/inventoryValidation';
 
 interface TemplateItemsDialogProps {
   isOpen: boolean;
@@ -29,10 +30,19 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [inStockQuantity, setInStockQuantity] = useState<number>(0);
+  const [inStockQuantity, setInStockQuantity] = useState<number>(1);
   const [minimumQuantity, setMinimumQuantity] = useState<number | undefined>(undefined);
   const [maximumQuantity, setMaximumQuantity] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Validation state
+  const validation = useMemo(() => {
+    return validateQuantityLogic({
+      inStockQuantity,
+      minimumQuantity,
+      maximumQuantity
+    });
+  }, [inStockQuantity, minimumQuantity, maximumQuantity]);
 
   // Get template items for this specific template from global state
   const currentTemplateItems = useMemo(() => {
@@ -60,6 +70,16 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleAddItem = async () => {
     if (!selectedItem) return;
     
+    // Validate before submission
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid Quantities",
+        description: validation.errors.join('. '),
+        variant: "destructive",
+      });
+      return;
+    }
+    
     console.log('Dialog: Starting to add item to template', {
       templateId,
       selectedItemId: selectedItem.id,
@@ -78,7 +98,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
       await refreshTemplateItems();
       console.log('Dialog: Template items refreshed successfully');
       setSelectedItem(null);
-      setInStockQuantity(0);
+      setInStockQuantity(1);
       setMinimumQuantity(undefined);
       setMaximumQuantity(undefined);
       toast({
@@ -107,7 +127,14 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       console.log('Dialog: Calling addItemToTemplate (quick add)...');
-      await addItemToTemplate(templateId, item.id, 0);
+      const safeDefaults = getSafeQuickAddDefaults();
+      await addItemToTemplate(
+        templateId, 
+        item.id, 
+        safeDefaults.inStockQuantity,
+        safeDefaults.minimumQuantity,
+        safeDefaults.maximumQuantity
+      );
       console.log('Dialog: Successfully added item (quick add), refreshing template items...');
       // Refresh template items after successful addition
       await refreshTemplateItems();
@@ -251,54 +278,66 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                     <ArrowRight className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                   <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label htmlFor="in-stock-qty" className="text-sm font-medium">In-Stock Quantity</Label>
+                        <Input
+                          id="in-stock-qty"
+                          type="number"
+                          min="0"
+                          value={inStockQuantity}
+                          onChange={(e) => setInStockQuantity(Math.max(0, Number(e.target.value)))}
+                          placeholder="1"
+                          className={`mt-1 ${!validation.isValid ? 'border-destructive' : ''}`}
+                        />
+                      </div>
                      <div>
-                       <Label htmlFor="in-stock-qty" className="text-sm font-medium">In-Stock Quantity</Label>
+                       <Label htmlFor="min-qty" className="text-sm font-medium">Min Quantity (Optional)</Label>
                        <Input
-                         id="in-stock-qty"
+                         id="min-qty"
                          type="number"
                          min="0"
-                         value={inStockQuantity}
-                         onChange={(e) => setInStockQuantity(Number(e.target.value))}
-                         placeholder="0"
-                         className="mt-1"
+                         value={minimumQuantity || ''}
+                         onChange={(e) => setMinimumQuantity(e.target.value ? Math.max(0, Number(e.target.value)) : undefined)}
+                         placeholder="Optional"
+                         className={`mt-1 ${!validation.isValid ? 'border-destructive' : ''}`}
                        />
                      </div>
-                    <div>
-                      <Label htmlFor="min-qty" className="text-sm font-medium">Min Quantity (Optional)</Label>
-                      <Input
-                        id="min-qty"
-                        type="number"
-                        min="0"
-                        value={minimumQuantity || ''}
-                        onChange={(e) => setMinimumQuantity(e.target.value ? Number(e.target.value) : undefined)}
-                        placeholder="Optional"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="max-qty" className="text-sm font-medium">Max Quantity (Optional)</Label>
-                      <Input
-                        id="max-qty"
-                        type="number"
-                        min="0"
-                        value={maximumQuantity || ''}
-                        onChange={(e) => setMaximumQuantity(e.target.value ? Number(e.target.value) : undefined)}
-                        placeholder="Optional"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <Button
-                      onClick={handleAddItem}
-                      disabled={isLoading}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add to Template
-                    </Button>
-                  </div>
+                     <div>
+                       <Label htmlFor="max-qty" className="text-sm font-medium">Max Quantity (Optional)</Label>
+                       <Input
+                         id="max-qty"
+                         type="number"
+                         min="0"
+                         value={maximumQuantity || ''}
+                         onChange={(e) => setMaximumQuantity(e.target.value ? Math.max(0, Number(e.target.value)) : undefined)}
+                         placeholder="Optional"
+                         className={`mt-1 ${!validation.isValid ? 'border-destructive' : ''}`}
+                       />
+                     </div>
+                   </div>
+                   
+                   {/* Validation feedback */}
+                   {!validation.isValid && (
+                     <div className="mt-2 flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded">
+                       <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                       <div>
+                         {validation.errors.map((error, index) => (
+                           <div key={index}>{error}</div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+                   <div className="mt-3">
+                     <Button
+                       onClick={handleAddItem}
+                       disabled={isLoading || !validation.isValid}
+                       className="w-full"
+                     >
+                       <Plus className="h-4 w-4 mr-2" />
+                       Add to Template
+                     </Button>
+                   </div>
                 </div>
               </div>
             )}

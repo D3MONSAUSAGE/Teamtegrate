@@ -56,7 +56,7 @@ export const inventoryTemplatesApi = {
   async addItemToTemplate(
     templateId: string, 
     itemId: string, 
-    inStockQuantity: number = 0,
+    inStockQuantity: number = 1,
     minimumQuantity?: number,
     maximumQuantity?: number,
     sortOrder: number = 0
@@ -81,8 +81,8 @@ export const inventoryTemplatesApi = {
           template_id: templateId,
           item_id: itemId,
           in_stock_quantity: inStockQuantity,
-          minimum_quantity: minimumQuantity,
-          maximum_quantity: maximumQuantity,
+          minimum_quantity: minimumQuantity || null,
+          maximum_quantity: maximumQuantity || null,
           sort_order: sortOrder
         }])
         .select()
@@ -104,6 +104,10 @@ export const inventoryTemplatesApi = {
         
         if (error.message?.includes('duplicate key')) {
           throw new Error('This item is already in the template.');
+        }
+        
+        if (error.message?.includes('check_quantity_logic') || error.message?.includes('violates check constraint')) {
+          throw new Error('Invalid quantity combination. Please ensure: minimum ≤ in-stock ≤ maximum, and all values are non-negative.');
         }
         
         throw new Error(`Failed to add item to template: ${error.message}`);
