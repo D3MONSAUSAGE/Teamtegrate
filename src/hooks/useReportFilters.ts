@@ -74,9 +74,9 @@ export const useReportFilters = () => {
       return {
         orgId: '',
         view: activeTab,
-        dateISO: '',
-        weekStartISO: '',
-        timezone: 'UTC'
+        dateISO: format(new Date(), 'yyyy-MM-dd'), // Use today's date as fallback
+        weekStartISO: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+        timezone: userTimezone || 'UTC'
       };
     }
 

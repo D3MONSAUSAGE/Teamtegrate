@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Plus, UserPlus, AlertTriangle, TrendingUp } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { useDailyReport, useTaskReports, DailyDetailData } from '@/hooks/useTaskReports';
 import { DateNavigation } from '@/components/reports/DateNavigation';
 import { ScrollableTaskContainer } from '@/components/reports/ScrollableTaskContainer';
@@ -56,8 +56,38 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
     loadDailyData();
   }, [filter.dateISO, filter.userId, filter.teamIds]);
 
-  const selectedDate = new Date(filter.dateISO);
+  // Safe date handling with validation
+  const selectedDate = React.useMemo(() => {
+    if (!filter.dateISO) return new Date();
+    try {
+      const date = parseISO(filter.dateISO);
+      return isValid(date) ? date : new Date();
+    } catch {
+      return new Date();
+    }
+  }, [filter.dateISO]);
+
   const userName = filter.userId ? 'Selected User' : 'All Users';
+
+  // Don't render if filter is not ready (only when org is missing)
+  if (!filter.orgId) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded-lg" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-80 bg-muted rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleTaskClick = (task: DailyTaskDetail) => {
     setSelectedTask(task);
