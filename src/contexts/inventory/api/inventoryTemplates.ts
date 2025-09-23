@@ -61,31 +61,67 @@ export const inventoryTemplatesApi = {
     maximumQuantity?: number,
     sortOrder: number = 0
   ): Promise<InventoryTemplateItem> {
-    const { data, error } = await supabase
-      .from('inventory_template_items')
-      .insert([{
-        template_id: templateId,
-        item_id: itemId,
-        in_stock_quantity: inStockQuantity,
-        minimum_quantity: minimumQuantity,
-        maximum_quantity: maximumQuantity,
-        sort_order: sortOrder
-      }])
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('inventory_template_items')
+        .insert([{
+          template_id: templateId,
+          item_id: itemId,
+          in_stock_quantity: inStockQuantity,
+          minimum_quantity: minimumQuantity,
+          maximum_quantity: maximumQuantity,
+          sort_order: sortOrder
+        }])
+        .select()
+        .single();
 
-    if (error) throw error;
-    return data as InventoryTemplateItem;
+      if (error) {
+        console.error('Error adding item to template:', error);
+        
+        // Provide better error messages for common issues
+        if (error.code === 'PGRST301') {
+          throw new Error('You do not have permission to add items to this template. Please contact your administrator.');
+        }
+        
+        if (error.message?.includes('violates row-level security')) {
+          throw new Error('Permission denied: You cannot add items to this template.');
+        }
+        
+        if (error.message?.includes('duplicate key')) {
+          throw new Error('This item is already in the template.');
+        }
+        
+        throw new Error(`Failed to add item to template: ${error.message}`);
+      }
+      
+      return data as InventoryTemplateItem;
+    } catch (error: any) {
+      console.error('Template item creation error:', error);
+      throw error;
+    }
   },
 
   async removeItemFromTemplate(templateId: string, itemId: string): Promise<void> {
-    const { error } = await supabase
-      .from('inventory_template_items')
-      .delete()
-      .eq('template_id', templateId)
-      .eq('item_id', itemId);
+    try {
+      const { error } = await supabase
+        .from('inventory_template_items')
+        .delete()
+        .eq('template_id', templateId)
+        .eq('item_id', itemId);
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error removing item from template:', error);
+        
+        if (error.code === 'PGRST301' || error.message?.includes('violates row-level security')) {
+          throw new Error('Permission denied: You cannot remove items from this template.');
+        }
+        
+        throw new Error(`Failed to remove item from template: ${error.message}`);
+      }
+    } catch (error: any) {
+      console.error('Template item removal error:', error);
+      throw error;
+    }
   },
 
   async updateTemplateItem(
@@ -98,16 +134,30 @@ export const inventoryTemplatesApi = {
       sort_order?: number;
     }
   ): Promise<InventoryTemplateItem> {
-    const { data, error } = await supabase
-      .from('inventory_template_items')
-      .update(updates)
-      .eq('template_id', templateId)
-      .eq('item_id', itemId)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('inventory_template_items')
+        .update(updates)
+        .eq('template_id', templateId)
+        .eq('item_id', itemId)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return data as InventoryTemplateItem;
+      if (error) {
+        console.error('Error updating template item:', error);
+        
+        if (error.code === 'PGRST301' || error.message?.includes('violates row-level security')) {
+          throw new Error('Permission denied: You cannot modify this template item.');
+        }
+        
+        throw new Error(`Failed to update template item: ${error.message}`);
+      }
+      
+      return data as InventoryTemplateItem;
+    } catch (error: any) {
+      console.error('Template item update error:', error);
+      throw error;
+    }
   },
 
   async assignToTeam(templateId: string, teamId: string, assignedBy: string): Promise<TeamInventoryAssignment> {

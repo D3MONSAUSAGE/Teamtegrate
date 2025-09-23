@@ -63,6 +63,8 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await addItemToTemplate(templateId, selectedItem.id, inStockQuantity, minimumQuantity, maximumQuantity);
+      // Refresh template items after successful addition
+      await refreshTemplateItems();
       setSelectedItem(null);
       setInStockQuantity(0);
       setMinimumQuantity(undefined);
@@ -71,10 +73,11 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
         title: "Success",
         description: "Item added to template",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error adding item to template:', error);
       toast({
         title: "Error",
-        description: "Failed to add item to template",
+        description: error.message || "Failed to add item to template",
         variant: "destructive",
       });
     } finally {
@@ -86,14 +89,17 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await addItemToTemplate(templateId, item.id, 0);
+      // Refresh template items after successful addition
+      await refreshTemplateItems();
       toast({
         title: "Success",
         description: `${item.name} added to template`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error adding item to template (quick add):', error);
       toast({
         title: "Error",
-        description: "Failed to add item to template",
+        description: error.message || "Failed to add item to template",
         variant: "destructive",
       });
     } finally {
@@ -105,14 +111,17 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     setIsLoading(true);
     try {
       await removeItemFromTemplate(templateId, itemId);
+      // Refresh template items after successful removal
+      await refreshTemplateItems();
       toast({
         title: "Success",
         description: "Item removed from template",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error removing item from template:', error);
       toast({
         title: "Error",
-        description: "Failed to remove item from template",
+        description: error.message || "Failed to remove item from template",
         variant: "destructive",
       });
     } finally {
