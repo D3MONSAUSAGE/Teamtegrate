@@ -1675,6 +1675,30 @@ export type Database = {
           },
         ]
       }
+      email_events: {
+        Row: {
+          created_at: string | null
+          idempotency_key: string
+          last_error: string | null
+          payload: Json
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          idempotency_key: string
+          last_error?: string | null
+          payload: Json
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          idempotency_key?: string
+          last_error?: string | null
+          payload?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       email_notification_preferences: {
         Row: {
           created_at: string
