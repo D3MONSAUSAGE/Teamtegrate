@@ -45,6 +45,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [calculatedUnitPrice, setCalculatedUnitPrice] = useState<number | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -80,6 +81,11 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       form.reset();
       setCalculatedUnitPrice(null);
     }
+    
+    // Reset submitting state when dialog opens/closes
+    if (!open) {
+      setIsSubmitting(false);
+    }
   }, [itemId, open]);
 
   const loadItem = async () => {
@@ -106,6 +112,13 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   };
 
   const onSubmit = async (values: InventoryItemFormData) => {
+    // Prevent multiple submissions
+    if (isSubmitting || loading) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       console.log('Form values submitted:', values);
       console.log('Calculated unit price:', calculatedUnitPrice);
@@ -142,12 +155,17 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         console.log('Create result:', result);
         toast.success('Item created successfully');
       }
+      
+      // Only close dialog and reset form on success
       onOpenChange(false);
       form.reset();
+      setCalculatedUnitPrice(null);
     } catch (error) {
       console.error('Error saving item:', error);
       console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       toast.error(`Failed to save item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -163,6 +181,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <fieldset disabled={isSubmitting || loading} className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -377,17 +396,19 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               )}
             />
 
+            </fieldset>
+            
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={loading}
+                disabled={isSubmitting || loading}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
+              <Button type="submit" disabled={isSubmitting || loading}>
+                {isSubmitting || loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
               </Button>
             </div>
           </form>
