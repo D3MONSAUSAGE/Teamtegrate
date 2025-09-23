@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TimeRangeSelector } from '@/components/reports/TimeRangeSelector';
 import { EnhancedTeamSelector } from '@/components/finance/reports/EnhancedTeamSelector';
 import { TeamNameResolver } from '@/components/finance/reports/TeamNameResolver';
+import { IndividualUserSelector } from '@/components/finance/reports/IndividualUserSelector';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
@@ -63,6 +64,16 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
             />
           </div>
           
+          {onUserChange && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Select Individual</label>
+              <IndividualUserSelector
+                selectedUserId={selectedUserId}
+                selectedTeamId={selectedTeamId}
+                onUserChange={onUserChange}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -77,7 +88,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
                 <span>👥 <TeamNameResolver teamId={selectedTeamId} /></span>
               )}
               {canSelectTeam && selectedUserId && (
-                <span>👤 Selected User</span>
+                <span>👤 Individual User</span>
               )}
               {!canSelectTeam && (
                 <span>👥 Your Team Data</span>
