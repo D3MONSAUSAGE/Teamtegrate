@@ -54,7 +54,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { scanBarcode, isScanning } = useBarcodeScanner();
+  const { scanBarcode, isScanning, videoElement } = useBarcodeScanner();
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -123,18 +123,30 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const onSubmit = async (values: InventoryItemFormData) => {
     // Prevent multiple submissions
     if (isSubmitting || loading) {
+      console.log('🛑 Submission blocked - already submitting or loading');
       return;
     }
     
+    console.log('📋 Starting item submission...', values);
+    
     // Validate SKU uniqueness before submission
     if (values.sku && values.sku.trim() !== '') {
-      const skuValidation = await validateSKUUniqueness(values.sku, itemId || undefined);
-      if (!skuValidation.isUnique) {
-        form.setError('sku', {
-          type: 'manual',
-          message: skuValidation.message || 'SKU must be unique'
-        });
-        toast.error(skuValidation.message || 'SKU is already in use');
+      console.log('🔍 Validating SKU uniqueness:', values.sku);
+      try {
+        const skuValidation = await validateSKUUniqueness(values.sku, itemId || undefined);
+        if (!skuValidation.isUnique) {
+          console.log('❌ SKU validation failed:', skuValidation.message);
+          form.setError('sku', {
+            type: 'manual',
+            message: skuValidation.message || 'SKU must be unique'
+          });
+          toast.error(skuValidation.message || 'SKU is already in use');
+          return;
+        }
+        console.log('✅ SKU validation passed');
+      } catch (skuError) {
+        console.error('❌ SKU validation error:', skuError);
+        toast.error('Failed to validate SKU. Please try again.');
         return;
       }
     }
@@ -142,8 +154,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      console.log('Form values submitted:', values);
-      console.log('Calculated unit price:', calculatedUnitPrice);
+      console.log('📊 Form values submitted:', values);
+      console.log('💰 Calculated unit price:', calculatedUnitPrice);
       
       const itemData = {
         name: values.name || '',
@@ -166,26 +178,48 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         sort_order: 0,
       };
 
-      console.log('Item data being sent:', itemData);
+      console.log('📦 Item data being sent:', itemData);
 
+      let result;
       if (itemId) {
-        const result = await updateItem(itemId, itemData);
-        console.log('Update result:', result);
+        console.log('✏️ Updating existing item:', itemId);
+        result = await updateItem(itemId, itemData);
+        console.log('✅ Update result:', result);
         toast.success('Item updated successfully');
       } else {
-        const result = await createItem(itemData);
-        console.log('Create result:', result);
+        console.log('➕ Creating new item...');
+        result = await createItem(itemData);
+        console.log('✅ Create result:', result);
         toast.success('Item created successfully');
       }
       
       // Only close dialog and reset form on success
+      console.log('🎉 Operation successful, closing dialog');
       onOpenChange(false);
       form.reset();
       setCalculatedUnitPrice(null);
     } catch (error) {
-      console.error('Error saving item:', error);
-      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
-      toast.error(`Failed to save item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error saving item:', error);
+      console.error('📝 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error: error
+      });
+      
+      let errorMessage = 'Failed to save item';
+      if (error instanceof Error) {
+        if (error.message.includes('permission')) {
+          errorMessage = 'Permission denied. Please check your user role.';
+        } else if (error.message.includes('required')) {
+          errorMessage = 'Required fields are missing.';
+        } else if (error.message.includes('unique')) {
+          errorMessage = 'Duplicate value detected. Please check SKU and barcode.';
+        } else {
+          errorMessage = `Failed to save item: ${error.message}`;
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -193,13 +227,18 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
 
   const handleBarcodesScan = async () => {
     try {
+      console.log('🔍 Starting barcode scan...');
       const result = await scanBarcode();
       if (result) {
+        console.log('✅ Barcode scanned:', result.text);
         form.setValue('barcode', result.text);
-        toast.success('Barcode scanned successfully');
+        toast.success(`Barcode scanned: ${result.text}`);
+      } else {
+        console.log('❌ No barcode detected');
+        toast.error('No barcode detected. Please try again.');
       }
     } catch (error) {
-      console.error('Barcode scan error:', error);
+      console.error('❌ Barcode scan error:', error);
       toast.error('Failed to scan barcode. Please try again.');
     }
   };

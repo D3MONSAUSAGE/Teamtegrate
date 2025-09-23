@@ -21,7 +21,7 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
   className,
   onScanSuccess
 }) => {
-  const { scanBarcode, isScanning, stopScanning, hasPermission, requestPermissions } = useBarcodeScanner();
+  const { scanBarcode, isScanning, stopScanning, hasPermission, requestPermissions, videoElement } = useBarcodeScanner();
   
   const handleScan = async () => {
     try {
@@ -53,6 +53,7 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
         isScanning={isScanning}
         onClose={stopScanning}
         instructions="Position the barcode within the frame"
+        videoElement={videoElement}
       />
       
       <div className="flex gap-2">
