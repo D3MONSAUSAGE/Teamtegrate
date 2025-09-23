@@ -10,7 +10,7 @@ import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
 import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
-import { TeamSelector } from '@/components/team/TeamSelector';
+import { StandardTeamSelector } from '@/components/teams';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
 import { CountComparisonDialog } from './CountComparisonDialog';
 import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
@@ -27,7 +27,6 @@ import { cn } from '@/lib/utils';
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions } = useInventory();
   const { hasRoleAccess, user } = useAuth();
-  const { metrics, chartData } = useEnhancedInventoryAnalytics(counts, alerts, items, transactions);
   const { teams } = useTeamsByOrganization(user?.organizationId);
 
   // Create team name mapping
@@ -76,6 +75,28 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     
     return matchesSearch && matchesTeam && matchesStatus && matchesDate;
   });
+
+  // Filter team-based analytics data
+  const filteredAlertsForAnalytics = useMemo(() => {
+    if (!selectedTeam) return alerts;
+    // Filter alerts by items that might be associated with the team through counts
+    const teamItemIds = new Set(
+      filteredCounts
+        .filter(count => count.team_id === selectedTeam)
+        .flatMap(count => transactions
+          .filter(t => t.transaction_type === 'count')
+          .map(t => t.item_id)
+        )
+    );
+    return alerts.filter(alert => teamItemIds.has(alert.item_id));
+  }, [alerts, selectedTeam, filteredCounts, transactions]);
+
+  const { metrics, chartData } = useEnhancedInventoryAnalytics(
+    filteredCounts, 
+    filteredAlertsForAnalytics, 
+    items, 
+    transactions
+  );
 
   // Sort counts by most recent first
   const sortedCounts = [...filteredCounts].sort((a, b) => 
@@ -126,6 +147,11 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
           <h2 className="text-3xl font-bold">Enhanced Inventory Records</h2>
           <p className="text-muted-foreground mt-1">
             Comprehensive inventory history with financial insights and team performance tracking
+            {selectedTeam && (
+              <span className="block text-sm mt-1 text-primary">
+                Showing data for: {getTeamDisplayName(selectedTeam)}
+              </span>
+            )}
           </p>
         </div>
         
@@ -168,9 +194,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                 </div>
                 
                 {hasRoleAccess('admin') && (
-                  <TeamSelector 
+                  <StandardTeamSelector
+                    selectedTeamId={selectedTeam || null}
+                    onTeamChange={(teamId) => setSelectedTeam(teamId || '')}
                     showAllOption={true}
                     placeholder="Filter by team"
+                    variant="simple"
                   />
                 )}
 
@@ -302,10 +331,10 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">
-                  {metrics.teamPerformance.length}
+                  {selectedTeam ? 1 : metrics.teamPerformance.length}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Teams participating
+                  {selectedTeam ? 'Selected team' : 'Teams participating'}
                 </div>
               </CardContent>
             </Card>
@@ -320,6 +349,11 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               </CardTitle>
               <div className="text-sm text-muted-foreground">
                 Showing {filteredCounts.length} records with financial insights and team comparisons
+                {selectedTeam && (
+                  <span className="block text-primary">
+                    Team: {getTeamDisplayName(selectedTeam)}
+                  </span>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -502,61 +536,102 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
         <TabsContent value="teams" className="space-y-6">
           {/* Team Performance Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {metrics.teamPerformance.map((team) => (
-              <Card key={team.teamId} className="relative">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    {team.teamName}
-                  </CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    {team.countCompletions} counts completed
+          {selectedTeam ? (
+            // Show detailed view for selected team
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  {getTeamDisplayName(selectedTeam)} Performance
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  Detailed performance analysis for the selected team
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">
+                      {filteredCounts.filter(c => c.status === 'completed').length}
+                    </div>
+                    <div className="text-muted-foreground">Completed Counts</div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-muted-foreground">Accuracy</div>
-                      <div className="text-lg font-bold">{formatPercentage(team.accuracy)}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Avg Time</div>
-                      <div className="text-lg font-bold">{team.completionTime.toFixed(1)}h</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Total Value</div>
-                      <div className="text-lg font-bold text-green-600">
-                        {formatCurrency(team.inventoryValue)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Variance Cost</div>
-                      <div className="text-lg font-bold text-orange-600">
-                        {formatCurrency(team.varianceCost)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant={
-                        team.improvementTrend === 'up' ? 'default' : 
-                        team.improvementTrend === 'down' ? 'destructive' : 'secondary'
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">
+                      {filteredCounts.length > 0 ? 
+                        formatPercentage(filteredCounts.reduce((sum, c) => sum + c.completion_percentage, 0) / filteredCounts.length) : 
+                        '0%'
                       }
-                      className="gap-1"
-                    >
-                      {team.improvementTrend === 'up' ? <TrendingUp className="h-3 w-3" /> :
-                       team.improvementTrend === 'down' ? <TrendingDown className="h-3 w-3" /> :
-                       <BarChart3 className="h-3 w-3" />}
-                      {team.improvementTrend === 'up' ? 'Improving' :
-                       team.improvementTrend === 'down' ? 'Declining' : 'Stable'}
-                    </Badge>
+                    </div>
+                    <div className="text-muted-foreground">Average Accuracy</div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-600">
+                      {filteredCounts.reduce((sum, c) => sum + c.variance_count, 0)}
+                    </div>
+                    <div className="text-muted-foreground">Total Variances</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            // Show overview of all teams
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {metrics.teamPerformance.map((team) => (
+                <Card key={team.teamId} className="relative">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      {team.teamName}
+                    </CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      {team.countCompletions} counts completed
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-muted-foreground">Accuracy</div>
+                        <div className="text-lg font-bold">{formatPercentage(team.accuracy)}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Avg Time</div>
+                        <div className="text-lg font-bold">{team.completionTime.toFixed(1)}h</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Total Value</div>
+                        <div className="text-lg font-bold text-green-600">
+                          {formatCurrency(team.inventoryValue)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Variance Cost</div>
+                        <div className="text-lg font-bold text-orange-600">
+                          {formatCurrency(team.varianceCost)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={
+                          team.improvementTrend === 'up' ? 'default' : 
+                          team.improvementTrend === 'down' ? 'destructive' : 'secondary'
+                        }
+                        className="gap-1"
+                      >
+                        {team.improvementTrend === 'up' ? <TrendingUp className="h-3 w-3" /> :
+                         team.improvementTrend === 'down' ? <TrendingDown className="h-3 w-3" /> :
+                         <BarChart3 className="h-3 w-3" />}
+                        {team.improvementTrend === 'up' ? 'Improving' :
+                         team.improvementTrend === 'down' ? 'Declining' : 'Stable'}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
