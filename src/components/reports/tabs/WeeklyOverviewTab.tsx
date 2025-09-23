@@ -14,13 +14,10 @@ import {
   Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { DateRange } from 'react-day-picker';
-import { useComprehensiveReports, ReportGranularity } from '@/hooks/useComprehensiveReports';
 import { useTaskReports } from '@/hooks/useTaskReports';
 import { useWeeklyReport } from '@/hooks/useTaskReports';
 import { DailyCompletionChart } from '@/components/reports/weekly/DailyCompletionChart';
 import { DailyTaskDetailView, DailyDetailData } from '@/components/reports/weekly/DailyTaskDetailView';
-import { WeekNavigation } from '@/components/reports/WeekNavigation';
 import { MetricsCard } from '@/components/reports/MetricsCard';
 import { downloadCSV } from '@/utils/exportUtils';
 import type { ReportFilter } from '@/types/reports';
@@ -33,47 +30,79 @@ interface WeeklyOverviewTabProps {
 export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
   filter,
 }) => {
-  const [granularity, setGranularity] = useState<ReportGranularity>('daily');
   const [exportType, setExportType] = useState<'daily' | 'weekly' | 'comprehensive'>('comprehensive');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dailyDetailData, setDailyDetailData] = useState<DailyDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
 
   // Use new centralized weekly report hook
   const { data: weeklyData, isLoading: weeklyLoading } = useWeeklyReport(filter);
 
-  // Fallback to comprehensive reports for additional data (backward compatibility)
   const userId = filter.userId || '';
   const userName = filter.userId ? 'Selected User' : 'All Users';
-  const timeRange = '7 days'; // Default for backward compatibility
-  const dateRange: DateRange | undefined = filter.dateISO ? {
-    from: new Date(filter.dateISO),
-    to: new Date(filter.dateISO)
-  } : undefined;
+  const timeRange = '7 days';
+  
+  // Create mock data for backward compatibility until comprehensive reports are updated
+  const comprehensiveData = weeklyData?.reduce((acc: any[], day: any) => {
+    const existing = acc.find(item => item.period_label === format(new Date(day.day_date), 'MMM d'));
+    if (!existing) {
+      acc.push({
+        period_label: format(new Date(day.day_date), 'MMM d'),
+        total_tasks: 0,
+        completed_tasks: 0,
+        completion_rate: 0,
+        total_minutes_worked: 0,
+        productivity_score: 0,
+        efficiency_rating: 0,
+        projects_data: []
+      });
+    }
+    return acc;
+  }, []) || [];
 
-  const {
-    comprehensiveData,
-    dailyCompletionData,
-    summary,
-    isLoading: comprehensiveLoading,
-    error,
-    range,
-  } = useComprehensiveReports({
-    userId,
-    timeRange,
-    dateRange,
-    granularity,
-  });
+  const dailyCompletionData = weeklyData?.reduce((acc: any[], day: any) => {
+    const dateStr = day.day_date;
+    const existing = acc.find(item => item.completion_date === dateStr);
+    if (!existing) {
+      acc.push({
+        completion_date: dateStr,
+        day_name: format(new Date(dateStr), 'EEEE'),
+        total_tasks: 0,
+        completed_tasks: 0,
+        pending_tasks: 0,
+        overdue_tasks: 0,
+        completion_rate: 0,
+        total_time_minutes: 0,
+        avg_time_per_task: 0
+      });
+    }
+    return acc;
+  }, []) || [];
+
+  const summary = {
+    total_tasks: 0,
+    completed_tasks: 0,
+    completion_rate: 0,
+    total_hours: 0,
+    avg_productivity_score: 0,
+    avg_efficiency_rating: 0,
+    total_projects: 0
+  };
+
+  const range = {
+    startDate: filter.weekStartISO || filter.dateISO || '',
+    endDate: filter.dateISO || '',
+  };
+
+  const error = null;
 
   // Get the task reports hook for daily details (legacy)
   const { getDailyTaskDetails } = useTaskReports({
     timeRange,
-    dateRange,
     userId,
   });
 
-  const isLoading = weeklyLoading || comprehensiveLoading;
+  const isLoading = weeklyLoading;
 
   const handleDayClick = React.useCallback(async (date: string) => {
     setSelectedDate(date);
@@ -117,7 +146,6 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
           ['Report Information', '', '', ''],
           ['User Name', userName, '', ''],
           ['Date Range', `${range.startDate} to ${range.endDate}`, '', ''],
-          ['Granularity', granularity, '', ''],
           ['Generated At', format(new Date(), 'yyyy-MM-dd HH:mm:ss'), '', ''],
           ['', '', '', ''],
           ['Summary Metrics', '', '', ''],
@@ -128,15 +156,6 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
           ['Productivity Score', summary.avg_productivity_score.toString(), '', ''],
           ['Efficiency Rating', summary.avg_efficiency_rating.toString(), '', ''],
           ['Active Projects', summary.total_projects.toString(), '', ''],
-          ['', '', '', ''],
-          ['Detailed Breakdown', '', '', ''],
-          ['Period', 'Tasks', 'Completion Rate', 'Hours Worked'],
-          ...comprehensiveData.map(item => [
-            item.period_label,
-            `${item.completed_tasks}/${item.total_tasks}`,
-            `${item.completion_rate}%`,
-            Math.round((item.total_minutes_worked / 60) * 100) / 100,
-          ]),
         ];
 
         exportData = {
@@ -146,7 +165,6 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
           metadata: {
             exportType: 'comprehensive-report',
             dateRange: `${range.startDate} to ${range.endDate}`,
-            granularity,
             user: userName,
             generatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
             totalRecords: comprehensiveData.length,
@@ -244,21 +262,6 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <WeekNavigation
-                selectedWeek={selectedWeek}
-                onWeekChange={setSelectedWeek}
-              />
-              
-              <Select value={granularity} onValueChange={(value: ReportGranularity) => setGranularity(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                </SelectContent>
-              </Select>
-              
               <Select value={exportType} onValueChange={(value: 'daily' | 'weekly' | 'comprehensive') => setExportType(value)}>
                 <SelectTrigger className="w-40">
                   <SelectValue />

@@ -8842,26 +8842,6 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: number
       }
-      get_comprehensive_employee_report: {
-        Args: {
-          end_date: string
-          report_granularity?: string
-          start_date: string
-          target_user_id: string
-        }
-        Returns: {
-          completed_tasks: number
-          completion_rate: number
-          in_progress_tasks: number
-          overdue_tasks: number
-          overtime_minutes: number
-          period_date: string
-          period_label: string
-          session_count: number
-          total_minutes_worked: number
-          total_tasks: number
-        }[]
-      }
       get_current_user_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -8873,15 +8853,6 @@ export type Database = {
       get_daily_task_summary: {
         Args: { target_date?: string; target_user_id: string }
         Returns: Json
-      }
-      get_employee_daily_task_completion: {
-        Args: { end_date: string; start_date: string; target_user_id: string }
-        Returns: {
-          completion_date: string
-          completion_rate: number
-          tasks_completed: number
-          tasks_created: number
-        }[]
       }
       get_employee_detailed_tasks: {
         Args: { end_date: string; start_date: string; target_user_id: string }
@@ -9140,24 +9111,28 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
-      rpc_task_report_user_day: {
-        Args:
-          | {
-              p_date_iso: string
-              p_org_id: string
-              p_timezone?: string
-              p_user_id: string
-            }
-          | {
-              p_day: string
-              p_org: string
-              p_team?: string[]
-              p_tz?: string
-              p_user: string
-            }
-        Returns: Json
+      rpc_task_report_user_day_lists: {
+        Args: {
+          p_day: string
+          p_org: string
+          p_team?: string[]
+          p_tz?: string
+          p_user: string
+        }
+        Returns: {
+          assigned_at: string
+          bucket: string
+          completed_at: string
+          created_at: string
+          due_at: string
+          priority: string
+          status: string
+          task_id: string
+          team_id: string
+          title: string
+        }[]
       }
-      rpc_task_report_user_week: {
+      rpc_task_report_user_week_lists: {
         Args: {
           p_org: string
           p_team?: string[]
@@ -9166,14 +9141,17 @@ export type Database = {
           p_week_start: string
         }
         Returns: {
-          assigned: number
-          completed: number
-          created: number
-          current_due: number
-          daily_score: number
+          assigned_at: string
+          bucket: string
+          completed_at: string
+          created_at: string
           day_date: string
-          overdue: number
-          total_due: number
+          due_at: string
+          priority: string
+          status: string
+          task_id: string
+          team_id: string
+          title: string
         }[]
       }
       send_daily_emails_and_reminders: {

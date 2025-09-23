@@ -1,17 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ReportFilter } from '@/types/reports';
-import { getUserDailyReport, getUserWeeklyReport } from '@/services/reportsService';
+import { getDailyLists, getWeeklyLists } from '@/services/reportsService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, subDays } from 'date-fns';
 
-// Stable query key functions
-const keyDaily = (f: ReportFilter) =>
-  ["report:user:day", f.orgId, f.userId ?? "", (f.teamIds ?? []).join(","), f.dateISO, f.timezone];
-
-const keyWeekly = (f: ReportFilter) =>
-  ["report:user:week", f.orgId, f.userId ?? "", (f.teamIds ?? []).join(","), f.weekStartISO ?? "", f.timezone];
+const keyDaily = (f: ReportFilter) => ["report:day:lists", f.orgId, f.userId ?? "", (f.teamIds ?? []).join(","), f.dateISO, f.timezone];
+const keyWeekly = (f: ReportFilter) => ["report:week:lists", f.orgId, f.userId ?? "", (f.teamIds ?? []).join(","), f.weekStartISO ?? "", f.timezone];
 
 export interface DailyReportData {
   current_due: number;
@@ -30,33 +26,61 @@ export interface WeeklyReportData {
   current_due: number;
   daily_score: number;
   overdue: number;
-  total_due: number; // RPC uses this name instead of total_due_today
-  day_date?: string; // RPC includes this field
+  total_due: number;
+  day_date?: string;
 }
 
-// Centralized daily report hook
 export function useDailyReport(filter: ReportFilter) {
-  return useQuery({
+  const query = useQuery({
     queryKey: keyDaily(filter),
-    queryFn: async (): Promise<DailyReportData> => {
-      return await getUserDailyReport(filter);
+    queryFn: async () => {
+      const data = await getDailyLists(filter);
+      return data ?? [];
     },
+    enabled: !!filter.orgId && !!filter.dateISO,
     staleTime: 60_000,
-    refetchOnWindowFocus: false,
-    enabled: !!filter.orgId && !!filter.dateISO && filter.view === 'daily',
   });
+
+  const { metrics, buckets } = useMemo(() => {
+    const rows = query.data ?? [];
+    const count = (b: string) => rows.filter(r => r.bucket === b).length;
+    const dueToday = count("due_today");
+    const completedToday = rows.filter(r => r.bucket === "completed_today" && r.due_at).length;
+
+    const daily_score = dueToday === 0 ? 100 : Math.round((1000 * completedToday / Math.max(1, dueToday))) / 10;
+
+    return {
+      buckets: {
+        due_today: rows.filter(r => r.bucket === "due_today"),
+        overdue: rows.filter(r => r.bucket === "overdue"),
+        completed_today: rows.filter(r => r.bucket === "completed_today"),
+        created_today: rows.filter(r => r.bucket === "created_today"),
+        assigned_today: rows.filter(r => r.bucket === "assigned_today"),
+      },
+      metrics: {
+        current_due: dueToday,
+        overdue: count("overdue"),
+        completed: count("completed_today"),
+        created: count("created_today"),
+        assigned: count("assigned_today"),
+        total_due_today: dueToday,
+        daily_score,
+      }
+    };
+  }, [query.data]);
+
+  return { ...query, metrics, buckets };
 }
 
-// Centralized weekly report hook  
 export function useWeeklyReport(filter: ReportFilter) {
   return useQuery({
     queryKey: keyWeekly(filter),
-    queryFn: async (): Promise<WeeklyReportData[]> => {
-      return await getUserWeeklyReport(filter);
+    queryFn: async () => {
+      const data = await getWeeklyLists(filter);
+      return data ?? [];
     },
+    enabled: !!filter.orgId && !!filter.weekStartISO,
     staleTime: 60_000,
-    refetchOnWindowFocus: false,
-    enabled: !!filter.orgId && !!filter.weekStartISO && filter.view === 'weekly',
   });
 }
 

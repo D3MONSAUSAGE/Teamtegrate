@@ -3,75 +3,63 @@ import type { ReportFilter } from "@/types/reports";
 
 const DEBUG_REPORTS = false;
 
-const join = (arr?: string[]) => arr && arr.length ? arr : null;
+const asArrayOrNull = (a?: string[]) => (a && a.length ? a : null);
 
-export async function getUserDailyReport(filter: ReportFilter) {
+export async function getDailyLists(filter: ReportFilter) {
   if (DEBUG_REPORTS) {
-    console.info("[reports] getUserDailyReport filter", filter);
+    console.info("[reports] getDailyLists filter", filter);
   }
 
-  // RPC accepts timezone-aware anchors:
-  // p_org, p_user, p_day, p_team (csv or null), p_tz
-  const { data, error } = await supabase.rpc("rpc_task_report_user_day", {
+  const { data, error } = await supabase.rpc("rpc_task_report_user_day_lists", {
     p_org: filter.orgId,
     p_user: filter.userId ?? null,
     p_day: filter.dateISO,
-    p_team: join(filter.teamIds),
+    p_team: asArrayOrNull(filter.teamIds),
     p_tz: filter.timezone,
   });
 
   if (error) {
-    console.error("[reports] getUserDailyReport error:", error);
+    console.error("[reports] getDailyLists error:", error);
     throw error;
   }
 
   if (DEBUG_REPORTS) {
-    console.info("[reports] getUserDailyReport result counts", {
-      current_due: data?.[0]?.current_due || 0,
-      overdue: data?.[0]?.overdue || 0,
-      completed: data?.[0]?.completed || 0,
-      created: data?.[0]?.created || 0,
-      assigned: data?.[0]?.assigned || 0,
-      daily_score: data?.[0]?.daily_score || 0,
+    console.info("[reports] getDailyLists result", {
+      total_rows: data?.length || 0,
+      buckets: data?.reduce((acc: any, row: any) => {
+        acc[row.bucket] = (acc[row.bucket] || 0) + 1;
+        return acc;
+      }, {}) || {},
     });
   }
 
-  return data?.[0] || {
-    current_due: 0,
-    overdue: 0, 
-    completed: 0,
-    created: 0,
-    assigned: 0,
-    daily_score: 100,
-    total_due_today: 0,
-  };
+  return data ?? [];
 }
 
-export async function getUserWeeklyReport(filter: ReportFilter) {
+export async function getWeeklyLists(filter: ReportFilter) {
   if (DEBUG_REPORTS) {
-    console.info("[reports] getUserWeeklyReport filter", filter);
+    console.info("[reports] getWeeklyLists filter", filter);
   }
 
-  // Use rpc_task_report_user_week for weekly data
-  const { data, error } = await supabase.rpc("rpc_task_report_user_week", {
+  const { data, error } = await supabase.rpc("rpc_task_report_user_week_lists", {
     p_org: filter.orgId,
     p_user: filter.userId ?? null,
     p_week_start: filter.weekStartISO || filter.dateISO,
-    p_team: join(filter.teamIds),
+    p_team: asArrayOrNull(filter.teamIds),
     p_tz: filter.timezone,
   });
 
   if (error) {
-    console.error("[reports] getUserWeeklyReport error:", error);
+    console.error("[reports] getWeeklyLists error:", error);
     throw error;
   }
 
   if (DEBUG_REPORTS) {
-    console.info("[reports] getUserWeeklyReport result", {
-      records: data?.length || 0,
-      sample: data?.[0],
+    console.info("[reports] getWeeklyLists result", {
+      total_rows: data?.length || 0,
+      days: [...new Set(data?.map((row: any) => row.day_date) || [])],
     });
   }
 
-  return data || [];
+  return data ?? [];
 }

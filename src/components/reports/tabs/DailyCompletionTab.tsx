@@ -24,8 +24,8 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
   const [dailyDetailData, setDailyDetailData] = useState<DailyDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Use centralized daily report hook
-  const { data: dailyMetrics, isLoading: metricsLoading, error } = useDailyReport(filter);
+  // Use unified daily report hook with both metrics and task lists
+  const { metrics: dailyMetrics, buckets, isLoading: metricsLoading, error } = useDailyReport(filter);
   
   // Legacy hook for detailed task lists (backward compatibility)
   const { getDailyTaskDetails } = useTaskReports({
@@ -141,84 +141,116 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
           title="Completed"
           value={dailyMetrics?.completed || 0}
           icon={<CheckCircle className="h-5 w-5 text-white" />}
-          colorClass="bg-success text-success-foreground"
+          colorClass="bg-success text-success-foreground ring-1 ring-emerald-400/30 shadow-emerald-400/10"
           trend={{ value: 5, label: "+12% from yesterday" }}
         />
         <MetricsCard
           title="Created"
           value={dailyMetrics?.created || 0}
           icon={<Plus className="h-5 w-5 text-white" />}
-          colorClass="bg-primary text-primary-foreground"
+          colorClass="bg-primary text-primary-foreground ring-1 ring-primary/30 shadow-primary/10"
         />
         <MetricsCard
           title="Assigned"
           value={dailyMetrics?.assigned || 0}
           icon={<UserPlus className="h-5 w-5 text-white" />}
-          colorClass="bg-purple-500 text-white"
+          colorClass="bg-purple-500 text-white ring-1 ring-purple-400/35 shadow-purple-400/15"
         />
         <MetricsCard
           title="Overdue"
           value={dailyMetrics?.overdue || 0}
           icon={<AlertTriangle className="h-5 w-5 text-white" />}
-          colorClass="bg-warning text-warning-foreground"
+          colorClass="bg-warning text-warning-foreground ring-1 ring-red-400/35 shadow-red-400/15"
         />
         <MetricsCard
           title="Daily Score"
           value={`${Math.round(dailyMetrics?.daily_score || 0)}%`}
           icon={<TrendingUp className="h-5 w-5 text-white" />}
-          colorClass="bg-info text-info-foreground"
+          colorClass="bg-info text-info-foreground ring-1 ring-info/30 shadow-info/10 hover:shadow-info/20"
           trend={{ value: 8, label: "+8% this week" }}
         />
       </div>
 
-      {/* Task Containers */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Task Containers - Grid of 4 equal containers */}
+      <div className="grid grid-cols-2 gap-4">
         <ScrollableTaskContainer
-          title="Current Tasks"
-          tasks={dailyDetailData?.pending_tasks || []}
+          title="Due Today"
+          tasks={buckets?.due_today?.map(task => ({
+            task_id: task.task_id,
+            title: task.title,
+            description: '',
+            priority: task.priority as 'High' | 'Medium' | 'Low',
+            status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+            deadline: task.due_at,
+            created_at: task.created_at,
+            completed_at: task.completed_at,
+            project_title: null
+          })) || []}
           icon={<AlertTriangle className="h-4 w-4 text-warning" />}
           onTaskClick={handleTaskClick}
-          emptyMessage="No pending tasks for today"
-          maxHeight="400px"
+          emptyMessage="No tasks due today"
+          maxHeight="420px"
+          className="ring-1 ring-amber-400/35 shadow-amber-400/15"
         />
         
         <ScrollableTaskContainer
-          title="Overdue Tasks"
-          tasks={dailyDetailData?.overdue_tasks || []}
+          title="Overdue"
+          tasks={buckets?.overdue?.map(task => ({
+            task_id: task.task_id,
+            title: task.title,
+            description: '',
+            priority: task.priority as 'High' | 'Medium' | 'Low',
+            status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+            deadline: task.due_at,
+            created_at: task.created_at,
+            completed_at: task.completed_at,
+            project_title: null
+          })) || []}
           icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No overdue tasks"
-          maxHeight="400px"
+          maxHeight="420px"
+          className="ring-1 ring-red-400/35 shadow-red-400/15"
         />
         
         <ScrollableTaskContainer
-          title="Completed Tasks"
-          tasks={dailyDetailData?.completed_tasks || []}
+          title="Completed Today"
+          tasks={buckets?.completed_today?.map(task => ({
+            task_id: task.task_id,
+            title: task.title,
+            description: '',
+            priority: task.priority as 'High' | 'Medium' | 'Low',
+            status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+            deadline: task.due_at,
+            created_at: task.created_at,
+            completed_at: task.completed_at,
+            project_title: null
+          })) || []}
           icon={<CheckCircle className="h-4 w-4 text-success" />}
           onTaskClick={handleTaskClick}
-          emptyMessage="No completed tasks today"
-          maxHeight="400px"
+          emptyMessage="No tasks completed today"
+          maxHeight="420px"
+          className="ring-1 ring-emerald-400/30 shadow-emerald-400/10"
         />
-      </div>
 
-      {/* Additional Task Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ScrollableTaskContainer
-          title="Tasks Created Today"
-          tasks={dailyDetailData?.created_tasks || []}
-          icon={<Plus className="h-4 w-4 text-primary" />}
-          onTaskClick={handleTaskClick}
-          emptyMessage="No tasks created today"
-          maxHeight="400px"
-        />
-        
-        <ScrollableTaskContainer
-          title="Tasks Assigned Today"
-          tasks={dailyDetailData?.assigned_tasks || []}
+          title="Assigned Today"
+          tasks={buckets?.assigned_today?.map(task => ({
+            task_id: task.task_id,
+            title: task.title,
+            description: '',
+            priority: task.priority as 'High' | 'Medium' | 'Low',
+            status: task.status as 'To Do' | 'In Progress' | 'Completed' | 'Archived',
+            deadline: task.due_at,
+            created_at: task.created_at,
+            completed_at: task.completed_at,
+            project_title: null
+          })) || []}
           icon={<UserPlus className="h-4 w-4 text-purple-500" />}
           onTaskClick={handleTaskClick}
           emptyMessage="No tasks assigned today"
-          maxHeight="400px"
+          maxHeight="420px"
+          className="ring-1 ring-slate-200/60 hover:shadow-slate-300/20"
         />
       </div>
 
