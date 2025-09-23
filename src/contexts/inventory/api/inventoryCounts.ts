@@ -406,4 +406,19 @@ export const inventoryCountsApi = {
       throw error;
     }
   },
+
+  async cancel(id: string): Promise<InventoryCount> {
+    const { data, error } = await supabase
+      .from('inventory_counts')
+      .update({ 
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as InventoryCount;
+  },
 };
