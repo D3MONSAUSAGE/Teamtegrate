@@ -197,24 +197,18 @@ export const useInventoryData = (): UseInventoryDataReturn => {
   const refreshTemplateItems = useCallback(async () => {
     if (!user?.organizationId) return;
     try {
-      // Get all template items across all templates
-      const allTemplateItems: InventoryTemplateItem[] = [];
-      
-      for (const template of templates) {
-        const templateItems = await handleAsyncOperation(
-          () => inventoryTemplatesApi.getTemplateItems(template.id),
-          'Load Template Items'
-        );
-        if (templateItems) {
-          allTemplateItems.push(...templateItems);
-        }
+      // Get all template items in one call - no dependency on templates state
+      const allTemplateItems = await handleAsyncOperation(
+        () => inventoryTemplatesApi.getAllTemplateItems(),
+        'Load Template Items'
+      );
+      if (allTemplateItems) {
+        setTemplateItems(allTemplateItems);
       }
-      
-      setTemplateItems(allTemplateItems);
     } catch (error) {
       console.error('Error refreshing template items:', error);
     }
-  }, [user?.organizationId, handleAsyncOperation, templates]);
+  }, [user?.organizationId, handleAsyncOperation]);
 
   const refreshAll = useCallback(async () => {
     if (!user?.organizationId) return;
@@ -228,14 +222,10 @@ export const useInventoryData = (): UseInventoryDataReturn => {
       refreshTeamAssignments,
       refreshCategories,
       refreshUnits,
+      refreshTemplateItems, // Load template items in parallel
     ];
     
     await Promise.allSettled(refreshFunctions.map(fn => fn()));
-    
-    // Refresh template items after templates are loaded if we have templates
-    if (templates.length > 0) {
-      await refreshTemplateItems();
-    }
   }, [
     user?.organizationId,
     refreshItems,
@@ -247,15 +237,14 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshCategories,
     refreshUnits,
     refreshTemplateItems,
-    templates,
   ]);
 
-  // Load template items when templates change
+  // Load template items independently - no dependency on templates
   useEffect(() => {
-    if (user?.organizationId && templates.length > 0) {
+    if (user?.organizationId) {
       refreshTemplateItems();
     }
-  }, [user?.organizationId, templates, refreshTemplateItems]);
+  }, [user?.organizationId, refreshTemplateItems]);
 
   // Initial data load - use stable function to avoid dependency cycle
   useEffect(() => {
@@ -273,6 +262,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
           refreshTeamAssignments,
           refreshCategories,
           refreshUnits,
+          refreshTemplateItems, // Load template items in parallel during initial load
         ];
         
         await Promise.allSettled(refreshFunctions.map(fn => fn()));

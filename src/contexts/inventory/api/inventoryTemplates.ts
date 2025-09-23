@@ -5,12 +5,38 @@ export const inventoryTemplatesApi = {
   async getAll(): Promise<InventoryTemplate[]> {
     const { data, error } = await supabase
       .from('inventory_templates')
-      .select('*')
+      .select(`
+        *,
+        inventory_template_items(count)
+      `)
       .eq('is_active', true)
       .order('name');
 
     if (error) throw error;
-    return (data || []) as InventoryTemplate[];
+    
+    // Transform data to include item count
+    return (data || []).map((template: any) => ({
+      ...template,
+      item_count: template.inventory_template_items?.[0]?.count || 0
+    })) as InventoryTemplate[];
+  },
+
+  async getAllTemplateItems(): Promise<InventoryTemplateItem[]> {
+    const { data, error } = await supabase
+      .from('inventory_template_items')
+      .select(`
+        *,
+        inventory_items(*),
+        inventory_templates!inner(*)
+      `)
+      .eq('inventory_templates.is_active', true)
+      .order('sort_order');
+
+    if (error) throw error;
+    return (data || []).map((item: any) => ({
+      ...item,
+      updated_at: item.updated_at || item.created_at || new Date().toISOString()
+    })) as InventoryTemplateItem[];
   },
 
   async create(template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryTemplate> {

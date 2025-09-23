@@ -21,7 +21,7 @@ interface InventoryTemplatesPanelProps {
 }
 
 export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = ({ selectedTeam }) => {
-  const { templates, createTemplate, duplicateTemplate, deleteTemplate, refreshTemplates } = useInventory();
+  const { templates, templateItems, createTemplate, duplicateTemplate, deleteTemplate, refreshTemplates } = useInventory();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -228,28 +228,46 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
             </CardContent>
           </Card>
         ) : (
-          filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{template.name}</CardTitle>
-                  <Badge variant={template.is_active ? 'default' : 'secondary'}>
-                    {template.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {template.description && (
-                    <p className="text-sm text-muted-foreground">
-                      {template.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    {template.team_id ? 'Team Specific' : 'Organization Wide'}
+          filteredTemplates.map((template) => {
+            const templateItemsForTemplate = templateItems.filter(item => item.template_id === template.id);
+            const itemCount = templateItemsForTemplate.length;
+            
+            return (
+              <Card key={template.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">{template.name}</CardTitle>
+                    <Badge variant={template.is_active ? 'default' : 'secondary'}>
+                      {template.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {template.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {template.description}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {template.team_id ? 'Team Specific' : 'Organization Wide'}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Package className="h-4 w-4" />
+                        <span className={itemCount === 0 ? 'text-amber-600 font-medium' : ''}>
+                          {itemCount} item{itemCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {itemCount === 0 && (
+                      <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded flex items-center gap-1">
+                        ⚠️ No items added yet. Add items to use this template.
+                      </div>
+                    )}
                   
                   <div className="grid grid-cols-2 gap-2">
                     <Button 
@@ -321,7 +339,8 @@ export const InventoryTemplatesPanel: React.FC<InventoryTemplatesPanelProps> = (
                 </div>
               </CardContent>
             </Card>
-          ))
+            );
+          })
         )}
       </div>
 

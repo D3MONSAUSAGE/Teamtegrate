@@ -133,6 +133,7 @@ export interface InventoryTemplate {
   execution_window_hours: number;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   category: string;
+  item_count?: number; // Number of items in this template
 }
 
 export interface InventoryTemplateItem {
