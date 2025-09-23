@@ -67,16 +67,16 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
     },
   });
 
-  // Convert hook request types to simple format
+  // Convert hook request types to simple format with proper subcategory handling
   const simpleRequestTypes: SimpleRequestType[] = requestTypes.map(rt => ({
     id: rt.id,
     name: rt.name,
     description: rt.description,
     requires_approval: rt.requires_approval,
     category: rt.category,
-    subcategory: undefined,
-    parent_id: undefined,
-    is_subcategory: false,
+    subcategory: rt.subcategory,
+    parent_id: rt.parent_category_id,
+    is_subcategory: !!rt.parent_category_id,
     display_order: 0
   }));
 
@@ -128,148 +128,176 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
   const selectedRequestType = simpleRequestTypes.find(rt => rt.id === form.watch('request_type_id'));
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      {/* Request Type Selection */}
-      <div className="space-y-2">
-        <Label htmlFor="request_type">Request Type *</Label>
-        <Select
-          value={form.watch('request_type_id')}
-          onValueChange={(value) => form.setValue('request_type_id', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a request type" />
-          </SelectTrigger>
-          <SelectContent>
-            {simpleRequestTypes
-              .filter(type => !type.is_subcategory) // Show only parent categories
-              .map((parentType) => {
-                const subcategories = simpleRequestTypes.filter(type => type.parent_id === parentType.id);
-                
-                return (
-                  <div key={parentType.id}>
-                    <SelectItem value={parentType.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <div>
-                          <div className="font-medium">{parentType.name}</div>
-                          {parentType.description && (
-                            <div className="text-sm text-muted-foreground">{parentType.description}</div>
-                          )}
-                        </div>
-                        {parentType.requires_approval && (
-                          <Badge variant="outline" className="ml-2">Requires Approval</Badge>
-                        )}
-                      </div>
-                    </SelectItem>
-                    
-                    {subcategories.map((subType) => (
-                      <SelectItem key={subType.id} value={subType.id}>
-                        <div className="flex items-center justify-between w-full pl-4">
+    <div className="space-y-6">
+      {/* Request Type Selection Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+          <Check className="h-4 w-4" />
+          Request Type Selection
+        </div>
+        
+        <div className="pl-6 space-y-2">
+          <Label htmlFor="request_type">Request Type *</Label>
+          <Select
+            value={form.watch('request_type_id')}
+            onValueChange={(value) => form.setValue('request_type_id', value)}
+          >
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder="Select a request type" />
+            </SelectTrigger>
+            <SelectContent>
+              {simpleRequestTypes
+                .filter(type => !type.is_subcategory) // Show only parent categories
+                .map((parentType) => {
+                  const subcategories = simpleRequestTypes.filter(type => type.parent_id === parentType.id);
+                  
+                  return (
+                    <div key={parentType.id}>
+                      <SelectItem value={parentType.id}>
+                        <div className="flex items-center justify-between w-full">
                           <div>
-                            <div className="font-medium text-sm">↳ {subType.name}</div>
-                            {subType.description && (
-                              <div className="text-xs text-muted-foreground">{subType.description}</div>
+                            <div className="font-medium">{parentType.name}</div>
+                            {parentType.description && (
+                              <div className="text-sm text-muted-foreground">{parentType.description}</div>
                             )}
                           </div>
-                          {subType.requires_approval && (
-                            <Badge variant="outline" className="ml-2 text-xs">Requires Approval</Badge>
+                          {parentType.requires_approval && (
+                            <Badge variant="outline" className="ml-2">Requires Approval</Badge>
                           )}
                         </div>
                       </SelectItem>
-                    ))}
-                  </div>
-                );
-              })}
-          </SelectContent>
-        </Select>
-        {form.formState.errors.request_type_id && (
-          <p className="text-sm text-destructive flex items-center gap-1">
-            <AlertCircle className="h-4 w-4" />
-            {form.formState.errors.request_type_id.message}
-          </p>
-        )}
-      </div>
-
-      {/* Request Title */}
-      <div className="space-y-2">
-        <Label htmlFor="title">Request Title *</Label>
-        <Input
-          id="title"
-          placeholder="Enter a clear, descriptive title"
-          {...form.register('title')}
-        />
-        {form.formState.errors.title && (
-          <p className="text-sm text-destructive flex items-center gap-1">
-            <AlertCircle className="h-4 w-4" />
-            {form.formState.errors.title.message}
-          </p>
-        )}
-      </div>
-
-      {/* Priority and Due Date Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="priority">Priority</Label>
-          <Select
-            value={form.watch('priority')}
-            onValueChange={(value: any) => form.setValue('priority', value)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
-                <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
-                    <Badge className={config.color}>{config.label}</Badge>
-                  </div>
-                </SelectItem>
-              ))}
+                      
+                      {subcategories.map((subType) => (
+                        <SelectItem key={subType.id} value={subType.id}>
+                          <div className="flex items-center justify-between w-full pl-4">
+                            <div>
+                              <div className="font-medium text-sm">↳ {subType.name}</div>
+                              {subType.description && (
+                                <div className="text-xs text-muted-foreground">{subType.description}</div>
+                              )}
+                            </div>
+                            {subType.requires_approval && (
+                              <Badge variant="outline" className="ml-2 text-xs">Requires Approval</Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </div>
+                  );
+                })}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Due Date (Optional)</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !form.watch('due_date') && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {form.watch('due_date') ? (
-                  format(form.watch('due_date')!, "PPP")
-                ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={form.watch('due_date')}
-                onSelect={(date) => form.setValue('due_date', date)}
-                disabled={(date) => date < new Date()}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          {form.formState.errors.request_type_id && (
+            <p className="text-sm text-destructive flex items-center gap-1">
+              <AlertCircle className="h-4 w-4" />
+              {form.formState.errors.request_type_id.message}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Provide additional details about your request"
-          rows={4}
-          {...form.register('description')}
-        />
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+      {/* Request Details Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+          <AlertCircle className="h-4 w-4" />
+          Request Details
+        </div>
+        
+        <div className="pl-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Request Title *</Label>
+            <Input
+              id="title"
+              placeholder="Enter a clear, descriptive title..."
+              {...form.register('title')}
+              className="h-12"
+            />
+            {form.formState.errors.title && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {form.formState.errors.title.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Provide additional details about your request..."
+              rows={4}
+              {...form.register('description')}
+              className="resize-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Priority & Timing Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+          <CalendarIcon className="h-4 w-4" />
+          Priority & Timing
+        </div>
+        
+        <div className="pl-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select
+                value={form.watch('priority')}
+                onValueChange={(value: any) => form.setValue('priority', value)}
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <Badge className={config.color}>{config.label}</Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Due Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-12 justify-start text-left font-normal",
+                      !form.watch('due_date') && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.watch('due_date') ? (
+                      format(form.watch('due_date')!, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={form.watch('due_date')}
+                    onSelect={(date) => form.setValue('due_date', date)}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Request Type Info */}
@@ -299,26 +327,36 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
       )}
 
       {/* Submit Actions */}
-      <div className="flex justify-end gap-2 pt-4">
+      <div className="flex justify-end gap-3 pt-6 border-t">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={loading}
+          >
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={loading}>
+        <Button 
+          type="submit" 
+          disabled={loading}
+          className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+        >
           {loading ? (
-            <div className="flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+            <>
+              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
               Submitting...
-            </div>
+            </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4" />
+            <>
+              <Check className="h-4 w-4 mr-2" />
               Submit Request
-            </div>
+            </>
           )}
         </Button>
       </div>
     </form>
+    </div>
   );
 }

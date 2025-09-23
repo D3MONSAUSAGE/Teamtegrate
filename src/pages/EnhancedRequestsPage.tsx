@@ -197,11 +197,23 @@ export default function EnhancedRequestsPage() {
 
       {/* Create Request Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Request</DialogTitle>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20">
+                <Plus className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                  Create New Request
+                </DialogTitle>
+                <p className="text-muted-foreground">
+                  Submit a request to your organization with proper categorization and details.
+                </p>
+              </div>
+            </div>
           </DialogHeader>
-          <SimpleRequestForm onSuccess={handleRequestSuccess} />
+          <SimpleRequestForm onSuccess={handleRequestSuccess} onCancel={() => setShowCreateForm(false)} />
         </DialogContent>
       </Dialog>
 
