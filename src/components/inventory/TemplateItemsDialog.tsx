@@ -245,44 +245,56 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                     <ArrowRight className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                   <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label htmlFor="in-stock-qty" className="text-sm font-medium">
+                          In-Stock Quantity
+                          <span className="text-xs text-muted-foreground block">Current expected stock</span>
+                        </Label>
+                        <Input
+                          id="in-stock-qty"
+                          type="number"
+                          min="0"
+                          value={inStockQuantity}
+                          onChange={(e) => setInStockQuantity(Number(e.target.value))}
+                          placeholder="0"
+                          className="mt-1"
+                        />
+                      </div>
                      <div>
-                       <Label htmlFor="in-stock-qty" className="text-sm font-medium">In-Stock Quantity</Label>
+                       <Label htmlFor="min-qty" className="text-sm font-medium">
+                         Min Quantity (Optional)
+                         <span className="text-xs text-muted-foreground block">Reorder threshold</span>
+                       </Label>
                        <Input
-                         id="in-stock-qty"
+                         id="min-qty"
                          type="number"
                          min="0"
-                         value={inStockQuantity}
-                         onChange={(e) => setInStockQuantity(Number(e.target.value))}
-                         placeholder="0"
+                         value={minimumQuantity || ''}
+                         onChange={(e) => setMinimumQuantity(e.target.value ? Number(e.target.value) : undefined)}
+                         placeholder="Optional"
                          className="mt-1"
                        />
                      </div>
-                    <div>
-                      <Label htmlFor="min-qty" className="text-sm font-medium">Min Quantity (Optional)</Label>
-                      <Input
-                        id="min-qty"
-                        type="number"
-                        min="0"
-                        value={minimumQuantity || ''}
-                        onChange={(e) => setMinimumQuantity(e.target.value ? Number(e.target.value) : undefined)}
-                        placeholder="Optional"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="max-qty" className="text-sm font-medium">Max Quantity (Optional)</Label>
-                      <Input
-                        id="max-qty"
-                        type="number"
-                        min="0"
-                        value={maximumQuantity || ''}
-                        onChange={(e) => setMaximumQuantity(e.target.value ? Number(e.target.value) : undefined)}
-                        placeholder="Optional"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
+                     <div>
+                       <Label htmlFor="max-qty" className="text-sm font-medium">
+                         Max Quantity (Optional)
+                         <span className="text-xs text-muted-foreground block">Maximum stock level</span>
+                       </Label>
+                       <Input
+                         id="max-qty"
+                         type="number"
+                         min="0"
+                         value={maximumQuantity || ''}
+                         onChange={(e) => setMaximumQuantity(e.target.value ? Number(e.target.value) : undefined)}
+                         placeholder="Optional"
+                         className="mt-1"
+                       />
+                     </div>
+                   </div>
+                   <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded mt-2">
+                     <strong>Tip:</strong> For new stores, you can set in-stock to 0 and define min/max quantities for future inventory planning.
+                   </div>
                   <div className="mt-3">
                     <Button
                       onClick={handleAddItem}

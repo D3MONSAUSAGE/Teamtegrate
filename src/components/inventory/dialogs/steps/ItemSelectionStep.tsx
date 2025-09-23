@@ -318,13 +318,13 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
               <Package className="h-4 w-4 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">Item Selection Tips</h4>
+              <h4 className="font-medium text-sm">Template Quantity Guidelines</h4>
               <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                <li>• Set in stock quantities to help teams know normal stock levels</li>
-                <li>• Use minimum/maximum quantities to define acceptable count ranges</li>
-                <li>• In stock quantity is required; min/max are optional for flexibility</li>
-                <li>• Use search and category filters to find items quickly</li>
-                <li>• Add commonly counted items first for better organization</li>
+                <li>• <strong>In Stock:</strong> Current expected stock level (can be 0 for new stores)</li>
+                <li>• <strong>Minimum:</strong> Reorder threshold - when to replenish stock</li>
+                <li>• <strong>Maximum:</strong> Maximum stock level to maintain</li>
+                <li>• For new stores: Set in-stock to 0 and define min/max for future ordering</li>
+                <li>• Min/max quantities help with inventory planning and reorder alerts</li>
               </ul>
             </div>
           </div>
