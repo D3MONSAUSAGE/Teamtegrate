@@ -48,6 +48,7 @@ const DedicatedTeamManagement = lazy(() => import('@/components/team/management/
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const TimeTrackingPage = lazy(() => import('@/pages/TimeTrackingPage'));
+const ReportsDashboard = lazy(() => import('@/pages/ReportsDashboard'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const DocumentsPage = lazy(() => import('@/pages/DocumentsPage'));
 const FinancePage = lazy(() => import('@/pages/FinancePage'));
@@ -237,7 +238,7 @@ const OptimizedRouter = () => {
             } />
             <Route path="reports" element={
               <PageWrapper>
-                <ReportsPage />
+                <ReportsDashboard />
               </PageWrapper>
             } />
             <Route path="time-tracking" element={
