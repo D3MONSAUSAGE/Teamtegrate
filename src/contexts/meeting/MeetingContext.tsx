@@ -11,12 +11,14 @@ import {
   respondToMeetingAPI,
   syncMeetingToGoogleAPI
 } from './api';
+import { useUserTimezone } from '@/hooks/useUserTimezone';
 
 export const MeetingContext = React.createContext<MeetingContextType | undefined>(undefined);
 
 export const MeetingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { userTimezone } = useUserTimezone();
   
   const [meetings, setMeetings] = useState<MeetingRequestWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,8 @@ export const MeetingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         endTime,
         participantIds,
         location,
-        user
+        user,
+        timezone: userTimezone
       });
 
       if (meeting) {

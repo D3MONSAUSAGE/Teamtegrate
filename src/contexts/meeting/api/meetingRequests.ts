@@ -113,10 +113,11 @@ interface CreateMeetingParams {
   participantIds: string[];
   location?: string;
   user: User;
+  timezone?: string;
 }
 
 export const createMeetingRequestAPI = async (params: CreateMeetingParams) => {
-  const { title, description, startTime, endTime, participantIds, location, user } = params;
+  const { title, description, startTime, endTime, participantIds, location, user, timezone } = params;
   
   if (!user.organizationId) {
     toast({
@@ -210,7 +211,8 @@ export const createMeetingRequestAPI = async (params: CreateMeetingParams) => {
           location: location,
           startISO: startTime.toISOString(),
           endISO: endTime.toISOString(),
-          notes: description
+          notes: description,
+          timezone: timezone || 'UTC'
         }
       };
 

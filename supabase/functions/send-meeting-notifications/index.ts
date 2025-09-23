@@ -62,20 +62,49 @@ function formatDate(dateString: string): string {
   });
 }
 
-function formatTime(dateString: string): string {
+function formatTime(dateString: string, timezone?: string): string {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true 
-  });
+  const tz = timezone || 'UTC';
+  
+  try {
+    return new Intl.DateTimeFormat('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true,
+      timeZone: tz
+    }).format(date);
+  } catch (error) {
+    console.warn(`Invalid timezone ${tz}, falling back to UTC:`, error);
+    return new Intl.DateTimeFormat('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC'
+    }).format(date);
+  }
 }
 
-function formatTimeRange(startISO: string, endISO?: string): string {
-  const start = formatTime(startISO);
+function formatTimeRange(startISO: string, endISO?: string, timezone?: string): string {
+  const start = formatTime(startISO, timezone);
   if (!endISO) return start;
-  const end = formatTime(endISO);
-  return `${start} - ${end}`;
+  const end = formatTime(endISO, timezone);
+  
+  // Get timezone abbreviation for display
+  const tz = timezone || 'UTC';
+  let tzDisplay = '';
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', { 
+      timeZoneName: 'short',
+      timeZone: tz
+    });
+    const parts = formatter.formatToParts(new Date(startISO));
+    const tzPart = parts.find(part => part.type === 'timeZoneName');
+    tzDisplay = tzPart ? ` (${tzPart.value})` : '';
+  } catch (error) {
+    tzDisplay = tz !== 'UTC' ? ` (${tz})` : ' (UTC)';
+  }
+  
+  return `${start} - ${end}${tzDisplay}`;
 }
 
 // Meeting email context interface
@@ -498,7 +527,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Format meeting details
     const meetingDate = formatDate(meeting.startISO);
-    const meetingTime = formatTimeRange(meeting.startISO, meeting.endISO);
+    const meetingTime = formatTimeRange(meeting.startISO, meeting.endISO, meeting.timezone);
     const meetingUrl = `${base}/dashboard/meetings/${meeting.id}`;
 
     // Build email context
