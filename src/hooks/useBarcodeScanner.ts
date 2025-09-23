@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-// jsQR removed to fix memory issues
 
 export interface BarcodeScanResult {
   text: string;
@@ -20,16 +18,9 @@ export const useBarcodeScanner = () => {
         setHasPermission(status.granted);
         return status.granted;
       } else {
-        // For web, request camera access
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          stream.getTracks().forEach(track => track.stop());
-          setHasPermission(true);
-          return true;
-        } catch (error) {
-          setHasPermission(false);
-          return false;
-        }
+        // For web, just return false - manual input only
+        setHasPermission(false);
+        return false;
       }
     } catch (error) {
       console.error('Permission request failed:', error);
@@ -44,6 +35,11 @@ export const useBarcodeScanner = () => {
     try {
       setIsScanning(true);
 
+      // Only work on native platforms
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Barcode scanning only available on mobile devices. Please enter barcode manually.');
+      }
+
       // Request permissions if not already granted
       if (hasPermission === null) {
         const granted = await requestPermissions();
@@ -52,27 +48,22 @@ export const useBarcodeScanner = () => {
         }
       }
 
-      if (Capacitor.isNativePlatform()) {
-        // Native mobile scanning
-        await BarcodeScanner.hideBackground();
-        document.body.classList.add('scanner-active');
-        
-        const result = await BarcodeScanner.startScan();
-        
-        document.body.classList.remove('scanner-active');
-        await BarcodeScanner.showBackground();
+      // Native mobile scanning
+      await BarcodeScanner.hideBackground();
+      document.body.classList.add('scanner-active');
+      
+      const result = await BarcodeScanner.startScan();
+      
+      document.body.classList.remove('scanner-active');
+      await BarcodeScanner.showBackground();
 
-        if (result.hasContent) {
-          return {
-            text: result.content,
-            format: result.format
-          };
-        }
-        return null;
-      } else {
-        // Web fallback - simplified camera input
-        throw new Error('Web barcode scanning temporarily disabled. Please enter barcode manually.');
+      if (result.hasContent) {
+        return {
+          text: result.content,
+          format: result.format
+        };
       }
+      return null;
     } catch (error: any) {
       console.error('Barcode scanning failed:', error);
       if (error.message && error.message.includes('cancelled')) {
@@ -110,5 +101,3 @@ export const useBarcodeScanner = () => {
     requestPermissions,
   };
 };
-
-// Helper function removed - jsQR dependency removed to fix memory issues

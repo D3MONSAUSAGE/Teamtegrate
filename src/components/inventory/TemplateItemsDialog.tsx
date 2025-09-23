@@ -60,9 +60,24 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleAddItem = async () => {
     if (!selectedItem) return;
     
+    // Validate quantities before adding
+    const validatedMin = minimumQuantity && minimumQuantity >= 0 ? minimumQuantity : undefined;
+    const validatedMax = maximumQuantity && maximumQuantity >= 0 ? maximumQuantity : undefined;
+    const validatedInStock = Math.max(0, inStockQuantity || 0);
+    
+    // Check min <= max constraint
+    if (validatedMin !== undefined && validatedMax !== undefined && validatedMin > validatedMax) {
+      toast({
+        title: "Invalid Quantities",
+        description: "Minimum quantity cannot be greater than maximum quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      await addItemToTemplate(templateId, selectedItem.id, inStockQuantity, minimumQuantity, maximumQuantity);
+      await addItemToTemplate(templateId, selectedItem.id, validatedInStock, validatedMin, validatedMax);
       // Force refresh of template items to ensure UI updates
       await refreshTemplateItems();
       setSelectedItem(null);

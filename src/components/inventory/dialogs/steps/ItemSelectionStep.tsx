@@ -59,11 +59,33 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
 
   const updateItemQuantity = (itemId: string, field: 'inStockQuantity' | 'minimumQuantity' | 'maximumQuantity', value: number | undefined) => {
     updateFormData({
-      selectedItems: formData.selectedItems.map(selected =>
-        selected.item.id === itemId
-          ? { ...selected, [field]: field === 'inStockQuantity' ? Math.max(0, value || 0) : value }
-          : selected
-      )
+      selectedItems: formData.selectedItems.map(selected => {
+        if (selected.item.id !== itemId) return selected;
+        
+        const updatedSelected = { ...selected };
+        
+        if (field === 'inStockQuantity') {
+          updatedSelected[field] = Math.max(0, value || 0);
+        } else {
+          updatedSelected[field] = value && value >= 0 ? value : undefined;
+        }
+        
+        // Validate min <= max constraint
+        if (updatedSelected.minimumQuantity !== undefined && 
+            updatedSelected.maximumQuantity !== undefined && 
+            updatedSelected.minimumQuantity > updatedSelected.maximumQuantity) {
+          // If setting min above max, adjust max
+          if (field === 'minimumQuantity') {
+            updatedSelected.maximumQuantity = updatedSelected.minimumQuantity;
+          }
+          // If setting max below min, adjust min
+          if (field === 'maximumQuantity') {
+            updatedSelected.minimumQuantity = updatedSelected.maximumQuantity;
+          }
+        }
+        
+        return updatedSelected;
+      })
     });
   };
 
