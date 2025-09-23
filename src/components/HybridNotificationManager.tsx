@@ -6,16 +6,12 @@ import { Bell, BellRing, Smartphone, Globe, CheckCircle, AlertCircle } from 'luc
 import { useAuth } from '@/contexts/AuthContext';
 import { useFCMTokenManager } from '@/hooks/useFCMTokenManager';
 import { notifications } from '@/lib/notifications';
-import { Capacitor } from '@capacitor/core';
 import { toast } from '@/components/ui/sonner';
 
-/**
- * Unified notification manager that handles both native and web notifications
- * Provides a single interface for managing all notification types
- */
+// Web-only notification manager
 export const HybridNotificationManager: React.FC = () => {
   const { user } = useAuth();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = false; // Always false for web-only builds
   
   // Native FCM notifications
   const {

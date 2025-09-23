@@ -2,13 +2,13 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Capacitor } from '@capacitor/core';
 
+// Web-only background sync (no Capacitor dependency)
 export const useBackgroundSync = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user || !Capacitor.isNativePlatform()) return;
+    if (!user) return;
 
     // Store notifications that were missed while app was closed
     const syncMissedNotifications = async () => {
@@ -27,7 +27,7 @@ export const useBackgroundSync = () => {
         if (missedNotifications && missedNotifications.length > 0) {
           console.log(`Found ${missedNotifications.length} missed notifications`);
           
-          // Update app badge with unread count
+          // Update app badge with unread count (web API)
           if ('setAppBadge' in navigator) {
             (navigator as any).setAppBadge(missedNotifications.length);
           }

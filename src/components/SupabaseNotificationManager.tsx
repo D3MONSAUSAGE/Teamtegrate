@@ -7,8 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, TestTube, Zap } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
 
+// Web-only Supabase notification manager
 const SupabaseNotificationManager: React.FC = () => {
   const { user } = useAuth();
   const { triggerTestNotification } = useRealtimeNotifications();
@@ -17,7 +17,7 @@ const SupabaseNotificationManager: React.FC = () => {
   useNotificationChannels();
   useBackgroundSync();
 
-  if (!user || !Capacitor.isNativePlatform()) {
+  if (!user) {
     return null;
   }
 

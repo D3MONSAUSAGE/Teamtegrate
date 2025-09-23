@@ -1,50 +1,25 @@
-
 import { useEffect } from 'react';
-import { LocalNotifications } from '@capacitor/local-notifications';
-import { Capacitor } from '@capacitor/core';
+import { useAuth } from '@/contexts/AuthContext';
 
+// Web-only notification channels (no Capacitor dependency)
 export const useNotificationChannels = () => {
+  const { user } = useAuth();
+  
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    const initializeChannels = async () => {
+    // Web notification permissions and setup
+    if (!user || typeof window === 'undefined') return;
+    
+    const setupWebNotifications = async () => {
       try {
-        // Create notification channels for Android
-        await LocalNotifications.createChannel({
-          id: 'default',
-          name: 'Default Notifications',
-          description: 'General app notifications',
-          importance: 5,
-          sound: 'push-notification.mp3',
-          vibration: true,
-          lights: true,
-          lightColor: '#FF0000',
-        });
-
-        await LocalNotifications.createChannel({
-          id: 'chat',
-          name: 'Chat Messages',
-          description: 'New chat messages',
-          importance: 4,
-          sound: 'chat-notification.mp3',
-          vibration: true,
-        });
-
-        await LocalNotifications.createChannel({
-          id: 'tasks',
-          name: 'Task Updates',
-          description: 'Task assignments and updates',
-          importance: 4,
-          sound: 'task-notification.mp3',
-          vibration: true,
-        });
-
-        console.log('Notification channels created successfully');
+        // Request notification permission for web
+        if ('Notification' in window && Notification.permission === 'default') {
+          await Notification.requestPermission();
+        }
       } catch (error) {
-        console.error('Error creating notification channels:', error);
+        console.error('Error setting up web notifications:', error);
       }
     };
-
-    initializeChannels();
-  }, []);
+    
+    setupWebNotifications();
+  }, [user]);
 };

@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, BellOff, TestTube, Settings, Smartphone, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Capacitor } from '@capacitor/core';
 import { Link } from 'react-router-dom';
 
+// Web-only push notification manager
 const PushNotificationManager: React.FC = () => {
   const { 
     pushToken, 
@@ -40,11 +40,9 @@ const PushNotificationManager: React.FC = () => {
     }
   }, [fcmToken, isRegistered, user, fcmSupported]);
 
-  // Show settings panel on mobile devices for easier testing
+  // Show settings panel for web (always show for web-only builds)
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      setShowSettings(true);
-    }
+    setShowSettings(true);
   }, []);
 
   // Don't show if dismissed or hidden
