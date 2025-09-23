@@ -26,11 +26,11 @@ interface AdminHierarchySectionProps {
 const getRoleIcon = (role: string) => {
   switch (role) {
     case 'superadmin':
-      return <Crown className="h-4 w-4 text-yellow-500" />;
+      return <Crown className="h-4 w-4 text-amber-500" />;
     case 'admin':
       return <Shield className="h-4 w-4 text-blue-500" />;
     case 'manager':
-      return <UserCheck className="h-4 w-4 text-green-500" />;
+      return <UserCheck className="h-4 w-4 text-emerald-500" />;
     default:
       return null;
   }
@@ -39,13 +39,13 @@ const getRoleIcon = (role: string) => {
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
     case 'superadmin':
-      return 'default';
+      return 'destructive' as const; // Gold/amber appearance for superadmin
     case 'admin':
-      return 'secondary';
+      return 'default' as const; // Blue appearance for admin
     case 'manager':
-      return 'outline';
+      return 'secondary' as const; // Green appearance for manager
     default:
-      return 'outline';
+      return 'outline' as const;
   }
 };
 

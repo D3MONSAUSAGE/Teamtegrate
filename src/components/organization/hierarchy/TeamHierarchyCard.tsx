@@ -36,13 +36,13 @@ interface TeamHierarchyCardProps {
 const getTeamRoleIcon = (role: string) => {
   switch (role) {
     case 'manager':
-      return <Crown className="h-3 w-3 text-yellow-500" />;
+      return <Crown className="h-3 w-3 text-amber-500" />;
     case 'admin':
       return <Shield className="h-3 w-3 text-blue-500" />;
     case 'member':
-      return <User className="h-3 w-3 text-green-500" />;
+      return <User className="h-3 w-3 text-emerald-500" />;
     default:
-      return <User className="h-3 w-3 text-gray-500" />;
+      return <User className="h-3 w-3 text-muted-foreground" />;
   }
 };
 
@@ -150,9 +150,18 @@ export const TeamHierarchyCard: React.FC<TeamHierarchyCardProps> = ({ team, allU
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {teamMembers.map(member => (
-                    <TeamMemberCard key={member.id} member={member} />
-                  ))}
+                  {/* Sort team members: managers first, then admin, then members */}
+                  {teamMembers
+                    .sort((a, b) => {
+                      const roleOrder = { manager: 3, admin: 2, member: 1 };
+                      const roleComparison = (roleOrder[b.role] || 0) - (roleOrder[a.role] || 0);
+                      if (roleComparison !== 0) return roleComparison;
+                      return a.name.localeCompare(b.name);
+                    })
+                    .map(member => (
+                      <TeamMemberCard key={member.id} member={member} />
+                    ))
+                  }
                 </div>
               )}
             </div>

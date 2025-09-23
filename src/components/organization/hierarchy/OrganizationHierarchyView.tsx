@@ -32,10 +32,17 @@ export const OrganizationHierarchyView = () => {
     return matchesSearch && matchesRole;
   });
 
-  // Get admin users (superadmin, admin, manager)
-  const adminUsers = filteredUsers.filter(user => 
-    ['superadmin', 'admin', 'manager'].includes(user.role)
-  );
+  // Get admin users (superadmin, admin, manager) with proper hierarchy sorting
+  const roleOrder = { superadmin: 3, admin: 2, manager: 1 };
+  const adminUsers = filteredUsers
+    .filter(user => ['superadmin', 'admin', 'manager'].includes(user.role))
+    .sort((a, b) => {
+      // First sort by role hierarchy (superadmin first, then admin, then manager)
+      const roleComparison = (roleOrder[b.role] || 0) - (roleOrder[a.role] || 0);
+      if (roleComparison !== 0) return roleComparison;
+      // Then sort by name within same role
+      return a.name.localeCompare(b.name);
+    });
 
   if (isLoading) {
     return (
