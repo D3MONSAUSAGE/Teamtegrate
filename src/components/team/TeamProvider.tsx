@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Team } from '@/types/teams';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { TeamContext } from '@/hooks/useTeamContext';
 
 interface TeamProviderProps {
@@ -10,17 +10,13 @@ interface TeamProviderProps {
 
 export const TeamProvider: React.FC<TeamProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const { teams, isLoading } = useTeamsByOrganization(user?.organizationId);
+  const { teams, isLoading, availableTeams, canManageTeam: canManage } = useTeamAccess();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
-  const userTeams = teams as Team[];
+  const userTeams = teams;
 
   const canManageTeam = (teamId: string) => {
-    if (!user) return false;
-    if (user.role === 'superadmin' || user.role === 'admin') return true;
-    
-    const team = teams.find(t => t.id === teamId);
-    return team?.manager_id === user.id;
+    return canManage(teamId);
   };
 
   const isTeamMember = (teamId: string) => {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StandardTeamSelector } from '@/components/teams';
+import { StandardTeamSelector } from './StandardTeamSelector';
+import type { UnifiedTeamSelectorProps } from './UnifiedTeamSelector';
 
 interface EnhancedTeamSelectorProps {
   selectedTeamId: string | null;
@@ -7,8 +8,8 @@ interface EnhancedTeamSelectorProps {
 }
 
 /**
- * @deprecated Use StandardTeamSelector from @/components/teams instead
- * This component provides enhanced functionality but should be replaced
+ * Enhanced Team Selector with better role handling and auto-selection logic
+ * Uses the unified team management system under the hood
  */
 export const EnhancedTeamSelector: React.FC<EnhancedTeamSelectorProps> = ({ 
   selectedTeamId, 
