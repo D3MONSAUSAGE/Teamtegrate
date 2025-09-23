@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => ({
           'projects': ['src/pages/ProjectsPage.tsx'],
           'calendar': ['src/pages/CalendarPage.tsx'],
           'chat': ['src/pages/ChatPage.tsx'],
-          'reports': ['src/pages/ReportsPage.tsx'],
+          'reports': ['src/pages/ReportsDashboard.tsx', 'src/pages/TaskReportsPage.tsx'],
           'settings': ['src/pages/SettingsPage.tsx'],
         },
         // Optimize chunk file names
