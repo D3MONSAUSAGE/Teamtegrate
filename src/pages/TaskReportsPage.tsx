@@ -14,11 +14,11 @@ import { toast } from 'sonner';
 
 export const TaskReportsPage: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('daily');
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Use centralized report filters
+  // Use centralized report filters with unified filter object
   const {
+    // Legacy props for filter UI
     timeRange,
     dateRange,
     selectedTeamId,
@@ -27,7 +27,11 @@ export const TaskReportsPage: React.FC = () => {
     setTimeRange,
     setDateRange,
     setSelectedTeamId,
-    setSelectedUserId
+    setSelectedUserId,
+    // New unified filter system
+    filter,
+    activeTab,
+    setActiveTab
   } = useReportFilters();
 
   const handleRefresh = async () => {
@@ -138,19 +142,14 @@ export const TaskReportsPage: React.FC = () => {
 
               <TabsContent value="daily" className="space-y-4">
                 <DailyCompletionTab 
-                  userId={selectedUserId || user.id}
-                  userName={selectedUserId ? 'Selected User' : user.name || 'Current User'}
-                  selectedDate={dateRange?.from || new Date()}
+                  filter={filter}
                   onDateChange={(date) => setDateRange({ from: date, to: date })}
                 />
               </TabsContent>
 
               <TabsContent value="weekly" className="space-y-4">
                 <WeeklyOverviewTab 
-                  userId={selectedUserId || user.id}
-                  userName={selectedUserId ? 'Selected User' : user.name || 'Current User'}
-                  timeRange={timeRange}
-                  dateRange={dateRange}
+                  filter={filter}
                 />
               </TabsContent>
             </Tabs>

@@ -1,25 +1,22 @@
 import React, { useState } from 'react';
 import { CheckCircle, Plus, UserPlus, AlertTriangle, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
-import { useTaskReports } from '@/hooks/useTaskReports';
+import { useDailyReport, useTaskReports, DailyDetailData } from '@/hooks/useTaskReports';
 import { DateNavigation } from '@/components/reports/DateNavigation';
 import { ScrollableTaskContainer } from '@/components/reports/ScrollableTaskContainer';
 import { TaskDetailModal } from '@/components/reports/TaskDetailModal';
 import { MetricsCard } from '@/components/reports/MetricsCard';
-import { DailyTaskDetail, DailyDetailData } from '@/components/reports/weekly/DailyTaskDetailView';
+import { DailyTaskDetail, DailyDetailData as DailyDetailViewData } from '@/components/reports/weekly/DailyTaskDetailView';
+import type { ReportFilter } from '@/types/reports';
 import { toast } from 'sonner';
 
 interface DailyCompletionTabProps {
-  userId: string;
-  userName: string;
-  selectedDate: Date;
+  filter: ReportFilter;
   onDateChange?: (date: Date) => void;
 }
 
 export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
-  userId,
-  userName,
-  selectedDate,
+  filter,
   onDateChange
 }) => {
   const [selectedTask, setSelectedTask] = useState<DailyTaskDetail | null>(null);
@@ -27,23 +24,26 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
   const [dailyDetailData, setDailyDetailData] = useState<DailyDetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Use the task reports hook for single day data
+  // Use centralized daily report hook
+  const { data: dailyMetrics, isLoading: metricsLoading, error } = useDailyReport(filter);
+  
+  // Legacy hook for detailed task lists (backward compatibility)
   const { getDailyTaskDetails } = useTaskReports({
     timeRange: 'custom',
-    userId,
+    userId: filter.userId,
+    teamId: filter.teamIds?.[0],
   });
 
   // Load data when date or user changes
   React.useEffect(() => {
     const loadDailyData = async () => {
-      if (!selectedDate) return;
+      if (!filter.dateISO) return;
       
       setDetailLoading(true);
       setDailyDetailData(null);
       
       try {
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const details = await getDailyTaskDetails(dateStr);
+        const details = await getDailyTaskDetails(filter.dateISO);
         setDailyDetailData(details);
       } catch (error) {
         console.error('Failed to load daily details:', error);
@@ -54,7 +54,10 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
     };
 
     loadDailyData();
-  }, [selectedDate, userId]);
+  }, [filter.dateISO, filter.userId, filter.teamIds]);
+
+  const selectedDate = new Date(filter.dateISO);
+  const userName = filter.userId ? 'Selected User' : 'All Users';
 
   const handleTaskClick = (task: DailyTaskDetail) => {
     setSelectedTask(task);
@@ -65,8 +68,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
     setIsModalOpen(false);
     setSelectedTask(null);
   };
-
-  if (detailLoading) {
+  if (metricsLoading || detailLoading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -107,32 +109,32 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <MetricsCard
           title="Completed"
-          value={dailyDetailData?.completed_tasks.length || 0}
+          value={dailyMetrics?.completed || 0}
           icon={<CheckCircle className="h-5 w-5 text-white" />}
           colorClass="bg-success text-success-foreground"
           trend={{ value: 5, label: "+12% from yesterday" }}
         />
         <MetricsCard
           title="Created"
-          value={dailyDetailData?.created_tasks.length || 0}
+          value={dailyMetrics?.created || 0}
           icon={<Plus className="h-5 w-5 text-white" />}
           colorClass="bg-primary text-primary-foreground"
         />
         <MetricsCard
           title="Assigned"
-          value={dailyDetailData?.assigned_tasks.length || 0}
+          value={dailyMetrics?.assigned || 0}
           icon={<UserPlus className="h-5 w-5 text-white" />}
           colorClass="bg-purple-500 text-white"
         />
         <MetricsCard
           title="Overdue"
-          value={dailyDetailData?.overdue_tasks.length || 0}
+          value={dailyMetrics?.overdue || 0}
           icon={<AlertTriangle className="h-5 w-5 text-white" />}
           colorClass="bg-warning text-warning-foreground"
         />
         <MetricsCard
           title="Daily Score"
-          value={`${Math.round(dailyDetailData?.completion_score || 0)}%`}
+          value={`${Math.round(dailyMetrics?.daily_score || 0)}%`}
           icon={<TrendingUp className="h-5 w-5 text-white" />}
           colorClass="bg-info text-info-foreground"
           trend={{ value: 8, label: "+8% this week" }}
