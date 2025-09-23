@@ -73,8 +73,8 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             {isAdmin ? 'Select Team and Template for Count' : 'Select Template for Count'}
@@ -88,10 +88,10 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="flex flex-col flex-1 min-h-0 space-y-4">
           {/* Team Selector for Admins */}
           {isAdmin && (
-            <div className="space-y-2">
+            <div className="space-y-2 flex-shrink-0">
               <label className="text-sm font-medium">Select Team</label>
               <TeamSelect
                 teams={teams}
@@ -109,7 +109,7 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
           )}
           
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search templates..."
@@ -120,7 +120,8 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
           </div>
 
           {/* Templates Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
             {availableTemplates.length === 0 ? (
               <div className="col-span-full text-center py-8">
                 <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -187,6 +188,7 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
                 );
               })
             )}
+            </div>
           </div>
         </div>
       </DialogContent>
