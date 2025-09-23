@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { DEFAULT_CATEGORIES, DEFAULT_UNITS, shouldSeedDefaults } from '@/utils/inventorySeeds';
 
@@ -32,6 +33,7 @@ export const InventoryManagementTab: React.FC = () => {
     unitsLoading,
     deleteCategory, 
     deleteUnit, 
+    deleteItem,
     createCategory, 
     createUnit 
   } = useInventory();
@@ -49,6 +51,10 @@ export const InventoryManagementTab: React.FC = () => {
   // Unit dialog states
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  
+  // Item delete confirmation states
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Check if we should seed default data
   React.useEffect(() => {
@@ -129,6 +135,28 @@ export const InventoryManagementTab: React.FC = () => {
   const handleEditItem = (itemId: string) => {
     setSelectedItemId(itemId);
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    if (item) {
+      setItemToDelete({ id: item.id, name: item.name });
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return;
+    
+    try {
+      await deleteItem(itemToDelete.id);
+      toast.success('Item deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete item');
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
+    }
   };
 
   const handleAddCategory = () => {
@@ -280,25 +308,31 @@ export const InventoryManagementTab: React.FC = () => {
             ) : (
               <Card>
                 <div className="max-h-[600px] overflow-y-auto">
-                  <Table>
-                     <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>SKU</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Item Type</TableHead>
-                          <TableHead>Units/Package</TableHead>
-                          <TableHead>Purchase Unit</TableHead>
-                          <TableHead>Package Price</TableHead>
-                          <TableHead>Cost per Item</TableHead>
-                        </TableRow>
-                     </TableHeader>
-                    <TableBody>
-                      {filteredAndSortedItems.map((item) => (
-                        <ItemTableRow key={item.id} item={item} onClick={handleEditItem} />
-                      ))}
-                    </TableBody>
-                  </Table>
+                   <Table>
+                      <TableHeader>
+                         <TableRow>
+                           <TableHead>Name</TableHead>
+                           <TableHead>SKU</TableHead>
+                           <TableHead>Description</TableHead>
+                           <TableHead>Item Type</TableHead>
+                           <TableHead>Units/Package</TableHead>
+                           <TableHead>Purchase Unit</TableHead>
+                           <TableHead>Package Price</TableHead>
+                           <TableHead>Cost per Item</TableHead>
+                           <TableHead className="w-[80px]">Actions</TableHead>
+                         </TableRow>
+                      </TableHeader>
+                     <TableBody>
+                       {filteredAndSortedItems.map((item) => (
+                         <ItemTableRow 
+                           key={item.id} 
+                           item={item} 
+                           onClick={handleEditItem}
+                           onDelete={handleDeleteItem}
+                         />
+                       ))}
+                     </TableBody>
+                   </Table>
                 </div>
               </Card>
             )}
@@ -479,6 +513,26 @@ export const InventoryManagementTab: React.FC = () => {
         onOpenChange={setIsUnitDialogOpen}
         unitId={selectedUnitId}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteItem}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

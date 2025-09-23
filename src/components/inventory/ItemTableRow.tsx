@@ -1,15 +1,23 @@
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { formatCurrency } from '@/utils/formatters';
+import { Trash2 } from 'lucide-react';
 
 interface ItemTableRowProps {
   item: InventoryItem;
   onClick: (itemId: string) => void;
+  onDelete?: (itemId: string) => void;
 }
 
-export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => {
+export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDelete }) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(item.id);
+  };
+
   return (
     <TableRow 
       className="cursor-pointer hover:bg-muted/50" 
@@ -34,6 +42,18 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick }) => 
       <TableCell>
         {item.unit_cost ? formatCurrency(item.unit_cost) : 'N/A'}
       </TableCell>
+      {onDelete && (
+        <TableCell>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDeleteClick}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TableCell>
+      )}
     </TableRow>
   );
 };
