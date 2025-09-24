@@ -22,15 +22,31 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flashEnabled, setFlashEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Visibility: pause on hide to avoid iOS pausing weirdness
+  // Comprehensive cleanup on visibility change, navigation, and unmount
   useEffect(() => {
     const vis = () => { if (document.hidden) handleStop(); };
+    const beforeUnload = () => handleStop();
+    const popstate = () => handleStop();
+    
     document.addEventListener('visibilitychange', vis);
-    return () => document.removeEventListener('visibilitychange', vis);
+    window.addEventListener('beforeunload', beforeUnload);
+    window.addEventListener('popstate', popstate);
+    
+    // Cleanup on component unmount
+    return () => {
+      handleStop();
+      document.removeEventListener('visibilitychange', vis);
+      window.removeEventListener('beforeunload', beforeUnload);
+      window.removeEventListener('popstate', popstate);
+    };
   }, []);
 
   async function handleStart() {
+    if (isLoading || active) return;
+    
+    setIsLoading(true);
     setError(null);
     try {
       await switchToBackCamera();
@@ -55,16 +71,41 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
       } else if (errorMsg.includes('SecurityError')) {
         setError('Camera access requires a secure connection (HTTPS).');
       }
+    } finally {
+      setIsLoading(false);
     }
   }
 
   function handleStop() {
-    try { stopScan(); } catch {}
-    try {
-      const s = (videoRef.current as any)?.srcObject as MediaStream | undefined;
-      s?.getTracks()?.forEach(t => t.stop());
-    } catch {}
+    console.log('ScannerOverlay handleStop called');
+    setIsLoading(false);
     setActive(false);
+    setError(null);
+    
+    // Use the Scanner's stopScan function
+    try { 
+      stopScan(); 
+    } catch (error) {
+      console.error('Error in stopScan:', error);
+    }
+    
+    // Additional cleanup for video element
+    try {
+      const stream = (videoRef.current as any)?.srcObject as MediaStream | undefined;
+      if (stream) {
+        stream.getTracks()?.forEach(track => {
+          console.log(`Stopping overlay track: ${track.kind}`);
+          track.stop();
+        });
+      }
+      
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      }
+    } catch (error) {
+      console.error('Error in additional cleanup:', error);
+    }
   }
 
   async function handleToggleFlash() {
@@ -85,7 +126,10 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
   }
 
   useEffect(() => { 
-    if (!open) handleStop(); 
+    if (!open) {
+      console.log('Scanner overlay closed, stopping camera');
+      handleStop(); 
+    }
   }, [open]);
 
   if (!open) return null;
@@ -120,7 +164,11 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => { handleStop(); onClose(); }}
+            onClick={() => { 
+              console.log('Close button clicked');
+              handleStop(); 
+              onClose(); 
+            }}
             className="bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm"
           >
             <X className="h-6 w-6" />
@@ -162,9 +210,9 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
             <Button
               className="px-4 py-3 rounded bg-white text-black font-medium hover:bg-gray-100"
               onClick={handleStart}
-              disabled={active}
+              disabled={active || isLoading}
             >
-              {active ? 'Camera Active' : 'Start Camera'}
+              {isLoading ? 'Starting...' : active ? 'Camera Active' : 'Start Camera'}
             </Button>
             {active && (
               <Button

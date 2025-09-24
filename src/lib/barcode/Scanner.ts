@@ -1,6 +1,7 @@
 // Lightweight camera scanner without heavy dependencies
 let activeStream: MediaStream | null = null;
 let activeVideo: HTMLVideoElement | null = null;
+let isScanning: boolean = false;
 
 export async function listVideoDevices() {
   try {
@@ -18,10 +19,14 @@ export async function startScan(
   onResult: (text: string) => void,
 ) {
   try {
-    // Stop any existing stream
-    if (activeStream) {
-      activeStream.getTracks().forEach(track => track.stop());
+    // Prevent multiple simultaneous scans
+    if (isScanning) {
+      console.log('Scan already in progress, stopping existing scan first');
+      stopScan();
     }
+    
+    isScanning = true;
+    console.log('Starting camera scan...');
 
     // Get camera stream with back camera preference
     const constraints = {
@@ -42,13 +47,12 @@ export async function startScan(
     videoEl.srcObject = activeStream;
 
     await videoEl.play();
-
-    // For now, we'll rely on manual input since we removed heavy barcode libraries
-    // This provides camera preview for users to manually read and type barcodes
-    console.log('Camera preview started - manual barcode entry available');
+    console.log('Camera started successfully');
     
   } catch (error) {
     console.error('Failed to start camera:', error);
+    isScanning = false;
+    stopScan(); // Clean up on error
     throw new Error('Camera access failed. Please ensure camera permissions are granted.');
   }
 }
@@ -75,12 +79,33 @@ export async function switchToBackCamera() {
 }
 
 export function stopScan() {
+  console.log('Stopping camera scan...');
+  isScanning = false;
+  
+  // Stop all media tracks
   if (activeStream) {
-    activeStream.getTracks().forEach(track => track.stop());
+    try {
+      activeStream.getTracks().forEach(track => {
+        console.log(`Stopping track: ${track.kind}, state: ${track.readyState}`);
+        track.stop();
+      });
+    } catch (error) {
+      console.error('Error stopping tracks:', error);
+    }
     activeStream = null;
   }
+  
+  // Clean up video element
   if (activeVideo) {
-    activeVideo.srcObject = null;
+    try {
+      activeVideo.pause();
+      activeVideo.srcObject = null;
+      activeVideo.load(); // Force reload to clear any cached stream
+    } catch (error) {
+      console.error('Error cleaning video element:', error);
+    }
     activeVideo = null;
   }
+  
+  console.log('Camera scan stopped successfully');
 }
