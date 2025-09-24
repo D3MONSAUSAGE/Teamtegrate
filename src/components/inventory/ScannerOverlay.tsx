@@ -54,9 +54,27 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
     
     setIsLoading(true);
     setError(null);
+    
+    // Check for mobile device and request permissions first
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && navigator.permissions) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (permission.state === 'denied') {
+          setError('Camera permission denied. Please enable camera access in your browser settings and refresh the page.');
+          setIsLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.log('Permission API not available');
+      }
+    }
+    
     try {
-      await switchToBackCamera();
       if (!videoRef.current) return;
+      
+      // Start camera directly without switching to back camera first (causes issues on mobile)
       await startScan(videoRef.current, (text) => {
         onBarcode(text);
         if (!continuous) handleStop();
@@ -67,15 +85,25 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
       setError(errorMsg);
       setActive(false);
       
-      // Map common error types to user-friendly messages
+      // Enhanced mobile-specific error messages
       if (errorMsg.includes('NotAllowedError') || errorMsg.includes('Permission denied')) {
-        setError('Camera access denied. Please allow camera permissions and try again.');
+        if (isMobile) {
+          setError('Camera access denied. Please tap "Allow" when prompted, or enable camera in your browser settings.');
+        } else {
+          setError('Camera access denied. Please allow camera permissions and try again.');
+        }
       } else if (errorMsg.includes('NotFoundError')) {
         setError('No camera found on this device.');
       } else if (errorMsg.includes('OverconstrainedError')) {
-        setError('Camera configuration not supported. Try a different device.');
+        if (isMobile) {
+          setError('Camera not available. Try using your phone\'s back camera or enter the barcode manually below.');
+        } else {
+          setError('Camera configuration not supported. Try a different device.');
+        }
       } else if (errorMsg.includes('SecurityError')) {
         setError('Camera access requires a secure connection (HTTPS).');
+      } else if (isMobile) {
+        setError('Camera not available. Please enter the barcode manually below.');
       }
     } finally {
       setIsLoading(false);
@@ -188,18 +216,18 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
         <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
           <Button
             variant="ghost"
-            size="icon"
+            size="lg"
             onClick={handleClose}
-            className="bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm"
+            className="bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm px-4 py-3 touch-manipulation min-h-[48px] min-w-[48px]"
           >
             <X className="h-6 w-6" />
           </Button>
           
           <Button
             variant="ghost"
-            size="icon"
+            size="lg"
             onClick={handleToggleFlash}
-            className={`bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm ${
+            className={`bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm px-4 py-3 touch-manipulation min-h-[48px] min-w-[48px] ${
               flashEnabled ? 'bg-primary/80 text-primary-foreground' : ''
             }`}
           >
@@ -229,10 +257,10 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
         </div>
 
         {/* Instructions */}
-        <div className="absolute bottom-20 left-4 right-4">
+        <div className="absolute bottom-4 left-4 right-4">
           <div className="grid grid-cols-1 gap-3 mb-4">
             <Button
-              className="px-4 py-3 rounded bg-white text-black font-medium hover:bg-gray-100"
+              className="px-6 py-4 text-lg rounded-lg bg-white text-black font-medium hover:bg-gray-100 touch-manipulation min-h-[48px]"
               onClick={handleStart}
               disabled={active || isLoading}
             >
@@ -241,32 +269,42 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
             {active && (
               <Button
                 variant="outline"
-                className="px-4 py-3 rounded bg-white/10 text-white border-white/20 hover:bg-white/20"
+                className="px-6 py-4 text-lg rounded-lg bg-white/10 text-white border-white/20 hover:bg-white/20 touch-manipulation min-h-[48px]"
                 onClick={handleStop}
               >
                 Stop Camera
               </Button>
             )}
+            
+            {/* Close button - mobile friendly */}
+            <Button
+              variant="outline"
+              className="px-6 py-4 text-lg rounded-lg bg-red-500/20 text-white border-red-500/30 hover:bg-red-500/30 touch-manipulation min-h-[48px]"
+              onClick={handleClose}
+            >
+              Close Scanner
+            </Button>
           </div>
           
           <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4">
             <p className="text-white text-center font-medium text-lg">{instructions}</p>
             <p className="text-white/80 text-center text-sm mt-2">
-              Point camera at barcode and enter the code manually below
+              Or enter the barcode manually below
             </p>
-            {active && (
-              <input
-                type="text"
-                placeholder="Enter barcode manually"
-                className="w-full mt-3 p-2 rounded bg-white/90 text-black placeholder-gray-500"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                    onBarcode(e.currentTarget.value.trim());
-                    e.currentTarget.value = '';
-                  }
-                }}
-              />
-            )}
+            
+            {/* Always show manual input - don't require camera to be active */}
+            <input
+              type="text"
+              placeholder="Enter barcode manually"
+              className="w-full mt-3 p-3 rounded-lg bg-white/90 text-black placeholder-gray-500 text-lg touch-manipulation"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                  onBarcode(e.currentTarget.value.trim());
+                  e.currentTarget.value = '';
+                  if (!continuous) handleClose();
+                }
+              }}
+            />
           </div>
         </div>
 

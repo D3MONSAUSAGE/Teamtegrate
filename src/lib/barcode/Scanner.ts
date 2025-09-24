@@ -28,16 +28,54 @@ export async function startScan(
     isScanning = true;
     console.log('Starting camera scan...');
 
-    // Get camera stream with back camera preference
-    const constraints = {
-      video: {
-        facingMode: { ideal: 'environment' }, // Prefer back camera
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+    // Try progressive camera constraints for better mobile compatibility
+    const constraintSets = [
+      // First try: Ideal back camera with good resolution
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      },
+      // Second try: Relaxed back camera constraints
+      {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      },
+      // Third try: Any camera with minimal constraints
+      {
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      },
+      // Fourth try: Most basic constraints
+      {
+        video: true
       }
-    };
+    ];
 
-    activeStream = await navigator.mediaDevices.getUserMedia(constraints);
+    let lastError: Error | null = null;
+    
+    for (const constraints of constraintSets) {
+      try {
+        console.log('Trying camera constraints:', constraints);
+        activeStream = await navigator.mediaDevices.getUserMedia(constraints);
+        break; // Success, exit loop
+      } catch (error: any) {
+        console.log('Camera constraints failed:', error.message);
+        lastError = error;
+        continue; // Try next constraint set
+      }
+    }
+
+    if (!activeStream && lastError) {
+      throw lastError;
+    }
     activeVideo = videoEl;
 
     // iOS requirements to keep the camera inline & autoplay
