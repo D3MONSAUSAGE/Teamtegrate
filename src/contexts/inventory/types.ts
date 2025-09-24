@@ -83,6 +83,11 @@ export interface InventoryCount {
   completion_percentage: number;
   variance_count: number;
   total_items_count: number;
+  // Void functionality fields
+  is_voided: boolean;
+  voided_by?: string;
+  voided_at?: string;
+  void_reason?: string;
 }
 
 export interface InventoryCountItem {
@@ -200,6 +205,7 @@ export interface InventoryContextType {
   updateCountItem: (countId: string, itemId: string, actualQuantity: number, notes?: string) => Promise<void>;
   completeInventoryCount: (countId: string) => Promise<void>;
   cancelInventoryCount: (countId: string, reason?: string) => Promise<void>;
+  voidInventoryCount: (countId: string, reason?: string) => Promise<void>;
   
   resolveAlert: (alertId: string) => Promise<void>;
   

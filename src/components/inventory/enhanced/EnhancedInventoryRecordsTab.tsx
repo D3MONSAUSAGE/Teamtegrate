@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
@@ -17,7 +19,7 @@ import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
 import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
-  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare
+  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { InventoryCount } from '@/contexts/inventory/types';
@@ -25,7 +27,7 @@ import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
-  const { counts, alerts, items, transactions } = useInventory();
+  const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
   const { hasRoleAccess, user } = useAuth();
   const { teams } = useTeamsByOrganization(user?.organizationId);
 
@@ -52,6 +54,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [exportTeamId, setExportTeamId] = useState<string | undefined>();
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+  const [countToVoid, setCountToVoid] = useState<InventoryCount | null>(null);
+  const [voidReason, setVoidReason] = useState('');
 
   // Filter counts based on search, team, date, status, and role-based access
   const filteredCounts = useMemo(() => {
@@ -117,7 +122,26 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     setIsComparisonDialogOpen(true);
   };
 
-  const getStatusColor = (status: string) => {
+  const handleVoidCount = (count: InventoryCount) => {
+    setCountToVoid(count);
+    setVoidDialogOpen(true);
+  };
+
+  const confirmVoidCount = async () => {
+    if (!countToVoid) return;
+    
+    try {
+      await voidInventoryCount(countToVoid.id, voidReason);
+      setVoidDialogOpen(false);
+      setCountToVoid(null);
+      setVoidReason('');
+    } catch (error) {
+      console.error('Failed to void count:', error);
+    }
+  };
+
+  const getStatusColor = (status: string, isVoided: boolean = false) => {
+    if (isVoided) return 'outline';
     switch (status) {
       case 'completed': return 'default';
       case 'in_progress': return 'secondary';
@@ -132,9 +156,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     return 'destructive';
   };
 
-  // Calculate financial metrics for filtered counts
+  // Calculate financial metrics for filtered counts (excluding voided counts)
   const calculateFilteredMetrics = () => {
-    const completedCounts = filteredCounts.filter(c => c.status === 'completed');
+    const completedCounts = filteredCounts.filter(c => c.status === 'completed' && !c.is_voided);
     const totalValue = completedCounts.reduce((sum, count) => sum + (count.total_items_count * 25), 0); // Mock calculation
     const totalVarianceCost = completedCounts.reduce((sum, count) => sum + (count.variance_count * 15), 0);
     
@@ -384,23 +408,32 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                             {/* Main count info */}
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Badge variant={getStatusColor(count.status)}>
-                                    {count.status === 'cancelled' ? 'CANCELLED' : count.status.replace('_', ' ').toUpperCase()}
-                                  </Badge>
-                                  
-                                  <Badge variant="outline" className="gap-1">
-                                    <Users className="h-3 w-3" />
-                                    {getTeamDisplayName(count.team_id)}
-                                  </Badge>
-                                  
-                                  {count.variance_count > 0 && (
-                                    <Badge variant={getVarianceColor(count.variance_count)} className="gap-1">
-                                      <AlertTriangle className="h-3 w-3" />
-                                      {count.variance_count} variances
-                                    </Badge>
-                                  )}
-                                </div>
+                                 <div className="flex items-center gap-3 mb-2">
+                                   <Badge variant={getStatusColor(count.status, count.is_voided)}>
+                                     {count.is_voided ? 'VOIDED' : 
+                                      count.status === 'cancelled' ? 'CANCELLED' : 
+                                      count.status.replace('_', ' ').toUpperCase()}
+                                   </Badge>
+                                   
+                                   <Badge variant="outline" className="gap-1">
+                                     <Users className="h-3 w-3" />
+                                     {getTeamDisplayName(count.team_id)}
+                                   </Badge>
+                                   
+                                   {count.variance_count > 0 && !count.is_voided && (
+                                     <Badge variant={getVarianceColor(count.variance_count)} className="gap-1">
+                                       <AlertTriangle className="h-3 w-3" />
+                                       {count.variance_count} variances
+                                     </Badge>
+                                   )}
+
+                                   {count.is_voided && (
+                                     <Badge variant="outline" className="gap-1 text-muted-foreground">
+                                       <Ban className="h-3 w-3" />
+                                       No Financial Impact
+                                     </Badge>
+                                   )}
+                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                   <div>
@@ -450,29 +483,41 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                                 )}
                               </div>
 
-                              <div className="flex gap-2 ml-4">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleViewDetails(count)}
-                                  className="gap-1"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  Enhanced Details
-                                </Button>
-                                
-                                {previousCount && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleViewComparison(count)}
-                                    className="gap-1"
-                                  >
-                                    <GitCompare className="h-3 w-3" />
-                                    Compare
-                                  </Button>
-                                )}
-                              </div>
+                               <div className="flex gap-2 ml-4">
+                                 <Button 
+                                   variant="outline" 
+                                   size="sm"
+                                   onClick={() => handleViewDetails(count)}
+                                   className="gap-1"
+                                 >
+                                   <Eye className="h-3 w-3" />
+                                   Enhanced Details
+                                 </Button>
+                                 
+                                 {previousCount && (
+                                   <Button 
+                                     variant="outline" 
+                                     size="sm"
+                                     onClick={() => handleViewComparison(count)}
+                                     className="gap-1"
+                                   >
+                                     <GitCompare className="h-3 w-3" />
+                                     Compare
+                                   </Button>
+                                 )}
+
+                                 {hasRoleAccess('superadmin') && !count.is_voided && (
+                                   <Button 
+                                     variant="outline" 
+                                     size="sm"
+                                     onClick={() => handleVoidCount(count)}
+                                     className="gap-1 text-destructive hover:text-destructive"
+                                   >
+                                     <Ban className="h-3 w-3" />
+                                     Void
+                                   </Button>
+                                 )}
+                               </div>
                             </div>
 
                             {/* Quick comparison with previous count */}
@@ -669,6 +714,37 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
         countId={exportCountId}
         teamId={exportTeamId}
       />
+
+      {/* Void Confirmation Dialog */}
+      <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Void Inventory Count</DialogTitle>
+            <DialogDescription>
+              This will void the inventory count, removing its financial impact while keeping it for audit purposes. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Reason for voiding (optional)</label>
+              <Textarea
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                placeholder="Enter reason for voiding this count..."
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmVoidCount}>
+              Void Count
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

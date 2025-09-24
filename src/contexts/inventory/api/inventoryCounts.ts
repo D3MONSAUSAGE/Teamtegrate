@@ -471,4 +471,24 @@ export const inventoryCountsApi = {
       throw error;
     }
   },
+
+  async voidInventoryCount(countId: string, reason?: string): Promise<InventoryCount> {
+    const voidData: any = {
+      is_voided: true,
+      voided_by: (await supabase.auth.getUser()).data.user?.id,
+      voided_at: new Date().toISOString(),
+      void_reason: reason || 'No reason provided',
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('inventory_counts')
+      .update(voidData)
+      .eq('id', countId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as InventoryCount;
+  },
 };

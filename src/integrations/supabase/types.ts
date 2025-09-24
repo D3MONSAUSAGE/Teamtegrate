@@ -2498,6 +2498,7 @@ export type Database = {
           created_at: string
           email_sent_at: string | null
           id: string
+          is_voided: boolean
           notes: string | null
           organization_id: string
           status: string
@@ -2506,6 +2507,9 @@ export type Database = {
           total_items_count: number | null
           updated_at: string
           variance_count: number | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -2515,6 +2519,7 @@ export type Database = {
           created_at?: string
           email_sent_at?: string | null
           id?: string
+          is_voided?: boolean
           notes?: string | null
           organization_id: string
           status?: string
@@ -2523,6 +2528,9 @@ export type Database = {
           total_items_count?: number | null
           updated_at?: string
           variance_count?: number | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -2532,6 +2540,7 @@ export type Database = {
           created_at?: string
           email_sent_at?: string | null
           id?: string
+          is_voided?: boolean
           notes?: string | null
           organization_id?: string
           status?: string
@@ -2540,6 +2549,9 @@ export type Database = {
           total_items_count?: number | null
           updated_at?: string
           variance_count?: number | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -2561,6 +2573,20 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "inventory_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

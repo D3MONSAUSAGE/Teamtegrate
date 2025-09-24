@@ -51,11 +51,11 @@ export const useInventoryAnalytics = (
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
     const recentCounts = counts.filter(count => 
-      new Date(count.count_date) >= thirtyDaysAgo
+      new Date(count.count_date) >= thirtyDaysAgo && !count.is_voided
     );
 
-    // Calculate accuracy rate
-    const completedCounts = recentCounts.filter(c => c.status === 'completed');
+    // Calculate accuracy rate (excluding voided counts)
+    const completedCounts = recentCounts.filter(c => c.status === 'completed' && !c.is_voided);
     const totalVariances = completedCounts.reduce((sum, count) => sum + count.variance_count, 0);
     const totalItems = completedCounts.reduce((sum, count) => sum + count.total_items_count, 0);
     const accuracyRate = totalItems > 0 ? ((totalItems - totalVariances) / totalItems) * 100 : 0;
@@ -68,18 +68,18 @@ export const useInventoryAnalytics = (
         return sum + Math.abs(countDate.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
       }, 0) / completedCounts.length : 0;
 
-    // Trend analysis
+    // Trend analysis (excluding voided counts)
     const thisMonth = recentCounts.filter(count => 
       isWithinInterval(new Date(count.count_date), {
         start: startOfMonth(now),
         end: endOfMonth(now)
-      })
+      }) && !count.is_voided
     );
     const lastMonth = counts.filter(count => 
       isWithinInterval(new Date(count.count_date), {
         start: startOfMonth(subDays(now, 30)),
         end: endOfMonth(subDays(now, 30))
-      })
+      }) && !count.is_voided
     );
 
     const monthlyComparison = lastMonth.length > 0 ? 
@@ -97,12 +97,12 @@ export const useInventoryAnalytics = (
       monthlyComparison
     };
 
-    // Generate chart data
+    // Generate chart data (excluding voided counts)
     const completionTrend = Array.from({ length: 30 }, (_, i) => {
       const date = subDays(now, 29 - i);
       const dateStr = format(date, 'yyyy-MM-dd');
       const dayCounts = counts.filter(count => 
-        format(new Date(count.count_date), 'yyyy-MM-dd') === dateStr
+        format(new Date(count.count_date), 'yyyy-MM-dd') === dateStr && !count.is_voided
       );
       
       const completed = dayCounts.filter(c => c.status === 'completed').length;
@@ -124,7 +124,8 @@ export const useInventoryAnalytics = (
       const dateStr = format(date, 'yyyy-MM-dd');
       const dayCounts = counts.filter(count => 
         format(new Date(count.count_date), 'yyyy-MM-dd') === dateStr &&
-        count.status === 'completed'
+        count.status === 'completed' &&
+        !count.is_voided
       );
       
       return {
