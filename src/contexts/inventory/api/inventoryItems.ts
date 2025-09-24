@@ -36,8 +36,8 @@ export const inventoryItemsApi = {
 
     if (error) {
       // Handle barcode uniqueness constraint
-      if (error.code === '23505' && error.message?.includes('barcode')) {
-        throw new Error('This barcode already exists on another item');
+      if (error.code === '23505' && (error.message?.includes('barcode') || error.message?.includes('ux_inventory_items_barcode'))) {
+        throw new Error('That barcode is already used by another item');
       }
       throw error;
     }
@@ -58,8 +58,8 @@ export const inventoryItemsApi = {
 
     if (error) {
       // Handle barcode uniqueness constraint
-      if (error.code === '23505' && error.message?.includes('barcode')) {
-        throw new Error('This barcode already exists on another item');
+      if (error.code === '23505' && (error.message?.includes('barcode') || error.message?.includes('ux_inventory_items_barcode'))) {
+        throw new Error('That barcode is already used by another item');
       }
       throw error;
     }

@@ -30,6 +30,7 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const quaggaMountRef = useRef<HTMLDivElement | null>(null);
   const stopFunctions = useRef<(() => Promise<void>)[]>([]);
+  const shouldFallback = useRef<boolean>(false);
   
   const [mode, setMode] = useState<'idle' | 'native' | 'quagga'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -109,10 +110,13 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
 
       // Try native detector first
       if (hasNativeDetector()) {
+        shouldFallback.current = true;
         await tryNative();
         // Give native a chance, fallback after 2.5s if no results
         setTimeout(() => {
-          if (mode === 'native') tryQuagga();
+          if (shouldFallback.current) {
+            tryQuagga();
+          }
         }, 2500);
       } else {
         await tryQuagga();
@@ -166,6 +170,9 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
 
   function handleBarcodeHit(hit: BarcodeHit) {
     const now = Date.now();
+    
+    // Disable fallback once we get a result
+    shouldFallback.current = false;
     
     // Debounce duplicate scans within 1 second
     if (hit.text === lastBarcode && now - lastBarcodeTime < 1000) {
