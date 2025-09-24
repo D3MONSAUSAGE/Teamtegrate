@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Search, Plus, X, Package, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Search, Plus, X, Package, ArrowRight, ShoppingCart, Edit, Check, XCircle } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { useToast } from '@/hooks/use-toast';
 import { InventoryItem, InventoryTemplateItem } from '@/contexts/inventory/types';
@@ -24,7 +24,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   templateId,
   templateName
 }) => {
-  const { items, templateItems, addItemToTemplate, removeItemFromTemplate, refreshTemplateItems } = useInventory();
+  const { items, templateItems, addItemToTemplate, removeItemFromTemplate, refreshTemplateItems, updateTemplateItem } = useInventory();
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +33,16 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const [minimumQuantity, setMinimumQuantity] = useState<number | undefined>(undefined);
   const [maximumQuantity, setMaximumQuantity] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{
+    inStock: number;
+    minimum: number | undefined;
+    maximum: number | undefined;
+  }>({
+    inStock: 0,
+    minimum: undefined,
+    maximum: undefined
+  });
 
   // Get template items for this specific template from global state
   const currentTemplateItems = useMemo(() => {
@@ -137,6 +147,67 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
       toast({
         title: "Error",
         description: "Failed to remove item from template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditItem = (templateItem: InventoryTemplateItem) => {
+    setEditingItem(templateItem.id);
+    setEditValues({
+      inStock: templateItem.in_stock_quantity,
+      minimum: templateItem.minimum_quantity ?? undefined,
+      maximum: templateItem.maximum_quantity ?? undefined
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItem(null);
+    setEditValues({
+      inStock: 0,
+      minimum: undefined,
+      maximum: undefined
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+    
+    // Validate quantities before saving
+    const validatedMin = editValues.minimum && editValues.minimum >= 0 ? editValues.minimum : undefined;
+    const validatedMax = editValues.maximum && editValues.maximum >= 0 ? editValues.maximum : undefined;
+    const validatedInStock = Math.max(0, editValues.inStock || 0);
+    
+    // Check min <= max constraint
+    if (validatedMin !== undefined && validatedMax !== undefined && validatedMin > validatedMax) {
+      toast({
+        title: "Invalid Quantities",
+        description: "Minimum quantity cannot be greater than maximum quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await updateTemplateItem(templateId, editingItem.split('-')[1], {
+        in_stock_quantity: validatedInStock,
+        minimum_quantity: validatedMin ?? null,
+        maximum_quantity: validatedMax ?? null
+      });
+      await refreshTemplateItems();
+      setEditingItem(null);
+      toast({
+        title: "Success",
+        description: "Item updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating template item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update item",
         variant: "destructive",
       });
     } finally {
@@ -339,33 +410,132 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                 currentTemplateItems.map((templateItem) => {
                   const itemDetails = getItemDetails(templateItem.item_id);
                   if (!itemDetails) return null;
+                  
+                  const isEditing = editingItem === templateItem.id;
 
                   return (
                     <Card key={templateItem.id} className="border-2">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                        {isEditing ? (
+                          // Edit Mode
+                          <div className="space-y-3">
                             <div className="font-medium text-lg">{itemDetails.name}</div>
-                             <div className="text-sm text-muted-foreground mt-1">
-                               <span className="font-medium">In-Stock:</span> {templateItem.in_stock_quantity} • 
-                               <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
-                             </div>
-                            {templateItem.minimum_quantity !== null && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Min: {templateItem.minimum_quantity} • Max: {templateItem.maximum_quantity || 'N/A'}
+                            
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <Label className="text-xs">In-Stock</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={editValues.inStock}
+                                  onChange={(e) => setEditValues(prev => ({
+                                    ...prev,
+                                    inStock: Number(e.target.value)
+                                  }))}
+                                  className="h-8 text-xs"
+                                />
                               </div>
-                            )}
+                              <div>
+                                <Label className="text-xs">Min</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={editValues.minimum || ''}
+                                  onChange={(e) => setEditValues(prev => ({
+                                    ...prev,
+                                    minimum: e.target.value ? Number(e.target.value) : undefined
+                                  }))}
+                                  placeholder="Optional"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Max</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={editValues.maximum || ''}
+                                  onChange={(e) => setEditValues(prev => ({
+                                    ...prev,
+                                    maximum: e.target.value ? Number(e.target.value) : undefined
+                                  }))}
+                                  placeholder="Optional"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={handleSaveEdit}
+                                disabled={isLoading}
+                                className="h-7 text-xs"
+                              >
+                                <Check className="h-3 w-3 mr-1" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isLoading}
+                                className="h-7 text-xs"
+                              >
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveItem(templateItem.item_id)}
-                            disabled={isLoading}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        ) : (
+                          // View Mode
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium text-lg">{itemDetails.name}</div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                <span className="font-medium">In-Stock:</span> {templateItem.in_stock_quantity} • 
+                                <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
+                              </div>
+                              {(templateItem.minimum_quantity != null || templateItem.maximum_quantity != null) && (
+                                <div className="text-xs text-muted-foreground mt-1 flex gap-3">
+                                  <span>
+                                    <span className="font-medium">Min:</span> {templateItem.minimum_quantity ?? 'Not set'}
+                                  </span>
+                                  <span>
+                                    <span className="font-medium">Max:</span> {templateItem.maximum_quantity ?? 'Not set'}
+                                  </span>
+                                </div>
+                              )}
+                              {templateItem.minimum_quantity == null && templateItem.maximum_quantity == null && (
+                                <div className="text-xs text-orange-600 mt-1">
+                                  Min/Max quantities not set
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditItem(templateItem)}
+                                disabled={isLoading}
+                                className="h-8 w-8 p-0"
+                                title="Edit quantities"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveItem(templateItem.item_id)}
+                                disabled={isLoading}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Remove from template"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
