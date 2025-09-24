@@ -66,6 +66,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   // Daily view states
   const [viewMode, setViewMode] = useState<'all' | 'daily'>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDailyTeam, setSelectedDailyTeam] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Filter counts based on search, team, date, status, and role-based access
@@ -121,7 +122,8 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     alerts,
     items,
     transactions,
-    selectedDate
+    selectedDate,
+    selectedDailyTeam || undefined
   );
 
   // Sort counts by most recent first (using updated_at for more accurate recent changes)
@@ -619,6 +621,17 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                   className="px-3 py-2 border rounded-md bg-background"
                 />
               </div>
+              
+              {(hasRoleAccess('admin') || hasRoleAccess('manager')) && (
+                <StandardTeamSelector
+                  selectedTeamId={selectedDailyTeam || null}
+                  onTeamChange={(teamId) => setSelectedDailyTeam(teamId || '')}
+                  showAllOption={hasRoleAccess('admin')}
+                  placeholder="Filter by team"
+                  variant="simple"
+                />
+              )}
+              
               <Button 
                 variant="outline" 
                 size="sm"
@@ -637,68 +650,6 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
           {/* Daily Charts */}
           <DailyInventoryCharts chartData={dailyChartData} />
-
-          {/* Daily Transaction Log */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Daily Activity Log
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                All inventory activities for {selectedDate.toLocaleDateString()}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-80">
-                <div className="space-y-3">
-                  {counts
-                    .filter(count => {
-                      const countDate = new Date(count.count_date);
-                      return countDate.toDateString() === selectedDate.toDateString();
-                    })
-                    .map((count) => (
-                      <div key={count.id} className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex items-center gap-3">
-                          <Badge variant={getStatusColor(count.status, count.is_voided)}>
-                            {count.is_voided ? 'VOIDED' : count.status}
-                          </Badge>
-                          <div>
-                            <div className="font-medium">
-                              Count #{count.id.slice(0, 8)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {getTeamDisplayName(count.team_id)} • {format(new Date(count.count_date), 'HH:mm')}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {count.total_items_count} items
-                          </div>
-                          {count.variance_count > 0 && (
-                            <div className="text-sm text-destructive">
-                              {count.variance_count} variances
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  
-                  {counts.filter(count => {
-                    const countDate = new Date(count.count_date);
-                    return countDate.toDateString() === selectedDate.toDateString();
-                  }).length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-medium mb-2">No activity on this date</h3>
-                      <p>No inventory counts were performed on {selectedDate.toLocaleDateString()}</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">

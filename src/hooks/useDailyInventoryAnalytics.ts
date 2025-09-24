@@ -39,18 +39,32 @@ export const useDailyInventoryAnalytics = (
   alerts: InventoryAlert[],
   items: InventoryItem[],
   transactions: InventoryTransaction[],
-  selectedDate: Date
+  selectedDate: Date,
+  selectedTeamId?: string
 ) => {
   const analytics = useMemo(() => {
     // Filter counts for the selected date (excluding voided counts)
-    const dailyCounts = counts.filter(count => 
-      isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided
-    );
+    const dailyCounts = counts.filter(count => {
+      const matchesDate = isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided;
+      const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
+      return matchesDate && matchesTeam;
+    });
 
-    // Filter transactions for the selected date
-    const dailyTransactions = transactions.filter(transaction =>
-      isSameDay(new Date(transaction.transaction_date), selectedDate)
-    );
+    // Filter transactions for the selected date and team
+    const dailyTransactions = transactions.filter(transaction => {
+      if (!isSameDay(new Date(transaction.transaction_date), selectedDate)) return false;
+      
+      // If team is selected, only include transactions from counts made by that team
+      if (selectedTeamId) {
+        const associatedCount = counts.find(count => 
+          count.team_id === selectedTeamId && 
+          isSameDay(new Date(count.count_date), selectedDate)
+        );
+        return !!associatedCount;
+      }
+      
+      return true;
+    });
 
     // Calculate daily metrics
     const completedCounts = dailyCounts.filter(c => c.status === 'completed');
@@ -154,7 +168,7 @@ export const useDailyInventoryAnalytics = (
     };
 
     return { metrics, chartData };
-  }, [counts, alerts, items, transactions, selectedDate]);
+  }, [counts, alerts, items, transactions, selectedDate, selectedTeamId]);
 
   return analytics;
 };
