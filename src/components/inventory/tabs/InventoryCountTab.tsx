@@ -13,7 +13,8 @@ import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
 import { MobileCountInterface } from '../MobileCountInterface';
-import { StreamlinedMobileCount } from '../StreamlinedMobileCount';
+import { ScanMode } from '../mobile/ScanMode';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +30,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 
-type CountInterface = 'batch' | 'mobile' | 'streamlined' | 'quickscan';
+type CountInterface = 'batch' | 'mobile' | 'scan';
 
 
 export const InventoryCountTab: React.FC = () => {
@@ -200,6 +201,23 @@ export const InventoryCountTab: React.FC = () => {
     }
   };
 
+  // Wrapper for ScanMode that matches its expected signature
+  const handleScanModeUpdateCount = async (countId: string, itemId: string, actualQuantity: number, notes?: string) => {
+    try {
+      await inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes);
+      
+      // Update local state
+      setCountItems(prev => prev.map(item => 
+        item.item_id === itemId 
+          ? { ...item, actual_quantity: actualQuantity, counted_at: new Date().toISOString(), notes }
+          : item
+      ));
+    } catch (error) {
+      console.error('Failed to update count:', error);
+      throw error; // Let ScanMode handle the error
+    }
+  };
+
 
   const handleCancelCount = async () => {
     if (!activeCount) return;
@@ -250,12 +268,12 @@ export const InventoryCountTab: React.FC = () => {
 
 
   // Auto-detect mobile device
+  const isMobile = useIsMobile();
   useEffect(() => {
-    const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
     if (isMobile && countInterface === 'batch') {
-      setCountInterface('streamlined');
+      setCountInterface('scan');
     }
-  }, []);
+  }, [isMobile, countInterface]);
 
   useEffect(() => {
     // Check if there's an active count on load
@@ -479,13 +497,36 @@ export const InventoryCountTab: React.FC = () => {
             {/* Interface Selection */}
             <div className="border-t pt-4 mt-6">
               <p className="text-sm font-medium mb-3">Count Interface:</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant={countInterface === 'batch' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCountInterface('batch')}
                   className="text-xs"
                 >
+                  <Tablet className="h-3 w-3 mr-1" />
+                  Batch
+                </Button>
+                <Button
+                  variant={countInterface === 'mobile' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCountInterface('mobile')}
+                  className="text-xs"
+                >
+                  <Smartphone className="h-3 w-3 mr-1" />
+                  Mobile
+                </Button>
+                <Button
+                  variant={countInterface === 'scan' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCountInterface('scan')}
+                  className="text-xs"
+                >
+                  <Camera className="h-3 w-3 mr-1" />
+                  Scan
+                </Button>
+              </div>
+            </div>
                   <Tablet className="h-3 w-3 mr-1" />
                   Batch
                 </Button>
@@ -532,19 +573,13 @@ export const InventoryCountTab: React.FC = () => {
         />
       )}
 
-      {countInterface === 'streamlined' && (
-        <StreamlinedMobileCount
+      {countInterface === 'scan' && (
+        <ScanMode
+          countId={activeCount!}
           countItems={countItems}
           items={countableItems}
-          categories={categories}
-          units={units}
-          activeCountId={activeCount}
-          onUpdateCount={handleUpdateCount}
-          onItemCreated={handleItemCreated}
-          onCompleteCount={handleCompleteCount}
-          progress={progress}
-          completedItems={completedItems}
-          totalItems={totalItems}
+          onUpdateCount={handleScanModeUpdateCount}
+          onComplete={handleCompleteCount}
         />
       )}
     </div>

@@ -345,6 +345,50 @@ export const inventoryCountsApi = {
     return data as InventoryCount;
   },
 
+  async bumpActual(countId: string, itemId: string, delta: number): Promise<void> {
+    // Get current actual quantity
+    const { data: countItem, error: getError } = await supabase
+      .from('inventory_count_items')
+      .select('actual_quantity')
+      .eq('count_id', countId)
+      .eq('item_id', itemId)
+      .single();
+
+    if (getError) throw getError;
+
+    const currentActual = countItem?.actual_quantity || 0;
+    const newActual = currentActual + delta;
+
+    // Update with new quantity
+    const updateData = {
+      actual_quantity: newActual,
+      counted_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from('inventory_count_items')
+      .update(updateData)
+      .eq('count_id', countId)
+      .eq('item_id', itemId);
+
+    if (error) throw error;
+  },
+
+  async setActual(countId: string, itemId: string, qty: number): Promise<void> {
+    const updateData = {
+      actual_quantity: qty,
+      counted_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from('inventory_count_items')
+      .update(updateData)
+      .eq('count_id', countId)
+      .eq('item_id', itemId);
+
+    if (error) throw error;
+  },
+
   async updateInventoryStockFromCount(countId: string): Promise<void> {
     try {
       // Get all count items with actual quantities
