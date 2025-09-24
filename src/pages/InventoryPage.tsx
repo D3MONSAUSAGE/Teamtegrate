@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResponsiveTabs, ResponsiveTabsContent, ResponsiveTabsList, ResponsiveTabsTrigger } from '@/components/ui/ResponsiveTabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { Package, Settings } from 'lucide-react';
 import { InventoryCountTab } from '@/components/inventory/tabs/InventoryCountTab';
@@ -23,38 +23,38 @@ const InventoryPage: React.FC = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="count" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="count" className="flex items-center gap-2">
+        <ResponsiveTabs defaultValue="count" className="w-full">
+          <ResponsiveTabsList>
+            <ResponsiveTabsTrigger value="count" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Inventory Count
-            </TabsTrigger>
+            </ResponsiveTabsTrigger>
             {hasRoleAccess('manager') && (
-              <TabsTrigger value="management" className="flex items-center gap-2">
+              <ResponsiveTabsTrigger value="management" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Management
-              </TabsTrigger>
+              </ResponsiveTabsTrigger>
             )}
-            <TabsTrigger value="records" className="flex items-center gap-2">
+            <ResponsiveTabsTrigger value="records" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Records
-            </TabsTrigger>
-          </TabsList>
+            </ResponsiveTabsTrigger>
+          </ResponsiveTabsList>
 
-          <TabsContent value="count" className="mt-6">
+          <ResponsiveTabsContent value="count" className="mt-6">
             <InventoryCountTab />
-          </TabsContent>
+          </ResponsiveTabsContent>
 
           {hasRoleAccess('manager') && (
-            <TabsContent value="management" className="mt-6">
+            <ResponsiveTabsContent value="management" className="mt-6">
               <InventoryManagementTab />
-            </TabsContent>
+            </ResponsiveTabsContent>
           )}
 
-          <TabsContent value="records" className="mt-6">
+          <ResponsiveTabsContent value="records" className="mt-6">
             <InventoryRecordsTab />
-          </TabsContent>
-        </Tabs>
+          </ResponsiveTabsContent>
+        </ResponsiveTabs>
       </div>
     </InventoryProvider>
   );

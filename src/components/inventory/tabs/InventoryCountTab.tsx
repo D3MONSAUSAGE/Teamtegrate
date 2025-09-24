@@ -14,7 +14,6 @@ import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
 import { MobileCountInterface } from '../MobileCountInterface';
 import { StreamlinedMobileCount } from '../StreamlinedMobileCount';
-import { QuickScanInterface } from '../QuickScanInterface';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +54,7 @@ export const InventoryCountTab: React.FC = () => {
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [countInterface, setCountInterface] = useState<CountInterface>('batch');
-  const [showQuickScan, setShowQuickScan] = useState(false);
+  
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
 
@@ -442,14 +441,6 @@ export const InventoryCountTab: React.FC = () => {
                 Complete Count
               </Button>
               
-              <Button 
-                variant="outline"
-                onClick={() => setShowQuickScan(true)}
-                size="default"
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Quick Scan
-              </Button>
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -488,7 +479,7 @@ export const InventoryCountTab: React.FC = () => {
             {/* Interface Selection */}
             <div className="border-t pt-4 mt-6">
               <p className="text-sm font-medium mb-3">Count Interface:</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant={countInterface === 'batch' ? 'default' : 'outline'}
                   size="sm"
@@ -507,24 +498,6 @@ export const InventoryCountTab: React.FC = () => {
                   <Smartphone className="h-3 w-3 mr-1" />
                   Mobile
                 </Button>
-                <Button
-                  variant={countInterface === 'streamlined' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCountInterface('streamlined')}
-                  className="text-xs"
-                >
-                  <Smartphone className="h-3 w-3 mr-1" />
-                  Focused
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowQuickScan(true)}
-                  className="text-xs"
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Quick Scan
-                </Button>
               </div>
             </div>
           </div>
@@ -532,22 +505,6 @@ export const InventoryCountTab: React.FC = () => {
       </Card>
 
 
-      {/* Quick Scan Interface */}
-      {showQuickScan && (
-        <div className="fixed inset-0 z-50 bg-background">
-          <QuickScanInterface
-            countItems={countItems}
-            items={countableItems}
-            categories={categories}
-            units={units}
-            activeCountId={activeCount}
-            onUpdateCount={handleUpdateCount}
-            onBulkUpdate={handleBulkUpdateCount}
-            onItemCreated={handleItemCreated}
-            onClose={() => setShowQuickScan(false)}
-          />
-        </div>
-      )}
 
       {/* Count Interface */}
       {countInterface === 'batch' && (
