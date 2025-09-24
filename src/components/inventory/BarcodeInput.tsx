@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Scan, Loader2 } from 'lucide-react';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { Scan } from 'lucide-react';
 import { ScannerOverlay } from './ScannerOverlay';
-import { CameraPermissionDialog } from './CameraPermissionDialog';
-import { requestCameraAccess } from '@/utils/deviceUtils';
 import { toast } from 'sonner';
 
 interface BarcodeInputProps {
@@ -23,65 +20,17 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
   className,
   onScanSuccess,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
-  const { scanBarcode, stopScanning, isScanning, videoElement } = useBarcodeScanner();
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleScanRequest = () => {
-    setShowPermissionDialog(true);
+    setShowScanner(true);
   };
 
-  const handlePermissionGranted = async () => {
-    try {
-      setIsLoading(true);
-      setShowPermissionDialog(false);
-      console.log('🎯 Starting barcode scan with permission...');
-
-      // Request camera access first
-      const cameraResult = await requestCameraAccess();
-      
-      if (!cameraResult.success) {
-        toast(`Failed to access camera: ${cameraResult.error || 'Unknown error'}`, {
-          description: 'Please check your camera permissions and try again.',
-        });
-        return;
-      }
-
-      console.log('📹 Camera access granted, starting scan...');
-      const result = await scanBarcode(cameraResult.stream);
-      
-      if (result) {
-        console.log('✅ Barcode scan successful:', result);
-        onChange(result.text);
-        onScanSuccess?.(result.text);
-        toast(`Barcode scanned successfully!`, {
-          description: `Detected: ${result.text}`,
-        });
-      } else {
-        console.log('ℹ️ No barcode detected during scan timeout');
-        toast('No barcode detected', {
-          description: 'Please try again or enter the barcode manually.',
-        });
-      }
-    } catch (error) {
-      console.error('❌ Barcode scan error:', error);
-      // Don't show error for user cancellation
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (!errorMessage.includes('cancelled') && !errorMessage.includes('user')) {
-        toast(`Scan failed: ${errorMessage}`, {
-          description: 'Please try again or enter the barcode manually.',
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePermissionDenied = () => {
-    setShowPermissionDialog(false);
-    toast('Camera access denied', {
-      description: 'You can enter the barcode manually in the input field.',
-    });
+  const handleBarcodeScanned = (text: string) => {
+    onChange(text);
+    onScanSuccess?.(text);
+    setShowScanner(false);
+    toast.success(`Barcode scanned: ${text}`);
   };
 
   return (
@@ -99,29 +48,18 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
           variant="outline"
           size="sm"
           onClick={handleScanRequest}
-          disabled={isLoading || isScanning}
           className="shrink-0"
         >
-          {isLoading || isScanning ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Scan className="h-4 w-4" />
-          )}
+          <Scan className="h-4 w-4" />
         </Button>
       </div>
 
       <ScannerOverlay
-        isScanning={isScanning}
-        onClose={stopScanning}
-        videoElement={videoElement}
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onBarcode={handleBarcodeScanned}
+        continuous={false}
         instructions="Position the barcode within the scanning frame"
-      />
-
-      <CameraPermissionDialog
-        open={showPermissionDialog}
-        onOpenChange={setShowPermissionDialog}
-        onPermissionGranted={handlePermissionGranted}
-        onPermissionDenied={handlePermissionDenied}
       />
     </div>
   );
