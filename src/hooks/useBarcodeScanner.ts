@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface BarcodeScanResult {
   text: string;
@@ -15,6 +15,8 @@ declare global {
 export const useBarcodeScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(true);
+  const scanningRef = useRef(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   const requestPermissions = useCallback(async () => {
     try {
@@ -33,7 +35,9 @@ export const useBarcodeScanner = () => {
 
   const scanBarcode = useCallback(async (stream?: MediaStream): Promise<BarcodeScanResult | null> => {
     try {
+      console.log('🎯 Starting barcode scan...');
       setIsScanning(true);
+      scanningRef.current = true;
       
       // Use provided stream or request camera access
       let cameraStream = stream;
@@ -62,16 +66,37 @@ export const useBarcodeScanner = () => {
       
       setVideoElement(video);
       
+      // Setup cleanup function
+      cleanupRef.current = () => {
+        console.log('🧹 Cleaning up barcode scanner...');
+        scanningRef.current = false;
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('🎥 Camera track stopped via cleanup');
+          });
+        }
+        if (video) {
+          video.pause();
+          video.srcObject = null;
+        }
+        setCurrentStream(null);
+        setVideoElement(null);
+      };
+      
       // Wait for video to load and start playing
       await new Promise((resolve, reject) => {
         video.onloadedmetadata = () => {
           console.log('🎥 Video metadata loaded, starting playback');
           video.play().then(resolve).catch(reject);
         };
-        video.onerror = reject;
+        video.onerror = (error) => {
+          console.error('🎥 Video error:', error);
+          reject(error);
+        };
         
-        // Timeout after 5 seconds
-        setTimeout(() => reject(new Error('Video loading timeout')), 5000);
+        // Timeout after 10 seconds
+        setTimeout(() => reject(new Error('Video loading timeout')), 10000);
       });
       
       console.log('🎥 Video playing, dimensions:', video.videoWidth, 'x', video.videoHeight);
@@ -90,10 +115,10 @@ export const useBarcodeScanner = () => {
       
       console.log('✅ jsQR library available, starting scan loop');
       
-      // Scanning loop with proper error handling
-      const scanFrame = async (): Promise<BarcodeScanResult | null> => {
+      // Scanning loop with ref-based state checking
+      const scanFrame = (): BarcodeScanResult | null => {
         try {
-          if (!video.videoWidth || !video.videoHeight) {
+          if (!video.videoWidth || !video.videoHeight || !scanningRef.current) {
             return null;
           }
           
@@ -116,49 +141,72 @@ export const useBarcodeScanner = () => {
         }
       };
       
-      // Try scanning for 30 seconds with better feedback
-      const scanTimeout = 30000;
-      const scanInterval = 150;
-      const maxAttempts = scanTimeout / scanInterval;
-      
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        if (!isScanning) {
-          console.log('🛑 Scanning cancelled by user');
-          break;
-        }
+      // Scanning loop using requestAnimationFrame for better performance
+      return new Promise((resolve) => {
+        const startTime = Date.now();
+        const maxScanTime = 30000; // 30 seconds
         
-        const result = await scanFrame();
-        if (result) {
-          return result;
-        }
-        await new Promise(resolve => setTimeout(resolve, scanInterval));
-      }
+        const scan = () => {
+          if (!scanningRef.current) {
+            console.log('🛑 Scanning cancelled by user');
+            resolve(null);
+            return;
+          }
+          
+          if (Date.now() - startTime > maxScanTime) {
+            console.log('⏱️ Scan timeout reached, no barcode found');
+            resolve(null);
+            return;
+          }
+          
+          const result = scanFrame();
+          if (result) {
+            resolve(result);
+            return;
+          }
+          
+          // Continue scanning
+          requestAnimationFrame(scan);
+        };
+        
+        // Start the scanning loop
+        scan();
+      });
       
-      console.log('⏱️ Scan timeout reached, no barcode found');
-      
-      // Should not reach here normally
-      return null;
     } catch (error) {
       console.error('❌ Barcode scanning error:', error);
-      throw error; // Let the calling component handle the error
+      throw error;
     } finally {
+      console.log('🏁 Scan completed, cleaning up...');
+      scanningRef.current = false;
       setIsScanning(false);
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
     }
-  }, [isScanning, currentStream]);
+  }, []);
 
   const stopScanning = useCallback(async () => {
-    console.log('🛑 Stopping barcode scanner...');
+    console.log('🛑 Stopping barcode scanner via stopScanning...');
+    scanningRef.current = false;
     setIsScanning(false);
     
-    // Stop camera stream
-    if (currentStream) {
-      currentStream.getTracks().forEach(track => {
-        track.stop();
-        console.log('🎥 Camera track stopped via stopScanning');
-      });
-      setCurrentStream(null);
+    // Use cleanup function if available
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    } else {
+      // Fallback cleanup
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => {
+          track.stop();
+          console.log('🎥 Camera track stopped via stopScanning fallback');
+        });
+        setCurrentStream(null);
+      }
+      setVideoElement(null);
     }
-    setVideoElement(null);
   }, [currentStream]);
 
   // Set initial permission state

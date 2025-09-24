@@ -41,24 +41,37 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
       const cameraResult = await requestCameraAccess();
       
       if (!cameraResult.success) {
-        toast.error(cameraResult.error || 'Failed to access camera');
+        toast(`Failed to access camera: ${cameraResult.error || 'Unknown error'}`, {
+          description: 'Please check your camera permissions and try again.',
+        });
         return;
       }
 
+      console.log('📹 Camera access granted, starting scan...');
       const result = await scanBarcode(cameraResult.stream);
       
       if (result) {
         console.log('✅ Barcode scan successful:', result);
         onChange(result.text);
         onScanSuccess?.(result.text);
-        toast.success(`Barcode scanned: ${result.text}`);
+        toast(`Barcode scanned successfully!`, {
+          description: `Detected: ${result.text}`,
+        });
       } else {
-        console.log('❌ No barcode detected');
-        toast.error('No barcode detected. Please try again or enter manually.');
+        console.log('ℹ️ No barcode detected during scan timeout');
+        toast('No barcode detected', {
+          description: 'Please try again or enter the barcode manually.',
+        });
       }
     } catch (error) {
       console.error('❌ Barcode scan error:', error);
-      toast.error(`Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Don't show error for user cancellation
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (!errorMessage.includes('cancelled') && !errorMessage.includes('user')) {
+        toast(`Scan failed: ${errorMessage}`, {
+          description: 'Please try again or enter the barcode manually.',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +79,9 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
 
   const handlePermissionDenied = () => {
     setShowPermissionDialog(false);
-    toast.info('You can enter the barcode manually in the input field.');
+    toast('Camera access denied', {
+      description: 'You can enter the barcode manually in the input field.',
+    });
   };
 
   return (
