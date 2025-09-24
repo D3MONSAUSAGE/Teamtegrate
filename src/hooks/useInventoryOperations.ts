@@ -219,13 +219,32 @@ export const useInventoryOperations = ({
 
   // Count operations
   const startInventoryCount = useCallback(async (notes?: string, teamId?: string, templateId?: string): Promise<InventoryCount | null> => {
+    // If template is provided but no team, get team from template
+    let finalTeamId = teamId;
+    if (templateId && !teamId) {
+      try {
+        const { data: template } = await supabase
+          .from('inventory_templates')
+          .select('team_id')
+          .eq('id', templateId)
+          .single();
+        
+        if (template?.team_id) {
+          finalTeamId = template.team_id;
+          console.log(`Using team_id from template: ${template.team_id}`);
+        }
+      } catch (error) {
+        console.warn('Failed to get team from template:', error);
+      }
+    }
+
     const countData = {
       organization_id: user?.organizationId || '',
       count_date: new Date().toISOString(),
       status: 'in_progress' as const,
       conducted_by: user?.id || '',
       notes,
-      team_id: teamId,
+      team_id: finalTeamId,
       template_id: templateId,
       assigned_to: user?.id,
       completion_percentage: 0,
