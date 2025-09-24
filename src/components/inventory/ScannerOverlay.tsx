@@ -156,32 +156,45 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
           </div>
         </div>
 
-        {/* Controls */}
+        {/* Instructions */}
         <div className="absolute bottom-20 left-4 right-4">
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 gap-3 mb-4">
             <Button
               className="px-4 py-3 rounded bg-white text-black font-medium hover:bg-gray-100"
               onClick={handleStart}
               disabled={active}
             >
-              {active ? 'Scanning...' : 'Start Scanning'}
+              {active ? 'Camera Active' : 'Start Camera'}
             </Button>
-            <Button
-              variant="outline"
-              className="px-4 py-3 rounded bg-white/10 text-white border-white/20 hover:bg-white/20"
-              onClick={handleStop}
-              disabled={!active}
-            >
-              Stop
-            </Button>
+            {active && (
+              <Button
+                variant="outline"
+                className="px-4 py-3 rounded bg-white/10 text-white border-white/20 hover:bg-white/20"
+                onClick={handleStop}
+              >
+                Stop Camera
+              </Button>
+            )}
           </div>
           
-          {/* Instructions */}
           <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4">
             <p className="text-white text-center font-medium text-lg">{instructions}</p>
             <p className="text-white/80 text-center text-sm mt-2">
-              Make sure the barcode is clearly visible and well-lit
+              Point camera at barcode and enter the code manually below
             </p>
+            {active && (
+              <input
+                type="text"
+                placeholder="Enter barcode manually"
+                className="w-full mt-3 p-2 rounded bg-white/90 text-black placeholder-gray-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    onBarcode(e.currentTarget.value.trim());
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+            )}
           </div>
         </div>
 
