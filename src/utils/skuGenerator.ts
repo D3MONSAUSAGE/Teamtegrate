@@ -35,18 +35,24 @@ function generateCategoryPrefix(categoryName: string): string {
  */
 async function findNextSequentialNumber(prefix: string): Promise<number> {
   try {
+    console.log(`🔍 Finding next sequential number for prefix: ${prefix}`);
+    
     // Get all items to check existing SKUs
     const items = await inventoryItemsApi.getAll();
+    console.log(`📦 Retrieved ${items.length} items from database`);
     
     // Filter items with SKUs that start with the prefix
     const pattern = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-?(\\d+)$`, 'i');
+    console.log(`🔎 Using pattern: ${pattern.toString()}`);
     
     let maxNumber = 0;
+    const matchedSKUs: string[] = [];
     
     items.forEach(item => {
       if (item.sku) {
         const match = item.sku.match(pattern);
         if (match) {
+          matchedSKUs.push(item.sku);
           const number = parseInt(match[1], 10);
           if (number > maxNumber) {
             maxNumber = number;
@@ -54,10 +60,13 @@ async function findNextSequentialNumber(prefix: string): Promise<number> {
         }
       }
     });
+    
+    console.log(`✅ Found ${matchedSKUs.length} matching SKUs:`, matchedSKUs);
+    console.log(`📈 Max number found: ${maxNumber}, next will be: ${maxNumber + 1}`);
 
     return maxNumber + 1;
   } catch (error) {
-    console.error('Error finding next sequential number:', error);
+    console.error('❌ Error finding next sequential number:', error);
     // If there's an error, start from 1
     return 1;
   }
@@ -105,6 +114,8 @@ export async function generateSKU(
   excludeId?: string
 ): Promise<string> {
   try {
+    console.log('🎯 generateSKU called with:', { categoryId, excludeId });
+    
     // Determine the category prefix
     let prefix = 'GEN'; // Default general prefix
     
@@ -112,6 +123,7 @@ export async function generateSKU(
       const category = categories.find(cat => cat.id === categoryId);
       if (category) {
         prefix = generateCategoryPrefix(category.name);
+        console.log(`📂 Found category "${category.name}" -> prefix: ${prefix}`);
       }
     }
     
@@ -123,16 +135,22 @@ export async function generateSKU(
     
     // Generate the SKU
     let generatedSKU = `${prefix}-${formattedNumber}`;
+    console.log(`⚡ Generated initial SKU: ${generatedSKU}`);
     
     // Ensure uniqueness (in case of edge cases or concurrent access)
     let attempts = 0;
     const maxAttempts = 100;
     
     while (attempts < maxAttempts) {
+      console.log(`🔍 Validating SKU uniqueness (attempt ${attempts + 1}): ${generatedSKU}`);
       const validation = await validateSKUUniqueness(generatedSKU, excludeId);
+      
       if (validation.isUnique) {
+        console.log(`✅ SKU is unique! Final SKU: ${generatedSKU}`);
         return generatedSKU;
       }
+      
+      console.log(`❌ SKU conflict detected: ${validation.message}`);
       
       // If not unique, try next number
       attempts++;
@@ -141,12 +159,14 @@ export async function generateSKU(
       generatedSKU = `${prefix}-${nextFormattedNumber}`;
     }
     
+    console.log(`⚠️ Could not find unique SKU after ${maxAttempts} attempts, using timestamp fallback`);
+    
     // If we can't find a unique SKU after many attempts, add timestamp
     const timestamp = Date.now().toString().slice(-4);
     return `${prefix}-${timestamp}`;
     
   } catch (error) {
-    console.error('Error generating SKU:', error);
+    console.error('❌ Error generating SKU:', error);
     
     // Fallback: generate a simple timestamp-based SKU
     const timestamp = Date.now().toString().slice(-6);

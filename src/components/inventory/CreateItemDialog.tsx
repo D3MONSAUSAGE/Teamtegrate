@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
+import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton';
+import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { toast } from 'sonner';
 
 interface CreateItemDialogProps {
@@ -47,14 +49,31 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!formData.name.trim()) {
       toast.error('Item name is required');
       return;
     }
 
+    // Validate SKU uniqueness before submission if SKU is provided
+    if (formData.sku && formData.sku.trim() !== '') {
+      try {
+        const skuValidation = await validateSKUUniqueness(formData.sku);
+        if (!skuValidation.isUnique) {
+          toast.error(skuValidation.message || 'SKU is already in use');
+          return;
+        }
+      } catch (error) {
+        console.error('❌ SKU validation error:', error);
+        toast.error('Failed to validate SKU. Please try again.');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       // Pass the data back to parent for API call
+      console.log('📋 CreateItemDialog submitting form data:', formData);
       onItemCreated(formData);
       onClose();
       setFormData({
@@ -70,6 +89,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
         unit_cost: 0,
       });
     } catch (error) {
+      console.error('❌ CreateItemDialog error:', error);
       toast.error('Failed to create item');
     } finally {
       setIsSubmitting(false);
@@ -108,11 +128,24 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
 
           <div>
             <Label htmlFor="sku">SKU</Label>
-            <Input
-              id="sku"
-              value={formData.sku}
-              onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-              placeholder="Enter SKU"
+            <div className="flex gap-2">
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+                placeholder="Enter SKU or generate one"
+              />
+              <SKUGeneratorButton
+                categoryId={formData.category_id}
+                categories={categories}
+                currentSKU={formData.sku}
+                onSKUGenerated={(sku) => setFormData(prev => ({ ...prev, sku }))}
+                disabled={isSubmitting}
+              />
+            </div>
+            <SKUValidationIndicator
+              sku={formData.sku}
+              className="mt-1"
             />
           </div>
 

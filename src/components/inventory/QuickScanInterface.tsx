@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { InventoryCountItem, InventoryItem, InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Scan, 
   Plus,
@@ -50,6 +51,7 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
   onItemCreated,
   onClose,
 }) => {
+  const { user } = useAuth();
   const [scanSessions, setScanSessions] = useState<ScanSession[]>([]);
   const [currentQuantity, setCurrentQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,16 +145,35 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
     toast.success('Scan undone');
   };
 
-  const handleItemCreated = (newItem: InventoryItem) => {
-    onItemCreated(newItem);
-    setShowCreateDialog(false);
-    setUnknownBarcode('');
-    // Auto-scan the newly created item
-    setTimeout(() => {
-      if (unknownBarcode) {
-        handleBarcodeScanned(unknownBarcode);
+  const handleItemCreated = async (itemData: any) => {
+    try {
+      console.log('🔄 Creating item from QuickScan interface:', itemData);
+      
+      // Call the API directly here since CreateItemDialog just passes data back
+      const newItem = await inventoryItemsApi.create({
+        ...itemData,
+        organization_id: user?.organizationId || '',
+        created_by: user?.id || ''
+      });
+      
+      if (newItem) {
+        console.log('✅ Item created successfully from QuickScan:', newItem);
+        onItemCreated(newItem);
+        toast.success(`${newItem.name} created successfully`);
+        setShowCreateDialog(false);
+        setUnknownBarcode('');
+        
+        // Auto-scan the newly created item
+        setTimeout(() => {
+          if (unknownBarcode) {
+            handleBarcodeScanned(unknownBarcode);
+          }
+        }, 100);
       }
-    }, 100);
+    } catch (error) {
+      console.error('❌ Failed to create item from QuickScan:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create item');
+    }
   };
 
   const adjustQuantity = (sessionId: string, adjustment: number) => {

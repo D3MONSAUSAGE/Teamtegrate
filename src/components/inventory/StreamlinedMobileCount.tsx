@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { InventoryCountItem, InventoryItem, InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Package, 
   CheckCircle, 
@@ -48,6 +49,7 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
   completedItems,
   totalItems,
 }) => {
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const [isScanning, setIsScanning] = useState(false);
@@ -130,10 +132,28 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
     setIsScanning(true);
   };
 
-  const handleItemCreated = (newItem: InventoryItem) => {
-    onItemCreated(newItem);
-    setShowCreateDialog(false);
-    setUnknownBarcode('');
+  const handleItemCreated = async (itemData: any) => {
+    try {
+      console.log('🔄 Creating item from StreamlinedMobile interface:', itemData);
+      
+      // Call the API directly here since CreateItemDialog just passes data back
+      const newItem = await inventoryItemsApi.create({
+        ...itemData,
+        organization_id: user?.organizationId || '',
+        created_by: user?.id || ''
+      });
+      
+      if (newItem) {
+        console.log('✅ Item created successfully from StreamlinedMobile:', newItem);
+        onItemCreated(newItem);
+        toast.success(`${newItem.name} created successfully`);
+        setShowCreateDialog(false);
+        setUnknownBarcode('');
+      }
+    } catch (error) {
+      console.error('❌ Failed to create item from StreamlinedMobile:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create item');
+    }
   };
 
   const nextItem = () => {

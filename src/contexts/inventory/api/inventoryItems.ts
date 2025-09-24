@@ -24,6 +24,8 @@ export const inventoryItemsApi = {
       created_by: (await supabase.auth.getUser()).data.user?.id
     };
 
+    console.log('🔄 Creating item with data:', itemWithCreatedBy);
+
     const { data, error } = await supabase
       .from('inventory_items')
       .insert([itemWithCreatedBy])
@@ -35,12 +37,27 @@ export const inventoryItemsApi = {
       .single();
 
     if (error) {
+      console.error('❌ Database error during item creation:', error);
+      
+      // Handle SKU uniqueness constraint
+      if (error.code === '23505' && (error.message?.includes('sku') || error.message?.includes('ux_inventory_items_sku'))) {
+        throw new Error(`SKU "${item.sku}" is already used by another item`);
+      }
+      
       // Handle barcode uniqueness constraint
       if (error.code === '23505' && (error.message?.includes('barcode') || error.message?.includes('ux_inventory_items_barcode'))) {
         throw new Error('That barcode is already used by another item');
       }
+      
+      // Handle other uniqueness constraints
+      if (error.code === '23505') {
+        throw new Error('This item conflicts with an existing item (duplicate SKU, barcode, or name)');
+      }
+      
       throw error;
     }
+    
+    console.log('✅ Item created successfully:', data);
     return data as any;
   },
 
@@ -57,10 +74,23 @@ export const inventoryItemsApi = {
       .single();
 
     if (error) {
+      console.error('❌ Database error during item update:', error);
+      
+      // Handle SKU uniqueness constraint
+      if (error.code === '23505' && (error.message?.includes('sku') || error.message?.includes('ux_inventory_items_sku'))) {
+        throw new Error(`SKU "${updates.sku}" is already used by another item`);
+      }
+      
       // Handle barcode uniqueness constraint
       if (error.code === '23505' && (error.message?.includes('barcode') || error.message?.includes('ux_inventory_items_barcode'))) {
         throw new Error('That barcode is already used by another item');
       }
+      
+      // Handle other uniqueness constraints
+      if (error.code === '23505') {
+        throw new Error('This item conflicts with an existing item (duplicate SKU, barcode, or name)');
+      }
+      
       throw error;
     }
     return data as any;
