@@ -58,6 +58,23 @@ export const InventoryCountTab: React.FC = () => {
   const [showQuickScan, setShowQuickScan] = useState(false);
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
+
+  // Define handleItemCreated early to ensure it's available
+  const handleItemCreated = async (itemData: any) => {
+    try {
+      const newItem = await createItem(itemData);
+      if (newItem) {
+        toast({ title: "Item created", description: `${newItem.name} has been added to inventory` });
+        // Refresh count items if we have an active count
+        if (activeCount) {
+          await loadCountItems(activeCount);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create item:', error);
+      toast({ title: "Error", description: "Failed to create item", variant: "destructive" });
+    }
+  };
   
   // Use template items when in a template-based count, otherwise use all items
   const countableItems = activeTemplate && templateItems.length > 0 
@@ -232,21 +249,6 @@ export const InventoryCountTab: React.FC = () => {
     }
   };
 
-  const handleItemCreated = async (itemData: any) => {
-    try {
-      const newItem = await createItem(itemData);
-      if (newItem) {
-        toast({ title: "Item created", description: `${newItem.name} has been added to inventory` });
-        // Refresh count items if we have an active count
-        if (activeCount) {
-          await loadCountItems(activeCount);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to create item:', error);
-      toast({ title: "Error", description: "Failed to create item", variant: "destructive" });
-    }
-  };
 
   // Auto-detect mobile device
   useEffect(() => {
