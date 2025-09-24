@@ -23,25 +23,31 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   // Comprehensive cleanup on visibility change, navigation, and unmount
   useEffect(() => {
-    const vis = () => { if (document.hidden) handleStop(); };
-    const beforeUnload = () => handleStop();
-    const popstate = () => handleStop();
+    const vis = () => { if (document.hidden) handleClose(); };
+    const beforeUnload = () => handleClose();
+    const popstate = () => handleClose();
+    const keydown = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     
-    document.addEventListener('visibilitychange', vis);
-    window.addEventListener('beforeunload', beforeUnload);
-    window.addEventListener('popstate', popstate);
+    if (open) {
+      document.addEventListener('visibilitychange', vis);
+      document.addEventListener('keydown', keydown);
+      window.addEventListener('beforeunload', beforeUnload);
+      window.addEventListener('popstate', popstate);
+    }
     
     // Cleanup on component unmount
     return () => {
       handleStop();
       document.removeEventListener('visibilitychange', vis);
+      document.removeEventListener('keydown', keydown);
       window.removeEventListener('beforeunload', beforeUnload);
       window.removeEventListener('popstate', popstate);
     };
-  }, []);
+  }, [open]);
 
   async function handleStart() {
     if (isLoading || active) return;
@@ -74,6 +80,13 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleClose() {
+    console.log('ScannerOverlay handleClose called');
+    setIsClosing(true);
+    onClose(); // Call onClose first to immediately hide overlay
+    handleStop();
   }
 
   function handleStop() {
@@ -125,17 +138,29 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
     }
   }
 
+  // Reset states when open prop changes
   useEffect(() => { 
     if (!open) {
       console.log('Scanner overlay closed, stopping camera');
-      handleStop(); 
+      handleStop();
+      setIsClosing(false); // Reset closing state
+    } else {
+      setIsClosing(false); // Reset closing state when opening
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!open || isClosing) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div 
+      className="fixed inset-0 z-50 bg-black"
+      onClick={(e) => {
+        // Close when clicking outside the scanning frame
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }}
+    >
       {/* Video background */}
       <div className="absolute inset-0 w-full h-full">
         <video
@@ -164,11 +189,7 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => { 
-              console.log('Close button clicked');
-              handleStop(); 
-              onClose(); 
-            }}
+            onClick={handleClose}
             className="bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm"
           >
             <X className="h-6 w-6" />
@@ -188,7 +209,10 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
 
         {/* Scanning frame - centered */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-64 h-64 md:w-80 md:h-80">
+          <div 
+            className="relative w-64 h-64 md:w-80 md:h-80"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the frame
+          >
             <div className="absolute inset-0 bg-black/30 border-2 border-primary/50 rounded-lg">
               {/* Corner indicators */}
               <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
