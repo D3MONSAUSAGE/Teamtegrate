@@ -284,7 +284,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const { addProjectComment } = await import('@/contexts/task/api/comments');
       const newComment = await addProjectComment(projectId, {
         userId: user.id,
         userName: user.name,

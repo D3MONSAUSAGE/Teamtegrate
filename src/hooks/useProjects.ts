@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { requestManager } from '@/utils/requestManager';
 import { validateUUID, sanitizeProjectData } from '@/utils/uuidValidation';
+import { fetchProjectComments } from '@/contexts/task/api/comments';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -150,7 +151,6 @@ export function useProjects() {
         validatedProjects.map(async (dbProject) => {
           try {
             // Fetch comments for this project
-            const { fetchProjectComments } = await import('@/contexts/task/api/comments');
             const comments = await fetchProjectComments(dbProject.id);
 
             // Fix: Use team_members from database instead of teamMemberIds
