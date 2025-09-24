@@ -8,20 +8,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
+import { useDailyInventoryAnalytics } from '@/hooks/useDailyInventoryAnalytics';
 import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 import { StandardTeamSelector } from '@/components/teams';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
 import { CountComparisonDialog } from './CountComparisonDialog';
 import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
 import { InventoryExportDialog } from '../export/InventoryExportDialog';
+import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
+import { DailyInventoryCharts } from '../daily/DailyInventoryCharts';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
-  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban
+  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 import { InventoryCount } from '@/contexts/inventory/types';
 import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
@@ -57,6 +62,11 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [voidDialogOpen, setVoidDialogOpen] = useState(false);
   const [countToVoid, setCountToVoid] = useState<InventoryCount | null>(null);
   const [voidReason, setVoidReason] = useState('');
+  
+  // Daily view states
+  const [viewMode, setViewMode] = useState<'all' | 'daily'>('all');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Filter counts based on search, team, date, status, and role-based access
   const filteredCounts = useMemo(() => {
@@ -103,6 +113,15 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     filteredAlertsForAnalytics, 
     items, 
     transactions
+  );
+
+  // Daily analytics for selected date
+  const { metrics: dailyMetrics, chartData: dailyChartData } = useDailyInventoryAnalytics(
+    counts,
+    alerts,
+    items,
+    transactions,
+    selectedDate
   );
 
   // Sort counts by most recent first (using updated_at for more accurate recent changes)
@@ -200,8 +219,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       </div>
 
       <Tabs defaultValue="records" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="records">Count Records</TabsTrigger>
+          <TabsTrigger value="daily">Daily View</TabsTrigger>
           <TabsTrigger value="analytics">Advanced Analytics</TabsTrigger>
           <TabsTrigger value="teams">Team Performance</TabsTrigger>
         </TabsList>
@@ -572,6 +592,111 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                   </ScrollArea>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="daily" className="space-y-6">
+          {/* Daily View Header */}
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <CalendarDays className="h-5 w-5" />
+                Daily Inventory View
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Detailed view of inventory activities for a specific date
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                  className="px-3 py-2 border rounded-md bg-background"
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setSelectedDate(new Date())}
+              >
+                Today
+              </Button>
+            </div>
+          </div>
+
+          {/* Daily Metrics */}
+          <DailyInventoryMetrics 
+            metrics={dailyMetrics} 
+            selectedDate={selectedDate}
+          />
+
+          {/* Daily Charts */}
+          <DailyInventoryCharts chartData={dailyChartData} />
+
+          {/* Daily Transaction Log */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Daily Activity Log
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                All inventory activities for {selectedDate.toLocaleDateString()}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-80">
+                <div className="space-y-3">
+                  {counts
+                    .filter(count => {
+                      const countDate = new Date(count.count_date);
+                      return countDate.toDateString() === selectedDate.toDateString();
+                    })
+                    .map((count) => (
+                      <div key={count.id} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <Badge variant={getStatusColor(count.status, count.is_voided)}>
+                            {count.is_voided ? 'VOIDED' : count.status}
+                          </Badge>
+                          <div>
+                            <div className="font-medium">
+                              Count #{count.id.slice(0, 8)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {getTeamDisplayName(count.team_id)} • {format(new Date(count.count_date), 'HH:mm')}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">
+                            {count.total_items_count} items
+                          </div>
+                          {count.variance_count > 0 && (
+                            <div className="text-sm text-destructive">
+                              {count.variance_count} variances
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  
+                  {counts.filter(count => {
+                    const countDate = new Date(count.count_date);
+                    return countDate.toDateString() === selectedDate.toDateString();
+                  }).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-medium mb-2">No activity on this date</h3>
+                      <p>No inventory counts were performed on {selectedDate.toLocaleDateString()}</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
