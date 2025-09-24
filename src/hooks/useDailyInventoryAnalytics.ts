@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { InventoryCount, InventoryAlert, InventoryItem, InventoryTransaction } from '@/contexts/inventory/types';
+import { useMemo, useState, useEffect } from 'react';
+import { InventoryCount, InventoryAlert, InventoryItem, InventoryTransaction, InventoryCountItem } from '@/contexts/inventory/types';
 import { format, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { inventoryCountsApi } from '@/contexts/inventory/api';
 
 export interface DailyAnalyticsMetrics {
   totalValue: number;
@@ -11,6 +12,21 @@ export interface DailyAnalyticsMetrics {
   completedCounts: number;
   activeTeams: number;
   trendDirection: 'up' | 'down' | 'stable';
+}
+
+export interface DailyItemDetail extends InventoryCountItem {
+  item_name?: string;
+  item_sku?: string;
+  item_barcode?: string;
+  category_name?: string;
+  location?: string;
+  unit_cost?: number;
+  minimum_threshold?: number;
+  maximum_threshold?: number;
+  variance_quantity: number;
+  variance_cost: number;
+  stock_status: 'normal' | 'low' | 'out' | 'over';
+  total_value: number;
 }
 
 export interface DailyChartData {
@@ -34,6 +50,23 @@ export interface DailyChartData {
   }>;
 }
 
+export interface DailyItemsData {
+  items: DailyItemDetail[];
+  loading: boolean;
+  summary: {
+    totalItems: number;
+    countedItems: number;
+    totalVariances: number;
+    totalValue: number;
+    totalVarianceCost: number;
+    stockIssues: {
+      underStock: number;
+      overStock: number;
+      outOfStock: number;
+    };
+  };
+}
+
 export const useDailyInventoryAnalytics = (
   counts: InventoryCount[],
   alerts: InventoryAlert[],
@@ -42,6 +75,23 @@ export const useDailyInventoryAnalytics = (
   selectedDate: Date,
   selectedTeamId?: string
 ) => {
+  const [itemsData, setItemsData] = useState<DailyItemsData>({
+    items: [],
+    loading: false,
+    summary: {
+      totalItems: 0,
+      countedItems: 0,
+      totalVariances: 0,
+      totalValue: 0,
+      totalVarianceCost: 0,
+      stockIssues: {
+        underStock: 0,
+        overStock: 0,
+        outOfStock: 0,
+      },
+    },
+  });
+
   const analytics = useMemo(() => {
     // Filter counts for the selected date (excluding voided counts)
     const dailyCounts = counts.filter(count => {
@@ -170,5 +220,106 @@ export const useDailyInventoryAnalytics = (
     return { metrics, chartData };
   }, [counts, alerts, items, transactions, selectedDate, selectedTeamId]);
 
-  return analytics;
+  // Fetch detailed item data for the selected date and team
+  useEffect(() => {
+    const loadItemsData = async () => {
+      const dailyCounts = counts.filter(count => {
+        const matchesDate = isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided;
+        const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
+        return matchesDate && matchesTeam;
+      });
+
+      if (dailyCounts.length === 0) {
+        setItemsData(prev => ({ ...prev, items: [], loading: false }));
+        return;
+      }
+
+      setItemsData(prev => ({ ...prev, loading: true }));
+
+      try {
+        // Fetch count items for all daily counts
+        const allCountItems: DailyItemDetail[] = [];
+        
+        for (const count of dailyCounts) {
+          const countItems = await inventoryCountsApi.getCountItems(count.id);
+          
+          const processedItems = countItems.map((item): DailyItemDetail => {
+            const inventoryItem = items.find(i => i.id === item.item_id);
+            const unitCost = inventoryItem?.unit_cost || inventoryItem?.purchase_price || 15;
+            const actualQuantity = item.actual_quantity ?? 0;
+            const inStockQuantity = item.in_stock_quantity ?? 0;
+            const varianceQuantity = actualQuantity - inStockQuantity;
+            const varianceCost = Math.abs(varianceQuantity) * unitCost;
+            const totalValue = actualQuantity * unitCost;
+
+            // Determine stock status
+            let stockStatus: 'normal' | 'low' | 'out' | 'over' = 'normal';
+            const minThreshold = inventoryItem?.minimum_threshold || item.template_minimum_quantity;
+            const maxThreshold = inventoryItem?.maximum_threshold || item.template_maximum_quantity;
+            
+            if (actualQuantity === 0) {
+              stockStatus = 'out';
+            } else if (minThreshold && actualQuantity < minThreshold) {
+              stockStatus = 'low';
+            } else if (maxThreshold && actualQuantity > maxThreshold) {
+              stockStatus = 'over';
+            }
+
+            return {
+              ...item,
+              item_name: inventoryItem?.name || `Item ${item.item_id.slice(0, 8)}`,
+              item_sku: inventoryItem?.sku,
+              item_barcode: inventoryItem?.barcode,
+              category_name: inventoryItem?.category?.name || 'Uncategorized',
+              location: inventoryItem?.location,
+              unit_cost: unitCost,
+              minimum_threshold: inventoryItem?.minimum_threshold,
+              maximum_threshold: inventoryItem?.maximum_threshold,
+              variance_quantity: varianceQuantity,
+              variance_cost: varianceCost,
+              stock_status: stockStatus,
+              total_value: totalValue,
+            };
+          });
+
+          allCountItems.push(...processedItems);
+        }
+
+        // Calculate summary
+        const totalItems = allCountItems.length;
+        const countedItems = allCountItems.filter(item => item.actual_quantity !== null).length;
+        const totalVariances = allCountItems.filter(item => 
+          Math.abs(item.variance_quantity) > 0.01
+        ).length;
+        const totalValue = allCountItems.reduce((sum, item) => sum + item.total_value, 0);
+        const totalVarianceCost = allCountItems.reduce((sum, item) => sum + item.variance_cost, 0);
+        
+        const stockIssues = {
+          underStock: allCountItems.filter(item => item.stock_status === 'low').length,
+          overStock: allCountItems.filter(item => item.stock_status === 'over').length,
+          outOfStock: allCountItems.filter(item => item.stock_status === 'out').length,
+        };
+
+        setItemsData({
+          items: allCountItems,
+          loading: false,
+          summary: {
+            totalItems,
+            countedItems,
+            totalVariances,
+            totalValue,
+            totalVarianceCost,
+            stockIssues,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to load daily items data:', error);
+        setItemsData(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    loadItemsData();
+  }, [counts, items, selectedDate, selectedTeamId]);
+
+  return { ...analytics, itemsData };
 };

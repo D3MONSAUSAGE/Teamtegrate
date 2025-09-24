@@ -21,6 +21,7 @@ import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
 import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
 import { DailyInventoryCharts } from '../daily/DailyInventoryCharts';
+import { DailyItemDetailsTable } from '../daily/DailyItemDetailsTable';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
   BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays
@@ -120,7 +121,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   );
 
   // Daily analytics for selected date
-  const { metrics: dailyMetrics, chartData: dailyChartData } = useDailyInventoryAnalytics(
+  const { metrics: dailyMetrics, chartData: dailyChartData, itemsData } = useDailyInventoryAnalytics(
     counts,
     alerts,
     items,
@@ -658,6 +659,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
           {/* Daily Charts */}
           <DailyInventoryCharts chartData={dailyChartData} />
+
+          {/* Daily Item Details */}
+          <DailyItemDetailsTable itemsData={itemsData} />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
