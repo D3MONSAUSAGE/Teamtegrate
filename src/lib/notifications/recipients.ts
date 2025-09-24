@@ -79,13 +79,32 @@ export async function getChecklistRecipients({
       }
     }
 
-    // 4. Deduplicate by lowercased email
-    const uniqueRecipients = Array.from(
-      new Map(recipients.map(r => [r.email.toLowerCase().trim(), r])).values()
-    );
+    // 4. Deduplicate by user ID first (primary deduplication), then by email as fallback
+    const uniqueByIdMap = new Map<string, NotificationRecipient>();
+    const uniqueByEmailMap = new Map<string, NotificationRecipient>();
+    
+    recipients.forEach(recipient => {
+      // Primary deduplication by user ID
+      if (!uniqueByIdMap.has(recipient.id)) {
+        uniqueByIdMap.set(recipient.id, recipient);
+      }
+      // Fallback deduplication by email (for edge cases)
+      const emailKey = recipient.email.toLowerCase().trim();
+      if (!uniqueByEmailMap.has(emailKey)) {
+        uniqueByEmailMap.set(emailKey, recipient);
+      }
+    });
 
-    // 5. Filter out any recipients without valid emails
-    return uniqueRecipients.filter(r => r.email && r.email.includes('@'));
+    // Use ID-based deduplication as primary, email as fallback
+    const uniqueRecipients = Array.from(uniqueByIdMap.values());
+    
+    // 5. Filter out any recipients without valid emails and log recipients
+    const validRecipients = uniqueRecipients.filter(r => r.email && r.email.includes('@'));
+    
+    console.log(`[Checklist Recipients] Found ${recipients.length} total, ${uniqueRecipients.length} unique, ${validRecipients.length} valid recipients:`, 
+      validRecipients.map(r => `${r.name} (${r.email})`));
+    
+    return validRecipients;
 
   } catch (error) {
     console.error('Failed to fetch checklist recipients:', error);
