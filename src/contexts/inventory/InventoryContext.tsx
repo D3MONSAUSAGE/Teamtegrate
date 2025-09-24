@@ -87,20 +87,7 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
   
   return (
     <InventoryContext.Provider value={inventoryData || defaultContextValue}>
-      {shouldInitialize ? (
-        children
-      ) : (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-muted-foreground mb-2">
-              Organization Required
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              You need to be part of an organization to access inventory management.
-            </p>
-          </div>
-        </div>
-      )}
+      {children}
     </InventoryContext.Provider>
   );
 };
