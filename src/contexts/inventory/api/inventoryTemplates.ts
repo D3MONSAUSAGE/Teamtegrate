@@ -47,6 +47,10 @@ export const inventoryTemplatesApi = {
       .single();
 
     if (error) throw error;
+    
+    // Note: If template.team_id is NULL (All Teams), the database trigger will automatically
+    // create team_inventory_assignments for all teams in the organization
+    
     return data as InventoryTemplate;
   },
 

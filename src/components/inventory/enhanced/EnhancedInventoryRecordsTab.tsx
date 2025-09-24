@@ -53,7 +53,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Filter counts based on search, team, date, and status
+  // Filter counts based on search, team, date, status, and role-based access
   const filteredCounts = useMemo(() => {
     return counts.filter(count => {
       const matchesSearch = searchTerm === '' || 
@@ -197,11 +197,11 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                   />
                 </div>
                 
-                {hasRoleAccess('admin') && (
+                {(hasRoleAccess('admin') || hasRoleAccess('manager')) && (
                   <StandardTeamSelector
                     selectedTeamId={selectedTeam || null}
                     onTeamChange={(teamId) => setSelectedTeam(teamId || '')}
-                    showAllOption={true}
+                    showAllOption={hasRoleAccess('admin')}
                     placeholder="Filter by team"
                     variant="simple"
                   />
