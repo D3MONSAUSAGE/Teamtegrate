@@ -8824,6 +8824,10 @@ export type Database = {
         Args: { new_role: string; target_user_id: string }
         Returns: Json
       }
+      admin_update_user_email: {
+        Args: { new_email: string; target_user_id: string }
+        Returns: Json
+      }
       admin_update_user_role: {
         Args: {
           admin_user_id?: string

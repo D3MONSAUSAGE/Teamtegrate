@@ -383,12 +383,12 @@ export const useInventoryOperations = ({
               if (!emailAlreadySent) {
                 console.log(`[completeInventoryCount] Preparing email notifications for count ${countId} with ${countDetails.total_items_count} items`);
                 
-                // Query recipients: team managers + admins + superadmins
-                let recipientIds = [];
+                // Query recipients: team managers + admins + superadmins using proper deduplication
+                const recipientIdsSet = new Set<string>();
                 
                 // Add team manager if team exists
                 if (countDetails.team_id && countDetails.teams?.manager_id) {
-                  recipientIds.push(countDetails.teams.manager_id);
+                  recipientIdsSet.add(countDetails.teams.manager_id);
                 }
                 
                 // Add admins and superadmins
@@ -400,22 +400,28 @@ export const useInventoryOperations = ({
                 
                 if (adminUsers) {
                   adminUsers.forEach(admin => {
-                    if (!recipientIds.includes(admin.id)) {
-                      recipientIds.push(admin.id);
-                    }
+                    recipientIdsSet.add(admin.id);
                   });
                 }
+
+                const recipientIds = Array.from(recipientIdsSet);
 
                 // Get email addresses for all recipients
                 const { data: recipients } = await supabase
                   .from('users')
-                  .select('email, name')
+                  .select('email, name, id')
                   .in('id', recipientIds)
                   .not('email', 'is', null);
 
-                console.log(`[completeInventoryCount] Found ${recipients?.length || 0} email recipients for count ${countId}`);
+                // Final deduplication by email to ensure no duplicates
+                const uniqueRecipients = Array.from(
+                  new Map(recipients?.map(r => [r.email.toLowerCase().trim(), r]) || []).values()
+                );
 
-                if (recipients && recipients.length > 0) {
+                console.log(`[completeInventoryCount] Found ${uniqueRecipients.length} unique email recipients for count ${countId}:`, 
+                  uniqueRecipients.map(r => `${r.name} (${r.email})`));
+
+                if (uniqueRecipients && uniqueRecipients.length > 0) {
                   // Send email notifications
                   const emailResult = await notifications.notifyInventorySubmitted(
                     {
@@ -426,7 +432,7 @@ export const useInventoryOperations = ({
                       submitted_by_name: user.name,
                       location_name: countDetails.teams?.name, // Fallback
                     },
-                    recipients
+                    uniqueRecipients
                   );
 
                   // Check if emails were sent successfully
