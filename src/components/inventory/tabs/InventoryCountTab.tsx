@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Clock, X, Smartphone, Tablet, Zap } from 'lucide-react';
+import { Package, Play, CheckCircle, Clock, X, Smartphone, Tablet, Zap, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
@@ -524,20 +524,6 @@ export const InventoryCountTab: React.FC = () => {
                 >
                   <Camera className="h-3 w-3 mr-1" />
                   Scan
-                </Button>
-              </div>
-            </div>
-                  <Tablet className="h-3 w-3 mr-1" />
-                  Batch
-                </Button>
-                <Button
-                  variant={countInterface === 'mobile' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCountInterface('mobile')}
-                  className="text-xs"
-                >
-                  <Smartphone className="h-3 w-3 mr-1" />
-                  Mobile
                 </Button>
               </div>
             </div>
