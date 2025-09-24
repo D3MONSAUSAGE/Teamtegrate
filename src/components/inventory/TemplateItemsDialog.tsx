@@ -175,13 +175,17 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleSaveEdit = async () => {
     if (!editingItem) return;
     
+    // Find the template item being edited
+    const templateItem = currentTemplateItems.find(ti => ti.id === editingItem);
+    if (!templateItem) return;
+    
     // Validate quantities before saving
-    const validatedMin = editValues.minimum && editValues.minimum >= 0 ? editValues.minimum : undefined;
-    const validatedMax = editValues.maximum && editValues.maximum >= 0 ? editValues.maximum : undefined;
+    const validatedMin = editValues.minimum && editValues.minimum >= 0 ? editValues.minimum : null;
+    const validatedMax = editValues.maximum && editValues.maximum >= 0 ? editValues.maximum : null;
     const validatedInStock = Math.max(0, editValues.inStock || 0);
     
     // Check min <= max constraint
-    if (validatedMin !== undefined && validatedMax !== undefined && validatedMin > validatedMax) {
+    if (validatedMin !== null && validatedMax !== null && validatedMin > validatedMax) {
       toast({
         title: "Invalid Quantities",
         description: "Minimum quantity cannot be greater than maximum quantity",
@@ -192,13 +196,13 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     
     setIsLoading(true);
     try {
-      await updateTemplateItem(templateId, editingItem.split('-')[1], {
+      await updateTemplateItem(templateId, templateItem.item_id, {
         in_stock_quantity: validatedInStock,
-        minimum_quantity: validatedMin ?? null,
-        maximum_quantity: validatedMax ?? null
+        minimum_quantity: validatedMin,
+        maximum_quantity: validatedMax
       });
       await refreshTemplateItems();
-      setEditingItem(null);
+      handleCancelEdit();
       toast({
         title: "Success",
         description: "Item updated successfully",
