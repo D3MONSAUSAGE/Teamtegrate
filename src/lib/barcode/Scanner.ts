@@ -1,5 +1,4 @@
-// Advanced barcode scanner with multi-format support
-import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
+// Advanced barcode scanner with multi-format support and lazy loading
 import jsQR from 'jsqr';
 
 let activeStream: MediaStream | null = null;
@@ -9,38 +8,35 @@ let detectionLoop: number | null = null;
 let detectionCanvas: HTMLCanvasElement | null = null;
 let detectionContext: CanvasRenderingContext2D | null = null;
 let lastDetectionTime: number = 0;
-let zxingReader: BrowserMultiFormatReader | null = null;
+let zxingReader: any = null;
+let zxingLibrary: any = null;
+
+// Lazy load ZXing library to reduce initial bundle size
+async function loadZXingLibrary() {
+  if (!zxingLibrary) {
+    try {
+      zxingLibrary = await import('@zxing/library');
+      console.log('ZXing library loaded successfully');
+    } catch (error) {
+      console.error('Failed to load ZXing library:', error);
+      zxingLibrary = null;
+    }
+  }
+  return zxingLibrary;
+}
 
 // Initialize ZXing reader with optimized settings
-function initializeZXingReader() {
+async function initializeZXingReader() {
   if (!zxingReader) {
-    zxingReader = new BrowserMultiFormatReader();
+    const lib = await loadZXingLibrary();
+    if (!lib) return null;
     
-    // Configure hints for optimal detection
-    const hints = new Map();
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-      BarcodeFormat.QR_CODE,
-      BarcodeFormat.CODE_128,
-      BarcodeFormat.CODE_39,
-      BarcodeFormat.CODE_93,
-      BarcodeFormat.UPC_A,
-      BarcodeFormat.UPC_E,
-      BarcodeFormat.EAN_13,  
-      BarcodeFormat.EAN_8,
-      BarcodeFormat.CODABAR,
-      BarcodeFormat.ITF,
-      BarcodeFormat.DATA_MATRIX,
-      BarcodeFormat.PDF_417,
-      BarcodeFormat.AZTEC
-    ]);
-    hints.set(DecodeHintType.TRY_HARDER, true);
-    
-    // Apply hints through constructor if supported
     try {
-      zxingReader = new BrowserMultiFormatReader(hints);
+      zxingReader = new lib.BrowserMultiFormatReader();
+      console.log('ZXing reader initialized');
     } catch (error) {
-      // Fallback to basic reader if hints not supported
-      zxingReader = new BrowserMultiFormatReader();
+      console.error('Failed to initialize ZXing reader:', error);
+      zxingReader = null;
     }
   }
   return zxingReader;
@@ -57,28 +53,23 @@ export async function listVideoDevices() {
   }
 }
 
-// Enhanced image processing for better detection
+// Lightweight image processing for better detection
 function enhanceImageData(imageData: ImageData): ImageData {
+  // Simple brightness/contrast adjustment without creating new ImageData
   const data = imageData.data;
-  const enhanced = new ImageData(imageData.width, imageData.height);
   
-  // Apply contrast and brightness enhancement
+  // In-place enhancement to save memory
   for (let i = 0; i < data.length; i += 4) {
-    // Increase contrast and adjust brightness
-    const r = Math.min(255, Math.max(0, (data[i] - 128) * 1.2 + 128));
-    const g = Math.min(255, Math.max(0, (data[i + 1] - 128) * 1.2 + 128));
-    const b = Math.min(255, Math.max(0, (data[i + 2] - 128) * 1.2 + 128));
-    
-    enhanced.data[i] = r;
-    enhanced.data[i + 1] = g;
-    enhanced.data[i + 2] = b;
-    enhanced.data[i + 3] = data[i + 3];
+    // Light contrast and brightness boost
+    data[i] = Math.min(255, Math.max(0, (data[i] - 128) * 1.1 + 128));
+    data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * 1.1 + 128));
+    data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * 1.1 + 128));
   }
   
-  return enhanced;
+  return imageData;
 }
 
-// Multi-library barcode detection with fallback
+// Optimized barcode detection with lazy loading and memory efficiency
 async function detectBarcode(videoEl: HTMLVideoElement): Promise<string | null> {
   if (!detectionCanvas || !detectionContext) {
     detectionCanvas = document.createElement('canvas');
@@ -86,45 +77,58 @@ async function detectBarcode(videoEl: HTMLVideoElement): Promise<string | null> 
     if (!detectionContext) return null;
   }
 
-  // Set canvas size to match video
+  // Set canvas size to match video with memory optimization
   const videoWidth = videoEl.videoWidth;
   const videoHeight = videoEl.videoHeight;
   
   if (videoWidth === 0 || videoHeight === 0) return null;
   
-  detectionCanvas.width = videoWidth;
-  detectionCanvas.height = videoHeight;
+  // Limit canvas size to reduce memory usage
+  const maxSize = 800;
+  let canvasWidth = videoWidth;
+  let canvasHeight = videoHeight;
+  
+  if (videoWidth > maxSize || videoHeight > maxSize) {
+    const scale = Math.min(maxSize / videoWidth, maxSize / videoHeight);
+    canvasWidth = Math.floor(videoWidth * scale);
+    canvasHeight = Math.floor(videoHeight * scale);
+  }
+  
+  detectionCanvas.width = canvasWidth;
+  detectionCanvas.height = canvasHeight;
 
-  // Draw current video frame to canvas
-  detectionContext.drawImage(videoEl, 0, 0, videoWidth, videoHeight);
+  // Draw scaled video frame to canvas
+  detectionContext.drawImage(videoEl, 0, 0, canvasWidth, canvasHeight);
   
-  // Get image data for processing
-  const imageData = detectionContext.getImageData(0, 0, videoWidth, videoHeight);
-  const enhancedImageData = enhanceImageData(imageData);
-  
-  // Try ZXing first (supports more formats)
+  // Try jsQR first (lighter and faster for QR codes)
   try {
-    const reader = initializeZXingReader();
-    // Convert canvas to data URL for ZXing
-    const dataUrl = detectionCanvas.toDataURL('image/png');
-    const result = await reader.decodeFromImage(dataUrl);
-    if (result) {
-      console.log(`ZXing detected ${result.getBarcodeFormat()}: ${result.getText()}`);
-      return result.getText();
+    const imageData = detectionContext.getImageData(0, 0, canvasWidth, canvasHeight);
+    enhanceImageData(imageData); // In-place enhancement
+    
+    const qrResult = jsQR(imageData.data, canvasWidth, canvasHeight, {
+      inversionAttempts: 'dontInvert',
+    });
+    if (qrResult) {
+      console.log(`jsQR detected QR code: ${qrResult.data}`);
+      return qrResult.data;
+    }
+  } catch (jsqrError) {
+    console.log('jsQR detection failed:', jsqrError);
+  }
+  
+  // Try ZXing for other barcode formats (lazy loaded)
+  try {
+    const reader = await initializeZXingReader();
+    if (reader) {
+      const dataUrl = detectionCanvas.toDataURL('image/jpeg', 0.8); // Use JPEG for smaller size
+      const result = await reader.decodeFromImage(dataUrl);
+      if (result) {
+        console.log(`ZXing detected ${result.getBarcodeFormat()}: ${result.getText()}`);
+        return result.getText();
+      }
     }
   } catch (error) {
-    // ZXing failed, try jsQR as fallback for QR codes
-    try {
-      const qrResult = jsQR(enhancedImageData.data, videoWidth, videoHeight, {
-        inversionAttempts: 'dontInvert',
-      });
-      if (qrResult) {
-        console.log(`jsQR detected QR code: ${qrResult.data}`);
-        return qrResult.data;
-      }
-    } catch (jsqrError) {
-      // Both libraries failed, continue scanning
-    }
+    console.log('ZXing detection failed:', error);
   }
   
   return null;
@@ -140,9 +144,9 @@ function startDetectionLoop(videoEl: HTMLVideoElement, onResult: (text: string) 
       return;
     }
 
-    // Throttle detection to avoid excessive processing
+    // Throttle detection to avoid excessive processing and memory usage
     const now = Date.now();
-    if (now - lastDetectionTime < 100) { // Max 10 FPS for detection
+    if (now - lastDetectionTime < 200) { // Max 5 FPS for detection to reduce memory pressure
       detectionLoop = requestAnimationFrame(detect);
       return;
     }
