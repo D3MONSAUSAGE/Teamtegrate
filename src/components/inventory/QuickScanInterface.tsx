@@ -52,47 +52,6 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
   const handleStartQuickScan = () => {
     setIsScanning(true);
   };
-        toast.error('Item not found with this barcode');
-        return;
-      }
-
-      // Update scan session
-      setScanSessions(prev => {
-        const existing = prev.find(session => session.itemId === item.id);
-        if (existing) {
-          return prev.map(session => 
-            session.itemId === item.id
-              ? { 
-                  ...session, 
-                  scannedCount: session.scannedCount + currentQuantity,
-                  lastScanTime: Date.now()
-                }
-              : session
-          );
-        } else {
-          return [...prev, {
-            itemId: item.id,
-            scannedCount: currentQuantity,
-            lastScanTime: Date.now()
-          }];
-        }
-      });
-
-      setLastScannedItem(item);
-      toast.success(`+${currentQuantity} ${item.name}`, {
-        duration: 1500
-      });
-
-      // Haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-
-    } catch (error) {
-      console.error('Scan error:', error);
-      toast.error('Scan failed. Try again.');
-    }
-  };
 
   const adjustQuantity = (sessionId: string, adjustment: number) => {
     setScanSessions(prev => 

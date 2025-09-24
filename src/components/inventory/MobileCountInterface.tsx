@@ -89,39 +89,8 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
     handleQuantityUpdate(newValue);
   };
 
-  const handleScanBarcode = async () => {
-    try {
-      const result = await scanBarcode();
-      if (result && currentItem) {
-        // Check if scanned barcode matches current item
-        if (currentItem.barcode && currentItem.barcode === result.text) {
-          toast.success('Item verified! Barcode matches.');
-          // Auto-advance to next item after successful scan
-          setTimeout(() => {
-            if (currentIndex < items.length - 1) {
-              handleNext();
-            }
-          }, 1000);
-        } else if (currentItem.barcode) {
-          toast.error('Barcode mismatch! This is not the correct item.');
-        } else {
-          // Find item by barcode if current item doesn't have one
-          const matchedItem = items.find(item => item.barcode === result.text);
-          if (matchedItem) {
-            const matchedIndex = items.findIndex(item => item.id === matchedItem.id);
-            if (matchedIndex !== -1) {
-              setCurrentIndex(matchedIndex);
-              toast.success(`Switched to: ${matchedItem.name}`);
-            }
-          } else {
-            toast.warning('Item not found with this barcode');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Barcode scan error:', error);
-      toast.error('Failed to scan barcode. Please try again.');
-    }
+  const handleScanBarcode = () => {
+    setIsScanning(true);
   };
 
   if (!currentItem) {

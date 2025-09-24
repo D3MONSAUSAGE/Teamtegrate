@@ -79,36 +79,14 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
   };
 
   const nextItem = () => {
-            if (currentIndex < items.length - 1) {
-              handleNext();
-            }
-          }, 800);
-        } else if (currentItem.barcode) {
-          toast.error('Wrong item scanned!');
-        } else {
-          // No barcode on current item, try to find matching item
-          const matchedItem = items.find(item => item.barcode === result.text);
-          if (matchedItem) {
-            const matchedIndex = items.findIndex(item => item.id === matchedItem.id);
-            if (matchedIndex !== -1) {
-              setCurrentIndex(matchedIndex);
-              toast.success(`Found: ${matchedItem.name}`);
-            }
-          } else {
-            // Use scanned text as quantity if it's a number
-            const scannedNum = parseFloat(result.text);
-            if (!isNaN(scannedNum) && scannedNum >= 0) {
-              handleQuantityUpdate(scannedNum);
-              toast.success(`Count set to ${scannedNum}`);
-            } else {
-              toast.warning('Item not found with this code');
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Barcode scan error:', error);
-      toast.error('Scan failed. Try again.');
+    if (currentIndex < items.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const prevItem = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
     }
   };
 
