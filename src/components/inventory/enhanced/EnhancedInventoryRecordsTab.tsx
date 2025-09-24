@@ -100,10 +100,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     transactions
   );
 
-  // Sort counts by most recent first
-  const sortedCounts = [...filteredCounts].sort((a, b) => 
-    new Date(b.count_date).getTime() - new Date(a.count_date).getTime()
-  );
+  // Sort counts by most recent first (using updated_at for more accurate recent changes)
+  const sortedCounts = [...filteredCounts].sort((a, b) => {
+    const aTime = new Date(a.updated_at || a.count_date).getTime();
+    const bTime = new Date(b.updated_at || b.count_date).getTime();
+    return bTime - aTime;
+  });
 
   const handleViewDetails = (count: InventoryCount) => {
     setSelectedCount(count);

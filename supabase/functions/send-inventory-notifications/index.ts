@@ -288,16 +288,40 @@ const handler = async (req: Request): Promise<Response> => {
 
       const html = renderInventorySubmittedHTML(emailContext);
 
-      const sends = await Promise.allSettled(
-        recipientList.map(async (toEmail) => {
-          const out = await sendViaResend(apiKey, from, toEmail, subject, html);
-          return { to: toEmail, ok: true, id: out?.id ?? null };
-        })
-      );
+      // Send emails with rate limiting (max 2 per second for Resend)
+      const results: any[] = [];
+      const DELAY_MS = 600; // 600ms delay = ~1.6 requests per second to stay under limit
 
-      const results = sends.map((r) =>
-        r.status === "fulfilled" ? r.value : { ok: false, error: String(r.reason) }
-      );
+      for (let i = 0; i < recipientList.length; i++) {
+        const toEmail = recipientList[i];
+        
+        try {
+          // Add delay between sends to avoid rate limiting
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+          }
+          
+          const out = await sendViaResend(apiKey, from, toEmail, subject, html);
+          results.push({ to: toEmail, ok: true, id: out?.id ?? null });
+        } catch (error: any) {
+          // Check if it's a rate limit error and retry once
+          if (error.message?.includes('429') || error.message?.includes('rate_limit')) {
+            console.log(`Rate limit hit for ${toEmail}, retrying after delay...`);
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+            
+            try {
+              const retryOut = await sendViaResend(apiKey, from, toEmail, subject, html);
+              results.push({ to: toEmail, ok: true, id: retryOut?.id ?? null });
+            } catch (retryError) {
+              console.error(`Retry failed for ${toEmail}:`, retryError);
+              results.push({ ok: false, error: String(retryError) });
+            }
+          } else {
+            results.push({ ok: false, error: String(error) });
+          }
+        }
+      }
+
       const sent = results.filter((r: any) => r.ok).length;
 
       console.log("INVENTORY_EMAIL_RESULTS", { inventory_id: inv.id, team_id: inv.team_id, sent, total: recipientList.length, results });
