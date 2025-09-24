@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
+import { InventoryCountItem, InventoryItem, InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
 import { 
   Scan, 
   Plus,
@@ -12,17 +12,24 @@ import {
   CheckCircle,
   X,
   Zap,
-  Target
+  Target,
+  Undo2
 } from 'lucide-react';
 import { ScannerOverlay } from './ScannerOverlay';
+import { CreateItemDialog } from './CreateItemDialog';
+import { inventoryItemsApi } from '@/contexts/inventory/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface QuickScanInterfaceProps {
   countItems: InventoryCountItem[];
   items: InventoryItem[];
+  categories: InventoryCategory[];
+  units: InventoryUnit[];
+  activeCountId?: string;
   onUpdateCount: (itemId: string, actualQuantity: number) => void;
   onBulkUpdate: (updates: Array<{ itemId: string; actualQuantity: number }>) => Promise<void>;
+  onItemCreated: (item: InventoryItem) => void;
   onClose: () => void;
 }
 
@@ -35,8 +42,12 @@ interface ScanSession {
 export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
   countItems,
   items,
+  categories,
+  units,
+  activeCountId,
   onUpdateCount,
   onBulkUpdate,
+  onItemCreated,
   onClose,
 }) => {
   const [scanSessions, setScanSessions] = useState<ScanSession[]>([]);
@@ -44,13 +55,104 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastScannedItem, setLastScannedItem] = useState<InventoryItem | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [unknownBarcode, setUnknownBarcode] = useState<string>('');
+  const [lastScanTime, setLastScanTime] = useState(0);
 
   const handleScan = () => {
     setIsScanning(true);
   };
 
-  const handleStartQuickScan = () => {
-    setIsScanning(true);
+  const handleBarcodeScanned = async (barcode: string) => {
+    const now = Date.now();
+    
+    // Debounce duplicate scans within 750ms
+    if (now - lastScanTime < 750) return;
+    setLastScanTime(now);
+
+    try {
+      // Look up item by barcode
+      const item = await inventoryItemsApi.getByBarcode(barcode);
+      
+      if (!item) {
+        // Unknown barcode - show create dialog
+        setUnknownBarcode(barcode);
+        setIsScanning(false);
+        setShowCreateDialog(true);
+        toast.error(`Unknown barcode: ${barcode}`);
+        return;
+      }
+
+      // Find or create scan session
+      const existingSession = scanSessions.find(s => s.itemId === item.id);
+      if (existingSession) {
+        // Increment existing session
+        setScanSessions(prev => 
+          prev.map(session => 
+            session.itemId === item.id
+              ? { ...session, scannedCount: session.scannedCount + currentQuantity, lastScanTime: now }
+              : session
+          )
+        );
+      } else {
+        // Create new session
+        setScanSessions(prev => [...prev, {
+          itemId: item.id,
+          scannedCount: currentQuantity,
+          lastScanTime: now
+        }]);
+      }
+
+      setLastScannedItem(item);
+      
+      // Haptic feedback on mobile
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      
+      toast.success(`Scanned: ${item.name} +${currentQuantity}`, {
+        action: {
+          label: 'Undo',
+          onClick: () => undoLastScan(item.id)
+        }
+      });
+      
+    } catch (error) {
+      console.error('Barcode lookup failed:', error);
+      toast.error('Failed to process barcode scan');
+    }
+  };
+
+  const undoLastScan = (itemId: string) => {
+    setScanSessions(prev => {
+      const session = prev.find(s => s.itemId === itemId);
+      if (!session) return prev;
+      
+      if (session.scannedCount <= currentQuantity) {
+        // Remove session entirely
+        return prev.filter(s => s.itemId !== itemId);
+      } else {
+        // Decrement count
+        return prev.map(s => 
+          s.itemId === itemId 
+            ? { ...s, scannedCount: s.scannedCount - currentQuantity }
+            : s
+        );
+      }
+    });
+    toast.success('Scan undone');
+  };
+
+  const handleItemCreated = (newItem: InventoryItem) => {
+    onItemCreated(newItem);
+    setShowCreateDialog(false);
+    setUnknownBarcode('');
+    // Auto-scan the newly created item
+    setTimeout(() => {
+      if (unknownBarcode) {
+        handleBarcodeScanned(unknownBarcode);
+      }
+    }, 100);
   };
 
   const adjustQuantity = (sessionId: string, adjustment: number) => {
@@ -103,8 +205,17 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
       <ScannerOverlay
         open={isScanning}
         onClose={() => setIsScanning(false)}
-        onBarcode={() => {}}
+        onBarcode={handleBarcodeScanned}
         instructions="Scan multiple items quickly"
+      />
+      
+      <CreateItemDialog
+        open={showCreateDialog}
+        onClose={() => {setShowCreateDialog(false); setUnknownBarcode('');}}
+        onItemCreated={handleItemCreated}
+        categories={categories}
+        units={units}
+        prefilledBarcode={unknownBarcode}
       />
       
       <div className="min-h-screen bg-background">

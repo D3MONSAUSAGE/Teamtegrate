@@ -102,4 +102,22 @@ export const inventoryItemsApi = {
 
     if (error) throw error;
   },
+
+  async getByBarcode(barcode: string): Promise<InventoryItem | null> {
+    if (!barcode?.trim()) return null;
+    
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select(`
+        *,
+        category:inventory_categories(*),
+        base_unit:inventory_units(*)
+      `)
+      .eq('barcode', barcode.trim())
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as InventoryItem | null;
+  },
 };

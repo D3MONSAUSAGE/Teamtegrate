@@ -30,6 +30,12 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
     onChange(text);
     onScanSuccess?.(text);
     setShowScanner(false);
+    
+    // Haptic feedback on mobile
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+    
     toast.success(`Barcode scanned: ${text}`);
   };
 

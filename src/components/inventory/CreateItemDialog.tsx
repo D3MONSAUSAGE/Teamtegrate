@@ -1,0 +1,201 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
+import { toast } from 'sonner';
+
+interface CreateItemDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onItemCreated: (item: any) => void;
+  categories: InventoryCategory[];
+  units: InventoryUnit[];
+  prefilledBarcode?: string;
+}
+
+export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
+  open,
+  onClose,
+  onItemCreated,
+  categories,
+  units,
+  prefilledBarcode
+}) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    sku: '',
+    barcode: prefilledBarcode || '',
+    description: '',
+    category_id: '',
+    base_unit_id: '',
+    current_stock: 0,
+    reorder_point: 0,
+    reorder_quantity: 0,
+    unit_cost: 0,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (prefilledBarcode) {
+      setFormData(prev => ({ ...prev, barcode: prefilledBarcode }));
+    }
+  }, [prefilledBarcode]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error('Item name is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { useInventoryOperations } = await import('@/hooks/useInventoryOperations');
+      // This would need to be called from a component with proper hooks context
+      // For now, we'll emit the data back to parent
+      onItemCreated(formData);
+      onClose();
+      setFormData({
+        name: '',
+        sku: '',
+        barcode: '',
+        description: '',
+        category_id: '',
+        base_unit_id: '',
+        current_stock: 0,
+        reorder_point: 0,
+        reorder_quantity: 0,
+        unit_cost: 0,
+      });
+    } catch (error) {
+      toast.error('Failed to create item');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create New Item</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Item Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter item name"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="barcode">Barcode</Label>
+            <Input
+              id="barcode"
+              value={formData.barcode}
+              onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
+              placeholder="Enter or scan barcode"
+              readOnly={!!prefilledBarcode}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="sku">SKU</Label>
+            <Input
+              id="sku"
+              value={formData.sku}
+              onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+              placeholder="Enter SKU"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={formData.category_id} onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(category => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="unit">Base Unit</Label>
+            <Select value={formData.base_unit_id} onValueChange={(value) => setFormData(prev => ({ ...prev, base_unit_id: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map(unit => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    {unit.name} ({unit.abbreviation})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="stock">Current Stock</Label>
+              <Input
+                id="stock"
+                type="number"
+                value={formData.current_stock}
+                onChange={(e) => setFormData(prev => ({ ...prev, current_stock: parseFloat(e.target.value) || 0 }))}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label htmlFor="cost">Unit Cost</Label>
+              <Input
+                id="cost"
+                type="number"
+                value={formData.unit_cost}
+                onChange={(e) => setFormData(prev => ({ ...prev, unit_cost: parseFloat(e.target.value) || 0 }))}
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Enter item description"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
+              {isSubmitting ? 'Creating...' : 'Create Item'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};

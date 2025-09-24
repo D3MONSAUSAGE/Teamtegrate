@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
+import { InventoryCountItem, InventoryItem, InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
 import { 
   Package, 
   CheckCircle, 
@@ -16,13 +16,19 @@ import {
   Hash
 } from 'lucide-react';
 import { ScannerOverlay } from './ScannerOverlay';
+import { CreateItemDialog } from './CreateItemDialog';
+import { inventoryItemsApi } from '@/contexts/inventory/api';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface StreamlinedMobileCountProps {
   countItems: InventoryCountItem[];
   items: InventoryItem[];
+  categories: InventoryCategory[];
+  units: InventoryUnit[];
+  activeCountId?: string;
   onUpdateCount: (itemId: string, actualQuantity: number) => void;
+  onItemCreated: (item: InventoryItem) => void;
   onCompleteCount: () => void;
   progress: number;
   completedItems: number;
@@ -32,7 +38,11 @@ interface StreamlinedMobileCountProps {
 export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
   countItems,
   items,
+  categories,
+  units,
+  activeCountId,
   onUpdateCount,
+  onItemCreated,
   onCompleteCount,
   progress,
   completedItems,
@@ -41,6 +51,8 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
   const [isScanning, setIsScanning] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [unknownBarcode, setUnknownBarcode] = useState<string>('');
 
   const currentItem = items[currentIndex];
   const countItem = countItems.find(ci => ci.item_id === currentItem?.id);
@@ -74,8 +86,54 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
     }
   };
 
+  const handleBarcodeScanned = async (barcode: string) => {
+    try {
+      // Look up item by barcode
+      const item = await inventoryItemsApi.getByBarcode(barcode);
+      
+      if (!item) {
+        // Unknown barcode - show create dialog
+        setUnknownBarcode(barcode);
+        setIsScanning(false);
+        setShowCreateDialog(true);
+        toast.error(`Unknown barcode: ${barcode}`);
+        return;
+      }
+
+      // Find the item in our current items and navigate to it
+      const itemIndex = items.findIndex(i => i.id === item.id);
+      if (itemIndex >= 0) {
+        setCurrentIndex(itemIndex);
+        // Auto-fill with scanned quantity (1)
+        handleQuantityUpdate(1);
+        setIsScanning(false);
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+        
+        toast.success(`Scanned: ${item.name}`);
+      } else {
+        toast.error('Item not in current count');
+        setIsScanning(false);
+      }
+      
+    } catch (error) {
+      console.error('Barcode lookup failed:', error);
+      toast.error('Failed to process barcode scan');
+      setIsScanning(false);
+    }
+  };
+
   const handleScanBarcode = () => {
     setIsScanning(true);
+  };
+
+  const handleItemCreated = (newItem: InventoryItem) => {
+    onItemCreated(newItem);
+    setShowCreateDialog(false);
+    setUnknownBarcode('');
   };
 
   const nextItem = () => {
@@ -106,8 +164,17 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
       <ScannerOverlay
         open={isScanning}
         onClose={() => setIsScanning(false)}
-        onBarcode={() => {}}
+        onBarcode={handleBarcodeScanned}
         instructions={`Scan: ${currentItem.name}`}
+      />
+      
+      <CreateItemDialog
+        open={showCreateDialog}
+        onClose={() => {setShowCreateDialog(false); setUnknownBarcode('');}}
+        onItemCreated={handleItemCreated}
+        categories={categories}
+        units={units}
+        prefilledBarcode={unknownBarcode}
       />
       
       <div className="min-h-screen bg-background">

@@ -34,7 +34,18 @@ type CountInterface = 'batch' | 'mobile' | 'streamlined' | 'quickscan';
 
 
 export const InventoryCountTab: React.FC = () => {
-  const { items, counts, templates, startInventoryCount, completeInventoryCount, cancelInventoryCount, initializeCountItems } = useInventory();
+  const { 
+    items, 
+    counts, 
+    templates, 
+    categories,
+    units,
+    startInventoryCount, 
+    completeInventoryCount, 
+    cancelInventoryCount, 
+    initializeCountItems,
+    createItem 
+  } = useInventory();
   const { toast } = useToast();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
@@ -218,6 +229,22 @@ export const InventoryCountTab: React.FC = () => {
         description: 'Failed to complete inventory count',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleItemCreated = async (itemData: any) => {
+    try {
+      const newItem = await createItem(itemData);
+      if (newItem) {
+        toast({ title: "Item created", description: `${newItem.name} has been added to inventory` });
+        // Refresh count items if we have an active count
+        if (activeCount) {
+          await loadCountItems(activeCount);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create item:', error);
+      toast({ title: "Error", description: "Failed to create item", variant: "destructive" });
     }
   };
 
@@ -509,8 +536,12 @@ export const InventoryCountTab: React.FC = () => {
           <QuickScanInterface
             countItems={countItems}
             items={countableItems}
+            categories={categories}
+            units={units}
+            activeCountId={activeCount}
             onUpdateCount={handleUpdateCount}
             onBulkUpdate={handleBulkUpdateCount}
+            onItemCreated={handleItemCreated}
             onClose={() => setShowQuickScan(false)}
           />
         </div>
@@ -546,7 +577,11 @@ export const InventoryCountTab: React.FC = () => {
         <StreamlinedMobileCount
           countItems={countItems}
           items={countableItems}
+          categories={categories}
+          units={units}
+          activeCountId={activeCount}
           onUpdateCount={handleUpdateCount}
+          onItemCreated={handleItemCreated}
           onCompleteCount={handleCompleteCount}
           progress={progress}
           completedItems={completedItems}
