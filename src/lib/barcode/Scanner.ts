@@ -1,12 +1,21 @@
-import { BrowserMultiFormatReader } from '@zxing/browser';
-
-let reader: BrowserMultiFormatReader | null = null;
+let reader: any = null;
 let activeDeviceId: string | null = null;
+let BrowserMultiFormatReader: any = null;
+
+// Dynamic import to reduce bundle size
+async function loadZXing() {
+  if (!BrowserMultiFormatReader) {
+    const zxing = await import('@zxing/browser');
+    BrowserMultiFormatReader = zxing.BrowserMultiFormatReader;
+  }
+  return BrowserMultiFormatReader;
+}
 
 export async function listVideoDevices() {
-  const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+  const ReaderClass = await loadZXing();
+  const devices = await ReaderClass.listVideoInputDevices();
   // prefer back camera when labels are available
-  const back = devices.find(d => /back|rear|environment/i.test(d.label));
+  const back = devices.find((d: any) => /back|rear|environment/i.test(d.label));
   activeDeviceId = (back ?? devices[0])?.deviceId ?? null;
   return devices;
 }
@@ -15,7 +24,8 @@ export async function startScan(
   videoEl: HTMLVideoElement,
   onResult: (text: string) => void,
 ) {
-  if (!reader) reader = new BrowserMultiFormatReader();
+  const ReaderClass = await loadZXing();
+  if (!reader) reader = new ReaderClass();
   if (!activeDeviceId) await listVideoDevices();
 
   // iOS requirements to keep the camera inline & autoplay
@@ -23,14 +33,14 @@ export async function startScan(
   videoEl.muted = true;
   videoEl.autoplay = true;
 
-  await reader.decodeFromVideoDevice(activeDeviceId, videoEl, (res, err) => {
+  await reader.decodeFromVideoDevice(activeDeviceId, videoEl, (res: any, err: any) => {
     if (res?.getText) onResult(res.getText());
   });
 }
 
 export async function switchToBackCamera() {
   const devices = await listVideoDevices();
-  const back = devices.find(d => /back|rear|environment/i.test(d.label));
+  const back = devices.find((d: any) => /back|rear|environment/i.test(d.label));
   if (back) activeDeviceId = back.deviceId;
 }
 
