@@ -54,9 +54,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
 
     setIsSubmitting(true);
     try {
-      const { useInventoryOperations } = await import('@/hooks/useInventoryOperations');
-      // This would need to be called from a component with proper hooks context
-      // For now, we'll emit the data back to parent
+      // Pass the data back to parent for API call
       onItemCreated(formData);
       onClose();
       setFormData({
