@@ -68,6 +68,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedDailyTeam, setSelectedDailyTeam] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  
+  // Active tab state
+  const [activeTab, setActiveTab] = useState('records');
 
   // Filter counts based on search, team, date, status, and role-based access
   const filteredCounts = useMemo(() => {
@@ -196,9 +199,14 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
           <h2 className="text-3xl font-bold">Enhanced Inventory Records</h2>
           <p className="text-muted-foreground mt-1">
             Comprehensive inventory history with financial insights and team performance tracking
-            {selectedTeam && (
+            {(activeTab === 'records' && selectedTeam) && (
               <span className="block text-sm mt-1 text-primary">
                 Showing data for: {getTeamDisplayName(selectedTeam)}
+              </span>
+            )}
+            {(activeTab === 'daily' && selectedDailyTeam) && (
+              <span className="block text-sm mt-1 text-primary">
+                Showing data for: {getTeamDisplayName(selectedDailyTeam)}
               </span>
             )}
           </p>
@@ -220,7 +228,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="records" className="space-y-6">
+      <Tabs defaultValue="records" className="space-y-6" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="records">Count Records</TabsTrigger>
           <TabsTrigger value="daily">Daily View</TabsTrigger>
