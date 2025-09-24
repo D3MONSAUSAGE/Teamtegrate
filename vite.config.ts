@@ -21,44 +21,19 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Optimize chunk splitting for better caching
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Vendor chunks
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'query-vendor': ['@tanstack/react-query'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'date-vendor': ['date-fns'],
-          'chart-vendor': ['recharts'],
-          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          
-          // Feature chunks - using actual file paths that exist
-          'tasks': ['src/pages/TasksPage.tsx'],
-          'projects': ['src/pages/ProjectsPage.tsx'],
-          'calendar': ['src/pages/CalendarPage.tsx'],
-          'chat': ['src/pages/ChatPage.tsx'],
-          'reports': ['src/pages/ReportsDashboard.tsx', 'src/pages/TaskReportsPage.tsx'],
-          'settings': ['src/pages/SettingsPage.tsx'],
-        },
-        // Optimize chunk file names
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId 
-            ? path.basename(chunkInfo.facadeModuleId, path.extname(chunkInfo.facadeModuleId))
-            : 'chunk';
-          return `assets/${facadeModuleId}-[hash].js`;
-        },
-      },
-    },
-    // Optimize build performance
+    // Simplified build configuration to prevent memory issues
     target: 'esnext',
     minify: 'esbuild',
     sourcemap: mode === 'development',
-    // Reduce bundle size
     cssCodeSplit: true,
     reportCompressedSize: false,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        // Let Vite handle chunking automatically to prevent memory issues
+        manualChunks: undefined,
+      }
+    }
   },
   // Optimize dependencies
   optimizeDeps: {
