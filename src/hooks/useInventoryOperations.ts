@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { notifications } from '@/lib/notifications';
 import { 
   inventoryItemsApi,
   inventoryTransactionsApi,
@@ -335,8 +336,6 @@ export const useInventoryOperations = ({
               .single();
 
             if (countDetails) {
-              const { notifications } = await import('@/lib/notifications');
-              
               // Always send in-app notifications
               await notifications.notifyInventoryTemplateCompleted(
                 {
