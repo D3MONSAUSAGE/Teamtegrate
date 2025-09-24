@@ -21,47 +21,36 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Aggressive memory optimization
+    // Balanced memory optimization
     target: 'esnext',
-    minify: false, // Disable minification to save memory
-    sourcemap: false, // Disable sourcemaps to save memory
-    cssCodeSplit: false, // Disable CSS code splitting
+    minify: 'esbuild',
+    sourcemap: false,
+    cssCodeSplit: true,
     reportCompressedSize: false,
-    chunkSizeWarningLimit: 5000,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
-        // Let Vite handle chunking automatically
         manualChunks: undefined,
-        // Reduce chunk size to help with memory
-        maxParallelFileOps: 2,
-      },
-      // Reduce memory usage during build
-      maxParallelFileOps: 2,
+      }
     }
   },
-  // Optimize dependencies
+  // Optimize dependencies - include Supabase to prevent module errors
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react-router-dom',
+      '@supabase/supabase-js',
+      '@supabase/postgrest-js',
+      '@tanstack/react-query',
     ],
     exclude: [
-      // Exclude heavy dependencies to reduce memory usage
-      'emoji-picker-react',
-      '@supabase/supabase-js',
-      '@tanstack/react-query',
-      'recharts',
-      'framer-motion'
+      'emoji-picker-react'
     ]
   },
   // Performance optimizations
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' },
     treeShaking: true,
-    // Reduce memory usage
-    minifySyntax: false,
-    minifyWhitespace: false,
-    minifyIdentifiers: false,
   },
 }));
