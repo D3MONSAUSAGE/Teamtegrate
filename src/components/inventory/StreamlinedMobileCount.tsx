@@ -15,7 +15,6 @@ import {
   ArrowRight,
   Hash
 } from 'lucide-react';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { ScannerOverlay } from './ScannerOverlay';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -41,8 +40,7 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
-  
-  const { scanBarcode, isScanning, stopScanning } = useBarcodeScanner();
+  const [isScanning, setIsScanning] = useState(false);
 
   const currentItem = items[currentIndex];
   const countItem = countItems.find(ci => ci.item_id === currentItem?.id);
@@ -76,15 +74,11 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
     }
   };
 
-  const handleScanBarcode = async () => {
-    try {
-      const result = await scanBarcode();
-      if (result && currentItem) {
-        // If item has barcode, verify it matches
-        if (currentItem.barcode && currentItem.barcode === result.text) {
-          toast.success('Item verified!');
-          // Auto-advance after successful scan
-          setTimeout(() => {
+  const handleScanBarcode = () => {
+    setIsScanning(true);
+  };
+
+  const nextItem = () => {
             if (currentIndex < items.length - 1) {
               handleNext();
             }
@@ -132,8 +126,9 @@ export const StreamlinedMobileCount: React.FC<StreamlinedMobileCountProps> = ({
   return (
     <>
       <ScannerOverlay
-        isScanning={isScanning}
-        onClose={stopScanning}
+        open={isScanning}
+        onClose={() => setIsScanning(false)}
+        onBarcode={() => {}}
         instructions={`Scan: ${currentItem.name}`}
       />
       

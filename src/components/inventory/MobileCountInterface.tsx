@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { StockStatusBadge } from './StockStatusBadge';
 import { getStockStatus } from '@/utils/stockStatus';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { ScannerOverlay } from './ScannerOverlay';
 import { toast } from 'sonner';
 
@@ -45,8 +44,7 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
-  
-  const { scanBarcode, isScanning, stopScanning } = useBarcodeScanner();
+  const [isScanning, setIsScanning] = useState(false);
 
   const currentItem = items[currentIndex];
   const countItem = countItems.find(ci => ci.item_id === currentItem?.id);
@@ -138,8 +136,13 @@ export const MobileCountInterface: React.FC<MobileCountInterfaceProps> = ({
   return (
     <>
       <ScannerOverlay
-        isScanning={isScanning}
-        onClose={stopScanning}
+        open={isScanning}
+        onClose={() => setIsScanning(false)}
+        onBarcode={(text) => {
+          setInputValue(text);
+          setIsScanning(false);
+          toast.success(`Scanned: ${text}`);
+        }}
         instructions={`Scan barcode for: ${currentItem.name}`}
       />
       

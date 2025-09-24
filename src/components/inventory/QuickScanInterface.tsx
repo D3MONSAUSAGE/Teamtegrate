@@ -14,7 +14,6 @@ import {
   Zap,
   Target
 } from 'lucide-react';
-import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { ScannerOverlay } from './ScannerOverlay';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -44,17 +43,15 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
   const [currentQuantity, setCurrentQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastScannedItem, setLastScannedItem] = useState<InventoryItem | null>(null);
-  
-  const { scanBarcode, isScanning, stopScanning } = useBarcodeScanner();
+  const [isScanning, setIsScanning] = useState(false);
 
-  const handleScan = async () => {
-    try {
-      const result = await scanBarcode();
-      if (!result) return;
+  const handleScan = () => {
+    setIsScanning(true);
+  };
 
-      // Find item by barcode
-      const item = items.find(item => item.barcode === result.text);
-      if (!item) {
+  const handleStartQuickScan = () => {
+    setIsScanning(true);
+  };
         toast.error('Item not found with this barcode');
         return;
       }
@@ -145,8 +142,9 @@ export const QuickScanInterface: React.FC<QuickScanInterfaceProps> = ({
   return (
     <>
       <ScannerOverlay
-        isScanning={isScanning}
-        onClose={stopScanning}
+        open={isScanning}
+        onClose={() => setIsScanning(false)}
+        onBarcode={() => {}}
         instructions="Scan multiple items quickly"
       />
       

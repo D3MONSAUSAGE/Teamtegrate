@@ -35,5 +35,8 @@ export async function switchToBackCamera() {
 }
 
 export function stopScan() {
-  reader?.reset();
+  // Create a new reader instance for the next scan
+  // This is the safest way to "reset" the reader
+  reader = null;
+  activeDeviceId = null;
 }
