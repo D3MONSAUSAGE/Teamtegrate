@@ -176,23 +176,30 @@ function renderInventorySubmittedHTML(ctx: InventoryEmailContext): string {
 </table>`;
 }
 
-// Date formatting functions
-function formatDate(dateString: string): string {
+// Date formatting functions with timezone support
+function formatDate(dateString: string, timezone: string = 'UTC'): string {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { 
+    timeZone: timezone,
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 
   });
 }
 
-function formatTime(dateString: string): string {
+function formatTime(dateString: string, timezone: string = 'UTC'): string {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { 
+  return date.toLocaleTimeString('en-US', {
+    timeZone: timezone,
     hour: 'numeric', 
     minute: '2-digit',
     hour12: true 
   });
+}
+
+function formatDateTime(dateString: string, timezone: string = 'UTC'): string {
+  const date = new Date(dateString);
+  return `${formatDate(dateString, timezone)} at ${formatTime(dateString, timezone)}`;
 }
 
 // Direct Resend API call function
@@ -244,11 +251,13 @@ const handler = async (req: Request): Promise<Response> => {
       const submitterName = inv.submitted_by_name || 'Unknown User';
       const teamName = inv.team_name || inv.location_name || 'N/A';
       const totalItems = inv.items_total || 0;
-      const submissionDate = formatDate(requestData.timestamp);
-      const submissionTime = formatTime(requestData.timestamp);
+      
+      // Get user timezone from org data - fallback to America/Los_Angeles for now
+      const userTimezone = 'America/Los_Angeles'; // TODO: Get from user/org settings
+      const submissionDateTime = formatDateTime(requestData.timestamp, userTimezone);
       
       // Enhanced subject line with preheader
-      const subject = `📦 Inventory Count Submitted — ${submitterName} — ${teamName} — ${submissionDate}`;
+      const subject = `📦 Inventory Count Submitted — ${submitterName} — ${teamName} — ${formatDate(requestData.timestamp, userTimezone)}`;
       const url = `${base}/dashboard/inventory`;
 
       // Fetch inventory items for variance highlights (top 5 with variances)
@@ -280,7 +289,7 @@ const handler = async (req: Request): Promise<Response> => {
         logoUrl: 'https://teamtegrate.com/logo.png', // Placeholder - replace with actual logo URL
         submittedBy: submitterName,
         teamName,
-        submittedDate: `${submissionDate} at ${submissionTime}`,
+        submittedDate: submissionDateTime,
         totalItems,
         countUrl: url,
         highlights: highlights || undefined

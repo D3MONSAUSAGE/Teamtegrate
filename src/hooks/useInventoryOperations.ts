@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@/lib/notifications';
+import { useUserTimezone } from '@/hooks/useUserTimezone';
+import { createTimestampInTZ } from '@/lib/dates/tz';
 import { 
   inventoryItemsApi,
   inventoryTransactionsApi,
@@ -49,6 +51,7 @@ export const useInventoryOperations = ({
 }: UseInventoryOperationsProps) => {
   const { user } = useAuth();
   const { handleAsyncOperation } = useInventoryErrorHandler();
+  const { userTimezone } = useUserTimezone();
 
   // Item operations
   const createItem = useCallback(async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by'>): Promise<InventoryItem | null> => {
@@ -240,7 +243,7 @@ export const useInventoryOperations = ({
 
     const countData = {
       organization_id: user?.organizationId || '',
-      count_date: new Date().toISOString(),
+      count_date: createTimestampInTZ(userTimezone || 'UTC'),
       status: 'in_progress' as const,
       conducted_by: user?.id || '',
       notes,
@@ -272,10 +275,10 @@ export const useInventoryOperations = ({
 
   const updateCountItem = useCallback(async (countId: string, itemId: string, actualQuantity: number, notes?: string): Promise<void> => {
     await handleAsyncOperation(
-      () => inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes, user?.id),
+      () => inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes, user?.id, userTimezone),
       'Update Count Item'
     );
-  }, [user?.id, handleAsyncOperation]);
+  }, [user?.id, userTimezone, handleAsyncOperation]);
 
   const cancelInventoryCount = useCallback(async (countId: string, reason?: string): Promise<void> => {
     const result = await handleAsyncOperation(

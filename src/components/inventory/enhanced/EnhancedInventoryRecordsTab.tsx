@@ -21,6 +21,7 @@ import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
 import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
 import { EnhancedDailyAnalysis } from '../daily/EnhancedDailyAnalysis';
+import { TimezoneIndicator } from '../TimezoneIndicator';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
   BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays
@@ -30,11 +31,14 @@ import { DateRange } from 'react-day-picker';
 import { InventoryCount } from '@/contexts/inventory/types';
 import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
+import { useUserTimezone } from '@/hooks/useUserTimezone';
+import { getLocalDayBoundsISO, formatInTZ } from '@/lib/dates/tz';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
   const { hasRoleAccess, user } = useAuth();
   const { teams } = useTeamsByOrganization(user?.organizationId);
+  const { userTimezone } = useUserTimezone();
 
   // Create team name mapping
   const teamNameById = useMemo(() => {
@@ -83,14 +87,18 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       
       const matchesStatus = statusFilter === 'all' || count.status === statusFilter;
       
-      // Date filtering
+      // Date filtering using user timezone
       let matchesDate = true;
       if (dateFilter !== 'all') {
-        const countDate = new Date(count.count_date);
+        const timezone = userTimezone || 'UTC';
         const now = new Date();
         const daysAgo = parseInt(dateFilter);
+        
+        // Calculate the filter date in user's timezone
         const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-        matchesDate = countDate >= filterDate;
+        const { startUTC } = getLocalDayBoundsISO(timezone, filterDate);
+        
+        matchesDate = new Date(count.count_date) >= new Date(startUTC);
       }
       
       return matchesSearch && matchesTeam && matchesStatus && matchesDate;
@@ -210,6 +218,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               </span>
             )}
           </p>
+          <TimezoneIndicator className="mt-2" />
         </div>
         
         <div className="flex gap-2">
@@ -466,21 +475,31 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                                  </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                  <div>
-                                    <div className="text-muted-foreground">Date & Time</div>
-                                    <div className="font-medium">
-                                      {format(new Date(count.count_date), 'MMM dd, yyyy')}
-                                    </div>
-                                    <div className="text-muted-foreground text-xs">
-                                      Started: {format(new Date(count.created_at), 'h:mm a')}
-                                      {count.status === 'completed' && count.updated_at && (
-                                        <span className="block">
-                                          Completed: {format(new Date(count.updated_at), 'h:mm a')} 
-                                          ({differenceInMinutes(new Date(count.updated_at), new Date(count.created_at))}min)
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
+                                   <div>
+                                     <div className="text-muted-foreground">Date & Time</div>
+                                     <div className="font-medium">
+                                       {formatInTZ(count.count_date, userTimezone || 'UTC', { 
+                                         year: 'numeric', 
+                                         month: 'short', 
+                                         day: 'numeric' 
+                                       })}
+                                     </div>
+                                     <div className="text-muted-foreground text-xs">
+                                       Started: {formatInTZ(count.created_at, userTimezone || 'UTC', { 
+                                         hour: 'numeric', 
+                                         minute: '2-digit' 
+                                       })}
+                                       {count.status === 'completed' && count.updated_at && (
+                                         <span className="block">
+                                           Completed: {formatInTZ(count.updated_at, userTimezone || 'UTC', { 
+                                             hour: 'numeric', 
+                                             minute: '2-digit' 
+                                           })} 
+                                           ({differenceInMinutes(new Date(count.updated_at), new Date(count.created_at))}min)
+                                         </span>
+                                       )}
+                                     </div>
+                                   </div>
 
                                   <div>
                                     <div className="text-muted-foreground">Performance</div>
@@ -553,9 +572,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                             {/* Quick comparison with previous count */}
                             {previousCount && (
                               <div className="mt-3 pt-3 border-t border-dashed">
-                                <div className="text-xs text-muted-foreground mb-1">
-                                  Quick comparison with previous count ({format(new Date(previousCount.count_date), 'MMM dd')})
-                                </div>
+                                 <div className="text-xs text-muted-foreground mb-1">
+                                   Quick comparison with previous count ({formatInTZ(previousCount.count_date, userTimezone || 'UTC', { 
+                                     month: 'short', 
+                                     day: 'numeric' 
+                                   })})
+                                 </div>
                                 <div className="grid grid-cols-3 gap-4 text-xs">
                                   <div className="flex items-center gap-1">
                                     <span>Accuracy:</span>
