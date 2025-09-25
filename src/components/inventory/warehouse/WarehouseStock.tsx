@@ -59,30 +59,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
   };
 
   if (!warehouseId) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Warehouse Stock
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <AlertTriangle className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Warehouse Not Configured</h3>
-            <p className="text-muted-foreground max-w-md mb-4">
-              No warehouse has been set up yet. Create a warehouse to start managing stock.
-            </p>
-            <Badge variant="outline">
-              Setup Required
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return null; // WarehouseTab now handles the not configured state
   }
 
   return (

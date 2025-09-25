@@ -297,5 +297,20 @@ export const warehouseApi = {
 
     if (error) throw error;
     return data;
+  },
+
+  // Ensure a primary warehouse exists (idempotent setup method)
+  async ensurePrimaryWarehouse(name = 'Main Warehouse'): Promise<Warehouse> {
+    try {
+      // First try to get existing primary warehouse
+      const existing = await this.getPrimaryWarehouse();
+      if (existing) return existing;
+
+      // If none exists, create one
+      return await this.createDefaultWarehouse(name);
+    } catch (error) {
+      // Re-throw the error so UI can handle it appropriately
+      throw error;
+    }
   }
 };
