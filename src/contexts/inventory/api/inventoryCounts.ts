@@ -1,6 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { InventoryCount, InventoryCountItem } from '../types';
 
+// Utility for chunked operations
+const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 export const inventoryCountsApi = {
   async getAll(): Promise<InventoryCount[]> {
     const { data, error } = await supabase
@@ -269,46 +272,62 @@ export const inventoryCountsApi = {
 
   async bulkUpdateCountItems(
     countId: string,
-    updates: Array<{ itemId: string; actualQuantity: number; notes?: string; countedBy?: string }>
-  ): Promise<void> {
-    try {
-      console.log('Starting bulk update for count:', countId, 'with', updates.length, 'items');
-      
-      // Prepare bulk update operations
-      const updatePromises = updates.map(({ itemId, actualQuantity, notes, countedBy }) => {
-        const updateData: any = {
-          actual_quantity: actualQuantity,
-          counted_at: new Date().toISOString(),
-        };
+    updates: Array<{ itemId: string; actualQuantity: number; notes?: string; countedBy?: string }>,
+    opts: { chunkSize?: number; interChunkDelayMs?: number } = {}
+  ): Promise<{ saved: number; failed: Array<{ itemId: string; error: any }> }> {
+    const chunkSize = opts.chunkSize ?? 8;           // Keep small to avoid pool pressure
+    const interDelay = opts.interChunkDelayMs ?? 120;
 
-        if (notes) updateData.notes = notes;
-        if (countedBy) updateData.counted_by = countedBy;
+    const errors: Array<{ itemId: string; error: any }> = [];
+    let saved = 0;
 
-        return supabase
-          .from('inventory_count_items')
-          .update(updateData)
-          .eq('count_id', countId)
-          .eq('item_id', itemId);
+    console.log('Starting chunked bulk update for count:', countId, 'with', updates.length, 'items');
+
+    for (let i = 0; i < updates.length; i += chunkSize) {
+      const batch = updates.slice(i, i + chunkSize);
+
+      const results = await Promise.allSettled(
+        batch.map(({ itemId, actualQuantity, notes, countedBy }) => {
+          const updateData: any = {
+            actual_quantity: actualQuantity,
+            counted_at: new Date().toISOString(),
+          };
+
+          if (notes) updateData.notes = notes;
+          if (countedBy) updateData.counted_by = countedBy;
+
+          return supabase
+            .from('inventory_count_items')
+            .update(updateData)
+            .eq('count_id', countId)
+            .eq('item_id', itemId);
+        })
+      );
+
+      results.forEach((r, idx) => {
+        if (r.status === 'rejected' || (r.value as any)?.error) {
+          errors.push({
+            itemId: batch[idx].itemId,
+            error: r.status === 'rejected' ? r.reason : (r.value as any).error,
+          });
+        } else {
+          saved += 1;
+        }
       });
 
-      // Execute all updates in parallel
-      const results = await Promise.all(updatePromises);
-      
-      // Check for any errors
-      const errors = results.filter(result => result.error);
-      if (errors.length > 0) {
-        console.error('Bulk update errors:', errors);
-        throw new Error(`Failed to update ${errors.length} items: ${errors[0].error?.message}`);
-      }
-
-      // Update count totals after successful bulk update
-      await this.updateCountTotals(countId);
-
-      console.log(`Successfully updated ${updates.length} count items`);
-    } catch (error) {
-      console.error('Error in bulkUpdateCountItems:', error);
-      throw error;
+      // Tiny breather to keep Postgres happy
+      await sleep(interDelay);
     }
+
+    // Recompute totals ONCE (previously done many times)
+    try {
+      await this.updateCountTotals(countId);
+    } catch (e) {
+      console.warn('updateCountTotals failed:', e);
+    }
+
+    console.log(`Chunked bulk update completed: ${saved} saved, ${errors.length} failed`);
+    return { saved, failed: errors };
   },
 
   async getTemplateItems(templateId: string): Promise<any[]> {

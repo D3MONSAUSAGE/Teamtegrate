@@ -156,14 +156,22 @@ export const InventoryCountTab: React.FC = () => {
     if (!activeCount) return;
     
     try {
-      await inventoryCountsApi.bulkUpdateCountItems(activeCount, [{ itemId, actualQuantity }]);
+      const result = await inventoryCountsApi.bulkUpdateCountItems(activeCount, [{ itemId, actualQuantity }]);
       
-      // Update local state
-      setCountItems(prev => prev.map(item => 
-        item.item_id === itemId 
-          ? { ...item, actual_quantity: actualQuantity, counted_at: new Date().toISOString() }
-          : item
-      ));
+      // Update local state only if successful
+      if (result.saved > 0 && result.failed.length === 0) {
+        setCountItems(prev => prev.map(item => 
+          item.item_id === itemId 
+            ? { ...item, actual_quantity: actualQuantity, counted_at: new Date().toISOString() }
+            : item
+        ));
+      } else if (result.failed.length > 0) {
+        toast({
+          title: 'Error',
+          description: 'Failed to update inventory count',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Failed to update count:', error);
       toast({
@@ -178,20 +186,30 @@ export const InventoryCountTab: React.FC = () => {
     if (!activeCount) return;
     
     try {
-      await inventoryCountsApi.bulkUpdateCountItems(activeCount, updates);
+      const result = await inventoryCountsApi.bulkUpdateCountItems(activeCount, updates);
       
-      // Update local state
+      // Update local state for successfully saved items
       setCountItems(prev => prev.map(item => {
         const update = updates.find(u => u.itemId === item.item_id);
-        return update 
+        const wasSuccessful = update && !result.failed.some(f => f.itemId === update.itemId);
+        return wasSuccessful 
           ? { ...item, actual_quantity: update.actualQuantity, counted_at: new Date().toISOString() }
           : item;
       }));
       
-      toast({
-        title: 'Success',
-        description: `Updated ${updates.length} item${updates.length > 1 ? 's' : ''}`,
-      });
+      // Show appropriate toast based on results
+      if (result.failed.length === 0) {
+        toast({
+          title: 'Success',
+          description: `Updated ${result.saved} item${result.saved > 1 ? 's' : ''}`,
+        });
+      } else {
+        toast({
+          title: 'Partial Success',
+          description: `Saved ${result.saved}/${updates.length} items. ${result.failed.length} failed.`,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Failed to update counts:', error);
       toast({
