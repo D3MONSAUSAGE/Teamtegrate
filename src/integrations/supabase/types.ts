@@ -8520,6 +8520,280 @@ export type Database = {
           },
         ]
       }
+      warehouse_items: {
+        Row: {
+          item_id: string
+          on_hand: number
+          reorder_max: number | null
+          reorder_min: number | null
+          wac_unit_cost: number
+          warehouse_id: string
+        }
+        Insert: {
+          item_id: string
+          on_hand?: number
+          reorder_max?: number | null
+          reorder_min?: number | null
+          wac_unit_cost?: number
+          warehouse_id: string
+        }
+        Update: {
+          item_id?: string
+          on_hand?: number
+          reorder_max?: number | null
+          reorder_min?: number | null
+          wac_unit_cost?: number
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wi_item"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wi_wh"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_receipt_lines: {
+        Row: {
+          id: string
+          item_id: string
+          line_total: number | null
+          qty: number
+          receipt_id: string
+          unit_cost: number
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          line_total?: number | null
+          qty: number
+          receipt_id: string
+          unit_cost: number
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          line_total?: number | null
+          qty?: number
+          receipt_id?: string
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wrl_item"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wrl_wr"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_receipts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          received_at: string | null
+          status: string
+          subtotal: number | null
+          vendor_invoice: string | null
+          vendor_name: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          status?: string
+          subtotal?: number | null
+          vendor_invoice?: string | null
+          vendor_name?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          status?: string
+          subtotal?: number | null
+          vendor_invoice?: string | null
+          vendor_name?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wr_wh"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_transfer_lines: {
+        Row: {
+          id: string
+          item_id: string
+          line_total: number | null
+          qty: number
+          transfer_id: string
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          line_total?: number | null
+          qty: number
+          transfer_id: string
+          unit_price: number
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          line_total?: number | null
+          qty?: number
+          transfer_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wtl_item"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wtl_wt"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "v_team_recent_transfers"
+            referencedColumns: ["transfer_id"]
+          },
+          {
+            foreignKeyName: "fk_wtl_wt"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_transfers: {
+        Row: {
+          charge_subtotal: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          received_at: string | null
+          sent_at: string | null
+          status: string
+          to_team_id: string
+          transfer_no: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          charge_subtotal?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          sent_at?: string | null
+          status?: string
+          to_team_id: string
+          transfer_no?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          charge_subtotal?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          received_at?: string | null
+          sent_at?: string | null
+          status?: string
+          to_team_id?: string
+          transfer_no?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wt_team"
+            columns: ["to_team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wt_team"
+            columns: ["to_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wt_wh"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouses: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_primary: boolean
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary?: boolean
+          name: string
+          organization_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary?: boolean
+          name?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
       webhook_deliveries: {
         Row: {
           created_at: string
@@ -8817,6 +9091,40 @@ export type Database = {
           verified_instances: number | null
         }
         Relationships: []
+      }
+      v_team_recent_transfers: {
+        Row: {
+          item_id: string | null
+          qty: number | null
+          sent_at: string | null
+          status: string | null
+          team_id: string | null
+          transfer_id: string | null
+          unit_price: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wt_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wt_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wtl_item"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -9237,6 +9545,10 @@ export type Database = {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
+      post_warehouse_receipt: {
+        Args: { p_receipt_id: string; p_user: string }
+        Returns: undefined
+      }
       process_calendar_sync_queue: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -9247,6 +9559,10 @@ export type Database = {
       }
       recalculate_attempt_score: {
         Args: { p_quiz_attempt_id: string }
+        Returns: undefined
+      }
+      receive_warehouse_transfer: {
+        Args: { p_transfer_id: string; p_user: string }
         Returns: undefined
       }
       register_fcm_token: {
@@ -9327,6 +9643,10 @@ export type Database = {
       }
       send_timezone_aware_reminders: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      send_warehouse_transfer: {
+        Args: { p_transfer_id: string; p_user: string }
         Returns: undefined
       }
       sync_user_profile_across_tables: {
