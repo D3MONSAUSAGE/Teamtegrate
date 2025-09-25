@@ -19,7 +19,8 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
   startLocal.setHours(0, 0, 0, 0);
   
   const endLocal = new Date(local); 
-  endLocal.setHours(24, 0, 0, 0);
+  endLocal.setDate(endLocal.getDate() + 1); // Add 1 day
+  endLocal.setHours(0, 0, 0, 0); // Set to midnight of next day
 
   // Convert those local midnights to real UTC instants
   return {
