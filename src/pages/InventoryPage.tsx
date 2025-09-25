@@ -5,6 +5,7 @@ import { Package, Settings } from 'lucide-react';
 import { InventoryCountTab } from '@/components/inventory/tabs/InventoryCountTab';
 import { InventoryManagementTab } from '@/components/inventory/tabs/InventoryManagementTab';
 import { InventoryRecordsTab } from '@/components/inventory/tabs/InventoryRecordsTab';
+import { WarehouseTab } from '@/components/inventory/tabs/WarehouseTab';
 import { InventoryProvider } from '@/contexts/inventory';
 
 const InventoryPage: React.FC = () => {
@@ -29,31 +30,43 @@ const InventoryPage: React.FC = () => {
               <Package className="h-4 w-4" />
               Inventory Count
             </ResponsiveTabsTrigger>
+            <ResponsiveTabsTrigger value="records" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Records
+            </ResponsiveTabsTrigger>
+            {hasRoleAccess('manager') && (
+              <ResponsiveTabsTrigger value="warehouse" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Warehouse
+              </ResponsiveTabsTrigger>
+            )}
             {hasRoleAccess('manager') && (
               <ResponsiveTabsTrigger value="management" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Management
               </ResponsiveTabsTrigger>
             )}
-            <ResponsiveTabsTrigger value="records" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Records
-            </ResponsiveTabsTrigger>
           </ResponsiveTabsList>
 
           <ResponsiveTabsContent value="count" className="mt-6">
             <InventoryCountTab />
           </ResponsiveTabsContent>
 
+          <ResponsiveTabsContent value="records" className="mt-6">
+            <InventoryRecordsTab />
+          </ResponsiveTabsContent>
+
+          {hasRoleAccess('manager') && (
+            <ResponsiveTabsContent value="warehouse" className="mt-6">
+              <WarehouseTab />
+            </ResponsiveTabsContent>
+          )}
+
           {hasRoleAccess('manager') && (
             <ResponsiveTabsContent value="management" className="mt-6">
               <InventoryManagementTab />
             </ResponsiveTabsContent>
           )}
-
-          <ResponsiveTabsContent value="records" className="mt-6">
-            <InventoryRecordsTab />
-          </ResponsiveTabsContent>
         </ResponsiveTabs>
       </div>
     </InventoryProvider>
