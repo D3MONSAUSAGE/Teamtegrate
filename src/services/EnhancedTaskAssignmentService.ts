@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Task, User } from '@/types';
 import { toast } from '@/components/ui/sonner';
+import { notifications } from '@/lib/notifications';
 
 export interface AssignmentOptions {
   taskId: string;
@@ -201,6 +202,74 @@ export class EnhancedTaskAssignmentService {
         .eq('id', options.taskId);
 
       if (updateError) throw updateError;
+
+      // Send email notifications after successful DB update
+      if (options.userIds && options.userIds.length > 0) {
+        try {
+          // Get task data for notification
+          const { data: taskData, error: taskError } = await supabase
+            .from('tasks')
+            .select('id, title, description, status, priority, deadline, created_at, organization_id')
+            .eq('id', options.taskId)
+            .single();
+
+          // Get assignee data
+          const { data: assigneesData, error: assigneesError } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .in('id', options.userIds)
+            .eq('organization_id', options.organizationId);
+
+          // Get actor data
+          const { data: actorData, error: actorError } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .eq('id', options.assignedBy)
+            .single();
+
+          if (!taskError && !assigneesError && !actorError && taskData && assigneesData && actorData) {
+            const taskNotification = {
+              id: taskData.id,
+              title: taskData.title,
+              description: taskData.description || '',
+              status: taskData.status,
+              priority: taskData.priority || null,
+              deadline: taskData.deadline || null,
+              created_at: taskData.created_at,
+              organization_id: taskData.organization_id,
+              project_title: null // Optional field not available in all schemas
+            };
+
+            const assignees = assigneesData.map(userData => ({
+              id: userData.id,
+              email: userData.email,
+              name: userData.name || userData.email
+            }));
+
+            const actor = {
+              id: actorData.id,
+              email: actorData.email,
+              name: actorData.name || actorData.email
+            };
+
+            console.log('[EnhancedTaskAssignmentService] Sending notifications to:', assignees.map(a => a.email));
+            await notifications.notifyTaskAssigned(taskNotification, assignees, actor, { sendToSelf: false });
+            console.log('[EnhancedTaskAssignmentService] Email notifications sent');
+          } else {
+            console.warn('[EnhancedTaskAssignmentService] Missing data for email notifications:', {
+              taskError,
+              assigneesError,
+              actorError,
+              hasTask: !!taskData,
+              hasAssignees: !!assigneesData,
+              hasActor: !!actorData
+            });
+          }
+        } catch (emailError) {
+          console.error('[EnhancedTaskAssignmentService] Email notification failed:', emailError);
+          // Don't throw - email failure shouldn't break assignment UX
+        }
+      }
 
       toast.success('Task assignment updated successfully');
       return true;
