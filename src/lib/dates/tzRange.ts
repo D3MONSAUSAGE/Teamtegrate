@@ -29,26 +29,44 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
 }
 
 /**
+ * Sanitizes Intl.DateTimeFormat options to prevent conflicts between
+ * dateStyle/timeStyle and individual component options
+ */
+function sanitizeIntlOpts(
+  opts?: Intl.DateTimeFormatOptions
+): Intl.DateTimeFormatOptions | undefined {
+  if (!opts) return undefined;
+  
+  const hasComponents = ['year', 'month', 'day', 'hour', 'minute', 'second', 'weekday']
+    .some(k => k in opts);
+    
+  if (hasComponents) {
+    // Remove style keys if component fields are present (they are mutually exclusive)
+    const { dateStyle, timeStyle, ...rest } = opts;
+    return rest;
+  }
+  
+  return opts;
+}
+
+/**
  * Enhanced timezone-aware date formatter
  */
 export function formatInTZ(iso: string, tz: string, opts?: Intl.DateTimeFormatOptions) {
   const d = new Date(iso);
   
-  // If custom options are provided, use them without dateStyle/timeStyle
-  // as they are mutually exclusive with individual component options
-  const hasComponentOptions = opts && (
-    'year' in opts || 'month' in opts || 'day' in opts || 
-    'hour' in opts || 'minute' in opts || 'second' in opts
-  );
+  const safe = sanitizeIntlOpts(opts);
+  const defaults: Intl.DateTimeFormatOptions = 
+    safe ? {} : { dateStyle: 'medium', timeStyle: 'short' }; // only if caller didn't specify components
   
-  const defaultOptions = hasComponentOptions ? {} : {
-    dateStyle: 'medium' as const,
-    timeStyle: 'short' as const
-  };
-  
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    ...defaultOptions,
-    ...(opts || {})
-  }).format(d);
+  try {
+    return new Intl.DateTimeFormat('en-US', { 
+      timeZone: tz, 
+      ...defaults, 
+      ...(safe || {}) 
+    }).format(d);
+  } catch (e) {
+    console.error('formatInTZ invalid options:', { tz, defaults, safe });
+    throw e;
+  }
 }
