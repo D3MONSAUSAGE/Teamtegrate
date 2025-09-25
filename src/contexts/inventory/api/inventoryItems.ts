@@ -21,6 +21,7 @@ export const inventoryItemsApi = {
     // Add created_by field automatically for RLS policy compliance
     const itemWithCreatedBy = {
       ...item,
+      barcode: item.barcode?.trim() || null,
       created_by: (await supabase.auth.getUser()).data.user?.id
     };
 
@@ -62,9 +63,14 @@ export const inventoryItemsApi = {
   },
 
   async update(id: string, updates: Partial<Omit<InventoryItem, 'category' | 'base_unit' | 'calculated_unit_price'>>): Promise<InventoryItem> {
+    const normalizedUpdates = {
+      ...updates,
+      ...(updates.barcode !== undefined && { barcode: updates.barcode?.trim() || null })
+    };
+    
     const { data, error } = await supabase
       .from('inventory_items')
-      .update(updates)
+      .update(normalizedUpdates)
       .eq('id', id)
       .select(`
         *,

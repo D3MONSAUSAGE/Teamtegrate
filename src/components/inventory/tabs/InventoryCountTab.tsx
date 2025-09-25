@@ -451,11 +451,11 @@ export const InventoryCountTab: React.FC = () => {
               />
             </div>
             
-            <div className="flex gap-2 mt-6">
+            <div className="flex flex-col gap-2 sm:flex-row mt-6">
               <Button 
                 onClick={handleCompleteCount}
                 disabled={completedItems === 0}
-                className="flex-1"
+                className="w-full sm:flex-1"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Complete Count
@@ -464,7 +464,7 @@ export const InventoryCountTab: React.FC = () => {
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="default">
+                  <Button variant="destructive" size="default" className="w-full sm:w-auto">
                     <X className="h-4 w-4 mr-2" />
                     Cancel Count
                   </Button>
