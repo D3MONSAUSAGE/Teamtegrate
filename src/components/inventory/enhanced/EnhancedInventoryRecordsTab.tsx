@@ -41,6 +41,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { teams } = useTeamsByOrganization(user?.organizationId);
   const { userTimezone } = useUserTimezone();
   const tz = useTZ();
+  
+  // Debug what timezone we're using
+  console.log('🕐 EnhancedInventoryRecordsTab - using timezone:', tz);
 
   // Create team name mapping
   const teamNameById = useMemo(() => {

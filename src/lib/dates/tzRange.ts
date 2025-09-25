@@ -60,13 +60,23 @@ export function formatInTZ(iso: string, tz: string, opts?: Intl.DateTimeFormatOp
     safe ? {} : { dateStyle: 'medium', timeStyle: 'short' }; // only if caller didn't specify components
   
   try {
-    return new Intl.DateTimeFormat('en-US', { 
+    const result = new Intl.DateTimeFormat('en-US', { 
       timeZone: tz, 
       ...defaults, 
       ...(safe || {}) 
     }).format(d);
+    
+    // Debug logging for format results
+    console.log('🕐 formatInTZ result:', {
+      input: { iso, tz, opts },
+      utcDate: d.toISOString(),
+      result,
+      timezone: tz
+    });
+    
+    return result;
   } catch (e) {
-    console.error('formatInTZ invalid options:', { tz, defaults, safe });
+    console.error('🕐 formatInTZ invalid options:', { tz, defaults, safe });
     throw e;
   }
 }

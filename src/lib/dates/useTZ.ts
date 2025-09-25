@@ -7,14 +7,16 @@ import { useUserTimezone } from '@/hooks/useUserTimezone';
 export function useTZ(): string {
   const { userTimezone, detectedTimezone, isLoading } = useUserTimezone();
   
+  const resolved = userTimezone || detectedTimezone || 'UTC';
+  
   // Debug logging to track timezone resolution
-  console.log('useTZ - timezone resolution:', {
+  console.log('🕐 useTZ - timezone resolution:', {
     userTimezone,
-    detectedTimezone,
+    detectedTimezone,  
     isLoading,
-    resolved: userTimezone || detectedTimezone || 'UTC'
+    resolved,
+    fallbackUsed: !userTimezone ? (detectedTimezone ? 'detected' : 'UTC') : 'none'
   });
   
-  // Use user preference first, then detected timezone, finally UTC as last resort
-  return userTimezone || detectedTimezone || 'UTC';
+  return resolved;
 }
