@@ -264,7 +264,7 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
     <div 
       className={`fixed z-50 bg-gradient-to-b from-black via-black/95 to-black ${
         isMobileBrowser 
-          ? 'inset-x-0 top-0 h-[70vh] rounded-b-2xl shadow-2xl' 
+          ? 'inset-x-0 top-0 h-screen' 
           : 'inset-0'
       }`}
       onClick={(e) => {
@@ -301,154 +301,137 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
         )}
       </div>
 
-      {/* Overlay UI */}
-      <div className="absolute inset-0 z-10">
-        {/* Context Strip - Enhanced design */}
-        {isMobileBrowser && contextItem && (
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur-md border-b border-primary/20">
-            <div className="px-6 py-4 text-center">
-              <p className="text-white font-semibold text-lg">{contextItem.name}</p>
-              {contextItem.scannedCount !== undefined && (
-                <div className="flex items-center justify-center gap-2 mt-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                  <p className="text-primary-foreground/80 text-sm font-medium">
-                    Scanned: {contextItem.scannedCount}
-                  </p>
+      {/* Structured Layout - Prevents overlapping */}
+      <div className="absolute inset-0 z-10 flex flex-col">
+        {/* Top Section: Context Strip + Header Controls */}
+        <div className="flex-none">
+          {/* Context Strip */}
+          {isMobileBrowser && contextItem && (
+            <div className="bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur-md border-b border-primary/20">
+              <div className="px-6 py-3 text-center">
+                <p className="text-white font-semibold text-lg">{contextItem.name}</p>
+                {contextItem.scannedCount !== undefined && (
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <p className="text-primary-foreground/80 text-sm font-medium">
+                      Scanned: {contextItem.scannedCount}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Header Controls */}
+          <div className="flex justify-between items-center p-4">
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={handleClose}
+              className="bg-black/60 text-white hover:bg-black/80 backdrop-blur-sm rounded-full p-3 transition-all duration-200 shadow-lg border border-white/10"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={handleToggleFlash}
+              className={`bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full p-3 transition-all duration-200 shadow-lg border border-white/10 ${
+                flashEnabled 
+                  ? 'bg-primary/80 text-primary-foreground border-primary/30' 
+                  : 'text-white'
+              }`}
+            >
+              <Flashlight className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Middle Section: Scanner Frame */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div 
+            className="relative w-64 h-64 md:w-80 md:h-80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Main scanning frame with glassmorphism effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm border-2 border-primary/40 rounded-2xl shadow-2xl">
+              {/* Animated corner brackets */}
+              <div className="absolute -top-2 -left-2 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-2xl animate-pulse" />
+              <div className="absolute -top-2 -right-2 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-2xl animate-pulse" />
+              <div className="absolute -bottom-2 -left-2 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl animate-pulse" />
+              <div className="absolute -bottom-2 -right-2 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl animate-pulse" />
+              
+              {/* Enhanced scanning line animation */}
+              {(mode === 'native' || mode === 'quagga') && (
+                <>
+                  <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse opacity-80" />
+                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary/60 to-transparent animate-bounce" 
+                       style={{ animationDuration: '2s' }} />
+                </>
+              )}
+              
+              {/* Center targeting dot */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-ping" />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section: Instructions and Controls */}
+        <div className="flex-none p-4 space-y-4">
+          {/* Instructions */}
+          <div className="text-center">
+            <p className="text-white font-medium text-lg mb-2">{instructions}</p>
+            <div className="flex items-center justify-center gap-2 text-primary-foreground/70 text-sm">
+              <div className={`w-2 h-2 rounded-full ${
+                mode === 'native' || mode === 'quagga' 
+                  ? 'bg-green-400 animate-pulse' 
+                  : 'bg-gray-400'
+              }`}></div>
+              <span>Looking for UPC/EAN/Code128/QR codes</span>
+            </div>
+          </div>
+          
+          {/* Control Buttons */}
+          <div className="space-y-3 max-w-sm mx-auto">
+            <Button
+              className="w-full px-6 py-4 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold hover:from-primary/90 hover:to-primary/70 touch-manipulation min-h-[52px] shadow-lg transition-all duration-200"
+              onClick={handleStart}
+              disabled={mode !== 'idle' || isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Starting Camera...
+                </div>
+              ) : mode !== 'idle' ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  Scanning Active
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Camera className="w-5 h-5" />
+                  Start Camera
                 </div>
               )}
-            </div>
-          </div>
-        )}
-        
-        {/* Header Controls - Refined styling */}
-        <div className={`absolute left-4 right-4 flex justify-between items-center ${
-          isMobileBrowser && contextItem ? 'top-20' : 'top-6'
-        }`}>
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={handleClose}
-            className="bg-black/60 text-white hover:bg-black/80 backdrop-blur-sm rounded-full p-3 transition-all duration-200 shadow-lg border border-white/10"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={handleToggleFlash}
-            className={`bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full p-3 transition-all duration-200 shadow-lg border border-white/10 ${
-              flashEnabled 
-                ? 'bg-primary/80 text-primary-foreground border-primary/30' 
-                : 'text-white'
-            }`}
-          >
-            <Flashlight className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Enhanced Scanning Frame - Better positioned and styled */}
-        <div className={`absolute inset-x-0 flex justify-center ${
-          isMobileBrowser 
-            ? contextItem 
-              ? 'top-32 bottom-52' 
-              : 'top-24 bottom-52'
-            : 'top-28 bottom-40'
-        }`}>
-          <div className="flex items-center">
-            <div 
-              className="relative w-72 h-72 md:w-80 md:h-80"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Main scanning frame with glassmorphism effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm border-2 border-primary/40 rounded-2xl shadow-2xl">
-                {/* Animated corner brackets */}
-                <div className="absolute -top-2 -left-2 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-2xl animate-pulse" />
-                <div className="absolute -top-2 -right-2 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-2xl animate-pulse" />
-                <div className="absolute -bottom-2 -left-2 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl animate-pulse" />
-                <div className="absolute -bottom-2 -right-2 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl animate-pulse" />
-                
-                {/* Enhanced scanning line animation */}
-                {(mode === 'native' || mode === 'quagga') && (
-                  <>
-                    <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse opacity-80" />
-                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary/60 to-transparent animate-bounce" 
-                         style={{ animationDuration: '2s' }} />
-                  </>
-                )}
-                
-                {/* Center targeting dot */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-ping" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Professional Control Panel - Bottom positioned */}
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="bg-gradient-to-r from-black/80 to-black/70 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/10">
-            {/* Status and Instructions */}
-            <div className="text-center mb-6">
-              <h3 className="text-white font-semibold text-xl mb-2">{instructions}</h3>
-              <div className="flex items-center justify-center gap-2 text-primary-foreground/70 text-sm">
-                <div className={`w-2 h-2 rounded-full ${
-                  mode === 'native' || mode === 'quagga' 
-                    ? 'bg-green-400 animate-pulse' 
-                    : 'bg-gray-400'
-                }`}></div>
-                <span>Looking for UPC/EAN/Code128/QR codes</span>
-              </div>
-            </div>
+            </Button>
             
-            {/* Control Buttons Grid */}
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                className="px-8 py-4 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold hover:from-primary/90 hover:to-primary/70 touch-manipulation min-h-[52px] shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
-                onClick={handleStart}
-                disabled={mode !== 'idle' || isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Starting Camera...
-                  </div>
-                ) : mode !== 'idle' ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    Scanning Active
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Camera className="w-5 h-5" />
-                    Start Camera
-                  </div>
-                )}
-              </Button>
-              
-              {mode !== 'idle' && (
-                <Button
-                  variant="outline"
-                  className="px-8 py-4 text-lg rounded-xl bg-white/5 text-white border-white/20 hover:bg-white/10 touch-manipulation min-h-[52px] font-medium transition-all duration-200"
-                  onClick={() => cleanup()}
-                >
-                  Stop Scanner
-                </Button>
-              )}
-              
+            {mode !== 'idle' && (
               <Button
                 variant="outline"
-                className="px-8 py-4 text-lg rounded-xl bg-red-500/10 text-red-200 border-red-500/30 hover:bg-red-500/20 touch-manipulation min-h-[52px] font-medium transition-all duration-200"
-                onClick={handleClose}
+                className="w-full px-6 py-3 text-base rounded-xl bg-white/5 text-white border-white/20 hover:bg-white/10 touch-manipulation min-h-[48px] font-medium transition-all duration-200"
+                onClick={() => cleanup()}
               >
-                Close Scanner
+                Stop Scanner
               </Button>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Enhanced Error Display */}
+        {/* Error Display - Fixed position overlay */}
         {error && (
-          <div className="absolute bottom-4 left-4 right-4">
+          <div className="absolute inset-x-4 bottom-4">
             <div className="bg-gradient-to-r from-red-500/90 to-red-600/80 backdrop-blur-md rounded-xl p-4 shadow-xl border border-red-400/20">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
