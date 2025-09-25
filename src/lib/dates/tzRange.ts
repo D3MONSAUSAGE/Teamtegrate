@@ -7,26 +7,84 @@
  * This uses the offset calculation method for reliability across timezones and DST transitions
  */
 export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUTC: string; endUTC: string } {
-  // "base" as seen in the target TZ vs in UTC
-  const local = new Date(base.toLocaleString('en-US', { timeZone: tz }));
-  const utc = new Date(base.toLocaleString('en-US', { timeZone: 'UTC' }));
+  console.log('🕐 getTZDayRangeUTC input:', { tz, base, baseValid: base instanceof Date && !isNaN(base.getTime()) });
   
-  // Offset between TZ and UTC *at this instant*
-  const offsetMs = utc.getTime() - local.getTime();
-
-  // Build local midnight..next midnight in that TZ
-  const startLocal = new Date(local); 
-  startLocal.setHours(0, 0, 0, 0);
+  // Validate inputs
+  if (!tz || typeof tz !== 'string') {
+    console.error('🕐 getTZDayRangeUTC: Invalid timezone:', tz);
+    tz = 'UTC'; // Fallback to UTC
+  }
   
-  const endLocal = new Date(local); 
-  endLocal.setDate(endLocal.getDate() + 1); // Add 1 day
-  endLocal.setHours(0, 0, 0, 0); // Set to midnight of next day
+  if (!base || !(base instanceof Date) || isNaN(base.getTime())) {
+    console.error('🕐 getTZDayRangeUTC: Invalid base date:', base);
+    base = new Date(); // Fallback to current date
+  }
 
-  // Convert those local midnights to real UTC instants
-  return {
-    startUTC: new Date(startLocal.getTime() + offsetMs).toISOString(),
-    endUTC: new Date(endLocal.getTime() + offsetMs).toISOString(),
-  };
+  try {
+    // "base" as seen in the target TZ vs in UTC
+    const localString = base.toLocaleString('en-US', { timeZone: tz });
+    const utcString = base.toLocaleString('en-US', { timeZone: 'UTC' });
+    
+    const local = new Date(localString);
+    const utc = new Date(utcString);
+    
+    console.log('🕐 getTZDayRangeUTC strings:', { localString, utcString });
+    console.log('🕐 getTZDayRangeUTC dates:', { 
+      local, utc, 
+      localValid: !isNaN(local.getTime()), 
+      utcValid: !isNaN(utc.getTime()) 
+    });
+    
+    // Validate converted dates
+    if (isNaN(local.getTime()) || isNaN(utc.getTime())) {
+      throw new Error(`Invalid date conversion: local=${localString}, utc=${utcString}`);
+    }
+    
+    // Offset between TZ and UTC *at this instant*
+    const offsetMs = utc.getTime() - local.getTime();
+
+    // Build local midnight..next midnight in that TZ
+    const startLocal = new Date(local); 
+    startLocal.setHours(0, 0, 0, 0);
+    
+    const endLocal = new Date(local); 
+    endLocal.setDate(endLocal.getDate() + 1); // Add 1 day
+    endLocal.setHours(0, 0, 0, 0); // Set to midnight of next day
+
+    // Validate the calculated dates
+    if (isNaN(startLocal.getTime()) || isNaN(endLocal.getTime())) {
+      throw new Error(`Invalid calculated dates: startLocal=${startLocal}, endLocal=${endLocal}`);
+    }
+
+    const startUTCDate = new Date(startLocal.getTime() + offsetMs);
+    const endUTCDate = new Date(endLocal.getTime() + offsetMs);
+    
+    // Final validation before toISOString
+    if (isNaN(startUTCDate.getTime()) || isNaN(endUTCDate.getTime())) {
+      throw new Error(`Invalid final dates: startUTC=${startUTCDate}, endUTC=${endUTCDate}`);
+    }
+
+    // Convert those local midnights to real UTC instants
+    const result = {
+      startUTC: startUTCDate.toISOString(),
+      endUTC: endUTCDate.toISOString(),
+    };
+    
+    console.log('🕐 getTZDayRangeUTC result:', result);
+    return result;
+  } catch (error) {
+    console.error('🕐 getTZDayRangeUTC error:', error, { tz, base });
+    // Fallback: return current day in UTC
+    const fallbackStart = new Date(base);
+    fallbackStart.setUTCHours(0, 0, 0, 0);
+    const fallbackEnd = new Date(fallbackStart);
+    fallbackEnd.setUTCDate(fallbackEnd.getUTCDate() + 1);
+    
+    return {
+      startUTC: fallbackStart.toISOString(),
+      endUTC: fallbackEnd.toISOString(),
+    };
+  }
 }
 
 /**
