@@ -12,45 +12,6 @@ export const useUserTimezone = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Fetch user's saved timezone
-  useEffect(() => {
-    const fetchUserTimezone = async () => {
-      console.log('🕐 useUserTimezone: fetchUserTimezone called', { user: !!user, detectedTimezone });
-      
-      if (!user) {
-        console.log('🕐 useUserTimezone: no user, using detected timezone', detectedTimezone);
-        setUserTimezone(detectedTimezone);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('timezone')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.log('🕐 useUserTimezone: error fetching user timezone, using detected', { error, detectedTimezone });
-          // If no timezone is set, use detected timezone
-          setUserTimezone(detectedTimezone);
-        } else {
-          const savedTimezone = data.timezone || detectedTimezone;
-          console.log('🕐 useUserTimezone: fetched user timezone', { saved: data.timezone, detected: detectedTimezone, final: savedTimezone });
-          setUserTimezone(savedTimezone);
-        }
-      } catch (error) {
-        console.error('🕐 useUserTimezone: error in fetchUserTimezone', error);
-        setUserTimezone(detectedTimezone);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserTimezone();
-  }, [user, detectedTimezone]);
-
   // Update user's timezone in database
   const updateUserTimezone = async (newTimezone: string) => {
     if (!user) {
@@ -72,6 +33,7 @@ export const useUserTimezone = () => {
       }
 
       setUserTimezone(newTimezone);
+      setIsLoading(false);
       toast.success('Timezone preference updated successfully');
       return true;
     } catch (error) {
@@ -82,6 +44,53 @@ export const useUserTimezone = () => {
       setIsUpdating(false);
     }
   };
+
+  // Fetch user's saved timezone
+  useEffect(() => {
+    const fetchUserTimezone = async () => {
+      console.log('🕐 useUserTimezone: fetchUserTimezone called', { user: !!user, detectedTimezone });
+      
+      if (!user) {
+        console.log('🕐 useUserTimezone: no user, using detected timezone', detectedTimezone);
+        setUserTimezone(detectedTimezone);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('timezone')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.log('🕐 useUserTimezone: error fetching user timezone, auto-saving detected', { error, detectedTimezone });
+          // Auto-save detected timezone if user record doesn't exist or has error
+          await updateUserTimezone(detectedTimezone);
+          return;
+        }
+
+        const savedTimezone = data.timezone;
+        console.log('🕐 useUserTimezone: fetched user timezone', { saved: savedTimezone, detected: detectedTimezone });
+
+        // If no timezone saved or saved as UTC but detected is different, auto-update
+        if (!savedTimezone || (savedTimezone === 'UTC' && detectedTimezone !== 'UTC')) {
+          console.log('🕐 useUserTimezone: auto-updating timezone from', savedTimezone, 'to', detectedTimezone);
+          await updateUserTimezone(detectedTimezone);
+        } else {
+          setUserTimezone(savedTimezone);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('🕐 useUserTimezone: error in fetchUserTimezone', error);
+        setUserTimezone(detectedTimezone);
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserTimezone();
+  }, [user, detectedTimezone]);
 
   return {
     userTimezone,
