@@ -139,13 +139,6 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
   };
   const status = getStatus();
 
-  if (!isMobile) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-muted-foreground">Mobile Scan Mode is only available on mobile devices.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col space-y-4 p-4 pb-20">
