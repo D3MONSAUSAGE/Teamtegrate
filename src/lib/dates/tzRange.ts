@@ -33,10 +33,22 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
  */
 export function formatInTZ(iso: string, tz: string, opts?: Intl.DateTimeFormatOptions) {
   const d = new Date(iso);
+  
+  // If custom options are provided, use them without dateStyle/timeStyle
+  // as they are mutually exclusive with individual component options
+  const hasComponentOptions = opts && (
+    'year' in opts || 'month' in opts || 'day' in opts || 
+    'hour' in opts || 'minute' in opts || 'second' in opts
+  );
+  
+  const defaultOptions = hasComponentOptions ? {} : {
+    dateStyle: 'medium' as const,
+    timeStyle: 'short' as const
+  };
+  
   return new Intl.DateTimeFormat('en-US', {
     timeZone: tz,
-    dateStyle: 'medium',
-    timeStyle: 'short',
+    ...defaultOptions,
     ...(opts || {})
   }).format(d);
 }
