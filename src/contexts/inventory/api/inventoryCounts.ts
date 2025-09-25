@@ -366,16 +366,21 @@ export const inventoryCountsApi = {
     return data as InventoryCount;
   },
 
-  async bumpActual(countId: string, itemId: string, delta: number): Promise<void> {
-    // Get current actual quantity
+  async bumpActual(countId: string, countItemId: string, delta: number): Promise<{ id: string; actual_quantity: number } | null> {
+    console.log('[BUMP_REQUEST]', { countId, countItemId, delta });
+    
+    // IMPORTANT: Use countItemId (inventory_count_items.id) for targeting the row
     const { data: countItem, error: getError } = await supabase
       .from('inventory_count_items')
       .select('actual_quantity')
       .eq('count_id', countId)
-      .eq('item_id', itemId)
+      .eq('id', countItemId)  // <-- KEY FIX: use 'id' not 'item_id'
       .single();
 
-    if (getError) throw getError;
+    if (getError) {
+      console.error('[BUMP_ERROR]', { countId, countItemId, delta, error: getError });
+      throw getError;
+    }
 
     const currentActual = countItem?.actual_quantity || 0;
     const newActual = currentActual + delta;
@@ -386,28 +391,46 @@ export const inventoryCountsApi = {
       counted_at: createTimestampInTZ('UTC'),
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('inventory_count_items')
       .update(updateData)
       .eq('count_id', countId)
-      .eq('item_id', itemId);
+      .eq('id', countItemId)  // <-- KEY FIX: use 'id' not 'item_id'
+      .select('id, actual_quantity')
+      .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[BUMP_ERROR]', { countId, countItemId, delta, error });
+      throw error;
+    }
+
+    console.log('[BUMP_RESPONSE]', { countId, countItemId, delta, updated: data });
+    return data;
   },
 
-  async setActual(countId: string, itemId: string, qty: number): Promise<void> {
+  async setActual(countId: string, countItemId: string, qty: number): Promise<{ id: string; actual_quantity: number } | null> {
+    console.log('[SET_ACTUAL_REQUEST]', { countId, countItemId, qty });
+    
     const updateData = {
       actual_quantity: qty,
       counted_at: createTimestampInTZ('UTC'),
     };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('inventory_count_items')
       .update(updateData)
       .eq('count_id', countId)
-      .eq('item_id', itemId);
+      .eq('id', countItemId)  // <-- KEY FIX: use 'id' not 'item_id'
+      .select('id, actual_quantity')
+      .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[SET_ACTUAL_ERROR]', { countId, countItemId, qty, error });
+      throw error;
+    }
+
+    console.log('[SET_ACTUAL_RESPONSE]', { countId, countItemId, qty, updated: data });
+    return data;
   },
 
   async updateInventoryStockFromCount(countId: string): Promise<void> {

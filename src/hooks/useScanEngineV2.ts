@@ -20,14 +20,19 @@ export interface ScanEngineV2State {
   isProcessing: boolean;
 }
 
-// Per-item pending deltas to prevent flicker
+// Per-item pending deltas to prevent flicker (using countItemId as key)
 interface PendingByItem {
-  [itemId: string]: number;
+  [countItemId: string]: number;
 }
 
-// Per-item persistence locks to prevent concurrent requests
+// Per-item persistence locks to prevent concurrent requests (using countItemId as key)
 interface PersistingByItem {
-  [itemId: string]: boolean;
+  [countItemId: string]: boolean;
+}
+
+// Last confirmed server values per count item
+interface LastConfirmedByItem {
+  [countItemId: string]: number;
 }
 
 export interface ScanEngineV2Return {
@@ -35,10 +40,11 @@ export interface ScanEngineV2Return {
   pendingByItem: PendingByItem;
   scannerConnected: boolean;
   isListening: boolean;
-  getDisplayActual: (itemId: string) => number;
-  selectItem: (itemId: string) => void;
-  applyIncrement: (itemId: string, delta: number) => Promise<void>;
-  setQuantity: (itemId: string, qty: number) => Promise<void>;
+  getDisplayActual: (itemId: string) => number; // catalog itemId input for UI convenience
+  selectItem: (itemId: string) => void; // catalog itemId input
+  applyIncrement: (itemId: string, delta: number) => Promise<void>; // catalog itemId input
+  setQuantity: (itemId: string, qty: number) => Promise<void>; // catalog itemId input
+  onItemsRefetched: (items: Array<{ id: string; actual_quantity: number }>) => void;
   reset: () => void;
 }
 
@@ -53,28 +59,27 @@ export function useScanEngineV2(
     isProcessing: false,
   });
 
-  // Per-item pending deltas (the key to fixing flicker)
+  // Per-item pending deltas (the key to fixing flicker) - keyed by countItemId
   const [pendingByItem, setPendingByItem] = useState<PendingByItem>({});
   
-  // Per-item persistence locks and debounce timeouts
+  // Per-item persistence locks and debounce timeouts - keyed by countItemId
   const persistingByItemRef = useRef<PersistingByItem>({});
-  const debounceTimeoutsRef = useRef<{ [itemId: string]: NodeJS.Timeout }>({});
+  const debounceTimeoutsRef = useRef<{ [countItemId: string]: NodeJS.Timeout }>({});
+  const lastConfirmedRef = useRef<LastConfirmedByItem>({});
   const lastAttachedRef = useRef<string | null>(null);
 
-  // Build barcode to count item index for global scanning
+  // Build barcode to count item ID index for global scanning
   const barcodeIndex = useMemo(() => {
     const index: { [barcode: string]: string } = {};
     
     // Only index items that are in this count (not full catalog)
-    const itemsInCount = items.filter(item => 
-      countItems.some(ci => ci.item_id === item.id)
-    );
-    
-    itemsInCount.forEach(item => {
-      if (item.barcode) {
-        const normalizedBarcode = item.barcode.trim();
+    // Map barcode -> countItemId (inventory_count_items.id)
+    countItems.forEach(countItem => {
+      const catalogItem = items.find(item => item.id === countItem.item_id);
+      if (catalogItem?.barcode) {
+        const normalizedBarcode = catalogItem.barcode.trim();
         if (normalizedBarcode) {
-          index[normalizedBarcode] = item.id;
+          index[normalizedBarcode] = countItem.id; // Store countItemId, not catalogItemId
         }
       }
     });
@@ -82,12 +87,27 @@ export function useScanEngineV2(
     return index;
   }, [items, countItems]);
 
-  // Helper to get display actual (server + pending)
-  const getDisplayActual = useCallback((itemId: string): number => {
-    const countItem = countItems.find(ci => ci.item_id === itemId);
-    const serverActual = countItem?.actual_quantity || 0;
-    const pending = pendingByItem[itemId] || 0;
-    return serverActual + pending;
+  // Helper to get display actual (server + pending) - takes catalog itemId for UI convenience
+  const getDisplayActual = useCallback((catalogItemId: string): number => {
+    const countItem = countItems.find(ci => ci.item_id === catalogItemId);
+    if (!countItem) return 0;
+    
+    const countItemId = countItem.id;
+    const serverActual = countItem.actual_quantity || 0;
+    const pending = pendingByItem[countItemId] || 0;
+    const lastConfirmed = lastConfirmedRef.current[countItemId] || 0;
+    const base = Math.max(serverActual, lastConfirmed);
+    
+    console.log('[RENDER]', {
+      catalogItemId,
+      countItemId,
+      serverActual,
+      pending,
+      lastConfirmed,
+      displayValue: base + pending
+    });
+    
+    return base + pending;
   }, [countItems, pendingByItem]);
 
   // Helper functions
@@ -104,35 +124,33 @@ export function useScanEngineV2(
   }, [countItems, state.currentItemId]);
 
   // Per-item debounced persist function (prevents interference between items)
-  const debouncedPersistForItem = useCallback(async (itemId: string) => {
+  const debouncedPersistForItem = useCallback(async (countItemId: string) => {
     // Clear existing timeout for this item
-    if (debounceTimeoutsRef.current[itemId]) {
-      clearTimeout(debounceTimeoutsRef.current[itemId]);
+    if (debounceTimeoutsRef.current[countItemId]) {
+      clearTimeout(debounceTimeoutsRef.current[countItemId]);
     }
 
-    debounceTimeoutsRef.current[itemId] = setTimeout(async () => {
-      const pendingDelta = pendingByItem[itemId];
+    debounceTimeoutsRef.current[countItemId] = setTimeout(async () => {
+      const pendingDelta = pendingByItem[countItemId];
       
       // Prevent concurrent persistence operations for this item
-      if (persistingByItemRef.current[itemId] || !pendingDelta || pendingDelta <= 0) {
+      if (persistingByItemRef.current[countItemId] || !pendingDelta || pendingDelta <= 0) {
         return;
       }
       
-      persistingByItemRef.current[itemId] = true;
+      persistingByItemRef.current[countItemId] = true;
       
       try {
-        console.log('SCANENGINE_V2_PERSIST:', { itemId, pendingDelta });
+        console.log('[BUMP_REQUEST]', { countItemId, pendingDelta });
         
-        await inventoryCountsApi.bumpActual(settings.countId, itemId, pendingDelta);
+        // CRITICAL: Pass countItemId, not catalog item ID
+        await inventoryCountsApi.bumpActual(settings.countId, countItemId, pendingDelta);
         
-        // Success: clear pending for this item only
-        setPendingByItem(prev => ({
-          ...prev,
-          [itemId]: 0
-        }));
+        // DO NOT clear pending here - wait for refetch confirmation
+        console.log('[BUMP_RESPONSE]', { countItemId, pendingDelta, status: 'success' });
         
       } catch (error) {
-        console.error('SCANENGINE_V2_PERSIST_ERROR:', error);
+        console.error('[BUMP_FAIL]', { countItemId, pendingDelta, error });
         
         // Don't clear pending on error - show toast and retry on next scan
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -150,22 +168,35 @@ export function useScanEngineV2(
           });
         }
       } finally {
-        persistingByItemRef.current[itemId] = false;
+        persistingByItemRef.current[countItemId] = false;
       }
     }, 350); // Same timeout as original
   }, [pendingByItem, settings.countId, toast]);
 
-  // Apply increment with per-item pending state
-  const applyIncrement = useCallback(async (itemId: string, delta: number) => {
+  // Apply increment with per-item pending state - takes catalog itemId for UI convenience
+  const applyIncrement = useCallback(async (catalogItemId: string, delta: number) => {
     if (state.isProcessing) return;
 
-    // Increment pending for this item
+    // Find the count item to get the countItemId
+    const countItem = countItems.find(ci => ci.item_id === catalogItemId);
+    if (!countItem) {
+      console.error('[INCREMENT_ERROR]', { catalogItemId, error: 'Count item not found' });
+      return;
+    }
+    
+    const countItemId = countItem.id;
+    const serverActual = countItem.actual_quantity || 0;
+    
+    // Record baseline so we don't render lower than what we've seen confirmed
+    lastConfirmedRef.current[countItemId] = Math.max(lastConfirmedRef.current[countItemId] || 0, serverActual);
+
+    // Increment pending for this count item
     setPendingByItem(prev => ({
       ...prev,
-      [itemId]: (prev[itemId] || 0) + delta
+      [countItemId]: (prev[countItemId] || 0) + delta
     }));
 
-    console.log('SCANENGINE_V2_INCREMENT:', { itemId, delta });
+    console.log('[INCREMENT]', { catalogItemId, countItemId, delta, pendingBefore: pendingByItem[countItemId] ?? 0 });
 
     // Haptic feedback
     if (navigator.vibrate) {
@@ -173,9 +204,9 @@ export function useScanEngineV2(
     }
 
     // Show feedback toast
-    const item = items.find(i => i.id === itemId);
+    const item = items.find(i => i.id === catalogItemId);
     if (item) {
-      const newDisplayActual = getDisplayActual(itemId) + delta;
+      const newDisplayActual = getDisplayActual(catalogItemId);
       toast({
         title: `+${delta} scanned`,
         description: `${item.name} • In-Stock: ${newDisplayActual}`,
@@ -183,9 +214,9 @@ export function useScanEngineV2(
       });
     }
 
-    // Debounced persist for this item
-    debouncedPersistForItem(itemId);
-  }, [state.isProcessing, items, getDisplayActual, toast, debouncedPersistForItem]);
+    // Debounced persist for this count item
+    debouncedPersistForItem(countItemId);
+  }, [state.isProcessing, items, countItems, getDisplayActual, toast, debouncedPersistForItem, pendingByItem]);
 
   // Handle scan detection with global scanning support
   const handleScanDetected = useCallback(async (code: string) => {
@@ -215,32 +246,34 @@ export function useScanEngineV2(
 
       // Global scanning mode: find item by barcode across all count items
       if (settings.globalScanMode) {
-        const foundItemId = barcodeIndex[normalizedCode];
-        if (foundItemId) {
-          console.log('SCANENGINE_V2_GLOBAL_MATCH:', { barcode: normalizedCode, itemId: foundItemId });
+        const foundCountItemId = barcodeIndex[normalizedCode];
+        if (foundCountItemId) {
+          // Find the catalog item for this count item
+          const foundCountItem = countItems.find(ci => ci.id === foundCountItemId);
+          const foundCatalogItem = foundCountItem ? items.find(i => i.id === foundCountItem.item_id) : null;
           
-          if (settings.autoSwitchOnMatch) {
-            // Auto-switch to the found item
-            setState(prev => ({ ...prev, currentItemId: foundItemId }));
-            targetItemId = foundItemId;
+          console.log('[SCANENGINE_V2_GLOBAL_MATCH]', { 
+            barcode: normalizedCode, 
+            countItemId: foundCountItemId,
+            catalogItemId: foundCatalogItem?.id
+          });
+          
+          if (settings.autoSwitchOnMatch && foundCatalogItem) {
+            // Auto-switch to the found item (using catalog item ID for UI state)
+            setState(prev => ({ ...prev, currentItemId: foundCatalogItem.id }));
+            targetItemId = foundCatalogItem.id;
             
-            const foundItem = items.find(i => i.id === foundItemId);
-            if (foundItem) {
-              toast({
-                title: `Switched to ${foundItem.name}`,
-                description: `Auto-selected by barcode ${normalizedCode}`,
-                duration: 2000,
-              });
-            }
-          } else {
+            toast({
+              title: `Switched to ${foundCatalogItem.name}`,
+              description: `Auto-selected by barcode ${normalizedCode}`,
+              duration: 2000,
+            });
+          } else if (foundCatalogItem) {
             // Show confirmation to switch
-            const foundItem = items.find(i => i.id === foundItemId);
-            if (foundItem) {
-              toast({
-                title: `Found ${foundItem.name}`,
-                description: 'Tap to switch to this item',
-              });
-            }
+            toast({
+              title: `Found ${foundCatalogItem.name}`,
+              description: 'Tap to switch to this item',
+            });
             return;
           }
         } else {
@@ -375,26 +408,59 @@ export function useScanEngineV2(
     setState(prev => ({ ...prev, currentItemId: itemId }));
   }, []);
 
-  // Set quantity function
-  const setQuantity = useCallback(async (itemId: string, qty: number) => {
+  // Set quantity function - takes catalog itemId for UI convenience
+  const setQuantity = useCallback(async (catalogItemId: string, qty: number) => {
+    // Find the count item to get the countItemId
+    const countItem = countItems.find(ci => ci.item_id === catalogItemId);
+    if (!countItem) {
+      console.error('[SET_QTY_ERROR]', { catalogItemId, error: 'Count item not found' });
+      return;
+    }
+    
+    const countItemId = countItem.id;
+    
     try {
-      await inventoryCountsApi.setActual(settings.countId, itemId, qty);
+      await inventoryCountsApi.setActual(settings.countId, countItemId, qty);
       
-      // Clear pending for this item since we set absolute value
+      // Clear pending for this count item since we set absolute value
       setPendingByItem(prev => ({
         ...prev,
-        [itemId]: 0
+        [countItemId]: 0
       }));
       
     } catch (error) {
-      console.error('SCANENGINE_V2_SET_QTY_ERROR:', error);
+      console.error('[SET_QTY_ERROR]', { catalogItemId, countItemId, qty, error });
       toast({
         title: 'Failed to set quantity',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
     }
-  }, [settings.countId, toast]);
+  }, [settings.countId, countItems, toast]);
+
+  // PUBLIC: call this when count items are (re)fetched to clear confirmed pending state
+  const onItemsRefetched = useCallback((items: Array<{ id: string; actual_quantity: number }>) => {
+    console.log('[REFETCHED_ITEMS]', items.map(i => ({ id: i.id, actual: i.actual_quantity })));
+    setPendingByItem(prev => {
+      const next = { ...prev };
+      for (const ci of items) {
+        const countItemId = ci.id;
+        const pending = prev[countItemId] ?? 0;
+        const lastConfirmed = lastConfirmedRef.current[countItemId] ?? 0;
+        const mustBe = lastConfirmed + pending;
+        const server = ci.actual_quantity ?? 0;
+        // server "caught up" → clear pending & update lastConfirmed
+        if (server >= mustBe) {
+          next[countItemId] = 0;
+          lastConfirmedRef.current[countItemId] = server;
+        } else {
+          // server behind; keep pending sticky
+          lastConfirmedRef.current[countItemId] = Math.max(lastConfirmed, server);
+        }
+      }
+      return next;
+    });
+  }, []);
 
   // Reset function
   const reset = useCallback(() => {
@@ -403,6 +469,7 @@ export function useScanEngineV2(
     });
     setPendingByItem({});
     persistingByItemRef.current = {};
+    lastConfirmedRef.current = {};
     
     // Clear all debounce timeouts
     Object.values(debounceTimeoutsRef.current).forEach(timeout => {
@@ -431,6 +498,7 @@ export function useScanEngineV2(
     selectItem,
     applyIncrement,
     setQuantity,
+    onItemsRefetched,
     reset,
   };
 }

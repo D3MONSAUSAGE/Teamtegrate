@@ -21,6 +21,7 @@ interface ScanGunModeProps {
   items: InventoryItem[];
   onUpdateCount: (countId: string, itemId: string, actualQuantity: number, notes?: string) => Promise<void>;
   onComplete?: () => void;
+  onItemsRefetched?: (items: Array<{ id: string; actual_quantity: number }>) => void;
 }
 
 export const ScanGunMode: React.FC<ScanGunModeProps> = ({
@@ -28,7 +29,8 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   countItems,
   items,
   onUpdateCount,
-  onComplete
+  onComplete,
+  onItemsRefetched
 }) => {
   const { toast } = useToast();
   
@@ -98,13 +100,15 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
           const currentActual = selectedCountItem.actual_quantity || 0;
           const newActualQty = currentActual + sessionIncrementsRef.current;
           console.log('SCANGUN_PERSIST:', { 
-            itemId: selectedItem.id, 
+            catalogItemId: selectedItem.id,
+            countItemId: selectedCountItem.id,
             currentActual, 
             sessionIncrements: sessionIncrementsRef.current, 
             newActualQty 
           });
           
-          await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
+          // CRITICAL: Pass countItemId, not catalog item ID
+          await inventoryCountsApi.bumpActual(countId, selectedCountItem.id, sessionIncrementsRef.current);
           
           // Reset session increments after successful persist
           setSessionIncrements(0);
@@ -259,6 +263,16 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     }
   }, [scanEngineV2, selectedItem]);
 
+  // Wire up refetch callback to V2 engine to clear pending state when server confirms
+  useEffect(() => {
+    if (features.scanEngineV2 && scanEngineV2 && countItems.length > 0) {
+      scanEngineV2.onItemsRefetched(countItems.map(ci => ({ 
+        id: ci.id, 
+        actual_quantity: ci.actual_quantity || 0 
+      })));
+    }
+  }, [scanEngineV2, countItems]);
+
   const handleQtyPerScanChange = (increment: boolean) => {
     if (increment) {
       setQtyPerScan(prev => Math.min(prev + 1, 10));
@@ -324,9 +338,9 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                   Actual: {actualQty}
                 </div>
                 <Badge variant={status.variant}>{status.label}</Badge>
-                {features.scanEngineV2 && scanEngineV2 && selectedItem && scanEngineV2.pendingByItem[selectedItem.id] > 0 && (
+                {features.scanEngineV2 && scanEngineV2 && selectedItem && selectedCountItem && scanEngineV2.pendingByItem[selectedCountItem.id] > 0 && (
                   <Badge variant="outline" className="text-xs">
-                    +{scanEngineV2.pendingByItem[selectedItem.id]} pending
+                    +{scanEngineV2.pendingByItem[selectedCountItem.id]} pending
                   </Badge>
                 )}
                 {!features.scanEngineV2 && sessionIncrements > 0 && (

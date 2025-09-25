@@ -18,6 +18,7 @@ import { ScanGunMode } from '../modes/ScanGunMode';
 import { MobileScanMode } from '../modes/MobileScanMode';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useQuery } from '@tanstack/react-query';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,23 @@ export const InventoryCountTab: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [countInterface, setCountInterface] = useState<CountInterface>('batch');
   
+  // React Query for count items with optimized settings to prevent snap-back
+  const countItemsQuery = useQuery({
+    queryKey: ['count-items', activeCount],
+    queryFn: () => activeCount ? inventoryCountsApi.getCountItems(activeCount) : Promise.resolve([]),
+    enabled: !!activeCount,
+    staleTime: 5000, // 5 seconds to prevent excessive refetching
+    refetchOnWindowFocus: false,
+  });
+
+  // Update local state when React Query data changes
+  useEffect(() => {
+    if (countItemsQuery.data) {
+      console.log('[REFETCHED_ITEMS]', countItemsQuery.data.map(i => ({ id: i.id, actual: i.actual_quantity })));
+      setCountItems(countItemsQuery.data);
+    }
+  }, [countItemsQuery.data]);
+  
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
 
@@ -68,10 +86,8 @@ export const InventoryCountTab: React.FC = () => {
       const newItem = await createItem(itemData);
       if (newItem) {
         toast({ title: "Item created", description: `${newItem.name} has been added to inventory` });
-        // Refresh count items if we have an active count
-        if (activeCount) {
-          await loadCountItems(activeCount);
-        }
+      // Trigger React Query refetch instead of loadCountItems
+      countItemsQuery.refetch();
       }
     } catch (error) {
       console.error('Failed to create item:', error);
@@ -120,7 +136,8 @@ export const InventoryCountTab: React.FC = () => {
         await inventoryCountsApi.initializeCountItems(count.id);
       }
       
-      await loadCountItems(count.id);
+      // Trigger React Query refetch
+      countItemsQuery.refetch();
       
       toast({
         title: 'Count Started',
@@ -603,6 +620,10 @@ export const InventoryCountTab: React.FC = () => {
           items={countableItems}
           onUpdateCount={handleScanModeUpdateCount}
           onComplete={handleCompleteCount}
+          onItemsRefetched={(items) => {
+            // Wire up the V2 engine refetch callback if it exists
+            // This will be handled in ScanGunMode itself
+          }}
         />
       )}
     </div>
