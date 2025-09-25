@@ -278,20 +278,32 @@ export const warehouseApi = {
   },
 
   // Create a default warehouse for an organization (used for first-time setup)
-  async createDefaultWarehouse(name: string, organizationId?: string): Promise<Warehouse> {
-    const insertData: any = {
-      name,
-      is_primary: true
-    };
-    
-    // Add organization_id if provided, otherwise let the database set it via RLS
-    if (organizationId) {
-      insertData.organization_id = organizationId;
+  async createDefaultWarehouse(name: string): Promise<Warehouse> {
+    // Must be authenticated
+    const { data: authRes } = await supabase.auth.getUser();
+    const uid = authRes?.user?.id;
+    if (!uid) throw new Error('You must be signed in to set up a warehouse.');
+
+    // Fetch user's organization (required for RLS policy)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('organization_id, role')
+      .eq('id', uid)
+      .single();
+
+    if (userError || !userData?.organization_id) {
+      throw new Error('Could not determine your organization.');
     }
 
+    // Insert with explicit organization_id (RLS WITH CHECK will pass)
     const { data, error } = await supabase
       .from('warehouses')
-      .insert(insertData)
+      .insert({
+        name,
+        is_primary: true,
+        organization_id: userData.organization_id,
+        created_by: uid,
+      })
       .select()
       .single();
 
