@@ -1,8 +1,49 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Direct Resend API call function
+async function sendViaResend(options: {
+  apiKey: string;
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${options.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: options.from,
+        to: Array.isArray(options.to) ? options.to : [options.to],
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Email] Resend API error:', result);
+      return {
+        success: false,
+        error: `Resend API error ${response.status}: ${result?.message || response.statusText}`
+      };
+    }
+
+    return { success: true, id: result?.id };
+  } catch (error) {
+    console.error('[Email] Network error:', error);
+    return { success: false, error: `Network error: ${error.message}` };
+  }
+}
+
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -139,15 +180,21 @@ const handler = async (req: Request): Promise<Response> => {
 
         const personalizedContent = content.replace('{{recipient_name}}', recipient.name || recipient.email);
         
-        const { error: emailError } = await resend.emails.send({
+        if (!resendApiKey) {
+          console.warn('RESEND_API_KEY not configured, skipping email');
+          continue;
+        }
+
+        const emailResult = await sendViaResend({
+          apiKey: resendApiKey,
           from: "Teamtegrate <notifications@teamtegrate.com>",
           to: [recipient.email],
           subject,
-          html: personalizedContent,
+          html: personalizedContent
         });
 
-        if (emailError) {
-          console.error(`[Schedule Notifications] Failed to send email to ${recipient.email}:`, emailError);
+        if (!emailResult.success) {
+          console.error(`[Schedule Notifications] Failed to send email to ${recipient.email}:`, emailResult.error);
         } else {
           sent++;
         }

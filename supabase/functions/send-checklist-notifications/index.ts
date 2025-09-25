@@ -1,5 +1,46 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+
+// Direct Resend API call function
+async function sendViaResend(options: {
+  apiKey: string;
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${options.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: options.from,
+        to: Array.isArray(options.to) ? options.to : [options.to],
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Email] Resend API error:', result);
+      return {
+        success: false,
+        error: `Resend API error ${response.status}: ${result?.message || response.statusText}`
+      };
+    }
+
+    return { success: true, id: result?.id };
+  } catch (error) {
+    console.error('[Email] Network error:', error);
+    return { success: false, error: `Network error: ${error.message}` };
+  }
+}
 
 // Dynamic CORS headers (copied from send-ticket-notifications)
 const corsHeaders = {
@@ -47,7 +88,7 @@ interface NotificationResponse {
   correlationId: string;
 }
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -143,14 +184,23 @@ serve(async (req: Request): Promise<Response> => {
 
 async function sendEmail(to: string, subject: string, html: string, correlationId: string): Promise<void> {
   try {
-    const response = await resend.emails.send({
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY not configured');
+    }
+
+    const result = await sendViaResend({
+      apiKey: resendApiKey,
       from: "Teamtegrate <notifications@teamtegrate.com>",
       to: [to],
       subject,
-      html,
+      html
     });
 
-    console.log(`📧 Email sent successfully to ${to}:`, response.id, { correlationId });
+    if (!result.success) {
+      throw new Error(result.error || 'Email send failed');
+    }
+
+    console.log(`📧 Email sent successfully to ${to}:`, result.id, { correlationId });
   } catch (error) {
     console.error(`📧 Failed to send email to ${to}:`, error, { correlationId });
     throw error;

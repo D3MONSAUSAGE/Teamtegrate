@@ -35,62 +35,80 @@ interface TaskNotificationRequest {
   newStatus?: string;
 }
 
-// Email template loader function with retry logic and structured logging
+// Email template loader function with fallback
 async function loadEmailTemplate(templateName: string, variables: Record<string, string>): Promise<string> {
-  const retryCount = 3;
-  
-  for (let attempt = 1; attempt <= retryCount; attempt++) {
-    try {
-      console.log(`[Email Template] Loading ${templateName}, attempt ${attempt}/${retryCount}`);
-      
-      const templatePath = new URL(`../../../src/emails/${templateName}`, import.meta.url);
-      let templateContent = await Deno.readTextFile(templatePath);
-      
-      // Replace template variables
-      for (const [key, value] of Object.entries(variables)) {
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        templateContent = templateContent.replace(regex, value || '');
-      }
-      
-      console.log(`[Email Template] Successfully loaded ${templateName}`);
-      return templateContent;
-    } catch (error) {
-      console.error(`[Email Template] Attempt ${attempt}/${retryCount} failed for ${templateName}:`, error);
-      
-      if (attempt === retryCount) {
-        console.error(`[Email Template] All attempts failed for ${templateName}, using fallback`);
-        // Fallback to basic template
-        return `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <div style="background: hsl(217 91% 60%); color: white; padding: 20px; text-align: center; margin-bottom: 20px; border-radius: 8px;">
-              <h1>${variables.brandName || 'Notification'}</h1>
-            </div>
-            <div style="padding: 20px;">
-              <h2>Task Notification</h2>
-              <p>This is a notification about task <strong>#${variables.taskId}</strong></p>
-              <div style="background: hsl(240 4.8% 95.9%); padding: 15px; margin: 20px 0; border-radius: 8px;">
-                <h3>${variables.taskTitle}</h3>
-                ${variables.taskDescription ? `<p>${variables.taskDescription}</p>` : ''}
-                ${variables.deadline ? `<p><strong>Deadline:</strong> ${variables.deadline}</p>` : ''}
-                ${variables.priority ? `<p><strong>Priority:</strong> ${variables.priority}</p>` : ''}
-                ${variables.oldStatus && variables.newStatus ? `<p><strong>Status:</strong> ${variables.oldStatus} → ${variables.newStatus}</p>` : ''}
-              </div>
-              ${variables.taskUrl ? `
-                <div style="text-align: center; margin: 20px 0;">
-                  <a href="${variables.taskUrl}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Task</a>
-                </div>
-              ` : ''}
-            </div>
-            <div style="background: hsl(240 5.9% 90%); padding: 15px; text-align: center; font-size: 14px; color: hsl(240 3.8% 46.1%); border-radius: 8px;">
-              ${variables.brandName || 'TeamTegrate'} Task Management
-            </div>
-          </div>
-        `;
-      }
-      
-      // Wait before retry (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+  try {
+    console.log(`[Email Template] Loading ${templateName}`);
+    // Try colocated template first
+    const templatePath = new URL(`./${templateName}`, import.meta.url);
+    let templateContent = await Deno.readTextFile(templatePath);
+    
+    // Replace template variables
+    for (const [key, value] of Object.entries(variables)) {
+      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+      templateContent = templateContent.replace(regex, value || '');
     }
+    
+    console.log(`[Email Template] Successfully loaded ${templateName}`);
+    return templateContent;
+  } catch (error) {
+    console.warn(`[Email Template] Template ${templateName} missing, using fallback:`, error.message);
+    
+    // Return appropriate fallback based on template type
+    if (templateName === 'task-assigned.html') {
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <div style="background: hsl(217 91% 60%); color: white; padding: 20px; text-align: center; margin-bottom: 20px; border-radius: 8px;">
+            <h1>${variables.orgName || 'TeamTegrate'}</h1>
+            <h2>Task Assignment</h2>
+          </div>
+          <div style="padding: 20px;">
+            <p>Hi <strong>${variables.assigneeName}</strong>,</p>
+            <p>You have been assigned a new task by <strong>${variables.assignerName}</strong>:</p>
+            <div style="background: hsl(240 4.8% 95.9%); padding: 15px; margin: 20px 0; border-radius: 8px;">
+              <h3>${variables.taskTitle}</h3>
+              ${variables.description ? `<p>${variables.description}</p>` : ''}
+              ${variables.priority ? `<p><strong>Priority:</strong> <span class="${variables.priorityClass}">${variables.priority}</span></p>` : ''}
+              ${variables.dueDateLocal ? `<p><strong>Due Date:</strong> ${variables.dueDateLocal}</p>` : ''}
+            </div>
+            ${variables.taskUrl ? `
+              <div style="text-align: center; margin: 20px 0;">
+                <a href="${variables.taskUrl}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Task</a>
+              </div>
+            ` : ''}
+          </div>
+          <div style="background: hsl(240 5.9% 90%); padding: 15px; text-align: center; font-size: 14px; color: hsl(240 3.8% 46.1%); border-radius: 8px;">
+            © ${variables.year} ${variables.orgName || 'TeamTegrate'} | <a href="${variables.manageNotificationsUrl}">Manage Notifications</a>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Status change fallback
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="background: hsl(217 91% 60%); color: white; padding: 20px; text-align: center; margin-bottom: 20px; border-radius: 8px;">
+          <h1>${variables.orgName || 'TeamTegrate'}</h1>
+          <h2>Task Status Updated</h2>
+        </div>
+        <div style="padding: 20px;">
+          <p>Hi <strong>${variables.assigneeName}</strong>,</p>
+          <p><strong>${variables.assignerName}</strong> updated the status of a task:</p>
+          <div style="background: hsl(240 4.8% 95.9%); padding: 15px; margin: 20px 0; border-radius: 8px;">
+            <h3>${variables.taskTitle}</h3>
+            <p><strong>Status:</strong> ${variables.oldStatus} → ${variables.newStatus}</p>
+          </div>
+          ${variables.taskUrl ? `
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${variables.taskUrl}" style="background: hsl(217 91% 60%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Task</a>
+            </div>
+          ` : ''}
+        </div>
+        <div style="background: hsl(240 5.9% 90%); padding: 15px; text-align: center; font-size: 14px; color: hsl(240 3.8% 46.1%); border-radius: 8px;">
+          © ${variables.year} ${variables.orgName || 'TeamTegrate'}
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -215,13 +233,21 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Email service not configured' 
+          error: 'Email service not configured - RESEND_API_KEY missing' 
         }),
         {
           status: 500,
           headers: CORS,
         }
       );
+    }
+
+    // Get configuration from environment variables
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+    
+    // Validate sender domain
+    if (!fromEmail.includes('@') || fromEmail.includes('example.com')) {
+      console.error('[Config] Invalid FROM_EMAIL address. Verify domain in Resend:', fromEmail);
     }
 
     const requestData: TaskNotificationRequest = await req.json();

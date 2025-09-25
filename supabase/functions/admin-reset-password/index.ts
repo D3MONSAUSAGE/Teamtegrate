@@ -1,6 +1,47 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { Resend } from "npm:resend@2.0.0";
+
+// Direct Resend API call function (same as in send-task-notifications)
+async function sendViaResend(options: {
+  apiKey: string;
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${options.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: options.from,
+        to: Array.isArray(options.to) ? options.to : [options.to],
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Email] Resend API error:', result);
+      return {
+        success: false,
+        error: `Resend API error ${response.status}: ${result?.message || response.statusText}`
+      };
+    }
+
+    return { success: true, id: result?.id };
+  } catch (error) {
+    console.error('[Email] Network error:', error);
+    return { success: false, error: `Network error: ${error.message}` };
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -140,10 +181,9 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Send email if Resend is configured
       if (resendApiKey && data.properties?.action_link) {
-        const resend = new Resend(resendApiKey);
-        
         try {
-          await resend.emails.send({
+          const emailResult = await sendViaResend({
+            apiKey: resendApiKey,
             from: "TeamTegrate <noreply@resend.dev>",
             to: [email],
             subject: "Password Reset Request",
@@ -157,10 +197,13 @@ const handler = async (req: Request): Promise<Response> => {
               <p>If you didn't request this reset, please contact your administrator.</p>
               <br>
               <p>Best regards,<br>TeamTegrate Team</p>
-            `,
+            `
           });
           
-          result.emailSent = true;
+          result.emailSent = emailResult.success;
+          if (!emailResult.success) {
+            result.emailError = emailResult.error;
+          }
         } catch (emailError) {
           console.error('Failed to send email:', emailError);
           result.emailSent = false;
@@ -193,11 +236,10 @@ const handler = async (req: Request): Promise<Response> => {
       result = { temporaryPasswordSet: true };
 
       // Send email notification if Resend is configured
-      if (resendApiKey) {
-        const resend = new Resend(resendApiKey);
-        
+      if (resendApiKey) {        
         try {
-          await resend.emails.send({
+          const emailResult = await sendViaResend({
+            apiKey: resendApiKey,
             from: "TeamTegrate <noreply@resend.dev>",
             to: [email],
             subject: "Temporary Password Set",
@@ -210,10 +252,13 @@ const handler = async (req: Request): Promise<Response> => {
               <p><a href="${req.headers.get('origin') || 'https://91cd77c4-34d9-4c9a-a240-33280dceab90.sandbox.lovable.dev'}/login">Login Now</a></p>
               <br>
               <p>Best regards,<br>TeamTegrate Team</p>
-            `,
+            `
           });
           
-          result.emailSent = true;
+          result.emailSent = emailResult.success;
+          if (!emailResult.success) {
+            result.emailError = emailResult.error;
+          }
         } catch (emailError) {
           console.error('Failed to send email:', emailError);
           result.emailSent = false;

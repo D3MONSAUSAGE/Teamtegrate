@@ -2,6 +2,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { getChecklistRecipients } from './recipients';
 
+// Helper function to invoke edge functions with JWT authentication
+async function invokeWithAuth(name: string, body: unknown) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  return supabase.functions.invoke(name, {
+    body,
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+}
+
 interface NotificationRecipient {
   id: string;
   email: string;
@@ -239,12 +249,10 @@ export const notifications = {
           manageNotificationsUrl: orgData.manageNotificationsUrl
         };
 
-        const { data, error } = await supabase.functions.invoke('send-task-notifications', {
-          body: {
-            kind: 'task_assigned',
-            to: assignee.email,
-            vars: templateVars
-          }
+        const { data, error } = await invokeWithAuth('send-task-notifications', {
+          kind: 'task_assigned',
+          to: assignee.email,
+          vars: templateVars
         });
 
         if (error) {
@@ -262,25 +270,58 @@ export const notifications = {
   async notifyTaskStatusChanged(task: TaskNotificationData, oldStatus: string, newStatus: string, actor: UserData, assignees: UserData[]) {
     try {
       console.log(`[Notifications] Triggering task status changed notifications: ${task.id} from ${oldStatus} to ${newStatus}`);
-
-      const { data, error } = await supabase.functions.invoke('send-task-notifications', {
-        body: {
-          type: 'task_status_changed',
-          task,
-          oldStatus,
-          newStatus,
-          actor,
-          assignees,
-          timestamp: new Date().toISOString()
-        }
-      });
-
-      if (error) {
-        console.error('[Notifications] Failed to send task status changed notifications:', error);
-        throw error;
+      
+      // Import utilities dynamically
+      const { getTaskUrl, getNotificationSettingsUrl } = await import('@/lib/utils/urls');
+      const { getCurrentUserOrganization } = await import('@/lib/utils/organization');
+      const { getCurrentYear } = await import('@/lib/utils/dateFormat');
+      
+      // Get organization data
+      const orgData = await getCurrentUserOrganization();
+      if (!orgData) {
+        console.error('[Notifications] Could not get organization data');
+        return;
       }
 
-      console.log('[Notifications] Task status changed notifications sent successfully:', data);
+      // Send notification to each assignee individually
+      for (const assignee of assignees) {
+        if (!assignee.email) {
+          console.error('[Notifications] Missing assignee email for:', assignee);
+          continue;
+        }
+
+        // Skip self-notification
+        if (assignee.id === actor.id) {
+          console.log(`[Notifications] Skipping self-notification for ${assignee.email}`);
+          continue;
+        }
+
+        console.log(`[Notifications] Sending task status change email to: ${assignee.email}`);
+
+        const templateVars = {
+          orgName: orgData.name,
+          assigneeName: assignee.name || assignee.email,
+          assignerName: actor.name || actor.email,
+          taskTitle: task.title,
+          oldStatus,
+          newStatus,
+          taskUrl: getTaskUrl(task.id),
+          year: getCurrentYear(),
+          manageNotificationsUrl: orgData.manageNotificationsUrl
+        };
+
+        const { data, error } = await invokeWithAuth('send-task-notifications', {
+          kind: 'task_status_changed',
+          to: assignee.email,
+          vars: templateVars
+        });
+
+        if (error) {
+          console.error(`[Notifications] Failed to send task status change notification to ${assignee.email}:`, error);
+        } else {
+          console.log(`[Notifications] Task status change notification sent successfully to ${assignee.email}:`, data);
+        }
+      }
     } catch (error) {
       console.error('[Notifications] Error in notifyTaskStatusChanged:', error);
     }

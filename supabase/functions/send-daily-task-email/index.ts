@@ -1,14 +1,55 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Resend } from "npm:resend@2.0.0"
+
+// Direct Resend API call function
+async function sendViaResend(options: {
+  apiKey: string;
+  from: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${options.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: options.from,
+        to: Array.isArray(options.to) ? options.to : [options.to],
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Email] Resend API error:', result);
+      return {
+        success: false,
+        error: `Resend API error ${response.status}: ${result?.message || response.statusText}`
+      };
+    }
+
+    return { success: true, id: result?.id };
+  } catch (error) {
+    console.error('[Email] Network error:', error);
+    return { success: false, error: `Network error: ${error.message}` };
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name, x-schema-version, x-postgrest-profile',
 }
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
+const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -59,25 +100,30 @@ serve(async (req) => {
     const emailHtml = generateEmailTemplate(user, taskSummary)
 
     // Send email using verified domain
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY not configured');
+    }
+
+    const emailResult = await sendViaResend({
+      apiKey: resendApiKey,
       from: 'TaskManager <noreply@teamtegrate.com>',
       to: [user.email],
       subject: `Daily Task Summary - ${new Date().toLocaleDateString()}`,
-      html: emailHtml,
-    })
+      html: emailHtml
+    });
 
-    if (emailError) {
-      console.error('Error sending email:', emailError)
-      throw emailError
+    if (!emailResult.success) {
+      console.error('Error sending email:', emailResult.error);
+      throw new Error(emailResult.error || 'Email send failed');
     }
 
-    console.log('Email sent successfully:', emailData)
+    console.log('Email sent successfully:', emailResult.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Daily email sent successfully',
-        email_id: emailData.id,
+        email_id: emailResult.id,
         recipient: user.email
       }),
       { 
