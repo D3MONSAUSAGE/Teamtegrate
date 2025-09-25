@@ -7,16 +7,23 @@
  * This uses the offset calculation method for reliability across timezones and DST transitions
  */
 export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUTC: string; endUTC: string } {
-  console.log('🕐 getTZDayRangeUTC input:', { tz, base, baseValid: base instanceof Date && !isNaN(base.getTime()) });
+  // Validate inputs safely without triggering toString errors
+  const baseValid = base instanceof Date && !isNaN(base.getTime());
+  console.log('🕐 getTZDayRangeUTC input:', { 
+    tz, 
+    baseType: typeof base,
+    baseInstance: base instanceof Date,
+    baseValid 
+  });
   
   // Validate inputs
   if (!tz || typeof tz !== 'string') {
-    console.error('🕐 getTZDayRangeUTC: Invalid timezone:', tz);
+    console.error('🕐 getTZDayRangeUTC: Invalid timezone, falling back to UTC');
     tz = 'UTC'; // Fallback to UTC
   }
   
-  if (!base || !(base instanceof Date) || isNaN(base.getTime())) {
-    console.error('🕐 getTZDayRangeUTC: Invalid base date:', base);
+  if (!baseValid) {
+    console.error('🕐 getTZDayRangeUTC: Invalid base date, using current date');
     base = new Date(); // Fallback to current date
   }
 
@@ -29,11 +36,6 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
     const utc = new Date(utcString);
     
     console.log('🕐 getTZDayRangeUTC strings:', { localString, utcString });
-    console.log('🕐 getTZDayRangeUTC dates:', { 
-      local, utc, 
-      localValid: !isNaN(local.getTime()), 
-      utcValid: !isNaN(utc.getTime()) 
-    });
     
     // Validate converted dates
     if (isNaN(local.getTime()) || isNaN(utc.getTime())) {
@@ -53,7 +55,7 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
 
     // Validate the calculated dates
     if (isNaN(startLocal.getTime()) || isNaN(endLocal.getTime())) {
-      throw new Error(`Invalid calculated dates: startLocal=${startLocal}, endLocal=${endLocal}`);
+      throw new Error('Invalid calculated dates');
     }
 
     const startUTCDate = new Date(startLocal.getTime() + offsetMs);
@@ -61,7 +63,7 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
     
     // Final validation before toISOString
     if (isNaN(startUTCDate.getTime()) || isNaN(endUTCDate.getTime())) {
-      throw new Error(`Invalid final dates: startUTC=${startUTCDate}, endUTC=${endUTCDate}`);
+      throw new Error('Invalid final dates');
     }
 
     // Convert those local midnights to real UTC instants
@@ -73,9 +75,10 @@ export function getTZDayRangeUTC(tz: string, base: Date = new Date()): { startUT
     console.log('🕐 getTZDayRangeUTC result:', result);
     return result;
   } catch (error) {
-    console.error('🕐 getTZDayRangeUTC error:', error, { tz, base });
+    console.error('🕐 getTZDayRangeUTC error:', error?.message || 'Unknown error', { tz });
     // Fallback: return current day in UTC
-    const fallbackStart = new Date(base);
+    const now = new Date();
+    const fallbackStart = new Date(now);
     fallbackStart.setUTCHours(0, 0, 0, 0);
     const fallbackEnd = new Date(fallbackStart);
     fallbackEnd.setUTCDate(fallbackEnd.getUTCDate() + 1);

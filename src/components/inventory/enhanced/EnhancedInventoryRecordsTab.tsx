@@ -77,7 +77,13 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [viewMode, setViewMode] = useState<'all' | 'daily'>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     // Initialize with timezone-aware date
+    console.log('🗓️ Initializing selectedDate');
     const now = new Date();
+    console.log('🗓️ Initial date created:', { 
+      now, 
+      valid: now instanceof Date && !isNaN(now.getTime()),
+      timestamp: now.getTime() 
+    });
     return now;
   });
   const [selectedDailyTeam, setSelectedDailyTeam] = useState<string>('');
@@ -139,6 +145,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
   // Daily analytics with timezone-aware filtering
   const { startUTC, endUTC } = useMemo(() => {
+    console.log('🗓️ Computing day range for:', { 
+      selectedDate, 
+      tz, 
+      dateValid: selectedDate instanceof Date && !isNaN(selectedDate.getTime()),
+      dateString: selectedDate?.toString?.()
+    });
     return getTZDayRangeUTC(tz, selectedDate);
   }, [tz, selectedDate]);
 
