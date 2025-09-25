@@ -11,7 +11,7 @@ import { useScanGun } from '@/hooks/useScanGun';
 import { ScanItemPicker } from '../ScanItemPicker';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
 import { useToast } from '@/hooks/use-toast';
-import { inventoryCountsApi } from '@/contexts/inventory/api';
+import { inventoryCountsApi, inventoryItemsApi } from '@/contexts/inventory/api';
 
 interface ScanGunModeProps {
   countId: string;
@@ -44,6 +44,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const sessionIncrementsRef = useRef<number>(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScanRef = useRef<string>('');
+  const lastAttachedRef = useRef<string | null>(null);
 
   // Find count item for selected item
   useEffect(() => {
@@ -166,13 +167,32 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
       }
     } else {
       // Item has no barcode - handle attachment
-      if (attachFirstScan) {
-        console.log('SCANGUN_ATTACH_BARCODE:', { itemId: selectedItem.id, barcode: code });
-        toast({
-          title: 'Barcode would be attached',
-          description: `${code} to ${selectedItem.name} (feature not implemented)`,
-        });
-        // For now, just proceed with the scan without attaching
+      if (attachFirstScan && selectedItem && !selectedItem.barcode) {
+        try {
+          const trimmed = code.trim();
+          if (!trimmed) return; // nothing to attach
+
+          // prevent double-attach on the same scan burst
+          if (lastAttachedRef.current === trimmed) return;
+          lastAttachedRef.current = trimmed;
+          setTimeout(() => (lastAttachedRef.current = null), 1000);
+
+          await inventoryItemsApi.update(selectedItem.id, { barcode: trimmed });
+
+          // Optimistic UI
+          setSelectedItem(prev => (prev ? { ...prev, barcode: trimmed } : prev));
+
+          toast({ title: 'Barcode attached', description: `${trimmed} → ${selectedItem.name}` });
+          // IMPORTANT: do NOT return; we want this same scan to continue
+          // into the existing increment/persist path so it counts too.
+        } catch (e: any) {
+          toast({
+            title: 'Failed to attach barcode',
+            description: e?.message ?? 'Could not attach barcode',
+            variant: 'destructive',
+          });
+          return; // abort counting for this scan on error
+        }
       }
     }
 
