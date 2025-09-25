@@ -262,9 +262,9 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
   
   return (
     <div 
-      className={`fixed z-50 bg-black ${
+      className={`fixed z-50 bg-gradient-to-b from-black via-black/95 to-black ${
         isMobileBrowser 
-          ? 'inset-x-0 top-0 h-[70vh] rounded-b-lg' 
+          ? 'inset-x-0 top-0 h-[70vh] rounded-b-2xl shadow-2xl' 
           : 'inset-0'
       }`}
       onClick={(e) => {
@@ -303,115 +303,159 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
 
       {/* Overlay UI */}
       <div className="absolute inset-0 z-10">
-        {/* Context Strip - Show current item info on mobile */}
+        {/* Context Strip - Enhanced design */}
         {isMobileBrowser && contextItem && (
-          <div className="absolute top-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-3 border-b border-white/10">
-            <div className="text-center">
-              <p className="text-white font-medium text-sm">{contextItem.name}</p>
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur-md border-b border-primary/20">
+            <div className="px-6 py-4 text-center">
+              <p className="text-white font-semibold text-lg">{contextItem.name}</p>
               {contextItem.scannedCount !== undefined && (
-                <p className="text-white/70 text-xs">Scanned: {contextItem.scannedCount}</p>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <p className="text-primary-foreground/80 text-sm font-medium">
+                    Scanned: {contextItem.scannedCount}
+                  </p>
+                </div>
               )}
             </div>
           </div>
         )}
         
-        {/* Header */}
+        {/* Header Controls - Refined styling */}
         <div className={`absolute left-4 right-4 flex justify-between items-center ${
-          isMobileBrowser && contextItem ? 'top-16' : 'top-4'
+          isMobileBrowser && contextItem ? 'top-20' : 'top-6'
         }`}>
           <Button
             variant="ghost"
             size="lg"
             onClick={handleClose}
-            className="bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm px-4 py-3 touch-manipulation min-h-[48px] min-w-[48px]"
+            className="bg-black/60 text-white hover:bg-black/80 backdrop-blur-sm rounded-full p-3 transition-all duration-200 shadow-lg border border-white/10"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </Button>
           
           <Button
             variant="ghost"
             size="lg"
             onClick={handleToggleFlash}
-            className={`bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm px-4 py-3 touch-manipulation min-h-[48px] min-w-[48px] ${
-              flashEnabled ? 'bg-primary/80 text-primary-foreground' : ''
+            className={`bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full p-3 transition-all duration-200 shadow-lg border border-white/10 ${
+              flashEnabled 
+                ? 'bg-primary/80 text-primary-foreground border-primary/30' 
+                : 'text-white'
             }`}
           >
-            <Flashlight className="h-6 w-6" />
+            <Flashlight className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Scanning frame - positioned in upper portion */}
+        {/* Enhanced Scanning Frame - Better positioned and styled */}
         <div className={`absolute inset-x-0 flex justify-center ${
           isMobileBrowser 
             ? contextItem 
-              ? 'top-24 bottom-80' 
-              : 'top-16 bottom-80'
-            : 'top-20 bottom-60'
+              ? 'top-32 bottom-52' 
+              : 'top-24 bottom-52'
+            : 'top-28 bottom-40'
         }`}>
           <div className="flex items-center">
             <div 
-              className="relative w-64 h-64 md:w-80 md:h-80"
+              className="relative w-72 h-72 md:w-80 md:h-80"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="absolute inset-0 bg-black/30 border-2 border-primary/50 rounded-lg">
-                {/* Corner indicators */}
-                <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
-                <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
-                <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
+              {/* Main scanning frame with glassmorphism effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm border-2 border-primary/40 rounded-2xl shadow-2xl">
+                {/* Animated corner brackets */}
+                <div className="absolute -top-2 -left-2 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-2xl animate-pulse" />
+                <div className="absolute -top-2 -right-2 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-2xl animate-pulse" />
+                <div className="absolute -bottom-2 -left-2 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-2xl animate-pulse" />
+                <div className="absolute -bottom-2 -right-2 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-2xl animate-pulse" />
                 
-                {/* Scanning line animation */}
+                {/* Enhanced scanning line animation */}
                 {(mode === 'native' || mode === 'quagga') && (
-                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
+                  <>
+                    <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse opacity-80" />
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary/60 to-transparent animate-bounce" 
+                         style={{ animationDuration: '2s' }} />
+                  </>
                 )}
+                
+                {/* Center targeting dot */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-ping" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Control buttons - positioned below scanning frame */}
+        {/* Professional Control Panel - Bottom positioned */}
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="grid grid-cols-1 gap-3 mb-4">
-            <Button
-              className="px-6 py-4 text-lg rounded-lg bg-white text-black font-medium hover:bg-gray-100 touch-manipulation min-h-[48px]"
-              onClick={handleStart}
-              disabled={mode !== 'idle' || isLoading}
-            >
-              {isLoading ? 'Starting...' : mode !== 'idle' ? `Scanning (${mode})` : 'Start Camera'}
-            </Button>
+          <div className="bg-gradient-to-r from-black/80 to-black/70 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/10">
+            {/* Status and Instructions */}
+            <div className="text-center mb-6">
+              <h3 className="text-white font-semibold text-xl mb-2">{instructions}</h3>
+              <div className="flex items-center justify-center gap-2 text-primary-foreground/70 text-sm">
+                <div className={`w-2 h-2 rounded-full ${
+                  mode === 'native' || mode === 'quagga' 
+                    ? 'bg-green-400 animate-pulse' 
+                    : 'bg-gray-400'
+                }`}></div>
+                <span>Looking for UPC/EAN/Code128/QR codes</span>
+              </div>
+            </div>
             
-            {mode !== 'idle' && (
+            {/* Control Buttons Grid */}
+            <div className="grid grid-cols-1 gap-3">
+              <Button
+                className="px-8 py-4 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold hover:from-primary/90 hover:to-primary/70 touch-manipulation min-h-[52px] shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
+                onClick={handleStart}
+                disabled={mode !== 'idle' || isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Starting Camera...
+                  </div>
+                ) : mode !== 'idle' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    Scanning Active
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Camera className="w-5 h-5" />
+                    Start Camera
+                  </div>
+                )}
+              </Button>
+              
+              {mode !== 'idle' && (
+                <Button
+                  variant="outline"
+                  className="px-8 py-4 text-lg rounded-xl bg-white/5 text-white border-white/20 hover:bg-white/10 touch-manipulation min-h-[52px] font-medium transition-all duration-200"
+                  onClick={() => cleanup()}
+                >
+                  Stop Scanner
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
-                className="px-6 py-4 text-lg rounded-lg bg-white/10 text-white border-white/20 hover:bg-white/20 touch-manipulation min-h-[48px]"
-                onClick={() => cleanup()}
+                className="px-8 py-4 text-lg rounded-xl bg-red-500/10 text-red-200 border-red-500/30 hover:bg-red-500/20 touch-manipulation min-h-[52px] font-medium transition-all duration-200"
+                onClick={handleClose}
               >
-                Stop Scanner
+                Close Scanner
               </Button>
-            )}
-            
-            <Button
-              variant="outline"
-              className="px-6 py-4 text-lg rounded-lg bg-red-500/20 text-white border-red-500/30 hover:bg-red-500/30 touch-manipulation min-h-[48px]"
-              onClick={handleClose}
-            >
-              Close Scanner
-            </Button>
-          </div>
-          
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 text-center">
-            <p className="text-white font-medium text-lg">{instructions}</p>
-            <p className="text-white/80 text-sm mt-2">
-              Looking for UPC/EAN/Code128/QR codes...
-            </p>
+            </div>
           </div>
         </div>
 
-        {/* Error message */}
+        {/* Enhanced Error Display */}
         {error && (
           <div className="absolute bottom-4 left-4 right-4">
-            <div className="bg-red-500/90 backdrop-blur-sm rounded-lg p-3">
-              <p className="text-white text-center text-sm">{error}</p>
+            <div className="bg-gradient-to-r from-red-500/90 to-red-600/80 backdrop-blur-md rounded-xl p-4 shadow-xl border border-red-400/20">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <X className="w-4 h-4 text-red-600" />
+                </div>
+                <p className="text-white text-sm font-medium">{error}</p>
+              </div>
             </div>
           </div>
         )}
