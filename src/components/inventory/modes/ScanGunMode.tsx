@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Minus, Scan, Package, Zap } from 'lucide-react';
 import { useScanGun } from '@/hooks/useScanGun';
+import { useScanEngineV2 } from '@/hooks/useScanEngineV2';
 import { ScanItemPicker } from '../ScanItemPicker';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryCountsApi, inventoryItemsApi } from '@/contexts/inventory/api';
+import { features } from '@/config/features';
 
 interface ScanGunModeProps {
   countId: string;
@@ -30,7 +32,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 }) => {
   const { toast } = useToast();
   
-  // State
+  // State for both engines
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCountItem, setSelectedCountItem] = useState<InventoryCountItem | null>(null);
   const [qtyPerScan, setQtyPerScan] = useState<number>(1);
@@ -39,6 +41,21 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const [attachFirstScan, setAttachFirstScan] = useState<boolean>(true);
   const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(false);
   const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('enter');
+  const [globalScanMode, setGlobalScanMode] = useState<boolean>(true);
+
+  // Initialize V2 engine if feature flag enabled
+  const scanEngineV2 = features.scanEngineV2 ? useScanEngineV2(
+    {
+      countId,
+      globalScanMode,
+      attachFirstScan,
+      autoSwitchOnMatch: true,
+      qtyPerScan,
+      dedupeMs: 100,
+    },
+    items,
+    countItems
+  ) : null;
   
   // Refs for debouncing
   const sessionIncrementsRef = useRef<number>(0);
@@ -223,13 +240,24 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     debouncedPersist(qtyPerScan);
   }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, debouncedPersist]);
 
-  // Initialize scan gun
-  const { isListening, scannerConnected, reset } = useScanGun({
+  // Initialize scan gun (only if V2 not enabled)
+  const legacyScanGun = !features.scanEngineV2 ? useScanGun({
     onScan: handleScanDetected,
     onStart: () => console.log('SCANGUN_START'),
     onStop: () => console.log('SCANGUN_STOP'),
     enabled: true,
-  });
+  }) : null;
+
+  // Use V2 engine or fallback to legacy
+  const isListening = scanEngineV2?.isListening ?? legacyScanGun?.isListening ?? false;
+  const scannerConnected = scanEngineV2?.scannerConnected ?? legacyScanGun?.scannerConnected ?? false;
+  
+  // Sync V2 engine selection with local state
+  useEffect(() => {
+    if (features.scanEngineV2 && scanEngineV2 && selectedItem) {
+      scanEngineV2.selectItem(selectedItem.id);
+    }
+  }, [scanEngineV2, selectedItem]);
 
   const handleQtyPerScanChange = (increment: boolean) => {
     if (increment) {
@@ -244,7 +272,10 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const totalItems = countItems.length;
   const progress = totalItems > 0 ? (countedItems / totalItems) * 100 : 0;
   
-  const actualQty = (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
+  // Use V2 display calculation or fallback to legacy
+  const actualQty = features.scanEngineV2 && scanEngineV2 && selectedItem
+    ? scanEngineV2.getDisplayActual(selectedItem.id)
+    : (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
   const inStock = selectedCountItem?.in_stock_quantity ?? selectedItem?.current_stock ?? 0;
   const minThreshold = selectedCountItem?.template_minimum_quantity ?? selectedItem?.minimum_threshold;
   const maxThreshold = selectedCountItem?.template_maximum_quantity ?? selectedItem?.maximum_threshold;
@@ -293,9 +324,19 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                   Actual: {actualQty}
                 </div>
                 <Badge variant={status.variant}>{status.label}</Badge>
-                {sessionIncrements > 0 && (
+                {features.scanEngineV2 && scanEngineV2 && selectedItem && scanEngineV2.pendingByItem[selectedItem.id] > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{scanEngineV2.pendingByItem[selectedItem.id]} pending
+                  </Badge>
+                )}
+                {!features.scanEngineV2 && sessionIncrements > 0 && (
                   <Badge variant="outline" className="text-xs">
                     +{sessionIncrements} this session
+                  </Badge>
+                )}
+                {features.scanEngineV2 && globalScanMode && (
+                  <Badge variant="secondary" className="text-xs">
+                    🔍 Global Scan • {countItems.length} items
                   </Badge>
                 )}
               </div>
@@ -384,16 +425,31 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                 />
               </div>
               
-              <div className="flex items-center justify-between">
-                <Label htmlFor="auto-select" className="text-sm">
-                  Auto-select item by scanned barcode
-                </Label>
-                <Switch
-                  id="auto-select"
-                  checked={autoSelectByBarcode}
-                  onCheckedChange={setAutoSelectByBarcode}
-                />
-              </div>
+              {!features.scanEngineV2 && (
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="auto-select" className="text-sm">
+                    Auto-select item by scanned barcode
+                  </Label>
+                  <Switch
+                    id="auto-select"
+                    checked={autoSelectByBarcode}
+                    onCheckedChange={setAutoSelectByBarcode}
+                  />
+                </div>
+              )}
+
+              {features.scanEngineV2 && (
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="global-scan" className="text-sm">
+                    Global scan mode (scan any item in count)
+                  </Label>
+                  <Switch
+                    id="global-scan"
+                    checked={globalScanMode}
+                    onCheckedChange={setGlobalScanMode}
+                  />
+                </div>
+              )}
               
               <div className="flex items-center justify-between">
                 <Label htmlFor="scanner-suffix" className="text-sm">

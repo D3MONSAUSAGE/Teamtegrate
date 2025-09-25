@@ -564,6 +564,7 @@ export const InventoryCountTab: React.FC = () => {
       {/* Count Interface */}
       {countInterface === 'batch' && (
         <BatchCountInterface
+          countId={activeCount}
           countItems={countItems}
           items={countableItems}
           onBulkUpdate={handleBulkUpdateCount}
