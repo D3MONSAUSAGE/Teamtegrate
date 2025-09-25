@@ -3,6 +3,14 @@ import { InventoryCount, InventoryAlert, InventoryItem, InventoryTransaction, In
 import { format, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 
+export interface SessionChip {
+  id: string;
+  name?: string;
+  status: 'in_progress' | 'completed' | 'voided';
+  startedAt: string;
+  teamId?: string;
+}
+
 export interface DailyAnalyticsMetrics {
   totalValue: number;
   totalItemsCounted: number;
@@ -27,6 +35,12 @@ export interface DailyItemDetail extends InventoryCountItem {
   variance_cost: number;
   stock_status: 'normal' | 'low' | 'out' | 'over';
   total_value: number;
+  // Session metadata
+  count_id: string;
+  count_name?: string;
+  count_status: 'in_progress' | 'completed' | 'voided';
+  count_started_at: string;
+  team_id?: string;
 }
 
 export interface DailyChartData {
@@ -73,7 +87,10 @@ export const useDailyInventoryAnalytics = (
   items: InventoryItem[],
   transactions: InventoryTransaction[],
   selectedDate: Date,
-  selectedTeamId?: string
+  selectedTeamId?: string,
+  selectedSessions?: Set<string>,
+  includeVoided: boolean = false,
+  showOnlyCountedItems: boolean = false
 ) => {
   const [itemsData, setItemsData] = useState<DailyItemsData>({
     items: [],
@@ -92,12 +109,38 @@ export const useDailyInventoryAnalytics = (
     },
   });
 
-  const analytics = useMemo(() => {
-    // Filter counts for the selected date (excluding voided counts)
+  // Generate session chips from daily counts
+  const sessionChips = useMemo(() => {
     const dailyCounts = counts.filter(count => {
-      const matchesDate = isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided;
+      const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
       const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
-      return matchesDate && matchesTeam;
+      const matchesVoided = includeVoided || !count.is_voided;
+      return matchesDate && matchesTeam && matchesVoided;
+    });
+
+    return dailyCounts
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .map(count => ({
+        id: count.id,
+        name: count.notes,
+        status: count.is_voided ? 'voided' as const : count.status as 'in_progress' | 'completed',
+        startedAt: count.created_at,
+        teamId: count.team_id
+      }));
+  }, [counts, selectedDate, selectedTeamId, includeVoided]);
+
+  const analytics = useMemo(() => {
+    // Filter counts for the selected date based on session selection and voided state
+    const dailyCounts = counts.filter(count => {
+      const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
+      const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
+      const matchesVoided = includeVoided || !count.is_voided;
+      
+      // Filter by selected sessions
+      const matchesSession = !selectedSessions || selectedSessions.size === 0 || 
+        selectedSessions.has('COMBINE') || selectedSessions.has(count.id);
+      
+      return matchesDate && matchesTeam && matchesVoided && matchesSession;
     });
 
     // Filter transactions for the selected date and team
@@ -218,15 +261,21 @@ export const useDailyInventoryAnalytics = (
     };
 
     return { metrics, chartData };
-  }, [counts, alerts, items, transactions, selectedDate, selectedTeamId]);
+  }, [counts, alerts, items, transactions, selectedDate, selectedTeamId, selectedSessions, includeVoided]);
 
   // Fetch detailed item data for the selected date and team
   useEffect(() => {
     const loadItemsData = async () => {
       const dailyCounts = counts.filter(count => {
-        const matchesDate = isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided;
+        const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
         const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
-        return matchesDate && matchesTeam;
+        const matchesVoided = includeVoided || !count.is_voided;
+        
+        // Filter by selected sessions
+        const matchesSession = !selectedSessions || selectedSessions.size === 0 || 
+          selectedSessions.has('COMBINE') || selectedSessions.has(count.id);
+        
+        return matchesDate && matchesTeam && matchesVoided && matchesSession;
       });
 
       if (dailyCounts.length === 0) {
@@ -241,8 +290,9 @@ export const useDailyInventoryAnalytics = (
         const allCountItems: DailyItemDetail[] = [];
         
         for (const count of dailyCounts) {
-          // Double check that count is not voided before fetching items
-          if (count.is_voided) continue;
+          // Skip voided counts if not including them
+          if (count.is_voided && !includeVoided) continue;
+          
           const countItems = await inventoryCountsApi.getCountItems(count.id);
           
           const processedItems = countItems.map((item): DailyItemDetail => {
@@ -281,29 +331,40 @@ export const useDailyInventoryAnalytics = (
               variance_cost: varianceCost,
               stock_status: stockStatus,
               total_value: totalValue,
+              // Session metadata
+              count_id: count.id,
+              count_name: count.notes,
+              count_status: count.is_voided ? 'voided' as const : count.status as 'in_progress' | 'completed',
+              count_started_at: count.created_at,
+              team_id: count.team_id,
             };
           });
 
           allCountItems.push(...processedItems);
         }
 
+        // Apply show only counted items filter
+        const filteredItems = showOnlyCountedItems 
+          ? allCountItems.filter(item => item.actual_quantity !== null && item.actual_quantity !== undefined)
+          : allCountItems;
+
         // Calculate summary
-        const totalItems = allCountItems.length;
-        const countedItems = allCountItems.filter(item => item.actual_quantity !== null).length;
-        const totalVariances = allCountItems.filter(item => 
+        const totalItems = filteredItems.length;
+        const countedItems = filteredItems.filter(item => item.actual_quantity !== null).length;
+        const totalVariances = filteredItems.filter(item => 
           Math.abs(item.variance_quantity) > 0.01
         ).length;
-        const totalValue = allCountItems.reduce((sum, item) => sum + item.total_value, 0);
-        const totalVarianceCost = allCountItems.reduce((sum, item) => sum + item.variance_cost, 0);
+        const totalValue = filteredItems.reduce((sum, item) => sum + item.total_value, 0);
+        const totalVarianceCost = filteredItems.reduce((sum, item) => sum + item.variance_cost, 0);
         
         const stockIssues = {
-          underStock: allCountItems.filter(item => item.stock_status === 'low').length,
-          overStock: allCountItems.filter(item => item.stock_status === 'over').length,
-          outOfStock: allCountItems.filter(item => item.stock_status === 'out').length,
+          underStock: filteredItems.filter(item => item.stock_status === 'low').length,
+          overStock: filteredItems.filter(item => item.stock_status === 'over').length,
+          outOfStock: filteredItems.filter(item => item.stock_status === 'out').length,
         };
 
         setItemsData({
-          items: allCountItems,
+          items: filteredItems,
           loading: false,
           summary: {
             totalItems,
@@ -321,7 +382,7 @@ export const useDailyInventoryAnalytics = (
     };
 
     loadItemsData();
-  }, [counts, items, selectedDate, selectedTeamId]);
+  }, [counts, items, selectedDate, selectedTeamId, selectedSessions, includeVoided, showOnlyCountedItems]);
 
-  return { ...analytics, itemsData };
+  return { ...analytics, itemsData, sessionChips };
 };

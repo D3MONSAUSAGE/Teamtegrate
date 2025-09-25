@@ -22,9 +22,12 @@ import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
 import { EnhancedDailyAnalysis } from '../daily/EnhancedDailyAnalysis';
 import { TimezoneIndicator } from '../TimezoneIndicator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { SessionPickerChips } from '../daily/SessionPickerChips';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
-  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays
+  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays, Filter
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -77,6 +80,11 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   });
   const [selectedDailyTeam, setSelectedDailyTeam] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  
+  // Session-based view states
+  const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
+  const [includeVoided, setIncludeVoided] = useState(false);
+  const [showOnlyCountedItems, setShowOnlyCountedItems] = useState(false);
   
   // Active tab state
   const [activeTab, setActiveTab] = useState('records');
@@ -133,13 +141,16 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   );
 
   // Daily analytics for selected date
-  const { metrics: dailyMetrics, chartData: dailyChartData, itemsData } = useDailyInventoryAnalytics(
+  const { metrics: dailyMetrics, chartData: dailyChartData, itemsData, sessionChips } = useDailyInventoryAnalytics(
     counts,
     alerts,
     items,
     transactions,
     selectedDate,
-    selectedDailyTeam || undefined
+    selectedDailyTeam || undefined,
+    selectedSessions,
+    includeVoided,
+    showOnlyCountedItems
   );
 
   // Sort counts by most recent first (using updated_at for more accurate recent changes)
@@ -148,6 +159,18 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     const bTime = new Date(b.updated_at || b.count_date).getTime();
     return bTime - aTime;
   });
+
+  // Default session selection (latest non-voided session)
+  React.useEffect(() => {
+    if (selectedSessions.size === 0 && sessionChips.length > 0) {
+      const defaultSession = sessionChips.find(chip => chip.status !== 'voided') ?? sessionChips[0];
+      if (defaultSession) {
+        setSelectedSessions(new Set([defaultSession.id]));
+      } else {
+        setSelectedSessions(new Set(['COMBINE']));
+      }
+    }
+  }, [sessionChips, selectedSessions.size]);
 
   const handleViewDetails = (count: InventoryCount) => {
     setSelectedCount(count);
@@ -697,6 +720,38 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             selectedDate={selectedDate}
             itemsData={itemsData}
           />
+
+          {/* Session Selection and Additional Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <SessionPickerChips
+                sessionChips={sessionChips}
+                selectedSessions={selectedSessions}
+                onSessionSelect={setSelectedSessions}
+                includeVoided={includeVoided}
+                onIncludeVoidedChange={setIncludeVoided}
+                timezone={userTimezone || 'UTC'}
+                totalSessions={sessionChips.length + (includeVoided ? 0 : sessionChips.filter(c => c.status === 'voided').length)}
+                completedSessions={sessionChips.filter(c => c.status === 'completed').length}
+              />
+              
+              <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-only-counted"
+                    checked={showOnlyCountedItems}
+                    onCheckedChange={(checked) => setShowOnlyCountedItems(checked === true)}
+                  />
+                  <Label htmlFor="show-only-counted" className="text-sm font-medium">
+                    Show only items that were counted
+                  </Label>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Showing {itemsData.items.length} items
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Enhanced Daily Analysis */}
           <EnhancedDailyAnalysis 
