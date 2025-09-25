@@ -4,7 +4,7 @@ import { Task } from "@/types";
 import { Calendar, Clock, User, Building2, DollarSign } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useTask } from "@/contexts/task";
+import { useTaskSafe } from "@/hooks/useTaskSafe";
 
 interface TaskCardMetadataProps {
   task: Task;
@@ -12,7 +12,8 @@ interface TaskCardMetadataProps {
 }
 
 const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) => {
-  const { projects } = useTask();
+  const taskContext = useTaskSafe();
+  const projects = taskContext?.projects || [];
   
   const formatDeadline = (deadline: Date) => {
     const now = new Date();
