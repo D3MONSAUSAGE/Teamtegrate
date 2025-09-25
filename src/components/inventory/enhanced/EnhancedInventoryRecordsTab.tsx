@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -90,7 +91,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Active tab state
-  const [activeTab, setActiveTab] = useState('records');
+  const [activeTab, setActiveTab] = useState<string>('records');
 
   // Filter counts based on search, team, date, status, and role-based access
   const filteredCounts = useMemo(() => {
@@ -284,15 +285,38 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="records" className="space-y-6" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="records">Count Records</TabsTrigger>
-          <TabsTrigger value="daily">Daily View</TabsTrigger>
-          <TabsTrigger value="analytics">Advanced Analytics</TabsTrigger>
-          <TabsTrigger value="teams">Team Performance</TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <ScrollableTabs>
+          <ScrollableTabsList>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'records'} 
+              onClick={() => setActiveTab('records')}
+            >
+              Count Records
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'daily'} 
+              onClick={() => setActiveTab('daily')}
+            >
+              Daily View
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'analytics'} 
+              onClick={() => setActiveTab('analytics')}
+            >
+              Advanced Analytics
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'teams'} 
+              onClick={() => setActiveTab('teams')}
+            >
+              Team Performance
+            </ScrollableTabsTrigger>
+          </ScrollableTabsList>
+        </ScrollableTabs>
 
-        <TabsContent value="records" className="space-y-6">
+        {activeTab === 'records' && (
+          <div className="space-y-6">
           {/* Enhanced Filters */}
           <Card>
             <CardContent className="p-4">
@@ -673,10 +697,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
-        <TabsContent value="daily" className="space-y-6">
-          {/* Daily View Header */}
+        {activeTab === 'daily' && (
+          <div className="space-y-6">
+            {/* Daily View Header */}
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold flex items-center gap-2">
@@ -744,17 +770,21 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             itemsData={itemsData} 
             selectedDate={selectedDate} 
           />
-        </TabsContent>
+          </div>
+        )}
 
-        <TabsContent value="analytics" className="space-y-6">
-          <EnhancedAnalyticsDashboard 
-            metrics={metrics} 
-            chartData={chartData}
-          />
-        </TabsContent>
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <EnhancedAnalyticsDashboard 
+              metrics={metrics} 
+              chartData={chartData}
+            />
+          </div>
+        )}
 
-        <TabsContent value="teams" className="space-y-6">
-          {/* Team Performance Overview */}
+        {activeTab === 'teams' && (
+          <div className="space-y-6">
+            {/* Team Performance Overview */}
           {selectedTeam ? (
             // Show detailed view for selected team
             <Card>
@@ -851,8 +881,9 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               ))}
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+          </div>
+        )}
+      </div>
 
       {/* Enhanced Dialogs */}
       <EnhancedCountDetailsDialog
