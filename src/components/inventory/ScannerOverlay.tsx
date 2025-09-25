@@ -340,30 +340,36 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
           </Button>
         </div>
 
-        {/* Scanning frame - centered */}
-        <div className={`absolute inset-0 flex items-center justify-center ${
-          isMobileBrowser && contextItem ? 'pt-16' : ''
+        {/* Scanning frame - positioned in upper portion */}
+        <div className={`absolute inset-x-0 flex justify-center ${
+          isMobileBrowser 
+            ? contextItem 
+              ? 'top-24 bottom-80' 
+              : 'top-16 bottom-80'
+            : 'top-20 bottom-60'
         }`}>
-          <div 
-            className="relative w-64 h-64 md:w-80 md:h-80"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="absolute inset-0 bg-black/30 border-2 border-primary/50 rounded-lg">
-              {/* Corner indicators */}
-              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
-              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
-              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
-              
-              {/* Scanning line animation */}
-              {(mode === 'native' || mode === 'quagga') && (
-                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
-              )}
+          <div className="flex items-center">
+            <div 
+              className="relative w-64 h-64 md:w-80 md:h-80"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute inset-0 bg-black/30 border-2 border-primary/50 rounded-lg">
+                {/* Corner indicators */}
+                <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                
+                {/* Scanning line animation */}
+                {(mode === 'native' || mode === 'quagga') && (
+                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Instructions */}
+        {/* Control buttons - positioned below scanning frame */}
         <div className="absolute bottom-4 left-4 right-4">
           <div className="grid grid-cols-1 gap-3 mb-4">
             <Button
@@ -393,25 +399,11 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
             </Button>
           </div>
           
-          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4">
-            <p className="text-white text-center font-medium text-lg">{instructions}</p>
-            <p className="text-white/80 text-center text-sm mt-2">
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-4 text-center">
+            <p className="text-white font-medium text-lg">{instructions}</p>
+            <p className="text-white/80 text-sm mt-2">
               Looking for UPC/EAN/Code128/QR codes...
             </p>
-            
-            <Input
-              type="text"
-              placeholder="Enter barcode manually"
-              className="w-full mt-3 p-3 rounded-lg bg-white/90 text-black placeholder-gray-500 text-lg touch-manipulation"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                  const normalized = e.currentTarget.value.trim().replace(/\s+/g, '');
-                  onBarcode(normalized);
-                  e.currentTarget.value = '';
-                  if (!continuous) handleClose();
-                }
-              }}
-            />
           </div>
         </div>
 
