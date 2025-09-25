@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{{orgName}} · Task Assigned</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      /* Mobile-friendly base */
+      body { margin:0; padding:0; background:#f6f7f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      a { color:#2563eb; text-decoration:none; }
+      .container { max-width:640px; margin:0 auto; padding:24px; }
+      .card { background:#ffffff; border-radius:12px; padding:24px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+      .btn { display:inline-block; background:#2563eb; color:#ffffff !important; padding:12px 18px; border-radius:8px; font-weight:600; }
+      .pill { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; line-height:1; }
+      .pill--high { background:#fee2e2; color:#b91c1c; }
+      .pill--medium { background:#fef3c7; color:#92400e; }
+      .pill--low { background:#dcfce7; color:#166534; }
+      .meta { color:#667085; font-size:13px; }
+      .footer { color:#98a2b3; font-size:12px; text-align:center; margin-top:16px; }
+      @media (max-width:480px){ .container{ padding:16px } .card{ padding:18px } }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div style="text-align:center; margin:12px 0 16px">
+        <div style="font-weight:700; font-size:18px;">{{orgName}}</div>
+        <div class="meta">Task Assignment</div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:18px; font-weight:700; margin-bottom:4px;">{{taskTitle}}</div>
+        <div class="meta" style="margin-bottom:12px;">
+          Assigned to <strong>{{assigneeName}}</strong> by <strong>{{assignerName}}</strong>
+        </div>
+
+        <div style="margin:14px 0 10px;">
+          {{#priority}}
+          <span class="pill {{priorityClass}}">Priority: {{priority}}</span>
+          {{/priority}}
+          {{#dueDateLocal}}
+          <span class="pill" style="background:#eef2ff; color:#3730a3; margin-left:6px;">Due: {{dueDateLocal}}</span>
+          {{/dueDateLocal}}
+        </div>
+
+        {{#description}}
+        <div style="margin:12px 0 18px; white-space:pre-wrap; color:#101828;">{{description}}</div>
+        {{/description}}
+
+        <div style="margin:18px 0 8px;">
+          <a class="btn" href="{{taskUrl}}" target="_blank" rel="noopener">Open Task</a>
+        </div>
+
+        <div class="meta" style="margin-top:10px;">
+          You're receiving this because a task was assigned to you in {{orgName}}.
+        </div>
+      </div>
+
+      <div class="footer">
+        © {{year}} {{orgName}} · <a href="{{manageNotificationsUrl}}">Notification settings</a>
+      </div>
+    </div>
+  </body>
+</html>

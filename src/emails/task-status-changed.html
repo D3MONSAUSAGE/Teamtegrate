@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{{orgName}} · Task Status Updated</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { margin:0; padding:0; background:#f6f7f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      a { color:#2563eb; text-decoration:none; }
+      .container { max-width:640px; margin:0 auto; padding:24px; }
+      .card { background:#ffffff; border-radius:12px; padding:24px; box-shadow:0 1px 2px rgba(16,24,40,.06); }
+      .badge { display:inline-block; padding:4px 10px; border-radius:999px; background:#eff4ff; color:#1e40af; font-size:12px; }
+      .btn { display:inline-block; background:#2563eb; color:#ffffff !important; padding:12px 18px; border-radius:8px; font-weight:600; }
+      .meta { color:#667085; font-size:13px; }
+      .footer { color:#98a2b3; font-size:12px; text-align:center; margin-top:16px; }
+      @media (max-width:480px){ .container{ padding:16px } .card{ padding:18px } }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div style="text-align:center; margin:12px 0 16px">
+        <div style="font-weight:700; font-size:18px;">{{orgName}}</div>
+        <div class="meta">Task Status Updated</div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:18px; font-weight:700; margin-bottom:6px;">{{taskTitle}}</div>
+        <div class="meta" style="margin-bottom:14px;">
+          Updated by <strong>{{actorName}}</strong>
+        </div>
+
+        <div style="margin:6px 0 16px;">
+          <span class="badge">{{oldStatus}} → {{newStatus}}</span>
+          {{#dueDateLocal}}
+          <span class="badge" style="margin-left:6px; background:#eef2ff; color:#3730a3;">Due: {{dueDateLocal}}</span>
+          {{/dueDateLocal}}
+        </div>
+
+        {{#description}}
+        <div style="margin:12px 0 18px; white-space:pre-wrap; color:#101828;">{{description}}</div>
+        {{/description}}
+
+        <a class="btn" href="{{taskUrl}}" target="_blank" rel="noopener">View Task</a>
+
+        <div class="meta" style="margin-top:14px;">
+          You're on the follower/assignee list for this task in {{orgName}}.
+        </div>
+      </div>
+
+      <div class="footer">
+        © {{year}} {{orgName}} · <a href="{{manageNotificationsUrl}}">Notification settings</a>
+      </div>
+    </div>
+  </body>
+</html>
