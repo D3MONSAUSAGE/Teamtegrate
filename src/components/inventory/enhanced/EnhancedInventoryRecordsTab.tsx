@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
@@ -25,7 +27,8 @@ import { EnhancedDailyAnalysis } from '../daily/EnhancedDailyAnalysis';
 import { TimezoneIndicator } from '../TimezoneIndicator';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
-  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays
+  BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays,
+  CalendarIcon
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -92,6 +95,35 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   
   // Active tab state
   const [activeTab, setActiveTab] = useState<string>('records');
+
+  // Working DatePicker component (reused from PastTimeEntriesManager)
+  const DatePicker = ({ date, setDate }: { date: Date; setDate: (d: Date) => void }) => {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              'w-[240px] justify-start text-left font-normal',
+              !date && 'text-muted-foreground'
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date ? format(date, 'PPP') : <span>Pick a date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <CalendarComponent
+            mode="single"
+            selected={date}
+            onSelect={(d) => d && setDate(d)}
+            initialFocus
+            className={cn('p-3 pointer-events-auto')}
+          />
+        </PopoverContent>
+      </Popover>
+    );
+  };
 
   // Filter counts based on search, team, date, status, and role-based access
   const filteredCounts = useMemo(() => {
@@ -716,22 +748,8 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <input
-                  type="date"
-                  value={formatInTZ(selectedDate.toISOString(), userTimezone || 'UTC', { 
-                    year: 'numeric', 
-                    month: '2-digit', 
-                    day: '2-digit' 
-                  }).split('/').reverse().join('-')}
-                  onChange={(e) => {
-                    const dateStr = e.target.value;
-                    // Create date in user's timezone to avoid timezone shift
-                    const localDate = new Date(`${dateStr}T12:00:00`);
-                    setSelectedDate(localDate);
-                  }}
-                  className="px-3 py-2 border rounded-md bg-background"
-                />
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <DatePicker date={selectedDate} setDate={setSelectedDate} />
               </div>
               
               {(hasRoleAccess('admin') || hasRoleAccess('manager')) && (
