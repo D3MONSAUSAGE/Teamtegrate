@@ -93,11 +93,21 @@ export const useDailyInventoryAnalytics = (
   });
 
   const analytics = useMemo(() => {
-    // Filter counts for the selected date (excluding voided counts)
+    // Filter counts for the selected date (explicitly excluding voided counts)
     const dailyCounts = counts.filter(count => {
-      const matchesDate = isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided;
+      // First check: not voided and status is completed
+      if (count.is_voided || count.status !== 'completed') return false;
+      
+      const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
       const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
       return matchesDate && matchesTeam;
+    });
+
+    console.log(`Daily Analytics - Filtered counts for ${selectedDate.toISOString().split('T')[0]}:`, {
+      totalCounts: counts.length,
+      dailyCompleted: dailyCounts.length,
+      voidedFiltered: counts.filter(c => c.is_voided).length,
+      selectedTeam: selectedTeamId
     });
 
     // Filter transactions for the selected date and team
@@ -224,9 +234,18 @@ export const useDailyInventoryAnalytics = (
   useEffect(() => {
     const loadItemsData = async () => {
       const dailyCounts = counts.filter(count => {
-        const matchesDate = isSameDay(new Date(count.count_date), selectedDate) && !count.is_voided;
+        // Explicitly exclude voided counts and only include completed ones
+        if (count.is_voided || count.status !== 'completed') return false;
+        
+        const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
         const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
         return matchesDate && matchesTeam;
+      });
+
+      console.log(`Loading items data - Filtered counts:`, {
+        totalCounts: counts.length,
+        nonVoidedCompleted: dailyCounts.length,
+        voidedCount: counts.filter(c => c.is_voided).length
       });
 
       if (dailyCounts.length === 0) {
@@ -241,8 +260,11 @@ export const useDailyInventoryAnalytics = (
         const allCountItems: DailyItemDetail[] = [];
         
         for (const count of dailyCounts) {
-          // Double check that count is not voided before fetching items
-          if (count.is_voided) continue;
+          // Triple check that count is not voided and is completed before fetching items
+          if (count.is_voided || count.status !== 'completed') {
+            console.log(`Skipping count ${count.id}: voided=${count.is_voided}, status=${count.status}`);
+            continue;
+          }
           const countItems = await inventoryCountsApi.getCountItems(count.id);
           
           const processedItems = countItems.map((item): DailyItemDetail => {
