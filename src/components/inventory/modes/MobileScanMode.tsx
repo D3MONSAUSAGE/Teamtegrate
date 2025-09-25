@@ -358,6 +358,10 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
         onBarcode={handleScanDetected}
         continuous={true}
         instructions={`Scanning for ${selectedItem?.name || 'selected item'}`}
+        contextItem={selectedItem ? {
+          name: selectedItem.name,
+          scannedCount: countItems.find(ci => ci.item_id === selectedItem.id)?.actual_quantity || 0
+        } : undefined}
       />
 
       {/* Item Picker */}

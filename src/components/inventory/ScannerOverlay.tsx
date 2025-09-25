@@ -18,6 +18,10 @@ interface ScannerOverlayProps {
   onBarcode: (text: string) => void;
   continuous?: boolean;
   instructions?: string;
+  contextItem?: {
+    name: string;
+    scannedCount?: number;
+  };
 }
 
 export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
@@ -25,7 +29,8 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
   onClose,
   onBarcode,
   continuous = true,
-  instructions = "Position the barcode within the frame to scan"
+  instructions = "Position the barcode within the frame to scan",
+  contextItem
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const quaggaMountRef = useRef<HTMLDivElement | null>(null);
@@ -252,9 +257,16 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
 
   if (!open || isClosing) return null;
 
+  // Check if we're on mobile browser
+  const isMobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black"
+      className={`fixed z-50 bg-black ${
+        isMobileBrowser 
+          ? 'inset-x-0 top-0 h-[70vh] rounded-b-lg' 
+          : 'inset-0'
+      }`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleClose();
@@ -291,8 +303,22 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
 
       {/* Overlay UI */}
       <div className="absolute inset-0 z-10">
+        {/* Context Strip - Show current item info on mobile */}
+        {isMobileBrowser && contextItem && (
+          <div className="absolute top-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-3 border-b border-white/10">
+            <div className="text-center">
+              <p className="text-white font-medium text-sm">{contextItem.name}</p>
+              {contextItem.scannedCount !== undefined && (
+                <p className="text-white/70 text-xs">Scanned: {contextItem.scannedCount}</p>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
+        <div className={`absolute left-4 right-4 flex justify-between items-center ${
+          isMobileBrowser && contextItem ? 'top-16' : 'top-4'
+        }`}>
           <Button
             variant="ghost"
             size="lg"
@@ -315,7 +341,9 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
         </div>
 
         {/* Scanning frame - centered */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className={`absolute inset-0 flex items-center justify-center ${
+          isMobileBrowser && contextItem ? 'pt-16' : ''
+        }`}>
           <div 
             className="relative w-64 h-64 md:w-80 md:h-80"
             onClick={(e) => e.stopPropagation()}

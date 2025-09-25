@@ -48,6 +48,8 @@ export function useScanEngine(
   const sessionIncrementsRef = useRef<number>(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAttachedRef = useRef<string | null>(null);
+  const persistingRef = useRef<boolean>(false);
+  const completionGuardRef = useRef<boolean>(false);
 
   // Helper functions
   const normalizeBarcode = (code: string): string => code.trim();
@@ -74,7 +76,7 @@ export function useScanEngine(
     return countItems.find(ci => ci.item_id === state.currentItemId) || null;
   }, [countItems, state.currentItemId]);
 
-  // Debounced persist function - uses same API as scan-gun
+  // Debounced persist function - uses same API as scan-gun with enhanced deduplication
   const debouncedPersist = useCallback(async () => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -84,42 +86,49 @@ export function useScanEngine(
       const currentItem = getCurrentItem();
       const currentCountItem = getCurrentCountItem();
       
-      if (currentItem && currentCountItem && sessionIncrementsRef.current > 0) {
-        try {
-          console.log('SCAN_ENGINE_PERSIST:', { 
-            itemId: currentItem.id, 
-            sessionIncrements: sessionIncrementsRef.current 
+      // Prevent concurrent persistence operations
+      if (persistingRef.current || !currentItem || !currentCountItem || sessionIncrementsRef.current <= 0) {
+        return;
+      }
+      
+      persistingRef.current = true;
+      
+      try {
+        console.log('SCAN_ENGINE_PERSIST:', { 
+          itemId: currentItem.id, 
+          sessionIncrements: sessionIncrementsRef.current 
+        });
+        
+        await inventoryCountsApi.bumpActual(settings.countId, currentItem.id, sessionIncrementsRef.current);
+        
+        // Reset session increments after successful persist
+        setState(prev => ({ ...prev, sessionIncrements: 0 }));
+        sessionIncrementsRef.current = 0;
+        
+      } catch (error) {
+        console.error('SCAN_ENGINE_PERSIST_ERROR:', error);
+        
+        // Rollback optimistic update
+        setState(prev => ({ ...prev, sessionIncrements: 0 }));
+        sessionIncrementsRef.current = 0;
+        
+        // Show friendly error
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
+          toast({
+            title: 'Permission denied',
+            description: 'You do not have permission to update this count',
+            variant: 'destructive',
           });
-          
-          await inventoryCountsApi.bumpActual(settings.countId, currentItem.id, sessionIncrementsRef.current);
-          
-          // Reset session increments after successful persist
-          setState(prev => ({ ...prev, sessionIncrements: 0 }));
-          sessionIncrementsRef.current = 0;
-          
-        } catch (error) {
-          console.error('SCAN_ENGINE_PERSIST_ERROR:', error);
-          
-          // Rollback optimistic update
-          setState(prev => ({ ...prev, sessionIncrements: 0 }));
-          sessionIncrementsRef.current = 0;
-          
-          // Show friendly error
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
-            toast({
-              title: 'Permission denied',
-              description: 'You do not have permission to update this count',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Save failed',
-              description: errorMessage,
-              variant: 'destructive',
-            });
-          }
+        } else {
+          toast({
+            title: 'Save failed',
+            description: errorMessage,
+            variant: 'destructive',
+          });
         }
+      } finally {
+        persistingRef.current = false;
       }
     }, 350); // Same 350ms timeout as scan-gun
   }, [getCurrentItem, getCurrentCountItem, settings.countId, toast]);
@@ -337,6 +346,8 @@ export function useScanEngine(
       isProcessing: false,
     });
     sessionIncrementsRef.current = 0;
+    persistingRef.current = false;
+    completionGuardRef.current = false;
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
