@@ -105,7 +105,7 @@ serve(async (req) => {
           .from('calendar_sync_log')
           .update({ 
             status: 'failed',
-            error_message: syncProcessError.message,
+            error_message: syncProcessError instanceof Error ? syncProcessError.message : String(syncProcessError),
             updated_at: new Date().toISOString()
           })
           .eq('id', sync.id);
@@ -135,7 +135,7 @@ serve(async (req) => {
     console.error('Error in process-calendar-sync-queue function:', error);
     
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error) 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

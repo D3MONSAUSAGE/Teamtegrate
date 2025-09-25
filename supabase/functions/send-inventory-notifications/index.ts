@@ -248,9 +248,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const inv = inventory ?? {};
-      const submitterName = inv.submitted_by_name || 'Unknown User';
-      const teamName = inv.team_name || inv.location_name || 'N/A';
-      const totalItems = inv.items_total || 0;
+      const submitterName = (inv as any).submitted_by_name || 'Unknown User';
+      const teamName = (inv as any).team_name || (inv as any).location_name || 'N/A';
+      const totalItems = (inv as any).items_total || 0;
       
       // Get user timezone - for now use America/Los_Angeles, but this should come from user/org settings
       const userTimezone = 'America/Los_Angeles'; 
@@ -266,7 +266,7 @@ const handler = async (req: Request): Promise<Response> => {
         const { data: items } = await supabase
           .from('inventory_count_items')
           .select('item_name, counted_quantity, expected_quantity, unit')
-          .eq('count_id', inv.id)
+          .eq('count_id', (inv as any).id)
           .neq('counted_quantity', 'expected_quantity')
           .order('abs(counted_quantity - expected_quantity)', { ascending: false })
           .limit(5);
@@ -333,7 +333,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const sent = results.filter((r: any) => r.ok).length;
 
-      console.log("INVENTORY_EMAIL_RESULTS", { inventory_id: inv.id, team_id: inv.team_id, sent, total: recipientList.length, results });
+      console.log("INVENTORY_EMAIL_RESULTS", { inventory_id: (inv as any).id, team_id: (inv as any).team_id, sent, total: recipientList.length, results });
       return new Response(JSON.stringify({ ok: sent > 0, sent, total: recipientList.length, results }), { status: 200, headers: CORS });
     }
 
@@ -386,7 +386,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       // Remove the person who completed the count to avoid self-notification
-      recipients.delete(completedBy.id);
+      if (completedBy) {
+        recipients.delete(completedBy.id);
+      }
 
       console.log(`[Inventory Notifications] Found ${recipients.size} recipients for template completion`);
 
@@ -396,13 +398,13 @@ const handler = async (req: Request): Promise<Response> => {
           user_id: userId,
           organization_id: count.organization_id,
           title: 'Inventory Count Completed',
-          content: `${count.template_name || 'Inventory count'} has been completed${count.team_name ? ` for team ${count.team_name}` : ''} by ${completedBy.name || completedBy.email}. ${count.total_items_count} items counted with ${count.variance_count} variances (${count.completion_percentage}% complete).`,
+          content: `${count.template_name || 'Inventory count'} has been completed${count.team_name ? ` for team ${count.team_name}` : ''} by ${completedBy ? (completedBy.name || completedBy.email) : 'Unknown'}. ${count.total_items_count} items counted with ${count.variance_count} variances (${count.completion_percentage}% complete).`,
           type: 'inventory_completed',
           metadata: {
             count_id: count.id,
             template_id: count.template_id,
             team_id: count.team_id,
-            completed_by: completedBy.id,
+            completed_by: completedBy?.id,
             completion_percentage: count.completion_percentage,
             variance_count: count.variance_count,
             total_items_count: count.total_items_count,
@@ -427,7 +429,7 @@ const handler = async (req: Request): Promise<Response> => {
     const response = {
       success: true,
       type,
-      count_id: count.id,
+      count_id: count?.id,
       notifications_sent: notificationsSent,
       errors,
       timestamp: new Date().toISOString()

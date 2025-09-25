@@ -306,7 +306,7 @@ serve(async (req: Request): Promise<Response> => {
       success: false,
       created: 0,
       skipped: 0,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       correlationId
     };
 

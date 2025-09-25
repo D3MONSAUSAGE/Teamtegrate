@@ -109,7 +109,7 @@ serve(async (req) => {
             }
           } catch (userError) {
             console.error(`Error processing user ${user.id}:`, userError);
-            errors.push(`User ${user.id}: ${userError.message}`);
+            errors.push(`User ${user.id}: ${userError instanceof Error ? userError.message : String(userError)}`);
           }
         }
 
@@ -128,7 +128,7 @@ serve(async (req) => {
           organizationId: org.id,
           archivedCount: 0,
           taskIds: [],
-          errors: [orgError.message]
+          errors: [orgError instanceof Error ? orgError.message : String(orgError)]
         });
       }
     }
@@ -150,7 +150,7 @@ serve(async (req) => {
     console.error('Auto-archive function error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     }), {
       status: 500,

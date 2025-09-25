@@ -314,7 +314,7 @@ serve(async (req) => {
             sync_type: 'import_from_google',
             google_event_id: event.id,
             status: 'failed',
-            error_message: eventError.message
+            error_message: eventError instanceof Error ? eventError.message : String(eventError)
           });
       }
     }
@@ -335,7 +335,7 @@ serve(async (req) => {
     console.error('Error in import-from-google-calendar function:', error);
     
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error) 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

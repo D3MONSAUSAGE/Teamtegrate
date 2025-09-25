@@ -174,7 +174,7 @@ async function sendFCMNotification(message: FCMMessage): Promise<{ success: bool
         }
       } catch (error) {
         console.error(`Error sending to token ${token.substring(0, 10)}...:`, error);
-        errors.push({ token: token.substring(0, 10) + '...', error: error.message });
+        errors.push({ token: token.substring(0, 10) + '...', error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -185,7 +185,7 @@ async function sendFCMNotification(message: FCMMessage): Promise<{ success: bool
     };
   } catch (error) {
     console.error('Error in sendFCMNotification:', error);
-    return { success: false, errors: [error.message] };
+    return { success: false, errors: [error instanceof Error ? error.message : String(error)] };
   }
 }
 
@@ -313,7 +313,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (error) {
         console.error('Error sending FCM notification:', error);
-        fcmError = error.message;
+        fcmError = error instanceof Error ? error.message : String(error);
       }
     }
     

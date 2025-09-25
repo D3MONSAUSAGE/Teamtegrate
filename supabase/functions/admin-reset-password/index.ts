@@ -39,7 +39,7 @@ async function sendViaResend(options: {
     return { success: true, id: result?.id };
   } catch (error) {
     console.error('[Email] Network error:', error);
-    return { success: false, error: `Network error: ${error.message}` };
+    return { success: false, error: `Network error: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 

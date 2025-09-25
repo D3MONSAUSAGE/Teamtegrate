@@ -52,7 +52,7 @@ async function loadEmailTemplate(templateName: string, variables: Record<string,
     console.log(`[Email Template] Successfully loaded ${templateName}`);
     return templateContent;
   } catch (error) {
-    console.warn(`[Email Template] Template ${templateName} missing, using fallback:`, error.message);
+    console.warn(`[Email Template] Template ${templateName} missing, using fallback:`, error instanceof Error ? error.message : String(error));
     
     // Return appropriate fallback based on template type
     if (templateName === 'task-assigned.html') {
@@ -166,7 +166,7 @@ async function sendViaResend(options: {
     console.error('[Email Delivery] Network error:', error);
     return {
       success: false,
-      error: `Network error: ${error.message}`
+      error: `Network error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }
@@ -261,13 +261,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get configuration from environment variables
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://teamtegrate.com';
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
     const brandName = 'Teamtegrate';
-    const taskUrl = `${appBaseUrl}/dashboard/tasks?task=${task.id}`;
+    const taskUrl = `${appBaseUrl}/dashboard/tasks?task=${task?.id || 'unknown'}`;
 
     console.log('[Config] Using configuration:', {
       appBaseUrl,
-      fromEmail,
       taskUrl
     });
 
@@ -315,7 +313,8 @@ const handler = async (req: Request): Promise<Response> => {
               })
             : '';
 
-          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+          const legacyFromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+          const success = await sendEmailWithRetry(resendApiKey, legacyFromEmail, {
             to,
             subject: `📋 New Task Assignment: ${task.title}`,
             html: await loadEmailTemplate('task-assigned.html', {
@@ -344,22 +343,23 @@ const handler = async (req: Request): Promise<Response> => {
         }
         break;
 
-      case 'task_status_changed':
-        if (to && vars) {
-          // Use the new vars structure for status change
-          const safeVars = {
-            recipientName: vars.assigneeName || to,
-            taskTitle: vars.taskTitle || '',
-            oldStatus: vars.oldStatus || '',
-            newStatus: vars.newStatus || '',
-            actorName: vars.assignerName || '',
-            taskUrl: vars.taskUrl || '',
-            brandName: vars.orgName || 'TeamTegrate',
-            orgName: vars.orgName || 'TeamTegrate',
-            year: vars.year || String(new Date().getFullYear())
-          };
+        case 'task_status_changed':
+          if (to && vars) {
+            // Use the new vars structure for status change
+            const safeVars = {
+              recipientName: vars.assigneeName || to,
+              taskTitle: vars.taskTitle || '',
+              oldStatus: vars.oldStatus || '',
+              newStatus: vars.newStatus || '',
+              actorName: vars.assignerName || '',
+              taskUrl: vars.taskUrl || '',
+              brandName: vars.orgName || 'TeamTegrate',
+              orgName: vars.orgName || 'TeamTegrate',
+              year: vars.year || String(new Date().getFullYear())
+            };
 
-          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+            const statusFromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+            const success = await sendEmailWithRetry(resendApiKey, statusFromEmail, {
             to,
             subject: `🔄 Task Status Updated: ${safeVars.taskTitle}`,
             html: await loadEmailTemplate('task-status-changed.html', safeVars)
@@ -369,7 +369,8 @@ const handler = async (req: Request): Promise<Response> => {
           console.log(`[Email Status] Task status update email result: ${success ? 'SUCCESS' : 'FAILED'}`);
         } else if (to && actor && oldStatus && newStatus && task) {
           // Legacy fallback for backward compatibility
-          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+          const legacyFromEmail2 = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+          const success = await sendEmailWithRetry(resendApiKey, legacyFromEmail2, {
             to,
             subject: `🔄 Task Status Updated: ${task.title}`,
             html: await loadEmailTemplate('task-status-changed.html', {

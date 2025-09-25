@@ -117,7 +117,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Failed to invalidate Google Calendar tokens'
+        error: error instanceof Error ? error.message : String(error) || 'Failed to invalidate Google Calendar tokens'
       }),
       { 
         status: 500,

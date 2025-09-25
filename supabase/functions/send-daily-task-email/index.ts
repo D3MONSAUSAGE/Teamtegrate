@@ -40,7 +40,7 @@ async function sendViaResend(options: {
     return { success: true, id: result?.id };
   } catch (error) {
     console.error('[Email] Network error:', error);
-    return { success: false, error: `Network error: ${error.message}` };
+    return { success: false, error: `Network error: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 
@@ -138,7 +138,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : String(error) 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -98,6 +98,14 @@ async function loadEmailTemplate(templateName: string, variables: Record<string,
       await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
     }
   }
+  
+  // Final fallback if all else fails
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2>Notification</h2>
+      <p>This is a system notification. Please contact support if you need assistance.</p>
+    </div>
+  `;
 }
 
 // Direct Resend API call function
@@ -154,7 +162,7 @@ async function sendViaResend(options: {
     console.error('[Email Delivery] Network error:', error);
     return {
       success: false,
-      error: `Network error: ${error.message}`
+      error: `Network error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }

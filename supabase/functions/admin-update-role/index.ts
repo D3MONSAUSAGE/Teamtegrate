@@ -72,7 +72,9 @@ Deno.serve(async (req) => {
     }
     
     // SECURITY: Validate role change permissions using centralized hierarchy
-    const roleHierarchy = {
+    type UserRole = 'user' | 'team_leader' | 'manager' | 'admin' | 'superadmin';
+    
+    const roleHierarchy: Record<UserRole, number> = {
       'user': 1,
       'team_leader': 2,
       'manager': 3,
@@ -80,9 +82,9 @@ Deno.serve(async (req) => {
       'superadmin': 5
     }
     
-    const requesterLevel = roleHierarchy[requesterData.role] || 0
-    const targetLevel = roleHierarchy[targetData.role] || 0  
-    const newRoleLevel = roleHierarchy[newRole] || 0
+    const requesterLevel = roleHierarchy[requesterData.role as UserRole] || 0
+    const targetLevel = roleHierarchy[targetData.role as UserRole] || 0  
+    const newRoleLevel = roleHierarchy[newRole as UserRole] || 0
     
     // Validation rules:
     // 1. Must be in same organization
@@ -173,7 +175,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: 'Internal server error',
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       }),
       { 
         status: 500,

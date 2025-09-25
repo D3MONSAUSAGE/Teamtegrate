@@ -114,7 +114,7 @@ serve(async (req) => {
       console.error("Error with OpenAI request:", openaiError);
       
       // Check if the error is related to quota
-      if (openaiError.message && openaiError.message.includes("insufficient_quota")) {
+      if (openaiError instanceof Error && openaiError.message && openaiError.message.includes("insufficient_quota")) {
         return new Response(
           JSON.stringify({ 
             response: "I apologize, but the AI service is currently unavailable due to quota limitations. Please try again later or contact the administrator to check the OpenAI account billing status.",

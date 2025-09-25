@@ -122,6 +122,6 @@ serve(async (req) => {
 
   } catch (e) {
     console.error('❌ Server error:', e);
-    return json(500, { error: "server_error", message: String(e?.message ?? e) });
+    return json(500, { error: "server_error", message: String((e as any)?.message ?? e) });
   }
 });

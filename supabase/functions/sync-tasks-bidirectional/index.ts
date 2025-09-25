@@ -48,7 +48,7 @@ serve(async (req) => {
         console.log('Import completed:', results.import_result);
       } catch (error) {
         console.error('Import error:', error);
-        results.errors.push(`Import error: ${error.message}`);
+        results.errors.push(`Import error: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -94,7 +94,7 @@ serve(async (req) => {
               }
             }
           } catch (taskError) {
-            exportErrors.push(`Task ${task.id}: ${taskError.message}`);
+            exportErrors.push(`Task ${task.id}: ${taskError instanceof Error ? taskError.message : String(taskError)}`);
           }
         }
 
@@ -110,7 +110,7 @@ serve(async (req) => {
         console.log('Export completed:', results.export_result);
       } catch (error) {
         console.error('Export error:', error);
-        results.errors.push(`Export error: ${error.message}`);
+        results.errors.push(`Export error: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -145,7 +145,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error) 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

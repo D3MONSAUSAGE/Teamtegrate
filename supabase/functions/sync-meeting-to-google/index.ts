@@ -275,7 +275,7 @@ serve(async (req) => {
             meeting_request_id: meetingId,
             sync_type: 'export_to_google',
             status: 'failed',
-            error_message: error.message,
+            error_message: error instanceof Error ? error.message : String(error),
           });
       }
     } catch (logError) {
@@ -283,7 +283,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error) 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
