@@ -237,10 +237,12 @@ export const useDailyInventoryAnalytics = (
       setItemsData(prev => ({ ...prev, loading: true }));
 
       try {
-        // Fetch count items for all daily counts
+        // Fetch count items for all daily counts (excluding voided counts)
         const allCountItems: DailyItemDetail[] = [];
         
         for (const count of dailyCounts) {
+          // Double check that count is not voided before fetching items
+          if (count.is_voided) continue;
           const countItems = await inventoryCountsApi.getCountItems(count.id);
           
           const processedItems = countItems.map((item): DailyItemDetail => {

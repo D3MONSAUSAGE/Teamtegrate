@@ -13,18 +13,20 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { DailyAnalyticsMetrics } from '@/hooks/useDailyInventoryAnalytics';
+import { DailyAnalyticsMetrics, DailyItemsData } from '@/hooks/useDailyInventoryAnalytics';
 import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 interface DailyInventoryMetricsProps {
   metrics: DailyAnalyticsMetrics;
   selectedDate: Date;
+  itemsData?: DailyItemsData;
 }
 
 export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
   metrics,
-  selectedDate
+  selectedDate,
+  itemsData
 }) => {
   const getTrendIcon = () => {
     if (metrics.trendDirection === 'up') return <ArrowUpRight className="h-4 w-4 text-success" />;
@@ -71,10 +73,10 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(metrics.totalValue)}
+              {formatCurrency(itemsData?.summary ? itemsData.summary.totalValue : metrics.totalValue)}
             </div>
             <div className="text-sm text-muted-foreground">
-              {metrics.totalItemsCounted} items counted
+              {itemsData?.summary ? itemsData.summary.countedItems : metrics.totalItemsCounted} items counted
             </div>
           </CardContent>
         </Card>
@@ -88,7 +90,7 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.totalItemsCounted.toLocaleString()}
+              {itemsData?.summary ? itemsData.summary.totalItems.toLocaleString() : metrics.totalItemsCounted.toLocaleString()}
             </div>
             <div className="text-sm text-muted-foreground">
               {metrics.completedCounts} counts completed
@@ -105,10 +107,10 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(metrics.totalVarianceCost)}
+              {formatCurrency(itemsData?.summary ? itemsData.summary.totalVarianceCost : metrics.totalVarianceCost)}
             </div>
             <div className="text-sm text-muted-foreground">
-              Daily discrepancies
+              {itemsData?.summary ? `${itemsData.summary.totalVariances} variances` : 'Daily discrepancies'}
             </div>
           </CardContent>
         </Card>

@@ -69,7 +69,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   
   // Daily view states
   const [viewMode, setViewMode] = useState<'all' | 'daily'>('all');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    // Initialize with timezone-aware date
+    const timezone = userTimezone || 'UTC';
+    const now = new Date();
+    return new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  });
   const [selectedDailyTeam, setSelectedDailyTeam] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
@@ -646,8 +651,17 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <input
                   type="date"
-                  value={selectedDate.toISOString().split('T')[0]}
-                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                  value={formatInTZ(selectedDate.toISOString(), userTimezone || 'UTC', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit' 
+                  }).split('/').reverse().join('-')}
+                  onChange={(e) => {
+                    const dateStr = e.target.value;
+                    // Create date in user's timezone to avoid timezone shift
+                    const localDate = new Date(`${dateStr}T12:00:00`);
+                    setSelectedDate(localDate);
+                  }}
                   className="px-3 py-2 border rounded-md bg-background"
                 />
               </div>
@@ -665,7 +679,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => setSelectedDate(new Date())}
+                onClick={() => {
+                  const timezone = userTimezone || 'UTC';
+                  const now = new Date();
+                  const localNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+                  setSelectedDate(localNow);
+                }}
               >
                 Today
               </Button>
@@ -676,6 +695,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
           <DailyInventoryMetrics 
             metrics={dailyMetrics} 
             selectedDate={selectedDate}
+            itemsData={itemsData}
           />
 
           {/* Enhanced Daily Analysis */}
