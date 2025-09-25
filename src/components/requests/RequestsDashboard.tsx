@@ -5,6 +5,7 @@ import RequestSearchBar from './RequestSearchBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { 
   CheckCircle, 
   Clock, 
@@ -47,10 +48,20 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
     category: 'all',
     dateRange: 'all'
   });
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return user?.role === 'user' ? 'mine' : 'all';
+  });
 
   useEffect(() => {
     fetchRequests();
   }, [user]);
+
+  useEffect(() => {
+    // Update activeTab when user role changes
+    if (user?.role) {
+      setActiveTab(user.role === 'user' ? 'mine' : 'all');
+    }
+  }, [user?.role]);
 
   const fetchRequests = async () => {
     if (!user?.organizationId) return;
@@ -314,20 +325,52 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
       </div>
 
       {/* Request Tabs */}
-      <Tabs defaultValue={user?.role === 'user' ? 'mine' : 'all'} className="space-y-4">
-        <TabsList className={`grid w-full ${user?.role === 'user' ? 'grid-cols-5' : 'grid-cols-6'}`}>
-          {user?.role !== 'user' && (
-            <TabsTrigger value="all">All Requests</TabsTrigger>
-          )}
-          <TabsTrigger value="assigned">Assigned to Me</TabsTrigger>
-          <TabsTrigger value="mine">My Requests</TabsTrigger>
-          <TabsTrigger value="pending">Pending Review</TabsTrigger>
-          <TabsTrigger value="overdue">Overdue</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
+        <ScrollableTabs>
+          <ScrollableTabsList>
+            {user?.role !== 'user' && (
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'all'} 
+                onClick={() => setActiveTab('all')}
+              >
+                All Requests
+              </ScrollableTabsTrigger>
+            )}
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'assigned'} 
+              onClick={() => setActiveTab('assigned')}
+            >
+              Assigned to Me
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'mine'} 
+              onClick={() => setActiveTab('mine')}
+            >
+              My Requests
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'pending'} 
+              onClick={() => setActiveTab('pending')}
+            >
+              Pending Review
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'overdue'} 
+              onClick={() => setActiveTab('overdue')}
+            >
+              Overdue
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'completed'} 
+              onClick={() => setActiveTab('completed')}
+            >
+              Completed
+            </ScrollableTabsTrigger>
+          </ScrollableTabsList>
+        </ScrollableTabs>
 
-        {user?.role !== 'user' && (
-          <TabsContent value="all" className="space-y-4">
+        {activeTab === 'all' && user?.role !== 'user' && (
+          <div className="space-y-4">
             <div className="grid gap-4">
               {filteredRequests.map(request => (
                 <EnhancedRequestCard
@@ -342,94 +385,104 @@ export const RequestsDashboard: React.FC<RequestsDashboardProps> = ({
                 />
               ))}
             </div>
-          </TabsContent>
+          </div>
         )}
 
-        <TabsContent value="assigned" className="space-y-4">
-          <div className="grid gap-4">
-            {getAssignedToMe().map(request => (
-              <EnhancedRequestCard
-                key={request.id}
-                request={request}
-                currentUserId={user?.id}
-                onView={onViewRequest}
-                onAssign={onAssignRequest}
-                onStatusChange={onStatusChange}
-                onDelete={handleRequestDelete}
-                onArchive={handleRequestArchive}
-              />
-            ))}
+        {activeTab === 'assigned' && (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {getAssignedToMe().map(request => (
+                <EnhancedRequestCard
+                  key={request.id}
+                  request={request}
+                  currentUserId={user?.id}
+                  onView={onViewRequest}
+                  onAssign={onAssignRequest}
+                  onStatusChange={onStatusChange}
+                  onDelete={handleRequestDelete}
+                  onArchive={handleRequestArchive}
+                />
+              ))}
+            </div>
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="mine" className="space-y-4">
-          <div className="grid gap-4">
-            {getMyRequests().map(request => (
-              <EnhancedRequestCard
-                key={request.id}
-                request={request}
-                currentUserId={user?.id}
-                onView={onViewRequest}
-                onAssign={onAssignRequest}
-                onStatusChange={onStatusChange}
-                onDelete={handleRequestDelete}
-                onArchive={handleRequestArchive}
-              />
-            ))}
+        {activeTab === 'mine' && (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {getMyRequests().map(request => (
+                <EnhancedRequestCard
+                  key={request.id}
+                  request={request}
+                  currentUserId={user?.id}
+                  onView={onViewRequest}
+                  onAssign={onAssignRequest}
+                  onStatusChange={onStatusChange}
+                  onDelete={handleRequestDelete}
+                  onArchive={handleRequestArchive}
+                />
+              ))}
+            </div>
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="pending" className="space-y-4">
-          <div className="grid gap-4">
-            {getRequestsByStatus('submitted').map(request => (
-              <EnhancedRequestCard
-                key={request.id}
-                request={request}
-                currentUserId={user?.id}
-                onView={onViewRequest}
-                onAssign={onAssignRequest}
-                onStatusChange={onStatusChange}
-                onDelete={handleRequestDelete}
-                onArchive={handleRequestArchive}
-              />
-            ))}
+        {activeTab === 'pending' && (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {getRequestsByStatus('submitted').map(request => (
+                <EnhancedRequestCard
+                  key={request.id}
+                  request={request}
+                  currentUserId={user?.id}
+                  onView={onViewRequest}
+                  onAssign={onAssignRequest}
+                  onStatusChange={onStatusChange}
+                  onDelete={handleRequestDelete}
+                  onArchive={handleRequestArchive}
+                />
+              ))}
+            </div>
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="overdue" className="space-y-4">
-          <div className="grid gap-4">
-            {getOverdueRequests().map(request => (
-              <EnhancedRequestCard
-                key={request.id}
-                request={request}
-                currentUserId={user?.id}
-                onView={onViewRequest}
-                onAssign={onAssignRequest}
-                onStatusChange={onStatusChange}
-                onDelete={handleRequestDelete}
-                onArchive={handleRequestArchive}
-              />
-            ))}
+        {activeTab === 'overdue' && (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {getOverdueRequests().map(request => (
+                <EnhancedRequestCard
+                  key={request.id}
+                  request={request}
+                  currentUserId={user?.id}
+                  onView={onViewRequest}
+                  onAssign={onAssignRequest}
+                  onStatusChange={onStatusChange}
+                  onDelete={handleRequestDelete}
+                  onArchive={handleRequestArchive}
+                />
+              ))}
+            </div>
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="completed" className="space-y-4">
-          <div className="grid gap-4">
-            {getRequestsByStatus('completed').map(request => (
-              <EnhancedRequestCard
-                key={request.id}
-                request={request}
-                currentUserId={user?.id}
-                onView={onViewRequest}
-                onAssign={onAssignRequest}
-                onStatusChange={onStatusChange}
-                onDelete={handleRequestDelete}
-                onArchive={handleRequestArchive}
-              />
-            ))}
+        {activeTab === 'completed' && (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {getRequestsByStatus('completed').map(request => (
+                <EnhancedRequestCard
+                  key={request.id}
+                  request={request}
+                  currentUserId={user?.id}
+                  onView={onViewRequest}
+                  onAssign={onAssignRequest}
+                  onStatusChange={onStatusChange}
+                  onDelete={handleRequestDelete}
+                  onArchive={handleRequestArchive}
+                />
+              ))}
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       {filteredRequests.length === 0 && !loading && (
         <Card>
