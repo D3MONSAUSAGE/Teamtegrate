@@ -15,7 +15,11 @@ export const useUserTimezone = () => {
   // Fetch user's saved timezone
   useEffect(() => {
     const fetchUserTimezone = async () => {
+      console.log('🕐 useUserTimezone: fetchUserTimezone called', { user: !!user, detectedTimezone });
+      
       if (!user) {
+        console.log('🕐 useUserTimezone: no user, using detected timezone', detectedTimezone);
+        setUserTimezone(detectedTimezone);
         setIsLoading(false);
         return;
       }
@@ -28,14 +32,16 @@ export const useUserTimezone = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching user timezone:', error);
+          console.log('🕐 useUserTimezone: error fetching user timezone, using detected', { error, detectedTimezone });
           // If no timezone is set, use detected timezone
           setUserTimezone(detectedTimezone);
         } else {
-          setUserTimezone(data.timezone || detectedTimezone);
+          const savedTimezone = data.timezone || detectedTimezone;
+          console.log('🕐 useUserTimezone: fetched user timezone', { saved: data.timezone, detected: detectedTimezone, final: savedTimezone });
+          setUserTimezone(savedTimezone);
         }
       } catch (error) {
-        console.error('Error in fetchUserTimezone:', error);
+        console.error('🕐 useUserTimezone: error in fetchUserTimezone', error);
         setUserTimezone(detectedTimezone);
       } finally {
         setIsLoading(false);

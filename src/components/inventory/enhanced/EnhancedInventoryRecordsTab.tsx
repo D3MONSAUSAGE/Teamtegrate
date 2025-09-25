@@ -33,12 +33,14 @@ import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
 import { getTZDayRangeUTC, formatInTZ } from '@/lib/dates/tzRange';
+import { useTZ } from '@/lib/dates/useTZ';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
   const { hasRoleAccess, user } = useAuth();
   const { teams } = useTeamsByOrganization(user?.organizationId);
   const { userTimezone } = useUserTimezone();
+  const tz = useTZ();
 
   // Create team name mapping
   const teamNameById = useMemo(() => {
@@ -71,9 +73,8 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [viewMode, setViewMode] = useState<'all' | 'daily'>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     // Initialize with timezone-aware date
-    const timezone = userTimezone || 'UTC';
     const now = new Date();
-    return new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    return now;
   });
   const [selectedDailyTeam, setSelectedDailyTeam] = useState<string>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -95,7 +96,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       // Date filtering using user timezone
       let matchesDate = true;
       if (dateFilter !== 'all') {
-        const timezone = userTimezone || 'UTC';
+        const timezone = tz;
         const now = new Date();
         const daysAgo = parseInt(dateFilter);
         
@@ -482,28 +483,28 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                    <div>
                                      <div className="text-muted-foreground">Date & Time</div>
-                                     <div className="font-medium">
-                                       {formatInTZ(count.count_date, userTimezone || 'UTC', { 
-                                         year: 'numeric', 
-                                         month: 'short', 
-                                         day: 'numeric' 
-                                       })}
-                                     </div>
-                                     <div className="text-muted-foreground text-xs">
-                                       Started: {formatInTZ(count.created_at, userTimezone || 'UTC', { 
-                                         hour: 'numeric', 
-                                         minute: '2-digit' 
-                                       })}
-                                       {count.status === 'completed' && count.updated_at && (
-                                         <span className="block">
-                                           Completed: {formatInTZ(count.updated_at, userTimezone || 'UTC', { 
-                                             hour: 'numeric', 
-                                             minute: '2-digit' 
-                                           })} 
-                                           ({differenceInMinutes(new Date(count.updated_at), new Date(count.created_at))}min)
-                                         </span>
-                                       )}
-                                     </div>
+                                      <div className="font-medium">
+                                        {formatInTZ(count.count_date, tz, { 
+                                          year: 'numeric', 
+                                          month: 'short', 
+                                          day: 'numeric' 
+                                        })}
+                                      </div>
+                                      <div className="text-muted-foreground text-xs">
+                                        Started: {formatInTZ(count.created_at, tz, { 
+                                          hour: 'numeric', 
+                                          minute: '2-digit' 
+                                        })}
+                                        {count.status === 'completed' && count.updated_at && (
+                                          <span className="block">
+                                            Completed: {formatInTZ(count.updated_at, tz, { 
+                                              hour: 'numeric', 
+                                              minute: '2-digit' 
+                                            })} 
+                                            ({differenceInMinutes(new Date(count.updated_at), new Date(count.created_at))}min)
+                                          </span>
+                                        )}
+                                      </div>
                                    </div>
 
                                   <div>
@@ -578,10 +579,10 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                             {previousCount && (
                               <div className="mt-3 pt-3 border-t border-dashed">
                                  <div className="text-xs text-muted-foreground mb-1">
-                                   Quick comparison with previous count ({formatInTZ(previousCount.count_date, userTimezone || 'UTC', { 
-                                     month: 'short', 
-                                     day: 'numeric' 
-                                   })})
+                                    Quick comparison with previous count ({formatInTZ(previousCount.count_date, tz, { 
+                                      month: 'short', 
+                                      day: 'numeric' 
+                                    })})
                                  </div>
                                 <div className="grid grid-cols-3 gap-4 text-xs">
                                   <div className="flex items-center gap-1">
