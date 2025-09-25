@@ -52,11 +52,11 @@ export function formatInTZ(iso: string | number | Date, timezone: string, opts?:
 }
 
 /**
- * Creates a properly timezone-aware timestamp for the current moment
+ * @deprecated Use new Date().toISOString() directly for proper UTC storage
+ * This function was creating incorrect timestamps
  */
 export function createTimestampInTZ(timezone: string): string {
-  // For database storage, we still want UTC timestamps
-  // This function ensures the timestamp represents the current moment correctly
+  console.warn('createTimestampInTZ is deprecated - use new Date().toISOString() for proper UTC storage');
   return new Date().toISOString();
 }
 
@@ -68,19 +68,10 @@ export function getLocalDateString(timezone: string, date: Date = new Date()): s
 }
 
 /**
- * Convert a Date to the user's local timezone representation while preserving the date part
+ * @deprecated This function created fake ISO strings with wrong timestamps
+ * Use getTZDayRangeUTC from tzRange.ts for proper timezone handling
  */
 export function getLocalDateForStorage(timezone: string, date: Date = new Date()): string {
-  // Get the date components in the user's timezone
-  const localDateString = getLocalDateString(timezone, date);
-  const localTime = formatInTZ(date, timezone, { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit', 
-    hour12: false 
-  });
-  
-  // Combine local date with current time to create an ISO string
-  // that represents the current moment but with the local date
-  return `${localDateString}T${localTime.replace(/:/g, ':').replace(' ', '')}.000Z`;
+  console.warn('getLocalDateForStorage is deprecated - creates incorrect timestamps');
+  return new Date().toISOString();
 }

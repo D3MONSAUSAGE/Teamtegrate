@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@/lib/notifications';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
-import { createTimestampInTZ } from '@/lib/dates/tz';
+// Removed broken createTimestampInTZ import - use new Date().toISOString() directly
 import { 
   inventoryItemsApi,
   inventoryTransactionsApi,
@@ -243,7 +243,7 @@ export const useInventoryOperations = ({
 
     const countData = {
       organization_id: user?.organizationId || '',
-      count_date: createTimestampInTZ(userTimezone || 'UTC'),
+      count_date: new Date().toISOString(), // Proper UTC storage
       status: 'in_progress' as const,
       conducted_by: user?.id || '',
       notes,

@@ -252,11 +252,11 @@ const handler = async (req: Request): Promise<Response> => {
       const teamName = inv.team_name || inv.location_name || 'N/A';
       const totalItems = inv.items_total || 0;
       
-      // Get user timezone from org data - fallback to America/Los_Angeles for now
-      const userTimezone = 'America/Los_Angeles'; // TODO: Get from user/org settings
+      // Get user timezone - for now use America/Los_Angeles, but this should come from user/org settings
+      const userTimezone = 'America/Los_Angeles'; 
       const submissionDateTime = formatDateTime(requestData.timestamp, userTimezone);
       
-      // Enhanced subject line with preheader
+      // Enhanced subject line with proper timezone formatting
       const subject = `📦 Inventory Count Submitted — ${submitterName} — ${teamName} — ${formatDate(requestData.timestamp, userTimezone)}`;
       const url = `${base}/dashboard/inventory`;
 

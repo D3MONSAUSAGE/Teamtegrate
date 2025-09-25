@@ -32,7 +32,7 @@ import { InventoryCount } from '@/contexts/inventory/types';
 import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
-import { getLocalDayBoundsISO, formatInTZ } from '@/lib/dates/tz';
+import { getTZDayRangeUTC, formatInTZ } from '@/lib/dates/tzRange';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
@@ -96,7 +96,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
         
         // Calculate the filter date in user's timezone
         const filterDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-        const { startUTC } = getLocalDayBoundsISO(timezone, filterDate);
+        const { startUTC } = getTZDayRangeUTC(timezone, filterDate);
         
         matchesDate = new Date(count.count_date) >= new Date(startUTC);
       }
