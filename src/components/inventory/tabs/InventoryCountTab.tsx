@@ -15,6 +15,7 @@ import { BatchCountInterface } from '../BatchCountInterface';
 import { MobileCountInterface } from '../MobileCountInterface';
 import { ScanMode } from '../mobile/ScanMode';
 import { ScanGunMode } from '../modes/ScanGunMode';
+import { MobileScanMode } from '../modes/MobileScanMode';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
@@ -575,14 +576,12 @@ export const InventoryCountTab: React.FC = () => {
       )}
 
       {countInterface === 'mobile' && (
-        <MobileCountInterface
+        <MobileScanMode
+          countId={activeCount!}
           countItems={countItems}
           items={countableItems}
-          onUpdateCount={handleUpdateCount}
-          onCompleteCount={handleCompleteCount}
-          progress={progress}
-          completedItems={completedItems}
-          totalItems={totalItems}
+          onUpdateCount={handleScanModeUpdateCount}
+          onComplete={handleCompleteCount}
         />
       )}
 
