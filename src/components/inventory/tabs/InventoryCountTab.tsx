@@ -7,13 +7,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventory } from '@/contexts/inventory';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
-import { Package, Play, CheckCircle, Clock, X, Smartphone, Tablet, Zap, Camera } from 'lucide-react';
+import { Package, Play, CheckCircle, Clock, X, Smartphone, Tablet, Zap, Camera, Scan } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
 import { MobileCountInterface } from '../MobileCountInterface';
 import { ScanMode } from '../mobile/ScanMode';
+import { ScanGunMode } from '../modes/ScanGunMode';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   AlertDialog,
@@ -30,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 
-type CountInterface = 'batch' | 'mobile' | 'scan';
+type CountInterface = 'batch' | 'mobile' | 'scan' | 'scangun';
 
 
 export const InventoryCountTab: React.FC = () => {
@@ -271,7 +273,7 @@ export const InventoryCountTab: React.FC = () => {
   const isMobile = useIsMobile();
   useEffect(() => {
     if (isMobile && countInterface === 'batch') {
-      setCountInterface('scan');
+      setCountInterface('scangun'); // Default mobile users to scan-gun mode
     }
   }, [isMobile, countInterface]);
 
@@ -497,35 +499,42 @@ export const InventoryCountTab: React.FC = () => {
             {/* Interface Selection */}
             <div className="border-t pt-4 mt-6">
               <p className="text-sm font-medium mb-3">Count Interface:</p>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  variant={countInterface === 'batch' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCountInterface('batch')}
-                  className="text-xs"
-                >
-                  <Tablet className="h-3 w-3 mr-1" />
-                  Batch
-                </Button>
-                <Button
-                  variant={countInterface === 'mobile' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCountInterface('mobile')}
-                  className="text-xs"
-                >
-                  <Smartphone className="h-3 w-3 mr-1" />
-                  Mobile
-                </Button>
-                <Button
-                  variant={countInterface === 'scan' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCountInterface('scan')}
-                  className="text-xs"
-                >
-                  <Camera className="h-3 w-3 mr-1" />
-                  Scan
-                </Button>
-              </div>
+              <ScrollableTabs>
+                <ScrollableTabsList>
+                  <ScrollableTabsTrigger
+                    isActive={countInterface === 'batch'}
+                    onClick={() => setCountInterface('batch')}
+                    className="text-xs"
+                  >
+                    <Tablet className="h-3 w-3 mr-1" />
+                    Batch
+                  </ScrollableTabsTrigger>
+                  <ScrollableTabsTrigger
+                    isActive={countInterface === 'mobile'}
+                    onClick={() => setCountInterface('mobile')}
+                    className="text-xs"
+                  >
+                    <Smartphone className="h-3 w-3 mr-1" />
+                    Mobile
+                  </ScrollableTabsTrigger>
+                  <ScrollableTabsTrigger
+                    isActive={countInterface === 'scan'}
+                    onClick={() => setCountInterface('scan')}
+                    className="text-xs"
+                  >
+                    <Camera className="h-3 w-3 mr-1" />
+                    Camera
+                  </ScrollableTabsTrigger>
+                  <ScrollableTabsTrigger
+                    isActive={countInterface === 'scangun'}
+                    onClick={() => setCountInterface('scangun')}
+                    className="text-xs"
+                  >
+                    <Scan className="h-3 w-3 mr-1" />
+                    Scan-Gun
+                  </ScrollableTabsTrigger>
+                </ScrollableTabsList>
+              </ScrollableTabs>
             </div>
           </div>
         </CardContent>
@@ -561,6 +570,16 @@ export const InventoryCountTab: React.FC = () => {
 
       {countInterface === 'scan' && (
         <ScanMode
+          countId={activeCount!}
+          countItems={countItems}
+          items={countableItems}
+          onUpdateCount={handleScanModeUpdateCount}
+          onComplete={handleCompleteCount}
+        />
+      )}
+
+      {countInterface === 'scangun' && (
+        <ScanGunMode
           countId={activeCount!}
           countItems={countItems}
           items={countableItems}
