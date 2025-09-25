@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
 import { InventoryCount, InventoryAlert, InventoryItem, InventoryTransaction, InventoryCountItem } from '@/contexts/inventory/types';
-import { format, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
 
 export interface DailyAnalyticsMetrics {
@@ -72,8 +71,11 @@ export const useDailyInventoryAnalytics = (
   alerts: InventoryAlert[],
   items: InventoryItem[],
   transactions: InventoryTransaction[],
-  selectedDate: Date,
-  selectedTeamId?: string
+  startUTC: string,
+  endUTC: string,
+  teamIds: string[] | 'all',
+  varianceThreshold?: number,
+  timezone?: string
 ) => {
   const [itemsData, setItemsData] = useState<DailyItemsData>({
     items: [],
@@ -93,32 +95,48 @@ export const useDailyInventoryAnalytics = (
   });
 
   const analytics = useMemo(() => {
-    // Filter counts for the selected date (explicitly excluding voided counts)
+    console.log('🕐 Daily Analytics - Using timezone-aware filtering:', {
+      startUTC, endUTC, teamIds, varianceThreshold, timezone
+    });
+
+    // Filter counts for the timezone-aware date range (explicitly excluding voided counts)
     const dailyCounts = counts.filter(count => {
       // First check: not voided and status is completed
       if (count.is_voided || count.status !== 'completed') return false;
       
-      const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
-      const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
+      // Use timezone-aware UTC range filtering instead of isSameDay
+      const countDate = new Date(count.count_date);
+      const countUTC = countDate.toISOString();
+      const matchesDate = countUTC >= startUTC && countUTC < endUTC;
+      
+      // Team filtering: support both array and 'all'
+      const matchesTeam = teamIds === 'all' || 
+        (Array.isArray(teamIds) && teamIds.length === 0) || 
+        (Array.isArray(teamIds) && teamIds.includes(count.team_id || ''));
+      
       return matchesDate && matchesTeam;
     });
 
-    console.log(`Daily Analytics - Filtered counts for ${selectedDate.toISOString().split('T')[0]}:`, {
+    console.log(`Daily Analytics - Filtered counts for ${startUTC} to ${endUTC}:`, {
       totalCounts: counts.length,
       dailyCompleted: dailyCounts.length,
       voidedFiltered: counts.filter(c => c.is_voided).length,
-      selectedTeam: selectedTeamId
+      teamFilter: teamIds
     });
 
-    // Filter transactions for the selected date and team
+    // Filter transactions for the timezone-aware date range and team
     const dailyTransactions = transactions.filter(transaction => {
-      if (!isSameDay(new Date(transaction.transaction_date), selectedDate)) return false;
+      const transactionDate = new Date(transaction.transaction_date);
+      const transactionUTC = transactionDate.toISOString();
+      const matchesDate = transactionUTC >= startUTC && transactionUTC < endUTC;
       
-      // If team is selected, only include transactions from counts made by that team
-      if (selectedTeamId) {
+      if (!matchesDate) return false;
+      
+      // If specific teams selected, only include transactions from counts made by those teams
+      if (teamIds !== 'all' && Array.isArray(teamIds) && teamIds.length > 0) {
         const associatedCount = counts.find(count => 
-          count.team_id === selectedTeamId && 
-          isSameDay(new Date(count.count_date), selectedDate)
+          teamIds.includes(count.team_id || '') && 
+          count.count_date >= startUTC && count.count_date < endUTC
         );
         return !!associatedCount;
       }
@@ -228,24 +246,33 @@ export const useDailyInventoryAnalytics = (
     };
 
     return { metrics, chartData };
-  }, [counts, alerts, items, transactions, selectedDate, selectedTeamId]);
+  }, [counts, alerts, items, transactions, startUTC, endUTC, teamIds, varianceThreshold]);
 
-  // Fetch detailed item data for the selected date and team
+  // Fetch detailed item data for the timezone-aware date range and teams
   useEffect(() => {
     const loadItemsData = async () => {
       const dailyCounts = counts.filter(count => {
         // Explicitly exclude voided counts and only include completed ones
         if (count.is_voided || count.status !== 'completed') return false;
         
-        const matchesDate = isSameDay(new Date(count.count_date), selectedDate);
-        const matchesTeam = !selectedTeamId || count.team_id === selectedTeamId;
+        // Use timezone-aware UTC range filtering
+        const countDate = new Date(count.count_date);
+        const countUTC = countDate.toISOString();
+        const matchesDate = countUTC >= startUTC && countUTC < endUTC;
+        
+        // Team filtering: support both array and 'all'
+        const matchesTeam = teamIds === 'all' || 
+          (Array.isArray(teamIds) && teamIds.length === 0) || 
+          (Array.isArray(teamIds) && teamIds.includes(count.team_id || ''));
+        
         return matchesDate && matchesTeam;
       });
 
-      console.log(`Loading items data - Filtered counts:`, {
+      console.log(`Loading items data - Filtered counts (${startUTC} to ${endUTC}):`, {
         totalCounts: counts.length,
         nonVoidedCompleted: dailyCounts.length,
-        voidedCount: counts.filter(c => c.is_voided).length
+        voidedCount: counts.filter(c => c.is_voided).length,
+        teamFilter: teamIds
       });
 
       if (dailyCounts.length === 0) {
@@ -275,6 +302,10 @@ export const useDailyInventoryAnalytics = (
             const varianceQuantity = actualQuantity - inStockQuantity;
             const varianceCost = Math.abs(varianceQuantity) * unitCost;
             const totalValue = actualQuantity * unitCost;
+            
+            // Apply variance threshold filter if specified
+            const passesVarianceThreshold = !varianceThreshold || 
+              Math.abs(varianceQuantity) >= varianceThreshold;
 
             // Determine stock status
             let stockStatus: 'normal' | 'low' | 'out' | 'over' = 'normal';
@@ -304,6 +335,10 @@ export const useDailyInventoryAnalytics = (
               stock_status: stockStatus,
               total_value: totalValue,
             };
+          }).filter(item => {
+            // Apply variance threshold if specified
+            if (!varianceThreshold) return true;
+            return Math.abs(item.variance_quantity) >= varianceThreshold;
           });
 
           allCountItems.push(...processedItems);
@@ -343,7 +378,7 @@ export const useDailyInventoryAnalytics = (
     };
 
     loadItemsData();
-  }, [counts, items, selectedDate, selectedTeamId]);
+  }, [counts, items, startUTC, endUTC, teamIds, varianceThreshold]);
 
   return { ...analytics, itemsData };
 };

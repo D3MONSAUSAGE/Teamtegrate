@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
 import { getTZDayRangeUTC, formatInTZ } from '@/lib/dates/tzRange';
 import { useTZ } from '@/lib/dates/useTZ';
+import { buildDailyViewData } from '@/services/dailyViewSelector';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
@@ -136,14 +137,39 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
     transactions
   );
 
-  // Daily analytics for selected date
+  // Daily analytics with timezone-aware filtering
+  const { startUTC, endUTC } = useMemo(() => {
+    return getTZDayRangeUTC(tz, selectedDate);
+  }, [tz, selectedDate]);
+
+  // Convert selectedDailyTeam to teamIds array format
+  const dailyTeamIds = useMemo((): string[] | 'all' => {
+    if (!selectedDailyTeam) return 'all';
+    return [selectedDailyTeam];
+  }, [selectedDailyTeam]);
+
   const { metrics: dailyMetrics, chartData: dailyChartData, itemsData } = useDailyInventoryAnalytics(
     counts,
     alerts,
     items,
     transactions,
-    selectedDate,
-    selectedDailyTeam || undefined
+    startUTC,
+    endUTC,
+    dailyTeamIds,
+    undefined, // No variance threshold for now
+    tz
+  );
+
+  // Build unified daily view data
+  const dailyViewData = useMemo(() => 
+    buildDailyViewData({
+      analytics: { metrics: dailyMetrics, chartData: dailyChartData, itemsData },
+      timezone: tz,
+      selectedDate,
+      teamIds: dailyTeamIds,
+      varianceThreshold: undefined
+    }),
+    [dailyMetrics, dailyChartData, itemsData, tz, selectedDate, dailyTeamIds]
   );
 
   // Sort counts by most recent first (using updated_at for more accurate recent changes)
@@ -697,9 +723,8 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
           {/* Daily Metrics */}
           <DailyInventoryMetrics 
-            metrics={dailyMetrics} 
-            selectedDate={selectedDate}
-            itemsData={itemsData}
+            summary={dailyViewData.summary}
+            timezone={tz}
           />
 
           {/* Enhanced Daily Analysis */}

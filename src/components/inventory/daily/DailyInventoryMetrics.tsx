@@ -13,28 +13,27 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { DailyAnalyticsMetrics, DailyItemsData } from '@/hooks/useDailyInventoryAnalytics';
 import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 interface DailyInventoryMetricsProps {
-  metrics: DailyAnalyticsMetrics;
-  selectedDate: Date;
-  itemsData?: DailyItemsData;
+  summary: {
+    totalValueCounted: number;
+    itemsProcessed: number;
+    varianceCost: number;
+    accuracyRatePct: number;
+    avgCompletionHours: number;
+    completedCounts: number;
+    activeTeams: number;
+    performanceGrade: string;
+  };
+  timezone?: string;
 }
 
 export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
-  metrics,
-  selectedDate,
-  itemsData
+  summary
 }) => {
-  const getTrendIcon = () => {
-    if (metrics.trendDirection === 'up') return <ArrowUpRight className="h-4 w-4 text-success" />;
-    if (metrics.trendDirection === 'down') return <ArrowDownRight className="h-4 w-4 text-destructive" />;
-    return null;
-  };
-
-  const isToday = new Date().toDateString() === selectedDate.toDateString();
+  // Pure component - all data comes from summary prop
 
   return (
     <div className="space-y-4">
@@ -42,25 +41,9 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
         <div>
           <h3 className="text-lg font-semibold">Daily Inventory Summary</h3>
           <p className="text-sm text-muted-foreground">
-            {selectedDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-            {isToday && <Badge variant="secondary" className="ml-2">Today</Badge>}
+            Performance overview for selected date and filters
           </p>
         </div>
-        {metrics.trendDirection !== 'stable' && (
-          <div className="flex items-center gap-2 text-sm">
-            {getTrendIcon()}
-            <span className={cn(
-              metrics.trendDirection === 'up' ? 'text-success' : 'text-destructive'
-            )}>
-              {metrics.trendDirection === 'up' ? 'Trending up' : 'Trending down'}
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -73,10 +56,10 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(itemsData?.summary ? itemsData.summary.totalValue : metrics.totalValue)}
+              {formatCurrency(summary.totalValueCounted)}
             </div>
             <div className="text-sm text-muted-foreground">
-              {itemsData?.summary ? itemsData.summary.countedItems : metrics.totalItemsCounted} items counted
+              {summary.itemsProcessed} items counted
             </div>
           </CardContent>
         </Card>
@@ -90,10 +73,10 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {itemsData?.summary ? itemsData.summary.totalItems.toLocaleString() : metrics.totalItemsCounted.toLocaleString()}
+              {summary.itemsProcessed.toLocaleString()}
             </div>
             <div className="text-sm text-muted-foreground">
-              {metrics.completedCounts} counts completed
+              {summary.completedCounts} counts completed
             </div>
           </CardContent>
         </Card>
@@ -107,10 +90,10 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(itemsData?.summary ? itemsData.summary.totalVarianceCost : metrics.totalVarianceCost)}
+              {formatCurrency(summary.varianceCost)}
             </div>
             <div className="text-sm text-muted-foreground">
-              {itemsData?.summary ? `${itemsData.summary.totalVariances} variances` : 'Daily discrepancies'}
+              Daily discrepancies
             </div>
           </CardContent>
         </Card>
@@ -124,15 +107,15 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatPercentage(metrics.accuracyRate)}
+              {formatPercentage(summary.accuracyRatePct * 100)}
             </div>
             <div className={cn(
               "text-sm",
-              metrics.accuracyRate >= 95 ? "text-success" : 
-              metrics.accuracyRate >= 85 ? "text-warning" : "text-destructive"
+              summary.accuracyRatePct >= 0.95 ? "text-success" : 
+              summary.accuracyRatePct >= 0.85 ? "text-warning" : "text-destructive"
             )}>
-              {metrics.accuracyRate >= 95 ? 'Excellent' : 
-               metrics.accuracyRate >= 85 ? 'Good' : 'Needs Improvement'}
+              {summary.accuracyRatePct >= 0.95 ? 'Excellent' : 
+               summary.accuracyRatePct >= 0.85 ? 'Good' : 'Needs Improvement'}
             </div>
           </CardContent>
         </Card>
@@ -146,7 +129,7 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.averageCompletionTime.toFixed(1)}h
+              {summary.avgCompletionHours.toFixed(1)}h
             </div>
             <div className="text-sm text-muted-foreground">
               Per count session
@@ -163,7 +146,7 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
-              {metrics.completedCounts}
+              {summary.completedCounts}
             </div>
             <div className="text-sm text-muted-foreground">
               Count sessions finished
@@ -180,7 +163,7 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-info">
-              {metrics.activeTeams}
+              {summary.activeTeams}
             </div>
             <div className="text-sm text-muted-foreground">
               Teams participated
@@ -199,13 +182,11 @@ export const DailyInventoryMetrics: React.FC<DailyInventoryMetricsProps> = ({
             <div className="flex items-center gap-2">
               <div className={cn(
                 "text-2xl font-bold",
-                metrics.accuracyRate >= 95 ? "text-success" : 
-                metrics.accuracyRate >= 85 ? "text-warning" : "text-destructive"
+                summary.accuracyRatePct >= 0.95 ? "text-success" : 
+                summary.accuracyRatePct >= 0.85 ? "text-warning" : "text-destructive"
               )}>
-                {metrics.accuracyRate >= 95 ? 'A+' : 
-                 metrics.accuracyRate >= 85 ? 'B' : 'C'}
+                {summary.performanceGrade}
               </div>
-              {getTrendIcon()}
             </div>
             <div className="text-sm text-muted-foreground">
               Daily grade
