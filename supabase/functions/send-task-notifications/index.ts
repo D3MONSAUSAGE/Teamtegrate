@@ -17,7 +17,9 @@ function cors(req: Request) {
 interface TaskNotificationRequest {
   kind: 'task_assigned' | 'task_status_changed';
   to: string;
-  task: {
+  vars?: Record<string, string>;
+  // Legacy fields for backward compatibility
+  task?: {
     id: string;
     title: string;
     description?: string;
@@ -223,9 +225,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const requestData: TaskNotificationRequest = await req.json();
-    const { kind, to, task, actor, oldStatus, newStatus } = requestData;
+    const { kind, to, vars, task, actor, oldStatus, newStatus } = requestData;
 
-    console.log(`[Notification Processing] Starting ${kind} notification for task ${task.id} to ${to}`);
+    console.log(`[Notification Processing] Starting ${kind} notification to ${to}`, { 
+      kind, 
+      hasVars: !!vars, 
+      hasLegacyTask: !!task 
+    });
 
     // Get configuration from environment variables
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://teamtegrate.com';
@@ -245,8 +251,36 @@ const handler = async (req: Request): Promise<Response> => {
     // Handle different notification types
     switch (kind) {
       case 'task_assigned':
-        if (to && actor) {
-          // Format deadline for display
+        if (to && vars) {
+          // Use the new vars structure with complete template mapping
+          const safeVars = {
+            orgName: vars.orgName || '',
+            assigneeName: vars.assigneeName || '',
+            assignerName: vars.assignerName || '',
+            taskTitle: vars.taskTitle || '',
+            description: vars.description || '',
+            priority: vars.priority || '',
+            priorityClass: vars.priorityClass || '',
+            dueDateLocal: vars.dueDateLocal || '',
+            taskUrl: vars.taskUrl || '',
+            year: vars.year || String(new Date().getFullYear()),
+            manageNotificationsUrl: vars.manageNotificationsUrl || ''
+          };
+
+          console.log('[Template Variables] Using vars for task_assigned:', Object.keys(safeVars));
+
+          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+            to,
+            subject: `📋 New Task Assignment: ${safeVars.taskTitle}`,
+            html: await loadEmailTemplate('task-assigned.html', safeVars)
+          }, 'task assignment email');
+
+          if (success) emailsSent++; else emailErrors++;
+          console.log(`[Email Status] Task assignment email result: ${success ? 'SUCCESS' : 'FAILED'}`);
+        } else if (to && task && actor) {
+          // Legacy fallback for backward compatibility
+          console.log('[Legacy Fallback] Using legacy task/actor structure');
+          
           const formattedDeadline = task.due_at 
             ? new Date(task.due_at).toLocaleDateString('en-US', { 
                 year: 'numeric', 
@@ -255,7 +289,6 @@ const handler = async (req: Request): Promise<Response> => {
               })
             : '';
 
-          // Send email to assignee
           const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
             to,
             subject: `📋 New Task Assignment: ${task.title}`,
@@ -268,18 +301,48 @@ const handler = async (req: Request): Promise<Response> => {
               deadline: formattedDeadline,
               actorName: actor.name || actor.email,
               taskUrl,
-              brandName
+              brandName,
+              orgName: brandName,
+              assignerName: actor.name || actor.email,
+              dueDateLocal: formattedDeadline,
+              priorityClass: '',
+              year: String(new Date().getFullYear()),
+              manageNotificationsUrl: ''
             })
-          }, 'task assignment email');
+          }, 'task assignment email (legacy)');
 
           if (success) emailsSent++; else emailErrors++;
-          console.log(`[Email Status] Task assignment email result: ${success ? 'SUCCESS' : 'FAILED'}`);
+          console.log(`[Email Status] Task assignment email result (legacy): ${success ? 'SUCCESS' : 'FAILED'}`);
+        } else {
+          console.error('[Task Assignment] Missing required data:', { hasTo: !!to, hasVars: !!vars, hasTask: !!task, hasActor: !!actor });
         }
         break;
 
       case 'task_status_changed':
-        if (to && actor && oldStatus && newStatus) {
-          // Send email for status change
+        if (to && vars) {
+          // Use the new vars structure for status change
+          const safeVars = {
+            recipientName: vars.assigneeName || to,
+            taskTitle: vars.taskTitle || '',
+            oldStatus: vars.oldStatus || '',
+            newStatus: vars.newStatus || '',
+            actorName: vars.assignerName || '',
+            taskUrl: vars.taskUrl || '',
+            brandName: vars.orgName || 'TeamTegrate',
+            orgName: vars.orgName || 'TeamTegrate',
+            year: vars.year || String(new Date().getFullYear())
+          };
+
+          const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
+            to,
+            subject: `🔄 Task Status Updated: ${safeVars.taskTitle}`,
+            html: await loadEmailTemplate('task-status-changed.html', safeVars)
+          }, 'task status update email');
+
+          if (success) emailsSent++; else emailErrors++;
+          console.log(`[Email Status] Task status update email result: ${success ? 'SUCCESS' : 'FAILED'}`);
+        } else if (to && actor && oldStatus && newStatus && task) {
+          // Legacy fallback for backward compatibility
           const success = await sendEmailWithRetry(resendApiKey, fromEmail, {
             to,
             subject: `🔄 Task Status Updated: ${task.title}`,
@@ -291,12 +354,16 @@ const handler = async (req: Request): Promise<Response> => {
               newStatus,
               actorName: actor.name || actor.email,
               taskUrl,
-              brandName
+              brandName,
+              orgName: brandName,
+              year: String(new Date().getFullYear())
             })
-          }, 'task status update email');
+          }, 'task status update email (legacy)');
 
           if (success) emailsSent++; else emailErrors++;
-          console.log(`[Email Status] Task status update email result: ${success ? 'SUCCESS' : 'FAILED'}`);
+          console.log(`[Email Status] Task status update email result (legacy): ${success ? 'SUCCESS' : 'FAILED'}`);
+        } else {
+          console.error('[Task Status Change] Missing required data:', { hasTo: !!to, hasVars: !!vars, hasTask: !!task, hasActor: !!actor });
         }
         break;
 
@@ -311,7 +378,7 @@ const handler = async (req: Request): Promise<Response> => {
       totalAttempts: emailsSent + emailErrors
     };
 
-    console.log(`[Notification Summary] Kind: ${kind}, Task: ${task.id}`, summary);
+    console.log(`[Notification Summary] Kind: ${kind}, Task: ${vars?.taskTitle || task?.id || 'unknown'}`, summary);
 
     return new Response(
       JSON.stringify({ 

@@ -105,7 +105,7 @@ export class TaskAssignmentService {
         };
 
         console.log('[TaskAssignmentService] Sending notifications to:', assignees.map(a => a.email));
-        await notifications.notifyTaskAssigned(taskNotification, assignees, actor);
+        await notifications.notifyTaskAssigned(taskNotification, assignees, actor, { sendToSelf: false });
         console.log('[TaskAssignmentService] Email notifications sent');
       } else {
         console.warn('[TaskAssignmentService] Missing data for email notifications:', {

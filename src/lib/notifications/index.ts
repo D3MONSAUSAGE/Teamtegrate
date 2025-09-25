@@ -188,10 +188,22 @@ export const notifications = {
     }
   },
 
-  // Task Assignment - notify assigned user(s)
-  async notifyTaskAssigned(task: TaskNotificationData, assignees: UserData[], actor: UserData) {
+  // Task Assignment - notify assigned user(s) with comprehensive variable mapping
+  async notifyTaskAssigned(task: TaskNotificationData, assignees: UserData[], actor: UserData, options?: { sendToSelf?: boolean }) {
     try {
       console.log(`[Notifications] Triggering task assigned notifications: ${task.id} to ${assignees.length} user(s)`);
+      
+      // Import utilities dynamically to avoid issues
+      const { getTaskUrl, getNotificationSettingsUrl } = await import('@/lib/utils/urls');
+      const { getCurrentUserOrganization } = await import('@/lib/utils/organization');
+      const { formatDateInTimezone, getPriorityClass, getCurrentYear } = await import('@/lib/utils/dateFormat');
+      
+      // Get organization data
+      const orgData = await getCurrentUserOrganization();
+      if (!orgData) {
+        console.error('[Notifications] Could not get organization data');
+        return;
+      }
 
       // Send notification to each assignee individually
       for (const assignee of assignees) {
@@ -200,24 +212,38 @@ export const notifications = {
           continue;
         }
 
+        // Skip self-assignment unless explicitly allowed
+        if (!options?.sendToSelf && assignee.id === actor.id) {
+          console.log(`[Notifications] Skipping self-assignment email for ${assignee.email}`);
+          continue;
+        }
+
         console.log(`[Notifications] Sending task assignment email to: ${assignee.email}`);
+
+        // Format all template variables
+        const dueDateLocal = task.deadline 
+          ? formatDateInTimezone(task.deadline, orgData.timezone)
+          : '';
+
+        const templateVars = {
+          orgName: orgData.name,
+          assigneeName: assignee.name || assignee.email,
+          assignerName: actor.name || actor.email,
+          taskTitle: task.title,
+          description: task.description || '',
+          priority: task.priority || '',
+          priorityClass: getPriorityClass(task.priority),
+          dueDateLocal,
+          taskUrl: getTaskUrl(task.id),
+          year: getCurrentYear(),
+          manageNotificationsUrl: orgData.manageNotificationsUrl
+        };
 
         const { data, error } = await supabase.functions.invoke('send-task-notifications', {
           body: {
             kind: 'task_assigned',
             to: assignee.email,
-            task: {
-              id: task.id,
-              title: task.title,
-              description: task.description,
-              due_at: task.deadline,
-              priority: task.priority
-            },
-            actor: {
-              id: actor.id,
-              email: actor.email,
-              name: actor.name
-            }
+            vars: templateVars
           }
         });
 
