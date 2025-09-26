@@ -367,45 +367,21 @@ export const inventoryCountsApi = {
   },
 
   async bumpActual(countId: string, countItemId: string, delta: number): Promise<{ id: string; actual_quantity: number } | null> {
-    console.log('[BUMP_REQUEST]', { countId, countItemId, delta });
-    
-    // IMPORTANT: Use countItemId (inventory_count_items.id) for targeting the row
-    const { data: countItem, error: getError } = await supabase
-      .from('inventory_count_items')
-      .select('actual_quantity')
-      .eq('count_id', countId)
-      .eq('id', countItemId)  // <-- KEY FIX: use 'id' not 'item_id'
-      .single();
+    const supabase = getSupabase();
 
-    if (getError) {
-      console.error('[BUMP_ERROR]', { countId, countItemId, delta, error: getError });
-      throw getError;
-    }
-
-    const currentActual = countItem?.actual_quantity || 0;
-    const newActual = currentActual + delta;
-
-    // Update with new quantity
-    const updateData = {
-      actual_quantity: newActual,
-      counted_at: createTimestampInTZ('UTC'),
-    };
-
-    const { data, error } = await supabase
-      .from('inventory_count_items')
-      .update(updateData)
-      .eq('count_id', countId)
-      .eq('id', countItemId)  // <-- KEY FIX: use 'id' not 'item_id'
-      .select('id, actual_quantity')
-      .single();
+    const { data, error } = await supabase.rpc('bump_count_item_actual', {
+      p_count_id: countId,
+      p_count_item_id: countItemId,
+      p_delta: delta,
+    });
 
     if (error) {
-      console.error('[BUMP_ERROR]', { countId, countItemId, delta, error });
+      console.error('[BUMP_RPC_ERROR]', { countId, countItemId, delta, error });
       throw error;
     }
-
-    console.log('[BUMP_RESPONSE]', { countId, countItemId, delta, updated: data });
-    return data;
+    const row = Array.isArray(data) ? data[0] : data;
+    console.log('[BUMP_RPC_OK]', row);
+    return row ?? null;
   },
 
   async setActual(countId: string, countItemId: string, qty: number): Promise<{ id: string; actual_quantity: number } | null> {

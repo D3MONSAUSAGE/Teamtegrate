@@ -51,6 +51,7 @@ export const InventoryCountTab: React.FC = () => {
     createItem 
   } = useInventory();
   const { toast } = useToast();
+  const scanEngineV2 = useScanEngineV2();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<InventoryTemplate | null>(null);
@@ -59,23 +60,24 @@ export const InventoryCountTab: React.FC = () => {
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [countInterface, setCountInterface] = useState<CountInterface>('batch');
-  
-  // React Query for count items with optimized settings to prevent snap-back
-  const countItemsQuery = useQuery({
-    queryKey: ['count-items', activeCount],
-    queryFn: () => activeCount ? inventoryCountsApi.getCountItems(activeCount) : Promise.resolve([]),
-    enabled: !!activeCount,
-    staleTime: 5000, // 5 seconds to prevent excessive refetching
-    refetchOnWindowFocus: false,
+
+  const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = useQuery({
+    queryKey: ['inventory-counts'],
+    queryFn: inventoryCountsApi.getCounts,
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Update local state when React Query data changes
-  useEffect(() => {
-    if (countItemsQuery.data) {
-      console.log('[REFETCHED_ITEMS]', countItemsQuery.data.map(i => ({ id: i.id, actual: i.actual_quantity })));
-      setCountItems(countItemsQuery.data);
-    }
-  }, [countItemsQuery.data]);
+  const { data: countItems, isLoading: itemsLoading, refetch: refetchItems } = useQuery({
+    queryKey: ['inventory-count-items', activeCount?.id],
+    queryFn: () => inventoryCountsApi.getCountItems(activeCount?.id || ''),
+    enabled: !!activeCount?.id,
+    staleTime: 5000,
+    keepPreviousData: true,
+    refetchOnWindowFocus: false,
+    onSuccess: (items) => {
+      scanEngineV2.onItemsRefetched(items || []);
+    },
+  });
   
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');

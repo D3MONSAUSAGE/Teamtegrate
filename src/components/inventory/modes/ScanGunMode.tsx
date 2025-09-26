@@ -34,30 +34,21 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 }) => {
   const { toast } = useToast();
   
-  // State for both engines
+  // V2 scan engine for sticky UI without snap-back
+  const scanEngineV2 = useScanEngineV2();
+
+  // State for UI
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCountItem, setSelectedCountItem] = useState<InventoryCountItem | null>(null);
   const [qtyPerScan, setQtyPerScan] = useState<number>(1);
-  const [sessionIncrements, setSessionIncrements] = useState<number>(0);
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [attachFirstScan, setAttachFirstScan] = useState<boolean>(true);
   const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(false);
   const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('enter');
   const [globalScanMode, setGlobalScanMode] = useState<boolean>(true);
 
-  // Initialize V2 engine if feature flag enabled
-  const scanEngineV2 = features.scanEngineV2 ? useScanEngineV2(
-    {
-      countId,
-      globalScanMode,
-      attachFirstScan,
-      autoSwitchOnMatch: true,
-      qtyPerScan,
-      dedupeMs: 100,
-    },
-    items,
-    countItems
-  ) : null;
+  // Initialize active count object for V2 engine
+  const activeCount = { id: countId };
   
   // Refs for debouncing
   const sessionIncrementsRef = useRef<number>(0);
@@ -82,64 +73,24 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     }
   }, [selectedItem, items]);
 
-  // Reset session increments when switching items
-  useEffect(() => {
-    setSessionIncrements(0);
-    sessionIncrementsRef.current = 0;
-  }, [selectedItem]);
+  // Update display values using V2 engine
+  const serverActual = selectedCountItem?.actual_quantity ?? 0;
+  const displayActual = scanEngineV2.getDisplayActual(selectedCountItem?.id, serverActual);
 
-  // Debounced persist function
-  const debouncedPersist = useCallback(async (delta: number) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
+  const handleIncrement = async () => {
+    if (!selectedCountItem || !activeCount) return;
 
-    debounceTimeoutRef.current = setTimeout(async () => {
-      if (selectedItem && selectedCountItem) {
-        try {
-          const currentActual = selectedCountItem.actual_quantity || 0;
-          const newActualQty = currentActual + sessionIncrementsRef.current;
-          console.log('SCANGUN_PERSIST:', { 
-            catalogItemId: selectedItem.id,
-            countItemId: selectedCountItem.id,
-            currentActual, 
-            sessionIncrements: sessionIncrementsRef.current, 
-            newActualQty 
-          });
-          
-          // CRITICAL: Pass countItemId, not catalog item ID
-          await inventoryCountsApi.bumpActual(countId, selectedCountItem.id, sessionIncrementsRef.current);
-          
-          // Reset session increments after successful persist
-          setSessionIncrements(0);
-          sessionIncrementsRef.current = 0;
-          
-        } catch (error) {
-          console.error('SCANGUN_PERSIST_ERROR:', error);
-          
-          // Rollback optimistic update
-          setSessionIncrements(0);
-          sessionIncrementsRef.current = 0;
-          
-          // Show friendly error
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
-            toast({
-              title: 'Permission denied (policy)',
-              description: 'You do not have permission to update this count',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Save failed',
-              description: errorMessage,
-              variant: 'destructive',
-            });
-          }
-        }
-      }
-    }, 350);
-  }, [selectedItem, selectedCountItem, countId, toast]);
+    console.log('[RENDER]', {
+      countItemId: selectedCountItem?.id,
+      serverActual: selectedCountItem?.actual_quantity,
+    });
+
+    scanEngineV2.applyIncrement(
+      selectedCountItem.id,             // countItemId (inventory_count_items.id)
+      qtyPerScan,
+      selectedCountItem.actual_quantity ?? 0
+    );
+  };
 
   // Handle scan detection
   const handleScanDetected = useCallback(async (code: string) => {
@@ -217,61 +168,30 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
       }
     }
 
-    // Accept scan - increment optimistically
-    sessionIncrementsRef.current += qtyPerScan;
-    setSessionIncrements(sessionIncrementsRef.current);
-    
-    console.log('SCANGUN_INCREMENT:', { 
-      qtyPerScan, 
-      newSessionTotal: sessionIncrementsRef.current 
-    });
-    
-    // Haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
-    
-    // Show feedback toast
-    const currentActual = selectedCountItem?.actual_quantity || 0;
-    const newInStock = currentActual + sessionIncrementsRef.current;
-    toast({
-      title: `+${qtyPerScan} scanned`,
-      description: `${selectedItem.name} • In-Stock: ${newInStock}`,
-      duration: 2000,
-    });
-    
-    // Debounced persist
-    debouncedPersist(qtyPerScan);
-  }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, debouncedPersist]);
+    // Handle increment using V2 engine
+    handleIncrement();
+  }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, handleIncrement]);
 
-  // Initialize scan gun (only if V2 not enabled)
-  const legacyScanGun = !features.scanEngineV2 ? useScanGun({
+  // Initialize scan gun using V2 engine's scan handling
+  const legacyScanGun = useScanGun({
     onScan: handleScanDetected,
     onStart: () => console.log('SCANGUN_START'),
     onStop: () => console.log('SCANGUN_STOP'),
     enabled: true,
-  }) : null;
+  });
 
-  // Use V2 engine or fallback to legacy
-  const isListening = scanEngineV2?.isListening ?? legacyScanGun?.isListening ?? false;
-  const scannerConnected = scanEngineV2?.scannerConnected ?? legacyScanGun?.scannerConnected ?? false;
+  const isListening = legacyScanGun?.isListening ?? false;
+  const scannerConnected = legacyScanGun?.scannerConnected ?? false;
   
-  // Sync V2 engine selection with local state
+  // Wire up refetch callback to V2 engine
   useEffect(() => {
-    if (features.scanEngineV2 && scanEngineV2 && selectedItem) {
-      scanEngineV2.selectItem(selectedItem.id);
-    }
-  }, [scanEngineV2, selectedItem]);
-
-  // Wire up refetch callback to V2 engine to clear pending state when server confirms
-  useEffect(() => {
-    if (features.scanEngineV2 && scanEngineV2 && countItems.length > 0) {
-      scanEngineV2.onItemsRefetched(countItems.map(ci => ({ 
+    if (onItemsRefetched && countItems.length > 0) {
+      onItemsRefetched(countItems.map(ci => ({ 
         id: ci.id, 
         actual_quantity: ci.actual_quantity || 0 
       })));
     }
-  }, [scanEngineV2, countItems]);
+  }, [onItemsRefetched, countItems]);
 
   const handleQtyPerScanChange = (increment: boolean) => {
     if (increment) {
@@ -286,10 +206,8 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const totalItems = countItems.length;
   const progress = totalItems > 0 ? (countedItems / totalItems) * 100 : 0;
   
-  // Use V2 display calculation or fallback to legacy
-  const actualQty = features.scanEngineV2 && scanEngineV2 && selectedItem
-    ? scanEngineV2.getDisplayActual(selectedItem.id)
-    : (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
+  // Use V2 display calculation
+  const actualQty = displayActual;
   const inStock = selectedCountItem?.in_stock_quantity ?? selectedItem?.current_stock ?? 0;
   const minThreshold = selectedCountItem?.template_minimum_quantity ?? selectedItem?.minimum_threshold;
   const maxThreshold = selectedCountItem?.template_maximum_quantity ?? selectedItem?.maximum_threshold;
@@ -338,19 +256,9 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                   Actual: {actualQty}
                 </div>
                 <Badge variant={status.variant}>{status.label}</Badge>
-                {features.scanEngineV2 && scanEngineV2 && selectedItem && selectedCountItem && scanEngineV2.pendingByItem[selectedCountItem.id] > 0 && (
+                {selectedCountItem && scanEngineV2.pendingByKey[selectedCountItem.id] > 0 && (
                   <Badge variant="outline" className="text-xs">
-                    +{scanEngineV2.pendingByItem[selectedCountItem.id]} pending
-                  </Badge>
-                )}
-                {!features.scanEngineV2 && sessionIncrements > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{sessionIncrements} this session
-                  </Badge>
-                )}
-                {features.scanEngineV2 && globalScanMode && (
-                  <Badge variant="secondary" className="text-xs">
-                    🔍 Global Scan • {countItems.length} items
+                    +{scanEngineV2.pendingByKey[selectedCountItem.id]} pending
                   </Badge>
                 )}
               </div>
