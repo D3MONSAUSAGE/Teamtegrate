@@ -84,6 +84,11 @@ export function useScanEngineV2() {
     });
   }
 
+  // Debug handle
+  React.useEffect(() => {
+    (window as any).__scan = { pending: pendingByKey };
+  }, [pendingByKey]);
+
   return {
     // expose what your UI needs
     getDisplayActual,

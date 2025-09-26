@@ -51,7 +51,6 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const activeCount = { id: countId };
   
   // Refs for debouncing
-  const sessionIncrementsRef = useRef<number>(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScanRef = useRef<string>('');
   const lastAttachedRef = useRef<string | null>(null);
