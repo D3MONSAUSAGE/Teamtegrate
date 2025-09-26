@@ -141,7 +141,17 @@ export const WarehouseTab: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold">Warehouse Management</h2>
+            <h2 className="text-2xl font-semibold">
+              {warehouse ? (
+                warehouse.team?.name 
+                  ? `${warehouse.team.name} Warehouse Stock`
+                  : warehouse.name
+              ) : (isAdmin || isSuperAdmin) && !selectedTeamId ? (
+                'Warehouse Management'
+              ) : (
+                'Warehouse Stock'
+              )}
+            </h2>
             <p className="text-muted-foreground">
               {warehouse ? (
                 <>Manage {warehouse.name} stock levels{warehouse.team?.name && ` (${warehouse.team.name})`}, receive inventory, and transfer to teams</>

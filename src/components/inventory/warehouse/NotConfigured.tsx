@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Package, Loader2 } from 'lucide-react';
-import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
+import { AlertTriangle, Package } from 'lucide-react';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { WarehouseSetupWizard } from './WarehouseSetupWizard';
 
 interface NotConfiguredProps {
   onConfigured: () => void;
@@ -13,37 +11,30 @@ interface NotConfiguredProps {
 }
 
 export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured, selectedTeamId }) => {
-  const [loading, setLoading] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const { availableTeams, isManager, isAdmin, isSuperAdmin } = useTeamAccess();
 
-  const handleSetup = async () => {
-    try {
-      setLoading(true);
-      
-      // Determine which team to assign warehouse to
-      let teamId: string | undefined;
-      if (selectedTeamId) {
-        // Admin/superadmin setting up for specific team
-        teamId = selectedTeamId;
-      } else if (isManager && availableTeams.length === 1) {
-        // Manager with single team
-        teamId = availableTeams[0].id;
-      }
-      
-      const teamName = teamId ? availableTeams.find(t => t.id === teamId)?.name : undefined;
-      const warehouseName = teamName ? `${teamName} Warehouse` : 'Main Warehouse';
-      
-      await warehouseApi.ensurePrimaryWarehouse(warehouseName, teamId);
-      toast.success(`Warehouse configured successfully${teamName ? ` for ${teamName}` : ''}`);
-      onConfigured();
-    } catch (error: any) {
-      console.error('Error setting up warehouse:', error);
-      const message = error?.message || 'Failed to configure warehouse';
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+  // Get team details for display
+  const teamName = selectedTeamId ? availableTeams.find(t => t.id === selectedTeamId)?.name : undefined;
+
+  const handleStartSetup = () => {
+    setShowSetupWizard(true);
   };
+
+  const handleSetupComplete = () => {
+    setShowSetupWizard(false);
+    onConfigured();
+  };
+
+  if (showSetupWizard) {
+    return (
+      <WarehouseSetupWizard
+        onComplete={handleSetupComplete}
+        selectedTeamId={selectedTeamId}
+        teamName={teamName}
+      />
+    );
+  }
 
   return (
     <Card>
@@ -69,12 +60,10 @@ export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured, sele
           
           {(isManager || isAdmin || isSuperAdmin) ? (
             <Button 
-              onClick={handleSetup} 
-              disabled={loading}
+              onClick={handleStartSetup} 
               className="flex items-center gap-2"
             >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {loading ? 'Setting up...' : 'Setup Warehouse'}
+              Setup Warehouse
             </Button>
           ) : (
             <div className="text-sm text-muted-foreground">
