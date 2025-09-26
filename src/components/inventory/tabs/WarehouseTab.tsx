@@ -20,6 +20,7 @@ export const WarehouseTab: React.FC = () => {
   const { isAdmin, isSuperAdmin, isManager, availableTeams } = useTeamAccess();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [teamSwitching, setTeamSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState('stock');
@@ -33,12 +34,15 @@ export const WarehouseTab: React.FC = () => {
       setLoading(false);
       setWarehouse(null);
       setError(null);
+      setTeamSwitching(false);
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
+      // SECURITY: Immediately clear warehouse data to prevent cross-team data leakage
+      setWarehouse(null);
       
       let data: Warehouse | null = null;
       
@@ -54,6 +58,20 @@ export const WarehouseTab: React.FC = () => {
       }
       
       if (data) {
+        // SECURITY: Validate warehouse belongs to selected team
+        if ((isAdmin || isSuperAdmin) && selectedTeamId && data.team_id !== selectedTeamId) {
+          console.error('SECURITY ALERT: Warehouse team mismatch', {
+            expectedTeamId: selectedTeamId,
+            actualTeamId: data.team_id,
+            warehouseId: data.id,
+            userId: user?.id
+          });
+          toast.error('Security error: Warehouse team mismatch');
+          setError('Access denied: Invalid warehouse access');
+          setWarehouse(null);
+          return;
+        }
+        
         console.log('Warehouse loaded:', data);
         setWarehouse(data);
       } else {
@@ -93,8 +111,18 @@ export const WarehouseTab: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      setTeamSwitching(false);
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse, user?.id]);
+
+  // Immediate state clearing when team changes (SECURITY FIX)
+  useEffect(() => {
+    if ((isAdmin || isSuperAdmin) && selectedTeamId !== null) {
+      setTeamSwitching(true);
+      setWarehouse(null); // Immediately clear to prevent cross-team data leakage
+      setError(null);
+    }
+  }, [selectedTeamId, isAdmin, isSuperAdmin]);
 
   useEffect(() => {
     loadWarehouse();
@@ -197,9 +225,11 @@ export const WarehouseTab: React.FC = () => {
       </div>
 
       {/* Content based on state */}
-      {loading ? (
+      {loading || teamSwitching ? (
         <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading warehouse...</div>
+          <div className="text-muted-foreground">
+            {teamSwitching ? 'Switching teams...' : 'Loading warehouse...'}
+          </div>
         </div>
       ) : error ? (
         <div className="flex items-center justify-center py-12">
