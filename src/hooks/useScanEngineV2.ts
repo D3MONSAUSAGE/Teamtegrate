@@ -27,14 +27,14 @@ export function useScanEngineV2(countId?: string) {
     if (inFlightRef.current[key]) return;
     const pending = pendingByKey[key] ?? 0;
     if (!pending) return;
+    if (!countId) {
+      console.log('[BUMP_SKIP] No countId provided to useScanEngineV2');
+      return;
+    }
 
     inFlightRef.current[key] = true;
     try {
       console.log('[BUMP_REQUEST]', { key, pending });
-      if (!countId) {
-        console.error('[BUMP_FAIL] No countId provided to useScanEngineV2');
-        return;
-      }
       const updated = await inventoryCountsApi.bumpActual(countId, key, pending);
       console.log('[BUMP_RESPONSE]', { key, pending, updated });
       // DO NOT clear pending here. Wait for refetch confirmation.
