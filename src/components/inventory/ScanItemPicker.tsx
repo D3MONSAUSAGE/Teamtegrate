@@ -26,17 +26,8 @@ export const ScanItemPicker: React.FC<ScanItemPickerProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Feature flag for scope enforcement
-  const enforceCountScope = process.env.NODE_ENV === 'development' || 
-    localStorage.getItem('features.enforceCountScope') === 'true';
-
-  // Build items list - either from countItems only (scoped) or all items (legacy)
-  const sourceItems = enforceCountScope 
-    ? countItems.map(ci => ci.item).filter(Boolean) as InventoryItem[]
-    : items;
-
   // Filter items based on search term
-  const filteredItems = sourceItems.filter(item =>
+  const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (item.barcode && item.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -75,11 +66,6 @@ export const ScanItemPicker: React.FC<ScanItemPickerProps> = ({
           </SheetTitle>
           <SheetDescription>
             Choose an item to start scanning. Items in this count only.
-            {enforceCountScope && (
-              <span className="block text-xs mt-1 font-medium text-primary">
-                🔒 Scoped to count items only ({sourceItems.length} available)
-              </span>
-            )}
           </SheetDescription>
         </SheetHeader>
         

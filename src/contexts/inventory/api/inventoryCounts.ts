@@ -366,39 +366,11 @@ export const inventoryCountsApi = {
     return data as InventoryCount;
   },
 
-  async bumpActual(countId: string, itemId: string, delta: number): Promise<{ newActual: number; countItemId: string }> {
-    // Feature flag for new atomic approach
-    const useStableScan = process.env.NODE_ENV === 'development' || 
-      localStorage.getItem('features.stableScan') === 'true';
-    const enforceCountScope = process.env.NODE_ENV === 'development' || 
-      localStorage.getItem('features.enforceCountScope') === 'true';
-
-    if (useStableScan || enforceCountScope) {
-      // Use atomic RPC with scope validation
-      const { data, error } = await supabase.rpc('bump_count_item_actual', {
-        p_count_id: countId,
-        p_item_id: itemId,
-        p_delta: delta
-      });
-
-      if (error) {
-        if (error.code === 'P0001') {
-          throw new Error('Item not in this count');
-        }
-        throw error;
-      }
-
-      const result = data?.[0];
-      return {
-        newActual: result?.new_actual || 0,
-        countItemId: result?.count_item_id || ''
-      };
-    }
-
-    // Legacy fetch-then-update approach
+  async bumpActual(countId: string, itemId: string, delta: number): Promise<void> {
+    // Get current actual quantity
     const { data: countItem, error: getError } = await supabase
       .from('inventory_count_items')
-      .select('id, actual_quantity')
+      .select('actual_quantity')
       .eq('count_id', countId)
       .eq('item_id', itemId)
       .single();
@@ -408,6 +380,7 @@ export const inventoryCountsApi = {
     const currentActual = countItem?.actual_quantity || 0;
     const newActual = currentActual + delta;
 
+    // Update with new quantity
     const updateData = {
       actual_quantity: newActual,
       counted_at: createTimestampInTZ('UTC'),
@@ -420,11 +393,6 @@ export const inventoryCountsApi = {
       .eq('item_id', itemId);
 
     if (error) throw error;
-
-    return {
-      newActual,
-      countItemId: countItem.id
-    };
   },
 
   async setActual(countId: string, itemId: string, qty: number): Promise<void> {
