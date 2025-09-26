@@ -51,7 +51,6 @@ export const InventoryCountTab: React.FC = () => {
     createItem 
   } = useInventory();
   const { toast } = useToast();
-  const scanEngineV2 = useScanEngineV2();
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<InventoryTemplate | null>(null);
@@ -59,6 +58,8 @@ export const InventoryCountTab: React.FC = () => {
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [countInterface, setCountInterface] = useState<CountInterface>('batch');
+
+  const scanEngineV2 = React.useMemo(() => useScanEngineV2(activeCount || undefined), [activeCount]);
 
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = useQuery({
     queryKey: ['inventory-counts'],
@@ -84,7 +85,7 @@ export const InventoryCountTab: React.FC = () => {
       }));
       scanEngineV2.onItemsRefetched(mappedItems);
     }
-  }, [countItems, scanEngineV2]);
+  }, [countItems, scanEngineV2.onItemsRefetched]);
   
 
   const activeCountRecord = (counts || []).find(c => c.id === activeCount && c.status === 'in_progress');

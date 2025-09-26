@@ -35,7 +35,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const { toast } = useToast();
   
   // V2 scan engine for sticky UI without snap-back
-  const scanEngineV2 = useScanEngineV2();
+  const scanEngineV2 = useScanEngineV2(countId);
 
   // State for UI
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);

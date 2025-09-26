@@ -7,7 +7,7 @@ type Key = string; // countItemId
 type PendingMap = Record<Key, number>;
 type InFlightMap = Record<Key, boolean>;
 
-export function useScanEngineV2() {
+export function useScanEngineV2(countId?: string) {
   const [pendingByKey, setPendingByKey] = React.useState<PendingMap>({});
   const inFlightRef = React.useRef<InFlightMap>({});
   const lastConfirmedRef = React.useRef<Record<Key, number>>({});
@@ -47,8 +47,10 @@ export function useScanEngineV2() {
     inFlightRef.current[key] = true;
     try {
       console.log('[BUMP_REQUEST]', { key, pending });
-      // This will be set by the component calling this hook
-      const countId = 'placeholder'; // Will be passed from component
+      if (!countId) {
+        console.error('[BUMP_FAIL] No countId provided to useScanEngineV2');
+        return;
+      }
       const updated = await inventoryCountsApi.bumpActual(countId, key, pending);
       console.log('[BUMP_RESPONSE]', { key, pending, updated });
       // DO NOT clear pending here. Wait for refetch confirmation.
