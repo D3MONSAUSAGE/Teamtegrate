@@ -152,11 +152,11 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
                 <h3 className="font-bold text-lg leading-tight truncate text-foreground">
                   {selectedItem?.name || 'No item selected'}
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1 mt-1">
                   <span className="text-sm text-muted-foreground">SKU:</span>
                   <span className="text-sm font-medium">{selectedItem?.sku || ''}</span>
                   {selectedItem?.barcode && (
-                    <Badge variant="secondary" className="text-xs ml-auto">
+                    <Badge variant="secondary" className="text-xs ml-2">
                       <Scan className="h-3 w-3 mr-1" />
                       {selectedItem.barcode}
                     </Badge>
@@ -178,7 +178,7 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
                 <div className="text-xl font-bold text-foreground mt-2">{maxThreshold ?? '—'}</div>
               </div>
               <div className="text-center p-4 bg-background rounded-lg shadow-sm border">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">EXPECTED</div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">EXP</div>
                 <div className="text-xl font-bold text-foreground mt-2">{inStock}</div>
               </div>
             </div>
