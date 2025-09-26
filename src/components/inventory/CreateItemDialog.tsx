@@ -10,6 +10,8 @@ import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton
 import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { toast } from 'sonner';
 import { TeamInventorySelector } from './TeamInventorySelector';
+import { VendorSelector } from './VendorSelector';
+import { useInventory } from '@/contexts/inventory';
 
 interface CreateItemDialogProps {
   open: boolean;
@@ -28,6 +30,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
   units,
   prefilledBarcode
 }) => {
+  const { vendors } = useInventory();
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -40,6 +43,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
     reorder_quantity: 0,
     unit_cost: 0,
     team_id: null as string | null,
+    vendor_id: null as string | null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -90,6 +94,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
         reorder_quantity: 0,
         unit_cost: 0,
         team_id: null,
+        vendor_id: null,
       });
     } catch (error) {
       console.error('❌ CreateItemDialog error:', error);
@@ -225,6 +230,16 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
             onChange={(teamId) => setFormData(prev => ({ ...prev, team_id: teamId }))}
             disabled={isSubmitting}
           />
+
+          <div>
+            <Label htmlFor="vendor">Vendor</Label>
+            <VendorSelector
+              vendors={vendors}
+              value={formData.vendor_id || undefined}
+              onValueChange={(vendorId) => setFormData(prev => ({ ...prev, vendor_id: vendorId || null }))}
+              disabled={isSubmitting}
+            />
+          </div>
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">

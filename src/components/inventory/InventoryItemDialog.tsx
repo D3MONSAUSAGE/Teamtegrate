@@ -17,6 +17,7 @@ import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton
 import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { BarcodeInput } from './BarcodeInput';
 import { TeamInventorySelector } from './TeamInventorySelector';
+import { VendorSelector } from './VendorSelector';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -26,6 +27,7 @@ const inventoryItemSchema = z.object({
   purchase_unit: z.string().optional(),
   conversion_factor: z.coerce.number().positive('Units per package must be greater than 0').optional(),
   purchase_price: z.coerce.number().min(0, 'Package price must be 0 or greater').optional(),
+  vendor_id: z.string().nullable().optional(),
   sku: z.string().optional().refine(async (sku) => {
     if (!sku || sku.trim() === '') return true;
     // This validation will be handled by the SKUValidationIndicator component
@@ -49,7 +51,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   onOpenChange,
   itemId
 }) => {
-  const { createItem, updateItem, getItemById, loading, categories, units } = useInventory();
+  const { createItem, updateItem, getItemById, loading, categories, units, vendors } = useInventory();
   
   const [calculatedUnitPrice, setCalculatedUnitPrice] = useState<number | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -70,6 +72,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       barcode: '',
       location: '',
       team_id: null,
+      vendor_id: null,
     },
   });
 
@@ -114,6 +117,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           barcode: item.barcode || '',
           location: item.location || '',
           team_id: item.team_id || null,
+          vendor_id: item.vendor_id || null,
         });
       }
     } catch (error) {
@@ -179,6 +183,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         is_template: false,
         sort_order: 0,
         team_id: values.team_id || null,
+        vendor_id: values.vendor_id || null,
       };
 
       console.log('📦 Item data being sent:', itemData);
@@ -410,6 +415,25 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                     disabled={isSubmitting || loading}
                     label="Team Access"
                   />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="vendor_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vendor</FormLabel>
+                  <FormControl>
+                    <VendorSelector
+                      vendors={vendors}
+                      value={field.value || undefined}
+                      onValueChange={(value) => field.onChange(value || null)}
+                      disabled={isSubmitting || loading}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

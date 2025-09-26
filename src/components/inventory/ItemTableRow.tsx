@@ -40,7 +40,7 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
         {item.purchase_price ? formatCurrency(item.purchase_price) : 'N/A'}
       </TableCell>
       <TableCell>
-        {item.unit_cost ? formatCurrency(item.unit_cost) : 'N/A'}
+        {item.vendor?.name || 'No Vendor'}
       </TableCell>
       {onDelete && (
         <TableCell>

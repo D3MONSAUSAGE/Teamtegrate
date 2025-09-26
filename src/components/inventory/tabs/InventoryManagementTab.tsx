@@ -9,10 +9,11 @@ import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
 import { InventoryUnitDialog } from '../InventoryUnitDialog';
+import { VendorDialog } from '../dialogs/VendorDialog';
 import { ItemCard } from '../ItemCard';
 import { ItemTableRow } from '../ItemTableRow';
 import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
-import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2, Building2, Mail, Phone, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +32,11 @@ export const InventoryManagementTab: React.FC = () => {
     categoriesLoading,
     units, 
     unitsLoading,
+    vendors,
+    vendorsLoading,
+    createVendor,
+    updateVendor,
+    deleteVendor,
     deleteCategory, 
     deleteUnit, 
     deleteItem,
@@ -320,7 +326,7 @@ export const InventoryManagementTab: React.FC = () => {
                            <TableHead>Units/Package</TableHead>
                            <TableHead>Purchase Unit</TableHead>
                            <TableHead>Package Price</TableHead>
-                           <TableHead>Cost per Item</TableHead>
+                           <TableHead>Vendor</TableHead>
                            <TableHead className="w-[80px]">Actions</TableHead>
                          </TableRow>
                       </TableHeader>
@@ -488,6 +494,92 @@ export const InventoryManagementTab: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Vendor Management Tab */}
+        <TabsContent value="vendors" className="mt-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Vendors
+              </CardTitle>
+              <Button onClick={() => setIsVendorDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Vendor
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {vendorsLoading ? (
+                <LoadingState rows={3} showHeader={false} />
+              ) : vendors.length === 0 ? (
+                <div className="text-center py-12">
+                  <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No vendors yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Add vendors to track supplier information and enhance your inventory management
+                  </p>
+                  <Button onClick={() => setIsVendorDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Vendor
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {vendors.map((vendor) => (
+                    <Card key={vendor.id} className="group hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            <h4 className="font-medium">{vendor.name}</h4>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditVendor(vendor)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setVendorToDelete(vendor)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                          {vendor.contact_email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              <span className="truncate">{vendor.contact_email}</span>
+                            </div>
+                          )}
+                          {vendor.contact_phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              <span>{vendor.contact_phone}</span>
+                            </div>
+                          )}
+                          {vendor.website && (
+                            <div className="flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              <span className="truncate">{vendor.website}</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

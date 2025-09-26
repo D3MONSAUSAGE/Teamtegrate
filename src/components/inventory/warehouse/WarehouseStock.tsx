@@ -14,6 +14,8 @@ import {
 import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { toast } from 'sonner';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { ItemDetailsModal } from '../ItemDetailsModal';
+import { InventoryItem } from '@/contexts/inventory/types';
 
 interface WarehouseStockProps {
   warehouseId?: string;
@@ -23,6 +25,42 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  const selectedItem = selectedItemId ? items.find(warehouseItem => warehouseItem.item_id === selectedItemId)?.item || null : null;
+
+  // Convert warehouse item to inventory item format for modal
+  const convertToInventoryItem = (warehouseItem: WarehouseItem) => {
+    if (!warehouseItem.item) return null;
+    
+    return {
+      ...warehouseItem.item,
+      organization_id: '', // Will be filled by context
+      current_stock: warehouseItem.on_hand,
+      created_by: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      purchase_price: null,
+      unit_cost: warehouseItem.wac_unit_cost,
+      conversion_factor: null,
+      purchase_unit: null,
+      minimum_threshold: warehouseItem.reorder_min || null,
+      maximum_threshold: warehouseItem.reorder_max || null,
+      reorder_point: null,
+      location: null,
+      is_active: true,
+      is_template: false,
+      sort_order: 0,
+      team_id: null,
+      vendor_id: null,
+      vendor: null
+    } as InventoryItem;
+  };
+
+  const modalItem = selectedItemId ? 
+    convertToInventoryItem(items.find(warehouseItem => warehouseItem.item_id === selectedItemId)!) : 
+    null;
 
   useEffect(() => {
     if (!warehouseId) {
@@ -57,6 +95,14 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
 
   const formatQuantity = (qty: number) => {
     return formatNumber(qty);
+  };
+
+  const handleItemClick = (itemId: string) => {
+    const item = items.find(warehouseItem => warehouseItem.item_id === itemId);
+    if (item?.item) {
+      setSelectedItemId(itemId);
+      setIsDetailsModalOpen(true);
+    }
   };
 
   // Calculate summary statistics
@@ -201,7 +247,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
               </TableHeader>
               <TableBody>
                 {items.map((item) => (
-                  <TableRow key={`${item.warehouse_id}-${item.item_id}`}>
+                  <TableRow key={`${item.warehouse_id}-${item.item_id}`} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(item.item_id)}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{item.item?.name}</div>
@@ -249,6 +295,12 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
           </>
         )}
       </CardContent>
+
+      <ItemDetailsModal
+        open={isDetailsModalOpen}
+        onOpenChange={setIsDetailsModalOpen}
+        item={modalItem}
+      />
     </Card>
   );
 };
