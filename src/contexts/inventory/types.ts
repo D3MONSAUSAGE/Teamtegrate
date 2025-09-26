@@ -240,8 +240,8 @@ export interface InventoryContextType {
   deleteUnit: (id: string) => Promise<void>;
   
   // Vendor operations
-  createVendor: (vendor: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'created_by'>) => Promise<Vendor>;
-  updateVendor: (id: string, updates: Partial<Vendor>) => Promise<Vendor>;
+  createVendor: (vendor: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'created_by'>) => Promise<Vendor | null>;
+  updateVendor: (id: string, updates: Partial<Vendor>) => Promise<Vendor | null>;
   deleteVendor: (id: string) => Promise<void>;
   
   // Template operations

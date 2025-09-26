@@ -697,6 +697,11 @@ export const useInventoryOperations = ({
     updateUnit,
     deleteUnit,
     
+    // Vendor operations
+    createVendor,
+    updateVendor,
+    deleteVendor,
+    
     // Transaction operations
     createTransaction,
     
