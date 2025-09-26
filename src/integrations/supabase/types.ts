@@ -2724,6 +2724,13 @@ export type Database = {
             foreignKeyName: "inventory_items_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
+            referencedRelation: "vendor_performance_analytics"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
             referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
@@ -9111,6 +9118,63 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_inventory_summary: {
+        Row: {
+          low_stock_items: number | null
+          overstock_items: number | null
+          summary_date: string | null
+          team_id: string | null
+          team_name: string | null
+          total_inventory_value: number | null
+          total_items: number | null
+          total_stock_quantity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_team_performance: {
+        Row: {
+          avg_completion_rate: number | null
+          calculated_accuracy_percentage: number | null
+          completed_counts: number | null
+          items_counted: number | null
+          month_start: string | null
+          team_id: string | null
+          team_name: string | null
+          total_counts: number | null
+          total_variances: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_counts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_user_hierarchy: {
         Row: {
           assigned_tasks_count: number | null
@@ -9215,6 +9279,48 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_performance_analytics: {
+        Row: {
+          avg_item_cost: number | null
+          items_supplied: number | null
+          last_transaction_date: string | null
+          teams_served: number | null
+          total_inventory_value: number | null
+          total_transactions: number | null
+          vendor_id: string | null
+          vendor_name: string | null
+        }
+        Relationships: []
+      }
+      weekly_inventory_movements: {
+        Row: {
+          po_number: string | null
+          team_id: string | null
+          team_name: string | null
+          total_quantity: number | null
+          total_value: number | null
+          transaction_count: number | null
+          transaction_type: string | null
+          vendor_name: string | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -9410,6 +9516,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_daily_movements: {
+        Args: { p_date?: string; p_team_id?: string }
+        Returns: {
+          po_numbers: string[]
+          total_quantity: number
+          total_value: number
+          transaction_count: number
+          transaction_type: string
+        }[]
+      }
       get_daily_task_summary: {
         Args: { target_date?: string; target_user_id: string }
         Returns: Json
@@ -9514,6 +9630,17 @@ export type Database = {
           started_at: string
           total_adjustment: number
           user_id: string
+        }[]
+      }
+      get_real_time_inventory_value: {
+        Args: { p_team_id?: string }
+        Returns: {
+          low_stock_count: number
+          overstock_count: number
+          team_id: string
+          team_name: string
+          total_items: number
+          total_value: number
         }[]
       }
       get_request_notification_recipients: {
