@@ -394,7 +394,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-sm text-muted-foreground">SKU:</span>
-                  <span className="text-sm font-medium">{selectedItem?.sku || 'No SKU'}</span>
+                  <span className="text-sm font-medium">{selectedItem?.sku || ''}</span>
                   {selectedItem?.barcode && (
                     <Badge variant="secondary" className="text-xs ml-auto">
                       <Scan className="h-3 w-3 mr-1" />
@@ -403,55 +403,58 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                   )}
                 </div>
               </div>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowItemPicker(true)}
-                className="min-h-[44px] px-3 bg-background/80 hover:bg-background"
-              >
-                <Package className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Select</span>
-              </Button>
             </div>
           </div>
 
-          {/* Quantities and Actual Count */}
-          <div className="p-4">
-            <div className="grid grid-cols-4 gap-3 mb-4">
-              <div className="text-center p-2 bg-muted/50 rounded-lg">
-                <div className="text-xs font-medium text-muted-foreground uppercase">Min</div>
-                <div className="text-sm font-bold mt-1">{minThreshold ?? '—'}</div>
+          {/* Quantities Grid */}
+          <div className="p-4 bg-muted/30">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-background rounded-lg shadow-sm border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">MIN</div>
+                <div className="text-xl font-bold text-foreground mt-2">{minThreshold ?? '—'}</div>
               </div>
-              <div className="text-center p-2 bg-muted/50 rounded-lg">
-                <div className="text-xs font-medium text-muted-foreground uppercase">Max</div>
-                <div className="text-sm font-bold mt-1">{maxThreshold ?? '—'}</div>
+              <div className="text-center p-4 bg-background rounded-lg shadow-sm border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">MAX</div>
+                <div className="text-xl font-bold text-foreground mt-2">{maxThreshold ?? '—'}</div>
               </div>
-              <div className="text-center p-2 bg-muted/50 rounded-lg">
-                <div className="text-xs font-medium text-muted-foreground uppercase">Expected</div>
-                <div className="text-sm font-bold mt-1">{inStock}</div>
-              </div>
-              <div className="text-center p-2 bg-primary/10 rounded-lg border border-primary/20">
-                <div className="text-xs font-medium text-primary uppercase">Actual</div>
-                <div className="text-lg font-bold text-primary mt-1">{actualQty}</div>
+              <div className="text-center p-4 bg-background rounded-lg shadow-sm border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">EXPECTED</div>
+                <div className="text-xl font-bold text-foreground mt-2">{inStock}</div>
               </div>
             </div>
+          </div>
+
+          {/* Bottom Section with Actual Count and Status */}
+          <div className="p-4 flex items-center justify-between">
+            {/* Status Badge on Left */}
+            <Badge 
+              variant={status.variant} 
+              className={`${status.variant === 'default' ? 'bg-primary/10 text-primary border-primary/20' : ''} px-3 py-1`}
+            >
+              {status.label}
+            </Badge>
             
-            {/* Status and Session Info */}
-            <div className="flex items-center justify-between">
-              <Badge 
-                variant={status.variant}
-                className={`${status.variant === 'default' ? 'bg-primary/10 text-primary border-primary/20' : ''} px-3 py-1`}
-              >
-                {status.label}
-              </Badge>
-              
+            {/* Actual Count in Center */}
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">ACTUAL</span>
+              <span className="text-3xl font-bold text-primary">{actualQty}</span>
               {sessionIncrements > 0 && (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold animate-pulse">
-                  +{sessionIncrements} this session
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold animate-pulse text-xs mt-1">
+                  +{sessionIncrements}
                 </Badge>
               )}
             </div>
+            
+            {/* Select Button on Right */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowItemPicker(true)}
+              className="min-h-[44px] px-3 bg-background/80 hover:bg-background"
+            >
+              <Package className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Select</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
