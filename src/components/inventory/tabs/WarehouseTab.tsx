@@ -3,6 +3,10 @@ import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
 import { TransferToTeamDrawer } from '../warehouse/TransferToTeamDrawer';
+import { ProcessingTab } from '../warehouse/ProcessingTab';
+import { OutgoingTab } from '../warehouse/OutgoingTab';
+import { ReportsTab } from '../warehouse/ReportsTab';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
 import { toast } from 'sonner';
 
@@ -11,6 +15,7 @@ export const WarehouseTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [activeTab, setActiveTab] = useState('stock');
 
   const loadWarehouse = useCallback(async () => {
     try {
@@ -93,6 +98,28 @@ export const WarehouseTab: React.FC = () => {
     );
   }
 
+  const tabs = [
+    { id: 'stock', label: 'Warehouse Stock' },
+    { id: 'processing', label: 'Processing' },
+    { id: 'outgoing', label: 'Outgoing' },
+    { id: 'reports', label: 'Reports' }
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'stock':
+        return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} />;
+      case 'processing':
+        return <ProcessingTab />;
+      case 'outgoing':
+        return <OutgoingTab />;
+      case 'reports':
+        return <ReportsTab />;
+      default:
+        return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -114,10 +141,23 @@ export const WarehouseTab: React.FC = () => {
         </div>
       </div>
 
-      <WarehouseStock 
-        key={refreshKey}
-        warehouseId={warehouse.id} 
-      />
+      <ScrollableTabs>
+        <ScrollableTabsList>
+          {tabs.map((tab) => (
+            <ScrollableTabsTrigger
+              key={tab.id}
+              isActive={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </ScrollableTabsTrigger>
+          ))}
+        </ScrollableTabsList>
+
+        <div className="mt-6">
+          {renderTabContent()}
+        </div>
+      </ScrollableTabs>
     </div>
   );
 };
