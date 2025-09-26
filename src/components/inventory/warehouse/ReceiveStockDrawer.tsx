@@ -13,11 +13,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Truck, X, Package, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Search, Truck, X, Package, Plus, Scan, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useScanGun } from '@/hooks/useScanGun';
+import { ScannerOverlay } from '../ScannerOverlay';
 
 interface ReceiveLine {
   id: string;
@@ -61,6 +65,11 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
   const [searchResults, setSearchResults] = useState<InventoryItem[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  
+  // Scanning state
+  const [scanMode, setScanMode] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerConnected, setScannerConnected] = useState(false);
   
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -107,6 +116,47 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       setSearchLoading(false);
     }
   };
+
+  // Handle barcode scan (from hardware scanner or camera)
+  const handleBarcodeScanned = async (barcode: string) => {
+    try {
+      // Search for item by barcode
+      const results = await warehouseApi.searchInventoryItems(barcode);
+      
+      if (results.length === 0) {
+        toast.error(`No item found with barcode: ${barcode}`);
+        return;
+      }
+      
+      // Auto-select first result (barcode search is precise)
+      const item = results[0];
+      handleItemSelect(item);
+      
+      // Show success feedback
+      toast.success(`Scanned: ${item.name}`);
+      
+      // Haptic feedback on mobile
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    } catch (error) {
+      console.error('Error searching barcode:', error);
+      toast.error('Failed to search barcode');
+    }
+  };
+
+  // Initialize hardware scanner
+  const { isListening, scannerConnected: hardwareScannerConnected, reset } = useScanGun({
+    onScan: handleBarcodeScanned,
+    onStart: () => console.log('SCANGUN_START'),
+    onStop: () => console.log('SCANGUN_STOP'),
+    enabled: scanMode && open,
+  });
+
+  // Update scanner connected state
+  useEffect(() => {
+    setScannerConnected(hardwareScannerConnected);
+  }, [hardwareScannerConnected]);
 
   const handleItemSelect = (item: InventoryItem) => {
     // Check if item already exists in lines
@@ -216,6 +266,8 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);
+    setScanMode(false);
+    setShowScanner(false);
   };
 
   const formatCurrency = (amount: number) => {
@@ -290,58 +342,110 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
 
               {/* Line Items */}
               <div className="space-y-4">
-                <Label className="text-lg font-semibold">Items to Receive</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-lg font-semibold">Items to Receive</Label>
+                  
+                  {/* Scan Mode Toggle */}
+                  <div className="flex items-center gap-4">
+                    {scanMode && scannerConnected && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <Zap className="h-3 w-3" />
+                        Scanner Ready
+                      </Badge>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="scan-mode" className="text-sm">Scan Mode</Label>
+                      <Switch
+                        id="scan-mode"
+                        checked={scanMode}
+                        onCheckedChange={setScanMode}
+                      />
+                    </div>
+                  </div>
+                </div>
                 
-                {/* Item Search */}
-                <div className="relative">
+                {/* Item Search/Scan */}
+                <div className="space-y-3">
+                  {/* Search Input with Results */}
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search items by name, SKU, or barcode..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onFocus={() => {
-                        if (searchResults.length > 0) setShowResults(true);
-                      }}
-                      className="pl-10"
-                    />
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={scanMode ? "Scan barcode or search manually..." : "Search items by name, SKU, or barcode..."}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => {
+                          if (searchResults.length > 0) setShowResults(true);
+                        }}
+                        className="pl-10"
+                        disabled={scanMode && !searchQuery}
+                      />
+                    </div>
+                    
+                    {/* Scan Button */}
+                    {scanMode && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowScanner(true)}
+                          className="p-2"
+                        >
+                          <Scan className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Search Results */}
+                    {showResults && searchResults.length > 0 && (
+                      <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto border shadow-lg bg-background">
+                        <CardContent className="p-2">
+                          {searchResults.map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => handleItemSelect(item)}
+                              className="flex items-center justify-between p-3 hover:bg-muted rounded-md cursor-pointer"
+                            >
+                              <div className="flex-1">
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-sm text-muted-foreground flex gap-2">
+                                  {item.sku && <span>SKU: {item.sku}</span>}
+                                  {item.barcode && <span>| {item.barcode}</span>}
+                                </div>
+                              </div>
+                              {item.unit_cost && (
+                                <div className="text-sm font-medium">
+                                  {formatCurrency(item.unit_cost)}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    )}
+                    
+                    {/* No Results */}
+                    {showResults && searchResults.length === 0 && debouncedSearchQuery && !searchLoading && (
+                      <Card className="absolute top-full left-0 right-0 z-50 mt-1 border shadow-lg bg-background">
+                        <CardContent className="p-4 text-center text-muted-foreground">
+                          No items found matching "{debouncedSearchQuery}"
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                   
-                  {/* Search Results */}
-                  {showResults && searchResults.length > 0 && (
-                    <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto border shadow-lg bg-background">
-                      <CardContent className="p-2">
-                        {searchResults.map((item) => (
-                          <div
-                            key={item.id}
-                            onClick={() => handleItemSelect(item)}
-                            className="flex items-center justify-between p-3 hover:bg-muted rounded-md cursor-pointer"
-                          >
-                            <div className="flex-1">
-                              <div className="font-medium">{item.name}</div>
-                              <div className="text-sm text-muted-foreground flex gap-2">
-                                {item.sku && <span>SKU: {item.sku}</span>}
-                                {item.barcode && <span>| {item.barcode}</span>}
-                              </div>
-                            </div>
-                            {item.unit_cost && (
-                              <div className="text-sm font-medium">
-                                {formatCurrency(item.unit_cost)}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )}
-                  
-                  {/* No Results */}
-                  {showResults && searchResults.length === 0 && debouncedSearchQuery && !searchLoading && (
-                    <Card className="absolute top-full left-0 right-0 z-50 mt-1 border shadow-lg bg-background">
-                      <CardContent className="p-4 text-center text-muted-foreground">
-                        No items found matching "{debouncedSearchQuery}"
-                      </CardContent>
-                    </Card>
+                  {/* Scanning Status */}
+                  {scanMode && (
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        scannerConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                      }`} />
+                      {scannerConnected 
+                        ? 'Hardware scanner ready - scan any barcode'
+                        : 'No hardware scanner detected - use camera scan button'
+                      }
+                    </div>
                   )}
                 </div>
 
@@ -457,6 +561,14 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
         </DrawerContent>
       </Drawer>
 
+      {/* Scanner Overlay */}
+      <ScannerOverlay
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onBarcode={handleBarcodeScanned}
+        continuous={true}
+        instructions="Scan item barcodes to add them to the receipt"
+      />
     </>
   );
 };
