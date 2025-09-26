@@ -7,9 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Minus, Scan, Package, Zap } from 'lucide-react';
-import { useScanGun } from '@/hooks/useScanGun';
 import { useScanEngineV2 } from '@/hooks/useScanEngineV2';
 import { ScanItemPicker } from '../ScanItemPicker';
+import { ScanGunTrap } from '../ScanGunTrap';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryCountsApi, inventoryItemsApi } from '@/contexts/inventory/api';
@@ -171,16 +171,8 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     handleIncrement();
   }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, handleIncrement]);
 
-  // Initialize scan gun using V2 engine's scan handling
-  const legacyScanGun = useScanGun({
-    onScan: handleScanDetected,
-    onStart: () => console.log('SCANGUN_START'),
-    onStop: () => console.log('SCANGUN_STOP'),
-    enabled: true,
-  });
-
-  const isListening = legacyScanGun?.isListening ?? false;
-  const scannerConnected = legacyScanGun?.scannerConnected ?? false;
+  // Scanner trap state
+  const [scannerConnected, setScannerConnected] = useState(false);
   
   // Wire up refetch callback to V2 engine
   useEffect(() => {
@@ -219,13 +211,10 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Hidden input to maintain focus */}
-      <input
-        className="scangun-input opacity-0 absolute -z-10"
-        type="text"
-        autoFocus
-        style={{ width: 1, height: 1 }}
-        onChange={() => {}} // Prevent warnings
+      {/* Scanner trap for focus management */}
+      <ScanGunTrap 
+        handleScan={handleScanDetected}
+        active={true}
       />
 
       {/* Sticky Item Summary */}
@@ -292,16 +281,14 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
       <Card>
         <CardContent className="p-4">
           <div className="space-y-4">
-            {/* Scanner Status */}
+            {/* Scanner Status - using ScanGunTrap's built-in status */}
             <div className="flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-                scannerConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
-                'bg-muted text-muted-foreground'
-              }`}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground">
                 <Scan className="h-4 w-4" />
-                <span className="text-sm">
-                  {scannerConnected ? 'Scanner connected' : 'Waiting for scanner...'}
-                </span>
+                <ScanGunTrap 
+                  handleScan={handleScanDetected}
+                  active={true}
+                />
               </div>
               {lastScanRef.current && (
                 <Badge variant="outline" className="text-xs">
