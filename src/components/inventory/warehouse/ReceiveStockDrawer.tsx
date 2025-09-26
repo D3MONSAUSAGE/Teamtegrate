@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -13,10 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Minus, Truck, X, Package } from 'lucide-react';
+import { Search, Truck, X, Package, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
-import { ItemSelector, type InventoryItemOption } from '@/components/warehouse/ItemSelector';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ReceiveLine {
   id: string;
@@ -29,6 +30,14 @@ interface ReceiveLine {
   line_notes?: string;
 }
 
+interface InventoryItem {
+  id: string;
+  name: string;
+  sku?: string;
+  barcode?: string;
+  unit_cost?: number;
+}
+
 interface ReceiveStockDrawerProps {
   warehouseId?: string;
   onReceiptPosted?: () => void;
@@ -38,14 +47,22 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
   warehouseId, 
   onReceiptPosted 
 }) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [receivedDate, setReceivedDate] = useState(new Date().toISOString().split('T')[0]);
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [lineItems, setLineItems] = useState<ReceiveLine[]>([]);
-  const [showItemSelector, setShowItemSelector] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Item search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<InventoryItem[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Load warehouse when warehouseId changes
   useEffect(() => {
@@ -53,6 +70,16 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       loadWarehouse();
     }
   }, [warehouseId, open]);
+
+  // Search for items when query changes
+  useEffect(() => {
+    if (debouncedSearchQuery.trim() && user?.organizationId) {
+      performSearch();
+    } else {
+      setSearchResults([]);
+      setShowResults(false);
+    }
+  }, [debouncedSearchQuery, user?.organizationId]);
 
   const loadWarehouse = async () => {
     if (!warehouseId) return;
@@ -65,7 +92,23 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     }
   };
 
-  const handleItemSelect = (item: InventoryItemOption) => {
+  const performSearch = async () => {
+    if (!user?.organizationId || !debouncedSearchQuery.trim()) return;
+    
+    try {
+      setSearchLoading(true);
+      const results = await warehouseApi.searchInventoryItems(debouncedSearchQuery);
+      setSearchResults(results);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Error searching items:', error);
+      toast.error('Failed to search items');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleItemSelect = (item: InventoryItem) => {
     // Check if item already exists in lines
     const existingLine = lineItems.find(line => line.item_id === item.id);
     if (existingLine) {
@@ -85,7 +128,11 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     };
 
     setLineItems([...lineItems, newLine]);
-    setShowItemSelector(false);
+    
+    // Clear search
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowResults(false);
   };
 
   const removeLineItem = (id: string) => {
@@ -160,6 +207,9 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     setNotes('');
     setLineItems([]);
     setReceivedDate(new Date().toISOString().split('T')[0]);
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowResults(false);
   };
 
   const formatCurrency = (amount: number) => {
@@ -234,16 +284,59 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
 
               {/* Line Items */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-lg font-semibold">Items to Receive</Label>
-                  <Button 
-                    onClick={() => setShowItemSelector(true)} 
-                    size="sm" 
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Item
-                  </Button>
+                <Label className="text-lg font-semibold">Items to Receive</Label>
+                
+                {/* Item Search */}
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search items by name, SKU, or barcode..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => {
+                        if (searchResults.length > 0) setShowResults(true);
+                      }}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  {/* Search Results */}
+                  {showResults && searchResults.length > 0 && (
+                    <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto border shadow-lg bg-background">
+                      <CardContent className="p-2">
+                        {searchResults.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => handleItemSelect(item)}
+                            className="flex items-center justify-between p-3 hover:bg-muted rounded-md cursor-pointer"
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground flex gap-2">
+                                {item.sku && <span>SKU: {item.sku}</span>}
+                                {item.barcode && <span>| {item.barcode}</span>}
+                              </div>
+                            </div>
+                            {item.unit_cost && (
+                              <div className="text-sm font-medium">
+                                {formatCurrency(item.unit_cost)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {/* No Results */}
+                  {showResults && searchResults.length === 0 && debouncedSearchQuery && !searchLoading && (
+                    <Card className="absolute top-full left-0 right-0 z-50 mt-1 border shadow-lg bg-background">
+                      <CardContent className="p-4 text-center text-muted-foreground">
+                        No items found matching "{debouncedSearchQuery}"
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
 
                 {lineItems.length === 0 ? (
@@ -253,15 +346,8 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                     </div>
                     <h3 className="text-lg font-semibold mb-2">No Items Added</h3>
                     <p className="text-muted-foreground mb-4">
-                      Click "Add Item" to select items from your master list
+                      Search for items above to add them to this receipt
                     </p>
-                    <Button 
-                      onClick={() => setShowItemSelector(true)}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Item
-                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -365,12 +451,6 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
         </DrawerContent>
       </Drawer>
 
-      {/* Item Selector Modal */}
-      <ItemSelector
-        open={showItemSelector}
-        onSelect={handleItemSelect}
-        onClose={() => setShowItemSelector(false)}
-      />
     </>
   );
 };
