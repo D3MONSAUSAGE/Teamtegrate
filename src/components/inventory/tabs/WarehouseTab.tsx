@@ -28,7 +28,7 @@ export const WarehouseTab: React.FC = () => {
   // For admins, don't auto-load anything until team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
 
-  const loadWarehouse = useCallback(async () => {
+  const loadWarehouse = useCallback(async (retryCount = 0) => {
     if (!shouldLoadWarehouse) {
       setLoading(false);
       setWarehouse(null);
@@ -67,7 +67,13 @@ export const WarehouseTab: React.FC = () => {
         setError('Access denied. You don\'t have permission to view warehouses.');
         setWarehouse(null);
       } else {
-        // No warehouse exists (this is the normal "not configured" case)
+        // No warehouse exists - but if we just created one, retry a few times
+        if (retryCount < 3) {
+          console.log(`No warehouse found - retrying (${retryCount + 1}/3)...`);
+          setTimeout(() => loadWarehouse(retryCount + 1), 1000);
+          return;
+        }
+        // After retries, show setup screen
         console.log('No warehouse found - showing setup screen');
         setWarehouse(null);
         setError(null);

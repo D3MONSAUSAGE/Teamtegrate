@@ -21,8 +21,10 @@ export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured, sele
     setShowSetupWizard(true);
   };
 
-  const handleSetupComplete = () => {
+  const handleSetupComplete = async () => {
     setShowSetupWizard(false);
+    // Brief delay to ensure smooth transition
+    await new Promise(resolve => setTimeout(resolve, 300));
     onConfigured();
   };
 

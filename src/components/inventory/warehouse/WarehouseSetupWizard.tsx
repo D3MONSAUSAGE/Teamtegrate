@@ -84,8 +84,10 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     toast.success('Warehouse setup completed successfully!');
+    // Add a brief delay to ensure database consistency before transitioning
+    await new Promise(resolve => setTimeout(resolve, 500));
     onComplete();
   };
 
