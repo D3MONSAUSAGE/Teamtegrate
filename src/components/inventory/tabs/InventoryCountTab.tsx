@@ -85,7 +85,7 @@ export const InventoryCountTab: React.FC = () => {
       }));
       scanEngineV2.onItemsRefetched(mappedItems);
     }
-  }, [countItems, scanEngineV2.onItemsRefetched]);
+  }, [countItems]); // Remove unstable scanEngineV2.onItemsRefetched from dependencies
   
 
   const activeCountRecord = (counts || []).find(c => c.id === activeCount && c.status === 'in_progress');
