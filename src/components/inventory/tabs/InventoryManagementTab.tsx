@@ -277,10 +277,12 @@ export const InventoryManagementTab: React.FC = () => {
                 </Select>
 
 
-                <Button onClick={handleAddItem}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
+                {hasRoleAccess('admin') && (
+                  <Button onClick={handleAddItem}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -298,7 +300,7 @@ export const InventoryManagementTab: React.FC = () => {
                     : 'Get started by adding your first inventory item.'
                   }
                 </p>
-                {(!searchTerm && selectedCategory === 'all') && (
+                {(!searchTerm && selectedCategory === 'all') && hasRoleAccess('admin') && (
                   <Button onClick={handleAddItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Item

@@ -42,8 +42,8 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const [sessionIncrements, setSessionIncrements] = useState<number>(0);
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [attachFirstScan, setAttachFirstScan] = useState<boolean>(true);
-  const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(false);
-  const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('enter');
+  const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(true);
+  const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('both');
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
   
   // Refs for debouncing and retry logic

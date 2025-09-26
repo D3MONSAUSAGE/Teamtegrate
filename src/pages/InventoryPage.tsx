@@ -30,10 +30,12 @@ const InventoryPage: React.FC = () => {
               <Package className="h-4 w-4" />
               Inventory Count
             </ResponsiveTabsTrigger>
-            <ResponsiveTabsTrigger value="records" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Records
-            </ResponsiveTabsTrigger>
+            {hasRoleAccess('manager') && (
+              <ResponsiveTabsTrigger value="records" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Records
+              </ResponsiveTabsTrigger>
+            )}
             {hasRoleAccess('manager') && (
               <ResponsiveTabsTrigger value="warehouse" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
@@ -52,9 +54,11 @@ const InventoryPage: React.FC = () => {
             <InventoryCountTab />
           </ResponsiveTabsContent>
 
-          <ResponsiveTabsContent value="records" className="mt-6">
-            <InventoryRecordsTab />
-          </ResponsiveTabsContent>
+          {hasRoleAccess('manager') && (
+            <ResponsiveTabsContent value="records" className="mt-6">
+              <InventoryRecordsTab />
+            </ResponsiveTabsContent>
+          )}
 
           {hasRoleAccess('manager') && (
             <ResponsiveTabsContent value="warehouse" className="mt-6">
