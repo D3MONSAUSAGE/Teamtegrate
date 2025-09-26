@@ -324,5 +324,39 @@ export const warehouseApi = {
       // Re-throw the error so UI can handle it appropriately
       throw error;
     }
+  },
+
+  // Search inventory items for warehouse receiving
+  async searchInventoryItems(query: string, limit = 20): Promise<any[]> {
+    if (!query.trim()) return [];
+
+    let baseQuery = supabase
+      .from('inventory_items')
+      .select(`
+        id,
+        name,
+        sku,
+        barcode,
+        unit_cost,
+        category:inventory_categories(name),
+        base_unit:inventory_units(name, abbreviation)
+      `)
+      .eq('is_active', true)
+      .limit(limit);
+
+    // Search by name, SKU, or barcode
+    const searchTerm = query.trim();
+    
+    // If it looks like a barcode (numbers only, 6+ digits), prioritize barcode search
+    if (/^\d{6,}$/.test(searchTerm)) {
+      baseQuery = baseQuery.or(`barcode.eq.${searchTerm},name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
+    } else {
+      baseQuery = baseQuery.or(`name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%,barcode.ilike.%${searchTerm}%`);
+    }
+
+    const { data, error } = await baseQuery.order('name');
+
+    if (error) throw error;
+    return data || [];
   }
 };
