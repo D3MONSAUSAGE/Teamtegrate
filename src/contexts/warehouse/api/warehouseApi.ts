@@ -330,6 +330,18 @@ export const warehouseApi = {
   async searchInventoryItems(query: string, limit = 20): Promise<any[]> {
     if (!query.trim()) return [];
 
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError || !user.user) throw new Error('Not authenticated');
+
+    // Get user's organization for filtering
+    const { data: userData, error: userDataError } = await supabase
+      .from('users')
+      .select('organization_id, role')
+      .eq('id', user.user.id)
+      .single();
+
+    if (userDataError || !userData) throw new Error('Could not get user data');
+
     let baseQuery = supabase
       .from('inventory_items')
       .select(`
@@ -338,11 +350,42 @@ export const warehouseApi = {
         sku,
         barcode,
         unit_cost,
+        team_id,
         category:inventory_categories(name),
         base_unit:inventory_units(name, abbreviation)
       `)
       .eq('is_active', true)
+      .eq('organization_id', userData.organization_id)
       .limit(limit);
+
+    // Apply team-based filtering for managers (same logic as getAll)
+    if (userData.role === 'manager') {
+      const { data: managedTeams } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('manager_id', user.user.id)
+        .eq('organization_id', userData.organization_id);
+
+      const teamIds = managedTeams?.map(t => t.id) || [];
+      if (teamIds.length > 0) {
+        baseQuery = baseQuery.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
+      } else {
+        baseQuery = baseQuery.is('team_id', null);
+      }
+    } else if (userData.role !== 'admin' && userData.role !== 'superadmin') {
+      // Other users see items from teams they belong to + items available to all teams
+      const { data: userTeams } = await supabase
+        .from('team_memberships')
+        .select('team_id')
+        .eq('user_id', user.user.id);
+
+      const teamIds = userTeams?.map(tm => tm.team_id) || [];
+      if (teamIds.length > 0) {
+        baseQuery = baseQuery.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
+      } else {
+        baseQuery = baseQuery.is('team_id', null);
+      }
+    }
 
     // Search by name, SKU, or barcode
     const searchTerm = query.trim();

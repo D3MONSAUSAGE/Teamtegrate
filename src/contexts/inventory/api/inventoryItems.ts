@@ -3,15 +3,62 @@ import { InventoryItem } from '../types';
 
 export const inventoryItemsApi = {
   async getAll(): Promise<InventoryItem[]> {
-    const { data, error } = await supabase
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError || !user.user) throw new Error('Not authenticated');
+
+    // Get user's organization and role for team-based filtering
+    const { data: userData, error: userDataError } = await supabase
+      .from('users')
+      .select('organization_id, role')
+      .eq('id', user.user.id)
+      .single();
+
+    if (userDataError || !userData) throw new Error('Could not get user data');
+
+    let query = supabase
       .from('inventory_items')
       .select(`
         *,
         category:inventory_categories(*),
-        base_unit:inventory_units(*)
+        base_unit:inventory_units(*),
+        teams:team_id(name)
       `)
       .eq('is_active', true)
-      .order('name');
+      .eq('organization_id', userData.organization_id);
+
+    // Apply team-based filtering based on user role
+    if (userData.role === 'admin' || userData.role === 'superadmin') {
+      // Admins see all items in their organization (no additional filter needed)
+    } else if (userData.role === 'manager') {
+      // Managers see items from their managed teams + items available to all teams (team_id = null)
+      const { data: managedTeams } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('manager_id', user.user.id)
+        .eq('organization_id', userData.organization_id);
+
+      const teamIds = managedTeams?.map(t => t.id) || [];
+      if (teamIds.length > 0) {
+        query = query.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
+      } else {
+        query = query.is('team_id', null);
+      }
+    } else {
+      // Other users see items from teams they belong to + items available to all teams
+      const { data: userTeams } = await supabase
+        .from('team_memberships')
+        .select('team_id')
+        .eq('user_id', user.user.id);
+
+      const teamIds = userTeams?.map(tm => tm.team_id) || [];
+      if (teamIds.length > 0) {
+        query = query.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
+      } else {
+        query = query.is('team_id', null);
+      }
+    }
+
+    const { data, error } = await query.order('name');
 
     if (error) throw error;
     return (data || []) as any;
@@ -22,6 +69,7 @@ export const inventoryItemsApi = {
     const itemWithCreatedBy = {
       ...item,
       barcode: item.barcode?.trim() || null,
+      team_id: item.team_id || null, // Ensure team_id is properly handled
       created_by: (await supabase.auth.getUser()).data.user?.id
     };
 
@@ -33,7 +81,8 @@ export const inventoryItemsApi = {
       .select(`
         *,
         category:inventory_categories(*),
-        base_unit:inventory_units(*)
+        base_unit:inventory_units(*),
+        teams:team_id(name)
       `)
       .single();
 
@@ -75,7 +124,8 @@ export const inventoryItemsApi = {
       .select(`
         *,
         category:inventory_categories(*),
-        base_unit:inventory_units(*)
+        base_unit:inventory_units(*),
+        teams:team_id(name)
       `)
       .single();
 
@@ -117,7 +167,8 @@ export const inventoryItemsApi = {
       .select(`
         *,
         category:inventory_categories(*),
-        base_unit:inventory_units(*)
+        base_unit:inventory_units(*),
+        teams:team_id(name)
       `)
       .eq('id', id)
       .eq('is_active', true)
@@ -147,7 +198,8 @@ export const inventoryItemsApi = {
       .select(`
         *,
         category:inventory_categories(*),
-        base_unit:inventory_units(*)
+        base_unit:inventory_units(*),
+        teams:team_id(name)
       `)
       .eq('barcode', barcode.trim())
       .eq('is_active', true)

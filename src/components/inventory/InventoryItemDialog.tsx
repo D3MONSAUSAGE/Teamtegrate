@@ -16,6 +16,7 @@ import { InventoryUnitDialog } from './InventoryUnitDialog';
 import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton';
 import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { BarcodeInput } from './BarcodeInput';
+import { TeamInventorySelector } from './TeamInventorySelector';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -32,6 +33,7 @@ const inventoryItemSchema = z.object({
   }, 'SKU validation failed'),
   barcode: z.string().optional(),
   location: z.string().optional(),
+  team_id: z.string().nullable().optional(),
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
@@ -67,6 +69,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       sku: '',
       barcode: '',
       location: '',
+      team_id: null,
     },
   });
 
@@ -110,6 +113,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           sku: item.sku || '',
           barcode: item.barcode || '',
           location: item.location || '',
+          team_id: item.team_id || null,
         });
       }
     } catch (error) {
@@ -174,6 +178,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         is_active: true,
         is_template: false,
         sort_order: 0,
+        team_id: values.team_id || null,
       };
 
       console.log('📦 Item data being sent:', itemData);
@@ -392,6 +397,23 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                 )}
               />
             </div>
+
+            {/* Team Assignment */}
+            <FormField
+              control={form.control}
+              name="team_id"
+              render={({ field }) => (
+                <FormItem>
+                  <TeamInventorySelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting || loading}
+                    label="Team Access"
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Package Information */}
             <div className="border rounded-lg p-4 space-y-4">

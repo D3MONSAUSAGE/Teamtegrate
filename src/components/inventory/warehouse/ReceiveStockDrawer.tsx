@@ -170,15 +170,20 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       // Step 1: Create receipt
       const receipt = await warehouseApi.createReceipt(warehouseId, reference || undefined);
 
-      // Step 2: Add lines to receipt
+      // Step 2: Add lines to receipt (include all lines with qty > 0, regardless of unit_cost)
+      console.log('📋 Adding receipt lines:', validLines.map(l => ({
+        item_id: l.item_id,
+        qty: l.qty,
+        unit_cost: l.unit_cost || 0,
+        name: l.name
+      })));
+      
       for (const line of validLines) {
-        if (line.unit_cost && line.unit_cost > 0) {
-          await warehouseApi.addReceiptLine(receipt.id, {
-            itemId: line.item_id,
-            qty: line.qty,
-            unitCost: line.unit_cost
-          });
-        }
+        await warehouseApi.addReceiptLine(receipt.id, {
+          itemId: line.item_id,
+          qty: line.qty,
+          unitCost: line.unit_cost || 0 // Default to 0 if no unit cost
+        });
       }
 
       // Step 3: Post the receipt (this updates warehouse_items.on_hand)
@@ -195,8 +200,9 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
         onReceiptPosted();
       }
     } catch (error) {
-      console.error('Error posting receipt:', error);
-      toast.error('Failed to post receipt. Please try again.');
+      console.error('❌ Error posting receipt:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to post receipt: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }

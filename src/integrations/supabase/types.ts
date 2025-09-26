@@ -2618,6 +2618,7 @@ export type Database = {
           sku: string | null
           sort_order: number | null
           supplier_info: Json | null
+          team_id: string | null
           template_name: string | null
           unit_cost: number | null
           unit_of_measure: string
@@ -2649,6 +2650,7 @@ export type Database = {
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
+          team_id?: string | null
           template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
@@ -2680,6 +2682,7 @@ export type Database = {
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
+          team_id?: string | null
           template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
@@ -2698,6 +2701,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -9171,6 +9188,15 @@ export type Database = {
           manager_id: string
         }
         Returns: Json
+      }
+      bump_count_item_actual: {
+        Args:
+          | { p_count_id: string; p_count_item_id: string; p_delta: number }
+          | { p_count_id: string; p_delta: number; p_item_id: string }
+        Returns: {
+          count_item_id: string
+          new_actual: number
+        }[]
       }
       calculate_execution_score: {
         Args: { execution_id_param: string }

@@ -23,6 +23,7 @@ export interface InventoryUnit {
 export interface InventoryItem {
   id: string;
   organization_id: string;
+  team_id?: string | null; // NULL means available to all teams
   name: string;
   description?: string;
   category_id?: string;

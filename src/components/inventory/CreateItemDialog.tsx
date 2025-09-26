@@ -9,6 +9,7 @@ import { InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
 import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton';
 import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { toast } from 'sonner';
+import { TeamInventorySelector } from './TeamInventorySelector';
 
 interface CreateItemDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
     reorder_point: 0,
     reorder_quantity: 0,
     unit_cost: 0,
+    team_id: null as string | null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -87,6 +89,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
         reorder_point: 0,
         reorder_quantity: 0,
         unit_cost: 0,
+        team_id: null,
       });
     } catch (error) {
       console.error('❌ CreateItemDialog error:', error);
@@ -216,6 +219,12 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
               rows={3}
             />
           </div>
+
+          <TeamInventorySelector
+            value={formData.team_id}
+            onChange={(teamId) => setFormData(prev => ({ ...prev, team_id: teamId }))}
+            disabled={isSubmitting}
+          />
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
