@@ -383,48 +383,75 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
       />
 
       {/* Sticky Item Summary */}
-      <Card className="border-2">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg truncate">
-                {selectedItem?.name || 'No item selected'}
-              </h3>
-              <p className="text-sm text-muted-foreground">{selectedItem?.sku || 'No SKU'}</p>
-              
-              <div className="flex items-center gap-4 mt-2">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Min:</span> {minThreshold ?? '—'}
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Max:</span> {maxThreshold ?? '—'}
-                </div>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">In-Stock:</span> {actualQty}
+      <Card className="border-2 shadow-lg">
+        <CardContent className="p-0">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 border-b">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg leading-tight truncate text-foreground">
+                  {selectedItem?.name || 'No item selected'}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-muted-foreground">SKU:</span>
+                  <span className="text-sm font-medium">{selectedItem?.sku || 'No SKU'}</span>
+                  {selectedItem?.barcode && (
+                    <Badge variant="secondary" className="text-xs ml-auto">
+                      <Scan className="h-3 w-3 mr-1" />
+                      {selectedItem.barcode}
+                    </Badge>
+                  )}
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 mt-2">
-                <div className="text-lg font-bold">
-                  Actual: {actualQty}
-                </div>
-                <Badge variant={status.variant}>{status.label}</Badge>
-                {sessionIncrements > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{sessionIncrements} this session
-                  </Badge>
-                )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowItemPicker(true)}
+                className="min-h-[44px] px-3 bg-background/80 hover:bg-background"
+              >
+                <Package className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Select</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Quantities and Actual Count */}
+          <div className="p-4">
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
+                <div className="text-xs font-medium text-muted-foreground uppercase">Min</div>
+                <div className="text-sm font-bold mt-1">{minThreshold ?? '—'}</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
+                <div className="text-xs font-medium text-muted-foreground uppercase">Max</div>
+                <div className="text-sm font-bold mt-1">{maxThreshold ?? '—'}</div>
+              </div>
+              <div className="text-center p-2 bg-muted/50 rounded-lg">
+                <div className="text-xs font-medium text-muted-foreground uppercase">Expected</div>
+                <div className="text-sm font-bold mt-1">{inStock}</div>
+              </div>
+              <div className="text-center p-2 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="text-xs font-medium text-primary uppercase">Actual</div>
+                <div className="text-lg font-bold text-primary mt-1">{actualQty}</div>
               </div>
             </div>
             
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowItemPicker(true)}
-              className="min-h-[44px] ml-4"
-            >
-              Select Item
-            </Button>
+            {/* Status and Session Info */}
+            <div className="flex items-center justify-between">
+              <Badge 
+                variant={status.variant}
+                className={`${status.variant === 'default' ? 'bg-primary/10 text-primary border-primary/20' : ''} px-3 py-1`}
+              >
+                {status.label}
+              </Badge>
+              
+              {sessionIncrements > 0 && (
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold animate-pulse">
+                  +{sessionIncrements} this session
+                </Badge>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

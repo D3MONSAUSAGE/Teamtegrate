@@ -143,65 +143,80 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
   return (
     <div className="flex flex-col space-y-4 p-4 pb-20">
       {/* Sticky Item Summary */}
-      <Card className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-2">
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            {/* Item Info */}
-            <div className="flex items-center justify-between">
+      <Card className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-2 shadow-lg">
+        <CardContent className="p-0">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 border-b">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg truncate">
+                <h3 className="font-bold text-lg leading-tight truncate text-foreground">
                   {selectedItem?.name || 'No item selected'}
                 </h3>
-                <p className="text-sm text-muted-foreground">{selectedItem?.sku || 'No SKU'}</p>
-                
-                {/* Barcode indicator */}
-                {selectedItem?.barcode && (
-                  <Badge variant="outline" className="text-xs mt-1">
-                    📱 {selectedItem.barcode}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-muted-foreground">SKU:</span>
+                  <span className="text-sm font-medium">{selectedItem?.sku || 'No SKU'}</span>
+                  {selectedItem?.barcode && (
+                    <Badge variant="secondary" className="text-xs ml-auto">
+                      <Scan className="h-3 w-3 mr-1" />
+                      {selectedItem.barcode}
+                    </Badge>
+                  )}
+                </div>
               </div>
               
               <Button
-                size="sm"
+                size="sm" 
                 variant="outline"
                 onClick={() => setShowItemPicker(true)}
-                className="min-h-[44px] ml-4"
+                className="min-h-[44px] px-3 bg-background/80 hover:bg-background"
               >
-                <Package className="h-4 w-4 mr-2" />
-                Select Item
+                <Package className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Select</span>
               </Button>
             </div>
+          </div>
 
-            {/* Quantities */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 bg-muted rounded-md">
-                <div className="text-sm text-muted-foreground">Min</div>
-                <div className="font-semibold">{minThreshold ?? '—'}</div>
+          {/* Quantities Grid */}
+          <div className="p-4 bg-muted/30">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 bg-background rounded-lg shadow-sm border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Min</div>
+                <div className="text-lg font-bold text-foreground mt-1">{minThreshold ?? '—'}</div>
               </div>
-              <div className="p-2 bg-muted rounded-md">
-                <div className="text-sm text-muted-foreground">Max</div>
-                <div className="font-semibold">{maxThreshold ?? '—'}</div>
+              <div className="text-center p-3 bg-background rounded-lg shadow-sm border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Max</div>
+                <div className="text-lg font-bold text-foreground mt-1">{maxThreshold ?? '—'}</div>
               </div>
-              <div className="p-2 bg-muted rounded-md">
-                <div className="text-sm text-muted-foreground">Expected</div>
-                <div className="font-semibold">{inStock}</div>
+              <div className="text-center p-3 bg-background rounded-lg shadow-sm border">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Expected</div>
+                <div className="text-lg font-bold text-foreground mt-1">{inStock}</div>
               </div>
             </div>
+          </div>
 
-            {/* Actual count and status */}
+          {/* Actual Count Hero Section */}
+          <div className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="text-xl font-bold">
-                  Actual: {actualQty}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-muted-foreground">ACTUAL COUNT</span>
+                  <span className="text-3xl font-bold text-primary">{actualQty}</span>
                 </div>
-                <Badge variant={status.variant}>{status.label}</Badge>
+                <Badge 
+                  variant={status.variant} 
+                  className={`${status.variant === 'default' ? 'bg-primary/10 text-primary border-primary/20' : ''} px-3 py-1`}
+                >
+                  {status.label}
+                </Badge>
               </div>
               
               {scanState.sessionIncrements > 0 && (
-                <Badge variant="outline" className="text-xs animate-pulse">
-                  +{scanState.sessionIncrements} this session
-                </Badge>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">This Session</div>
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold animate-pulse">
+                    +{scanState.sessionIncrements}
+                  </Badge>
+                </div>
               )}
             </div>
           </div>
