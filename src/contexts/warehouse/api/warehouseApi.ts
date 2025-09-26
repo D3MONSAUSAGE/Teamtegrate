@@ -5,9 +5,15 @@ export type Warehouse = {
   name: string;
   is_primary: boolean;
   organization_id: string;
+  team_id?: string;
   address?: string;
   created_by?: string;
   created_at: string;
+  // Joined data
+  team?: {
+    id: string;
+    name: string;
+  };
 };
 
 export type WarehouseItem = {
@@ -97,7 +103,10 @@ export const warehouseApi = {
   async getPrimaryWarehouse(): Promise<Warehouse | null> {
     const { data, error } = await supabase
       .from('warehouses')
-      .select('*')
+      .select(`
+        *,
+        team:teams(id, name)
+      `)
       .eq('is_primary', true)
       .single();
 
@@ -110,6 +119,42 @@ export const warehouseApi = {
     }
 
     return data;
+  },
+
+  // Get warehouse by team ID
+  async getWarehouseByTeam(teamId: string): Promise<Warehouse | null> {
+    const { data, error } = await supabase
+      .from('warehouses')
+      .select(`
+        *,
+        team:teams(id, name)
+      `)
+      .eq('team_id', teamId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
+  },
+
+  // List all warehouses for admin/superadmin users
+  async listWarehouses(): Promise<Warehouse[]> {
+    const { data, error } = await supabase
+      .from('warehouses')
+      .select(`
+        *,
+        team:teams(id, name)
+      `)
+      .order('name');
+
+    if (error) throw error;
+    return data || [];
   },
 
   // List warehouse items with inventory item details
@@ -278,7 +323,7 @@ export const warehouseApi = {
   },
 
   // Create a default warehouse for an organization (used for first-time setup)
-  async createDefaultWarehouse(name: string): Promise<Warehouse> {
+  async createDefaultWarehouse(name: string, teamId?: string): Promise<Warehouse> {
     // Must be authenticated
     const { data: authRes } = await supabase.auth.getUser();
     const uid = authRes?.user?.id;
@@ -295,16 +340,20 @@ export const warehouseApi = {
       throw new Error('Could not determine your organization.');
     }
 
-    // Insert with explicit organization_id (RLS WITH CHECK will pass)
+    // Insert with explicit organization_id and team_id (RLS WITH CHECK will pass)
     const { data, error } = await supabase
       .from('warehouses')
       .insert({
         name,
         is_primary: true,
         organization_id: userData.organization_id,
+        team_id: teamId,
         created_by: uid,
       })
-      .select()
+      .select(`
+        *,
+        team:teams(id, name)
+      `)
       .single();
 
     if (error) throw error;
@@ -312,14 +361,14 @@ export const warehouseApi = {
   },
 
   // Ensure a primary warehouse exists (idempotent setup method)
-  async ensurePrimaryWarehouse(name = 'Main Warehouse'): Promise<Warehouse> {
+  async ensurePrimaryWarehouse(name = 'Main Warehouse', teamId?: string): Promise<Warehouse> {
     try {
       // First try to get existing primary warehouse
       const existing = await this.getPrimaryWarehouse();
       if (existing) return existing;
 
       // If none exists, create one
-      return await this.createDefaultWarehouse(name);
+      return await this.createDefaultWarehouse(name, teamId);
     } catch (error) {
       // Re-throw the error so UI can handle it appropriately
       throw error;

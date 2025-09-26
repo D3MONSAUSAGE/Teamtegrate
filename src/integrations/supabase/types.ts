@@ -8790,6 +8790,7 @@ export type Database = {
           is_primary: boolean
           name: string
           organization_id: string
+          team_id: string | null
         }
         Insert: {
           address?: string | null
@@ -8799,6 +8800,7 @@ export type Database = {
           is_primary?: boolean
           name: string
           organization_id: string
+          team_id?: string | null
         }
         Update: {
           address?: string | null
@@ -8808,8 +8810,24 @@ export type Database = {
           is_primary?: boolean
           name?: string
           organization_id?: string
+          team_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "warehouses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhook_deliveries: {
         Row: {

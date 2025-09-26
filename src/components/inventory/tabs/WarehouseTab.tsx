@@ -7,21 +7,40 @@ import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
 import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
+import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
+import { useAuth } from '@/contexts/AuthContext';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
 import { toast } from 'sonner';
 
 export const WarehouseTab: React.FC = () => {
+  const { user } = useAuth();
+  const { isAdmin, isSuperAdmin, isManager, availableTeams } = useTeamAccess();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState('stock');
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   const loadWarehouse = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await warehouseApi.getPrimaryWarehouse();
+      
+      let data: Warehouse | null = null;
+      
+      // For admins/superadmins with team selected, get warehouse by team
+      if ((isAdmin || isSuperAdmin) && selectedTeamId) {
+        data = await warehouseApi.getWarehouseByTeam(selectedTeamId);
+      } else if (isManager && availableTeams.length === 1) {
+        // Managers with single team - get their team's warehouse
+        data = await warehouseApi.getWarehouseByTeam(availableTeams[0].id);
+      } else {
+        // Default: get primary warehouse (backward compatibility)
+        data = await warehouseApi.getPrimaryWarehouse();
+      }
+      
       setWarehouse(data);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -39,11 +58,12 @@ export const WarehouseTab: React.FC = () => {
         // No warehouse exists (this is the normal "not configured" case)
         console.log('No warehouse found - showing setup screen');
         setWarehouse(null);
+        setError(null);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams]);
 
   useEffect(() => {
     loadWarehouse();
@@ -122,22 +142,44 @@ export const WarehouseTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Warehouse Management</h2>
-          <p className="text-muted-foreground">
-            Manage {warehouse.name} stock levels, receive inventory, and transfer to teams
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <ReceiveStockDrawer 
-            warehouseId={warehouse.id}
-            onReceiptPosted={handleRefresh}
-          />
-          <TransferToTeamDrawer 
-            warehouseId={warehouse.id}
-            onTransferSent={handleRefresh}
-          />
+      <div className="space-y-4">
+        {/* Team Selector for Admins/Superadmins */}
+        {(isAdmin || isSuperAdmin) && (
+          <div className="flex items-center gap-4">
+            <UnifiedTeamSelector
+              selectedTeamId={selectedTeamId}
+              onTeamChange={setSelectedTeamId}
+              variant="simple"
+              placeholder="Select team warehouse..."
+              showAllOption={false}
+            />
+          </div>
+        )}
+        
+        {/* Header and Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">Warehouse Management</h2>
+            <p className="text-muted-foreground">
+              {warehouse ? (
+                <>Manage {warehouse.name} stock levels{warehouse.team?.name && ` (${warehouse.team.name})`}, receive inventory, and transfer to teams</>
+              ) : (
+                <>Warehouse system configuration</>
+              )}
+            </p>
+          </div>
+          {warehouse && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <ReceiveStockDrawer 
+                warehouseId={warehouse.id}
+                onReceiptPosted={handleRefresh}
+              />
+              <TransferToTeamDrawer 
+                warehouseId={warehouse.id}
+                onTransferSent={handleRefresh}
+              />
+            </div>
+          )}
         </div>
       </div>
 

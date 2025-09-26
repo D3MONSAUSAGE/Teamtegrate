@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Package, Loader2 } from 'lucide-react';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -12,16 +13,19 @@ interface NotConfiguredProps {
 
 export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured }) => {
   const [loading, setLoading] = useState(false);
-  const { user, hasRoleAccess } = useAuth();
-  
-  const isManager = hasRoleAccess('manager');
+  const { availableTeams, isManager } = useTeamAccess();
 
   const handleSetup = async () => {
-    if (!isManager) return;
-
-    setLoading(true);
     try {
-      await warehouseApi.ensurePrimaryWarehouse();
+      setLoading(true);
+      
+      // For managers with single team, assign warehouse to their team
+      let teamId: string | undefined;
+      if (isManager && availableTeams.length === 1) {
+        teamId = availableTeams[0].id;
+      }
+      
+      await warehouseApi.ensurePrimaryWarehouse('Main Warehouse', teamId);
       toast.success('Warehouse configured successfully');
       onConfigured();
     } catch (error: any) {
