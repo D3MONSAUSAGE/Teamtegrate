@@ -153,10 +153,15 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     enabled: scanMode && open,
   });
 
-  // Update scanner connected state
+  // Update scanner connected state and auto-enable scan mode for hardware scanners
   useEffect(() => {
     setScannerConnected(hardwareScannerConnected);
-  }, [hardwareScannerConnected]);
+    
+    // Auto-enable scan mode when hardware scanner is detected
+    if (hardwareScannerConnected && open) {
+      setScanMode(true);
+    }
+  }, [hardwareScannerConnected, open]);
 
   const handleItemSelect = (item: InventoryItem) => {
     // Check if item already exists in lines
@@ -345,16 +350,22 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                 <div className="flex items-center justify-between">
                   <Label className="text-lg font-semibold">Items to Receive</Label>
                   
-                  {/* Scan Mode Toggle */}
+                  {/* Hardware Scanner Status & Controls */}
                   <div className="flex items-center gap-4">
-                    {scanMode && scannerConnected && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Zap className="h-3 w-3" />
-                        Scanner Ready
-                      </Badge>
+                    {/* Prominent Hardware Scanner Status */}
+                    {scannerConnected && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        <span className="text-sm font-medium text-primary">Hardware Scanner Active</span>
+                        <Zap className="h-3 w-3 text-primary" />
+                      </div>
                     )}
+                    
+                    {/* Scan Mode Toggle */}
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="scan-mode" className="text-sm">Scan Mode</Label>
+                      <Label htmlFor="scan-mode" className="text-sm">
+                        {scannerConnected ? 'Scanning' : 'Scan Mode'}
+                      </Label>
                       <Switch
                         id="scan-mode"
                         checked={scanMode}
@@ -371,7 +382,13 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder={scanMode ? "Scan barcode or search manually..." : "Search items by name, SKU, or barcode..."}
+                        placeholder={
+                          scanMode && scannerConnected 
+                            ? "Ready for hardware scanner - or search manually..." 
+                            : scanMode 
+                              ? "Scan with camera or search manually..." 
+                              : "Search items by name, SKU, or barcode..."
+                        }
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => {
@@ -435,16 +452,36 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                     )}
                   </div>
                   
-                  {/* Scanning Status */}
+                  {/* Enhanced Scanning Status */}
                   {scanMode && (
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        scannerConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                      }`} />
-                      {scannerConnected 
-                        ? 'Hardware scanner ready - scan any barcode'
-                        : 'No hardware scanner detected - use camera scan button'
-                      }
+                    <div className={`rounded-lg p-3 border ${
+                      scannerConnected 
+                        ? 'bg-primary/5 border-primary/20' 
+                        : 'bg-muted/50 border-muted'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          scannerConnected ? 'bg-primary animate-pulse' : 'bg-muted-foreground/40'
+                        }`} />
+                        <div className="flex-1">
+                          {scannerConnected ? (
+                            <div>
+                              <div className="font-medium text-primary text-sm">🎯 Hardware Scanner Connected</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Point scanner at any barcode to add items instantly
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-medium text-sm">📱 Camera Scanning Available</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Use camera scan button or connect a hardware scanner for faster scanning
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {scannerConnected && <Zap className="h-4 w-4 text-primary" />}
+                      </div>
                     </div>
                   )}
                 </div>
