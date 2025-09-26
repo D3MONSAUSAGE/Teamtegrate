@@ -289,7 +289,7 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
         <DrawerTrigger asChild>
           <Button className="flex items-center gap-2">
             <Truck className="h-4 w-4" />
-            Receive from Master List
+            Receive Inventory
           </Button>
         </DrawerTrigger>
         <DrawerContent>

@@ -218,7 +218,7 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
             <div className="space-y-2">
               <p className="text-sm font-medium">Next steps:</p>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Use "Receive from Master List" to add more inventory</li>
+                <li>• Use "Receive Inventory" to add more inventory</li>
                 <li>• Create purchase orders and receipts</li>
                 <li>• Transfer items between teams</li>
               </ul>
