@@ -38,10 +38,17 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
     try {
       setLoading(true);
       const data = await warehouseApi.listWarehouseItems(warehouseId, search);
-      setItems(data);
+      // Sort items by name on client-side since we can't order by joined fields in PostgREST
+      const sortedData = [...data].sort((a, b) => {
+        const nameA = a.item?.name || '';
+        const nameB = b.item?.name || '';
+        return nameA.localeCompare(nameB);
+      });
+      setItems(sortedData);
     } catch (error) {
       console.error('Error loading warehouse items:', error);
-      toast.error('Failed to load warehouse stock');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to load warehouse stock: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

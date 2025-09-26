@@ -133,7 +133,7 @@ export const warehouseApi = {
       query = query.or(`item.name.ilike.%${search}%,item.sku.ilike.%${search}%,item.barcode.ilike.%${search}%`);
     }
 
-    const { data, error } = await query.order('item.name');
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
