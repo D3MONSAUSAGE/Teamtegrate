@@ -360,6 +360,50 @@ export const warehouseApi = {
     return data;
   },
 
+  // Create a team-specific warehouse (non-primary)
+  async createTeamWarehouse(name: string, teamId: string): Promise<Warehouse> {
+    // Must be authenticated
+    const { data: authRes } = await supabase.auth.getUser();
+    const uid = authRes?.user?.id;
+    if (!uid) throw new Error('You must be signed in to set up a warehouse.');
+
+    // Fetch user's organization (required for RLS policy)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('organization_id, role')
+      .eq('id', uid)
+      .single();
+
+    if (userError || !userData?.organization_id) {
+      throw new Error('Could not determine your organization.');
+    }
+
+    // Check if team warehouse already exists
+    const existing = await this.getWarehouseByTeam(teamId);
+    if (existing) {
+      return existing;
+    }
+
+    // Insert with is_primary: false for team warehouses
+    const { data, error } = await supabase
+      .from('warehouses')
+      .insert({
+        name,
+        is_primary: false, // Team warehouses are NOT primary
+        organization_id: userData.organization_id,
+        team_id: teamId,
+        created_by: uid,
+      })
+      .select(`
+        *,
+        team:teams(id, name)
+      `)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   // Ensure a primary warehouse exists (idempotent setup method)
   async ensurePrimaryWarehouse(name = 'Main Warehouse', teamId?: string): Promise<Warehouse> {
     try {

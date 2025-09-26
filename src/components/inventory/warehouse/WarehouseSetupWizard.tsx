@@ -38,7 +38,15 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
   const handleCreateWarehouse = async () => {
     try {
       setLoading(true);
-      const warehouse = await warehouseApi.ensurePrimaryWarehouse(warehouseName, selectedTeamId || undefined);
+      
+      // Create team-specific warehouse instead of primary warehouse
+      let warehouse;
+      if (selectedTeamId) {
+        warehouse = await warehouseApi.createTeamWarehouse(warehouseName, selectedTeamId);
+      } else {
+        warehouse = await warehouseApi.ensurePrimaryWarehouse(warehouseName);
+      }
+      
       setCreatedWarehouse(warehouse);
       toast.success(`${warehouseName} created successfully`);
       setCurrentStep('inventory');

@@ -48,12 +48,25 @@ export const WarehouseTab: React.FC = () => {
       } else if (isManager && availableTeams.length === 1) {
         // Managers with single team - get their team's warehouse
         data = await warehouseApi.getWarehouseByTeam(availableTeams[0].id);
-      } else {
-        // Default: get primary warehouse (backward compatibility)
-        data = await warehouseApi.getPrimaryWarehouse();
+      } else if (availableTeams.length > 0) {
+        // Regular users - get their first team's warehouse
+        data = await warehouseApi.getWarehouseByTeam(availableTeams[0].id);
       }
       
-      setWarehouse(data);
+      if (data) {
+        console.log('Warehouse loaded:', data);
+        setWarehouse(data);
+      } else {
+        // No warehouse exists - but if we just created one, retry a few times
+        if (retryCount < 3) {
+          console.log(`No warehouse found - retrying (${retryCount + 1}/3)...`);
+          setTimeout(() => loadWarehouse(retryCount + 1), 1000);
+          return;
+        }
+        // After retries, show setup screen
+        console.log('No warehouse found - showing setup screen');
+        setWarehouse(null);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
@@ -67,14 +80,14 @@ export const WarehouseTab: React.FC = () => {
         setError('Access denied. You don\'t have permission to view warehouses.');
         setWarehouse(null);
       } else {
-        // No warehouse exists - but if we just created one, retry a few times
+        // General error - retry if we haven't exhausted retries
         if (retryCount < 3) {
-          console.log(`No warehouse found - retrying (${retryCount + 1}/3)...`);
+          console.log(`Error loading warehouse - retrying (${retryCount + 1}/3)...`);
           setTimeout(() => loadWarehouse(retryCount + 1), 1000);
           return;
         }
         // After retries, show setup screen
-        console.log('No warehouse found - showing setup screen');
+        console.log('Error persists after retries - showing setup screen');
         setWarehouse(null);
         setError(null);
       }
