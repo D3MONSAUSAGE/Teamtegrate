@@ -7,6 +7,8 @@ import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
 import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Package } from 'lucide-react';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +25,17 @@ export const WarehouseTab: React.FC = () => {
   const [activeTab, setActiveTab] = useState('stock');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
+  // For admins, don't auto-load anything until team is selected
+  const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
+
   const loadWarehouse = useCallback(async () => {
+    if (!shouldLoadWarehouse) {
+      setLoading(false);
+      setWarehouse(null);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -63,7 +75,7 @@ export const WarehouseTab: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse]);
 
   useEffect(() => {
     loadWarehouse();
@@ -73,50 +85,20 @@ export const WarehouseTab: React.FC = () => {
     setRefreshKey(prev => prev + 1);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Loading warehouse...</div>
+  // Empty state when admin hasn't selected a team
+  const EmptyTeamState = () => (
+    <Card>
+      <CardContent className="py-12">
+        <div className="text-center">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Please Select a Team</h3>
+          <p className="text-muted-foreground">
+            Choose a team from the dropdown above to view and manage their warehouse.
+          </p>
         </div>
-      </div>
-    );
-  }
-
-  // Show system error if tables are missing or permissions are denied
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold">Warehouse Management</h2>
-            <p className="text-muted-foreground">Warehouse system configuration</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="text-destructive font-medium mb-2">System Error</div>
-            <div className="text-sm text-muted-foreground">{error}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show setup screen if no warehouse exists
-  if (!warehouse) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold">Warehouse Management</h2>
-            <p className="text-muted-foreground">Set up your warehouse to start managing inventory</p>
-          </div>
-        </div>
-        <NotConfigured onConfigured={loadWarehouse} />
-      </div>
-    );
-  }
+      </CardContent>
+    </Card>
+  );
 
   const tabs = [
     { id: 'stock', label: 'Warehouse Stock' },
@@ -143,7 +125,7 @@ export const WarehouseTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        {/* Team Selector for Admins/Superadmins */}
+        {/* Team Selector for Admins/Superadmins - Always visible */}
         {(isAdmin || isSuperAdmin) && (
           <div className="flex items-center gap-4">
             <UnifiedTeamSelector
@@ -156,15 +138,17 @@ export const WarehouseTab: React.FC = () => {
           </div>
         )}
         
-        {/* Header and Actions */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold">Warehouse Management</h2>
             <p className="text-muted-foreground">
               {warehouse ? (
                 <>Manage {warehouse.name} stock levels{warehouse.team?.name && ` (${warehouse.team.name})`}, receive inventory, and transfer to teams</>
+              ) : (isAdmin || isSuperAdmin) && !selectedTeamId ? (
+                <>Select a team to view and manage their warehouse</>
               ) : (
-                <>Warehouse system configuration</>
+                <>Set up your warehouse to start managing inventory</>
               )}
             </p>
           </div>
@@ -183,23 +167,41 @@ export const WarehouseTab: React.FC = () => {
         </div>
       </div>
 
-      <ScrollableTabs>
-        <ScrollableTabsList>
-          {tabs.map((tab) => (
-            <ScrollableTabsTrigger
-              key={tab.id}
-              isActive={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </ScrollableTabsTrigger>
-          ))}
-        </ScrollableTabsList>
-
-        <div className="mt-6">
-          {renderTabContent()}
+      {/* Content based on state */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading warehouse...</div>
         </div>
-      </ScrollableTabs>
+      ) : error ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="text-destructive font-medium mb-2">System Error</div>
+            <div className="text-sm text-muted-foreground">{error}</div>
+          </div>
+        </div>
+      ) : (isAdmin || isSuperAdmin) && !selectedTeamId ? (
+        <EmptyTeamState />
+      ) : !warehouse ? (
+        <NotConfigured onConfigured={loadWarehouse} selectedTeamId={selectedTeamId} />
+      ) : (
+        <ScrollableTabs>
+          <ScrollableTabsList>
+            {tabs.map((tab) => (
+              <ScrollableTabsTrigger
+                key={tab.id}
+                isActive={activeTab === tab.id}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </ScrollableTabsTrigger>
+            ))}
+          </ScrollableTabsList>
+
+          <div className="mt-6">
+            {renderTabContent()}
+          </div>
+        </ScrollableTabs>
+      )}
     </div>
   );
 };

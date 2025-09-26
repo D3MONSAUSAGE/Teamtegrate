@@ -9,24 +9,32 @@ import { toast } from 'sonner';
 
 interface NotConfiguredProps {
   onConfigured: () => void;
+  selectedTeamId?: string | null;
 }
 
-export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured }) => {
+export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured, selectedTeamId }) => {
   const [loading, setLoading] = useState(false);
-  const { availableTeams, isManager } = useTeamAccess();
+  const { availableTeams, isManager, isAdmin, isSuperAdmin } = useTeamAccess();
 
   const handleSetup = async () => {
     try {
       setLoading(true);
       
-      // For managers with single team, assign warehouse to their team
+      // Determine which team to assign warehouse to
       let teamId: string | undefined;
-      if (isManager && availableTeams.length === 1) {
+      if (selectedTeamId) {
+        // Admin/superadmin setting up for specific team
+        teamId = selectedTeamId;
+      } else if (isManager && availableTeams.length === 1) {
+        // Manager with single team
         teamId = availableTeams[0].id;
       }
       
-      await warehouseApi.ensurePrimaryWarehouse('Main Warehouse', teamId);
-      toast.success('Warehouse configured successfully');
+      const teamName = teamId ? availableTeams.find(t => t.id === teamId)?.name : undefined;
+      const warehouseName = teamName ? `${teamName} Warehouse` : 'Main Warehouse';
+      
+      await warehouseApi.ensurePrimaryWarehouse(warehouseName, teamId);
+      toast.success(`Warehouse configured successfully${teamName ? ` for ${teamName}` : ''}`);
       onConfigured();
     } catch (error: any) {
       console.error('Error setting up warehouse:', error);
@@ -52,10 +60,14 @@ export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured }) =>
           </div>
           <h3 className="text-lg font-semibold mb-2">Warehouse Not Configured</h3>
           <p className="text-muted-foreground max-w-md mb-6">
-            No warehouse has been set up yet. Create a primary warehouse to start managing stock.
+            {selectedTeamId ? (
+              <>No warehouse has been set up for this team yet. Create a warehouse to start managing their stock.</>
+            ) : (
+              <>No warehouse has been set up yet. Create a primary warehouse to start managing stock.</>
+            )}
           </p>
           
-          {isManager ? (
+          {(isManager || isAdmin || isSuperAdmin) ? (
             <Button 
               onClick={handleSetup} 
               disabled={loading}
