@@ -33,7 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 
-type CountInterface = 'batch' | 'mobile' | 'scan' | 'scangun';
+type CountInterface = 'batch' | 'mobile' | 'scangun';
 
 
 export const InventoryCountTab: React.FC = () => {
@@ -536,28 +536,20 @@ export const InventoryCountTab: React.FC = () => {
                     Batch
                   </ScrollableTabsTrigger>
                   <ScrollableTabsTrigger
-                    isActive={countInterface === 'mobile'}
-                    onClick={() => setCountInterface('mobile')}
-                    className="text-xs"
-                  >
-                    <Smartphone className="h-3 w-3 mr-1" />
-                    Mobile
-                  </ScrollableTabsTrigger>
-                  <ScrollableTabsTrigger
-                    isActive={countInterface === 'scan'}
-                    onClick={() => setCountInterface('scan')}
-                    className="text-xs"
-                  >
-                    <Camera className="h-3 w-3 mr-1" />
-                    Camera
-                  </ScrollableTabsTrigger>
-                  <ScrollableTabsTrigger
                     isActive={countInterface === 'scangun'}
                     onClick={() => setCountInterface('scangun')}
                     className="text-xs"
                   >
                     <Scan className="h-3 w-3 mr-1" />
                     Scan-Gun
+                  </ScrollableTabsTrigger>
+                  <ScrollableTabsTrigger
+                    isActive={countInterface === 'mobile'}
+                    onClick={() => setCountInterface('mobile')}
+                    className="text-xs"
+                  >
+                    <Smartphone className="h-3 w-3 mr-1" />
+                    Mobile
                   </ScrollableTabsTrigger>
                 </ScrollableTabsList>
               </ScrollableTabs>
@@ -592,15 +584,6 @@ export const InventoryCountTab: React.FC = () => {
         />
       )}
 
-      {countInterface === 'scan' && (
-        <ScanMode
-          countId={activeCount!}
-          countItems={countItems}
-          items={countableItems}
-          onUpdateCount={handleScanModeUpdateCount}
-          onComplete={handleCompleteCount}
-        />
-      )}
 
       {countInterface === 'scangun' && (
         <ScanGunMode

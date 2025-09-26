@@ -45,7 +45,7 @@ export const ScrollableTabsList: React.FC<ScrollableTabsListProps> = ({ children
 
   // Desktop fallback - render as grid as before
   return (
-    <div className={cn("grid grid-cols-4 gap-2", className)}>
+    <div className={cn("grid grid-cols-3 gap-2", className)}>
       {children}
     </div>
   );
@@ -72,7 +72,7 @@ export const ScrollableTabsTrigger: React.FC<ScrollableTabsTriggerProps> = ({
           "min-w-0 flex-shrink-0 snap-start",
           "min-h-[44px]", // Touch-friendly minimum height
           isActive 
-            ? "bg-background text-foreground shadow-sm"
+            ? "bg-primary/10 text-primary border border-primary/20"
             : "hover:bg-muted-foreground/10",
           className
         )}
@@ -93,7 +93,7 @@ export const ScrollableTabsTrigger: React.FC<ScrollableTabsTriggerProps> = ({
         "focus-visible:ring-ring focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50",
         isActive 
-          ? "bg-background text-foreground shadow-sm"
+          ? "bg-primary/10 text-primary border border-primary/20"
           : "hover:bg-muted-foreground/10",
         className
       )}
