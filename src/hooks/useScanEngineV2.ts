@@ -14,32 +14,16 @@ export function useScanEngineV2(countId?: string) {
   const timersRef = React.useRef<Record<Key, number | undefined>>({});
 
   // ========== PUBLIC: compute the number to show ==========
-  function getDisplayActual(key?: Key, serverActual?: number): number {
+  const getDisplayActual = useCallback((key?: Key, serverActual?: number): number => {
     if (!key) return serverActual ?? 0;
     const pending = pendingByKey[key] ?? 0;
     const lastConfirmed = lastConfirmedRef.current[key] ?? 0;
     const base = Math.max(serverActual ?? 0, lastConfirmed);
     return base + pending;
-  }
+  }, [pendingByKey]);
 
-  // ========== INTERNAL: increment & schedule persist ==========
-  function applyIncrement(key: Key, delta: number, serverActual?: number) {
-    console.log('[INCREMENT]', { key, delta, pendingBefore: pendingByKey[key] ?? 0 });
-    // Record baseline so we don't render lower than what we've seen confirmed
-    const baseline = serverActual ?? 0;
-    lastConfirmedRef.current[key] = Math.max(lastConfirmedRef.current[key] ?? 0, baseline);
-
-    setPendingByKey(p => ({ ...p, [key]: (p[key] ?? 0) + delta }));
-    schedulePersist(key);
-  }
-
-  function schedulePersist(key: Key) {
-    // 300–400ms is good balance for scan guns
-    clearTimeout(timersRef.current[key]);
-    timersRef.current[key] = window.setTimeout(() => persistKey(key), 350);
-  }
-
-  async function persistKey(key: Key) {
+  // ========== INTERNAL: persist function ==========
+  const persistKey = useCallback(async (key: Key) => {
     if (inFlightRef.current[key]) return;
     const pending = pendingByKey[key] ?? 0;
     if (!pending) return;
@@ -60,10 +44,27 @@ export function useScanEngineV2(countId?: string) {
     } finally {
       inFlightRef.current[key] = false;
     }
-  }
+  }, [countId, pendingByKey]);
+
+  const schedulePersist = useCallback((key: Key) => {
+    // 300–400ms is good balance for scan guns
+    clearTimeout(timersRef.current[key]);
+    timersRef.current[key] = window.setTimeout(() => persistKey(key), 350);
+  }, [persistKey]);
+
+  // ========== INTERNAL: increment & schedule persist ==========
+  const applyIncrement = useCallback((key: Key, delta: number, serverActual?: number) => {
+    console.log('[INCREMENT]', { key, delta, pendingBefore: pendingByKey[key] ?? 0 });
+    // Record baseline so we don't render lower than what we've seen confirmed
+    const baseline = serverActual ?? 0;
+    lastConfirmedRef.current[key] = Math.max(lastConfirmedRef.current[key] ?? 0, baseline);
+
+    setPendingByKey(p => ({ ...p, [key]: (p[key] ?? 0) + delta }));
+    schedulePersist(key);
+  }, [schedulePersist, pendingByKey]);
 
   // ========== PUBLIC: call this when count items are (re)fetched ==========
-  function onItemsRefetched(items: Array<{ id: string; actual_quantity: number }>) {
+  const onItemsRefetched = useCallback((items: Array<{ id: string; actual_quantity: number }>) => {
     console.log('[REFETCHED_ITEMS]', items.map(i => ({ id: i.id, actual: i.actual_quantity })));
     setPendingByKey(prev => {
       const next = { ...prev };
@@ -84,7 +85,7 @@ export function useScanEngineV2(countId?: string) {
       }
       return next;
     });
-  }
+  }, []);
 
   // Debug handle
   React.useEffect(() => {
