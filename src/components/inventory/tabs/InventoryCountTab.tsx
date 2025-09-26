@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -154,11 +154,11 @@ export const InventoryCountTab: React.FC = () => {
     }
   };
 
-  const refetchCountItems = useCallback(async () => {
+  const refetchCountItems = async () => {
     if (activeCount) {
       await loadCountItems(activeCount);
     }
-  }, [activeCount]);
+  };
 
   const handleUpdateCount = async (itemId: string, actualQuantity: number) => {
     if (!activeCount) return;
