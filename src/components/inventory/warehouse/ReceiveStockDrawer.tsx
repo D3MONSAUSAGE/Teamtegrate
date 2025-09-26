@@ -167,7 +167,8 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     // Check if item already exists in lines
     const existingLine = lineItems.find(line => line.item_id === item.id);
     if (existingLine) {
-      toast.error('Item already added to this receipt');
+      updateLineItem(existingLine.id, 'qty', existingLine.qty + 1);
+      toast.success(`Scanned: ${item.name} (Qty: ${existingLine.qty + 1})`);
       return;
     }
 
