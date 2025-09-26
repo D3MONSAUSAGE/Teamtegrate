@@ -58,6 +58,11 @@ export const InventoryManagementTab: React.FC = () => {
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   
+  // Vendor dialog states
+  const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<any | null>(null);
+  const [vendorToDelete, setVendorToDelete] = useState<any | null>(null);
+  
   // Item delete confirmation states
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -207,6 +212,46 @@ export const InventoryManagementTab: React.FC = () => {
     }
   };
 
+  const handleAddVendor = () => {
+    setSelectedVendor(null);
+    setIsVendorDialogOpen(true);
+  };
+
+  const handleEditVendor = (vendor: any) => {
+    setSelectedVendor(vendor);
+    setIsVendorDialogOpen(true);
+  };
+
+  const handleDeleteVendor = async () => {
+    if (!vendorToDelete) return;
+    
+    try {
+      await deleteVendor(vendorToDelete.id);
+      toast.success('Vendor deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete vendor');
+    } finally {
+      setVendorToDelete(null);
+    }
+  };
+
+  const handleSaveVendor = async (vendorData: any) => {
+    try {
+      if (selectedVendor) {
+        await updateVendor(selectedVendor.id, vendorData);
+        toast.success('Vendor updated successfully');
+      } else {
+        await createVendor(vendorData);
+        toast.success('Vendor created successfully');
+      }
+      setIsVendorDialogOpen(false);
+      setSelectedVendor(null);
+    } catch (error) {
+      toast.error('Failed to save vendor');
+      throw error;
+    }
+  };
+
   if (!hasRoleAccess('manager')) {
     return (
       <div className="text-center py-8">
@@ -221,7 +266,7 @@ export const InventoryManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="items" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Items
@@ -233,6 +278,10 @@ export const InventoryManagementTab: React.FC = () => {
           <TabsTrigger value="units" className="flex items-center gap-2">
             <Ruler className="h-4 w-4" />
             Units
+          </TabsTrigger>
+          <TabsTrigger value="vendors" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            Vendors
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -608,6 +657,13 @@ export const InventoryManagementTab: React.FC = () => {
         unitId={selectedUnitId}
       />
 
+      <VendorDialog
+        open={isVendorDialogOpen}
+        onOpenChange={setIsVendorDialogOpen}
+        vendor={selectedVendor}
+        onSave={handleSaveVendor}
+      />
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -623,6 +679,26 @@ export const InventoryManagementTab: React.FC = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!vendorToDelete} onOpenChange={(open) => !open && setVendorToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{vendorToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteVendor}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Vendor
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
