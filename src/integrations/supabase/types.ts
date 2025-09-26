@@ -5971,6 +5971,7 @@ export type Database = {
       }
       request_types: {
         Row: {
+          allows_attachments: boolean
           approval_roles: string[] | null
           category: string
           created_at: string
@@ -5997,6 +5998,7 @@ export type Database = {
           viewer_role_restrictions: string[] | null
         }
         Insert: {
+          allows_attachments?: boolean
           approval_roles?: string[] | null
           category: string
           created_at?: string
@@ -6023,6 +6025,7 @@ export type Database = {
           viewer_role_restrictions?: string[] | null
         }
         Update: {
+          allows_attachments?: boolean
           approval_roles?: string[] | null
           category?: string
           created_at?: string
