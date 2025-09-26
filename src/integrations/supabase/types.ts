@@ -9172,6 +9172,15 @@ export type Database = {
         }
         Returns: Json
       }
+      bump_count_item_actual: {
+        Args:
+          | { p_count_id: string; p_count_item_id: string; p_delta: number }
+          | { p_count_id: string; p_delta: number; p_item_id: string }
+        Returns: {
+          count_item_id: string
+          new_actual: number
+        }[]
+      }
       calculate_execution_score: {
         Args: { execution_id_param: string }
         Returns: number

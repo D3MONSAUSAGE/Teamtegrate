@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,21 +30,78 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 }) => {
   const { toast } = useToast();
   
+  // Feature flags
+  const useStableScan = process.env.NODE_ENV === 'development' || 
+    localStorage.getItem('features.stableScan') === 'true';
+  const enforceCountScope = process.env.NODE_ENV === 'development' || 
+    localStorage.getItem('features.enforceCountScope') === 'true';
+
   // State
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCountItem, setSelectedCountItem] = useState<InventoryCountItem | null>(null);
   const [qtyPerScan, setQtyPerScan] = useState<number>(1);
   const [sessionIncrements, setSessionIncrements] = useState<number>(0);
+  const [pendingDelta, setPendingDelta] = useState<number>(0);
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [attachFirstScan, setAttachFirstScan] = useState<boolean>(true);
   const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(false);
   const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('enter');
   
-  // Refs for debouncing
+  // Refs for debouncing and throttling
   const sessionIncrementsRef = useRef<number>(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScanRef = useRef<string>('');
   const lastAttachedRef = useRef<string | null>(null);
+
+  // Throttled refetch after successful persist
+  const throttledRefetch = useCallback(async () => {
+    if (throttleTimeoutRef.current) return;
+    
+    throttleTimeoutRef.current = setTimeout(() => {
+      throttleTimeoutRef.current = null;
+    }, 1000);
+
+    try {
+      if (onComplete) {
+        onComplete();
+      }
+    } catch (error) {
+      console.warn('Throttled refetch failed:', error);
+    }
+  }, [onComplete]);
+
+  // Scoped barcode matching - build from countItems if scope enforced 
+  const barcodeToCountItem = useMemo(() => {
+    const map = new Map<string, { item: InventoryItem; countItem: InventoryCountItem }>();
+    
+    if (enforceCountScope) {
+      // Use only items in the count
+      countItems.forEach(countItem => {
+        if (countItem.item?.barcode) {
+          map.set(countItem.item.barcode, { item: countItem.item, countItem });
+        }
+      });
+    } else {
+      // Legacy: use all items
+      items.forEach(item => {
+        if (item.barcode) {
+          const countItem = countItems.find(ci => ci.item_id === item.id);
+          if (countItem) {
+            map.set(item.barcode, { item, countItem });
+          }
+        }
+      });
+    }
+    
+    return map;
+  }, [countItems, items, enforceCountScope]);
+
+  // Scope validation helper
+  const validateCountScope = useCallback((item: InventoryItem) => {
+    if (!enforceCountScope) return true;
+    return countItems.some(ci => ci.item_id === item.id);
+  }, [countItems, enforceCountScope]);
 
   // Find count item for selected item
   useEffect(() => {
@@ -88,12 +145,27 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
             newActualQty 
           });
           
-          await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
-          console.log('[BUMP_RESPONSE] success');
+          if (useStableScan || enforceCountScope) {
+            // Use new atomic approach with proper return type
+            const result = await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
+            console.log('[BUMP_RESPONSE] success, newActual=', result.newActual);
+            
+            // Clear pending delta on successful persist
+            setPendingDelta(0);
+          } else {
+            // Legacy approach
+            await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
+            console.log('[BUMP_RESPONSE] success');
+          }
           
           // Reset session increments after successful persist
           setSessionIncrements(0);
           sessionIncrementsRef.current = 0;
+          
+          // Throttled refetch for cache consistency
+          if (useStableScan) {
+            throttledRefetch();
+          }
           
         } catch (error) {
           console.log('[BUMP_RESPONSE] error', error);
@@ -102,10 +174,17 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
           // Rollback optimistic update
           setSessionIncrements(0);
           sessionIncrementsRef.current = 0;
+          setPendingDelta(0);
           
           // Show friendly error
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
+          if (errorMessage.includes('Item not in this count')) {
+            toast({
+              title: 'Item not in count',
+              description: 'This item is not part of the current count',
+              variant: 'destructive',
+            });
+          } else if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
             toast({
               title: 'Permission denied (policy)',
               description: 'You do not have permission to update this count',
@@ -121,7 +200,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
         }
       }
     }, 350);
-  }, [selectedItem, selectedCountItem, countId, toast]);
+  }, [selectedItem, selectedCountItem, countId, toast, useStableScan, enforceCountScope, throttledRefetch]);
 
   // Handle scan detection
   const handleScanDetected = useCallback(async (code: string) => {
@@ -139,22 +218,40 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     
     lastScanRef.current = code;
 
-    // Auto-select by barcode if enabled
+    // Auto-select by barcode if enabled - now with scope enforcement
     if (autoSelectByBarcode) {
-      const foundItem = items.find(item => item.barcode === code);
-      if (foundItem && foundItem.id !== selectedItem.id) {
-        console.log('SCANGUN_AUTO_SELECT:', { foundItem: foundItem.name });
-        setSelectedItem(foundItem);
-        // Will increment on next scan detection after item switches
-        return;
-      }
-      if (!foundItem) {
-        toast({
-          title: 'Item not in this count',
-          description: `Barcode ${code} not found in current count`,
-          variant: 'destructive',
-        });
-        return;
+      if (enforceCountScope) {
+        const matchedData = barcodeToCountItem.get(code);
+        if (matchedData && matchedData.item.id !== selectedItem.id) {
+          console.log('[SCAN_MATCH] scoped barcode auto-select', { item: matchedData.item.name });
+          setSelectedItem(matchedData.item);
+          return;
+        }
+        if (!matchedData) {
+          console.log('[SCAN_MISS] out-of-scope barcode');
+          toast({
+            title: 'Barcode not in this count',
+            description: `Barcode ${code} not found in current count`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      } else {
+        // Legacy global search
+        const foundItem = items.find(item => item.barcode === code);
+        if (foundItem && foundItem.id !== selectedItem.id) {
+          console.log('SCANGUN_AUTO_SELECT:', { foundItem: foundItem.name });
+          setSelectedItem(foundItem);
+          return;
+        }
+        if (!foundItem) {
+          toast({
+            title: 'Item not in this count',
+            description: `Barcode ${code} not found in current count`,
+            variant: 'destructive',
+          });
+          return;
+        }
       }
     }
     
@@ -170,32 +267,38 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
         return;
       }
     } else {
-      // Item has no barcode - handle attachment
+      // Item has no barcode - handle attachment with scope validation
       if (attachFirstScan && selectedItem && !selectedItem.barcode) {
+        // Validate scope before allowing barcode attachment
+        if (enforceCountScope && !validateCountScope(selectedItem)) {
+          toast({
+            title: 'Item not in count',
+            description: 'Cannot attach barcode to out-of-scope item',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
         try {
           const trimmed = code.trim();
-          if (!trimmed) return; // nothing to attach
+          if (!trimmed) return;
 
-          // prevent double-attach on the same scan burst
           if (lastAttachedRef.current === trimmed) return;
           lastAttachedRef.current = trimmed;
           setTimeout(() => (lastAttachedRef.current = null), 1000);
 
           await inventoryItemsApi.update(selectedItem.id, { barcode: trimmed });
 
-          // Optimistic UI
           setSelectedItem(prev => (prev ? { ...prev, barcode: trimmed } : prev));
 
           toast({ title: 'Barcode attached', description: `${trimmed} → ${selectedItem.name}` });
-          // IMPORTANT: do NOT return; we want this same scan to continue
-          // into the existing increment/persist path so it counts too.
         } catch (e: any) {
           toast({
             title: 'Failed to attach barcode',
             description: e?.message ?? 'Could not attach barcode',
             variant: 'destructive',
           });
-          return; // abort counting for this scan on error
+          return;
         }
       }
     }
@@ -203,6 +306,11 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     // Accept scan - increment optimistically
     sessionIncrementsRef.current += qtyPerScan;
     setSessionIncrements(sessionIncrementsRef.current);
+    
+    // Update pending delta for stable scan display
+    if (useStableScan) {
+      setPendingDelta(sessionIncrementsRef.current);
+    }
     
     console.log('[MATCH] countItemId=', selectedCountItem?.id || 'NO_COUNT_ITEM');
     console.log('[INCREMENT] key=', selectedItem.id, 'delta=', qtyPerScan);
@@ -227,7 +335,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     
     // Debounced persist
     debouncedPersist(qtyPerScan);
-  }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, debouncedPersist]);
+  }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, debouncedPersist, enforceCountScope, barcodeToCountItem, validateCountScope, useStableScan]);
 
   // Initialize scan gun
   const { isListening, scannerConnected, reset } = useScanGun({
@@ -250,7 +358,11 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const totalItems = countItems.length;
   const progress = totalItems > 0 ? (countedItems / totalItems) * 100 : 0;
   
-  const actualQty = (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
+  // Display actual quantity with stable scan handling
+  const actualQty = useStableScan 
+    ? (selectedCountItem?.actual_quantity || 0) + pendingDelta
+    : (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
+    
   const inStock = selectedCountItem?.in_stock_quantity ?? selectedItem?.current_stock ?? 0;
   
   // Debug render
