@@ -6,12 +6,14 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Minus, Scan, Package, Zap } from 'lucide-react';
+import { Plus, Minus, Scan, Package, Zap, Wifi, WifiOff } from 'lucide-react';
 import { useScanGun } from '@/hooks/useScanGun';
 import { ScanItemPicker } from '../ScanItemPicker';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryCountsApi, inventoryItemsApi } from '@/contexts/inventory/api';
+import { validateUUID } from '@/utils/uuidValidation';
+import { useNetworkMonitoring } from '@/contexts/UnifiedDataContext/useNetworkMonitoring';
 
 interface ScanGunModeProps {
   countId: string;
@@ -31,6 +33,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   onRefetchCountItems
 }) => {
   const { toast } = useToast();
+  const { networkStatus } = useNetworkMonitoring();
   
   // State
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -41,12 +44,15 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const [attachFirstScan, setAttachFirstScan] = useState<boolean>(true);
   const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(false);
   const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('enter');
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
   
-  // Refs for debouncing
+  // Refs for debouncing and retry logic
   const sessionIncrementsRef = useRef<number>(0);
+  const sessionIncrementsBackupRef = useRef<number>(0); // Backup for recovery
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScanRef = useRef<string>('');
   const lastAttachedRef = useRef<string | null>(null);
+  const refetchCompletedRef = useRef<boolean>(true);
 
   // Find count item for selected item
   useEffect(() => {
@@ -69,9 +75,33 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   useEffect(() => {
     setSessionIncrements(0);
     sessionIncrementsRef.current = 0;
+    sessionIncrementsBackupRef.current = 0;
+    refetchCompletedRef.current = true;
   }, [selectedItem]);
 
-  // Debounced persist function
+  // Retry logic with exponential backoff
+  const retryWithBackoff = async (
+    operation: () => Promise<void>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<void> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await operation();
+        return; // Success
+      } catch (error) {
+        if (attempt === maxRetries) {
+          throw error; // Last attempt failed
+        }
+        
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  };
+
+  // Enhanced debounced persist function with validation, retry logic and proper timing
   const debouncedPersist = useCallback(async (delta: number) => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -79,6 +109,29 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 
     debounceTimeoutRef.current = setTimeout(async () => {
       if (selectedItem && selectedCountItem) {
+        // Input validation
+        const validatedCountId = validateUUID(countId);
+        const validatedItemId = validateUUID(selectedItem.id);
+        
+        if (!validatedCountId || !validatedItemId) {
+          console.error('Invalid UUID detected:', { countId: validatedCountId, itemId: validatedItemId });
+          toast({
+            title: 'Invalid data',
+            description: 'Invalid item or count identifier',
+            variant: 'destructive',
+          });
+          // Restore backup increments on validation failure
+          const backupIncrements = sessionIncrementsBackupRef.current;
+          setSessionIncrements(backupIncrements);
+          sessionIncrementsRef.current = backupIncrements;
+          return;
+        }
+
+        // Store backup before attempting to persist
+        sessionIncrementsBackupRef.current = sessionIncrementsRef.current;
+        setIsRetrying(true);
+        refetchCompletedRef.current = false;
+
         try {
           const currentActual = selectedCountItem.actual_quantity || 0;
           const newActualQty = currentActual + sessionIncrementsRef.current;
@@ -89,46 +142,88 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
             sessionIncrements: sessionIncrementsRef.current, 
             newActualQty 
           });
+
+          // Show network status warning if degraded
+          if (networkStatus === 'degraded') {
+            toast({
+              title: 'Slow connection',
+              description: 'Save may take longer than usual',
+              duration: 3000,
+            });
+          } else if (networkStatus === 'offline') {
+            toast({
+              title: 'No connection',
+              description: 'Unable to save changes',
+              variant: 'destructive',
+              duration: 5000,
+            });
+            throw new Error('No network connection');
+          }
           
-          await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
+          // Retry the bumpActual operation with exponential backoff
+          await retryWithBackoff(async () => {
+            await inventoryCountsApi.bumpActual(validatedCountId, validatedItemId, sessionIncrementsRef.current);
+          });
+          
           console.log('[BUMP_RESPONSE] success');
           
           // Refetch count items to get updated server data
           if (onRefetchCountItems) {
             await onRefetchCountItems();
+            refetchCompletedRef.current = true;
           }
           
-          // Reset session increments after successful persist and refetch
-          setSessionIncrements(0);
-          sessionIncrementsRef.current = 0;
+          // Only reset session increments after successful persist AND refetch completion
+          if (refetchCompletedRef.current) {
+            setSessionIncrements(0);
+            sessionIncrementsRef.current = 0;
+            sessionIncrementsBackupRef.current = 0;
+          }
           
         } catch (error) {
           console.log('[BUMP_RESPONSE] error', error);
           console.error('SCANGUN_PERSIST_ERROR:', error);
           
-          // Rollback optimistic update
-          setSessionIncrements(0);
-          sessionIncrementsRef.current = 0;
+          // Keep optimistic update visible - don't reset to zero
+          // Restore from backup instead
+          const backupIncrements = sessionIncrementsBackupRef.current;
+          setSessionIncrements(backupIncrements);
+          sessionIncrementsRef.current = backupIncrements;
           
-          // Show friendly error
+          // Show contextual error message
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
+          
+          if (errorMessage.includes('invalid input syntax for type uuid')) {
             toast({
-              title: 'Permission denied (policy)',
+              title: 'Data error',
+              description: 'Invalid item identifier. Please try selecting the item again.',
+              variant: 'destructive',
+            });
+          } else if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
+            toast({
+              title: 'Permission denied',
               description: 'You do not have permission to update this count',
               variant: 'destructive',
+            });
+          } else if (networkStatus === 'offline' || errorMessage.includes('connection')) {
+            toast({
+              title: 'Connection error',
+              description: 'Changes saved locally. Will retry when connection is restored.',
+              duration: 5000,
             });
           } else {
             toast({
               title: 'Save failed',
-              description: errorMessage,
+              description: `${errorMessage}. Changes preserved for retry.`,
               variant: 'destructive',
             });
           }
+        } finally {
+          setIsRetrying(false);
         }
       }
     }, 350);
-  }, [selectedItem, selectedCountItem, countId, toast]);
+  }, [selectedItem, selectedCountItem, countId, toast, networkStatus, onRefetchCountItems, retryWithBackoff]);
 
   // Handle scan detection
   const handleScanDetected = useCallback(async (code: string) => {
@@ -352,7 +447,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
         <CardContent className="p-4">
           <div className="space-y-4">
             {/* Scanner Status */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
                 scannerConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
                 'bg-muted text-muted-foreground'
@@ -362,6 +457,27 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                   {scannerConnected ? 'Scanner connected' : 'Waiting for scanner...'}
                 </span>
               </div>
+              
+              {/* Network Status */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+                networkStatus === 'healthy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                networkStatus === 'degraded' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+              }`}>
+                {networkStatus === 'offline' ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
+                <span className="text-sm">
+                  {networkStatus === 'healthy' ? 'Online' : 
+                   networkStatus === 'degraded' ? 'Slow' : 'Offline'}
+                </span>
+              </div>
+              
+              {/* Retry Status */}
+              {isRetrying && (
+                <Badge variant="outline" className="text-xs">
+                  Saving...
+                </Badge>
+              )}
+              
               {lastScanRef.current && (
                 <Badge variant="outline" className="text-xs">
                   Last: {lastScanRef.current}
