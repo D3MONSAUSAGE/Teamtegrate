@@ -10,7 +10,7 @@ import { Plus, Minus, Camera, Package, Settings, ChevronRight, Scan } from 'luci
 import { ScannerOverlay } from '../ScannerOverlay';
 import { ScanItemPicker } from '../ScanItemPicker';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
-import { useScanEngineV2 } from '@/hooks/useScanEngineV2';
+import { useScanEngine, ScanEngineSettings } from '@/hooks/useScanEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MobileScanModeProps {
@@ -47,42 +47,49 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
     countItems.some(ci => ci.item_id === item.id)
   );
 
-  // Initialize V2 scan engine
-  const scanEngineV2 = useScanEngineV2();
+  // Scan engine settings
+  const scanEngineSettings: ScanEngineSettings = {
+    countId,
+    attachFirstScan,
+    autoSelectByBarcode,
+    autoSwitchOnMatch,
+    qtyPerScan,
+    dedupeMs: 600, // Slightly longer than scan-gun for mobile touch delays
+  };
 
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const selectedCountItem = countItems.find(ci => ci.item_id === selectedItem?.id);
+  // Initialize scan engine
+  const { state: scanState, dispatch: scanDispatch } = useScanEngine(
+    scanEngineSettings,
+    countableItems,
+    countItems
+  );
+
+  const selectedItem = countableItems.find(item => item.id === scanState.currentItemId);
+  const selectedCountItem = countItems.find(ci => ci.item_id === scanState.currentItemId);
 
   // Auto-select first item if none selected
   useEffect(() => {
-    if (!selectedItem && countableItems.length > 0) {
-      setSelectedItem(countableItems[0]);
+    if (!scanState.currentItemId && countableItems.length > 0) {
+      scanDispatch({ type: 'ITEM_SELECTED', itemId: countableItems[0].id });
     }
-  }, [selectedItem, countableItems]);
+  }, [scanState.currentItemId, countableItems, scanDispatch]);
 
   // Handle barcode scan
   const handleScanDetected = useCallback((code: string) => {
-    if (!selectedItem || !selectedCountItem) return;
-    
-    // Apply increment using V2 engine
-    scanEngineV2.applyIncrement(
-      selectedCountItem.id,
-      qtyPerScan,
-      selectedCountItem.actual_quantity ?? 0
-    );
+    scanDispatch({ type: 'SCAN_DETECTED', code });
     
     // Add to scan log
     setScanLog(prev => [
       { type: 'success', message: `Scanned: ${code}`, time: new Date() },
       ...prev.slice(0, 2) // Keep only last 3 entries
     ]);
-  }, [selectedItem, selectedCountItem, qtyPerScan, scanEngineV2]);
+  }, [scanDispatch]);
 
   // Handle item selection
   const handleItemSelect = useCallback((item: InventoryItem) => {
-    setSelectedItem(item);
+    scanDispatch({ type: 'ITEM_SELECTED', itemId: item.id });
     setShowItemPicker(false);
-  }, []);
+  }, [scanDispatch]);
 
   // Qty per scan controls
   const handleQtyPerScanChange = (increment: boolean) => {
@@ -121,8 +128,7 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
   const totalItems = countItems.length;
   const progress = totalItems > 0 ? (countedItems / totalItems) * 100 : 0;
   
-  const serverActual = selectedCountItem?.actual_quantity ?? 0;
-  const actualQty = scanEngineV2.getDisplayActual(selectedCountItem?.id, serverActual);
+  const actualQty = (selectedCountItem?.actual_quantity || 0) + scanState.sessionIncrements;
   const inStock = selectedCountItem?.in_stock_quantity ?? selectedItem?.current_stock ?? 0;
   const minThreshold = selectedCountItem?.template_minimum_quantity ?? selectedItem?.minimum_threshold;
   const maxThreshold = selectedCountItem?.template_maximum_quantity ?? selectedItem?.maximum_threshold;
@@ -192,9 +198,9 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
                 <Badge variant={status.variant}>{status.label}</Badge>
               </div>
               
-              {selectedCountItem && scanEngineV2.pendingByKey[selectedCountItem.id] > 0 && (
+              {scanState.sessionIncrements > 0 && (
                 <Badge variant="outline" className="text-xs animate-pulse">
-                  +{scanEngineV2.pendingByKey[selectedCountItem.id]} pending
+                  +{scanState.sessionIncrements} this session
                 </Badge>
               )}
             </div>
@@ -224,7 +230,7 @@ export const MobileScanMode: React.FC<MobileScanModeProps> = ({
               onClick={() => setIsScanning(!isScanning)}
               className="w-full min-h-[56px] text-lg"
               variant={isScanning ? "destructive" : "default"}
-              disabled={false}
+              disabled={scanState.isProcessing}
             >
               <Camera className="h-5 w-5 mr-3" />
               {isScanning ? 'Stop Scanning' : 'Start Scanning'}

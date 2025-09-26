@@ -7,13 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Minus, Scan, Package, Zap } from 'lucide-react';
-import { useScanEngineV2 } from '@/hooks/useScanEngineV2';
+import { useScanGun } from '@/hooks/useScanGun';
 import { ScanItemPicker } from '../ScanItemPicker';
-import { ScanGunTrap } from '../ScanGunTrap';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryCountsApi, inventoryItemsApi } from '@/contexts/inventory/api';
-import { features } from '@/config/features';
 
 interface ScanGunModeProps {
   countId: string;
@@ -21,7 +19,6 @@ interface ScanGunModeProps {
   items: InventoryItem[];
   onUpdateCount: (countId: string, itemId: string, actualQuantity: number, notes?: string) => Promise<void>;
   onComplete?: () => void;
-  onItemsRefetched?: (items: Array<{ id: string; actual_quantity: number }>) => void;
 }
 
 export const ScanGunMode: React.FC<ScanGunModeProps> = ({
@@ -29,28 +26,22 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   countItems,
   items,
   onUpdateCount,
-  onComplete,
-  onItemsRefetched
+  onComplete
 }) => {
   const { toast } = useToast();
   
-  // V2 scan engine for sticky UI without snap-back
-  const scanEngineV2 = useScanEngineV2(countId);
-
-  // State for UI
+  // State
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedCountItem, setSelectedCountItem] = useState<InventoryCountItem | null>(null);
   const [qtyPerScan, setQtyPerScan] = useState<number>(1);
+  const [sessionIncrements, setSessionIncrements] = useState<number>(0);
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [attachFirstScan, setAttachFirstScan] = useState<boolean>(true);
   const [autoSelectByBarcode, setAutoSelectByBarcode] = useState<boolean>(false);
   const [scannerSuffix, setScannerSuffix] = useState<'enter' | 'tab' | 'both'>('enter');
-  const [globalScanMode, setGlobalScanMode] = useState<boolean>(true);
-
-  // Initialize active count object for V2 engine
-  const activeCount = { id: countId };
   
   // Refs for debouncing
+  const sessionIncrementsRef = useRef<number>(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScanRef = useRef<string>('');
   const lastAttachedRef = useRef<string | null>(null);
@@ -72,24 +63,62 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     }
   }, [selectedItem, items]);
 
-  // Update display values using V2 engine
-  const serverActual = selectedCountItem?.actual_quantity ?? 0;
-  const displayActual = scanEngineV2.getDisplayActual(selectedCountItem?.id, serverActual);
+  // Reset session increments when switching items
+  useEffect(() => {
+    setSessionIncrements(0);
+    sessionIncrementsRef.current = 0;
+  }, [selectedItem]);
 
-  const handleIncrement = async () => {
-    if (!selectedCountItem || !activeCount) return;
+  // Debounced persist function
+  const debouncedPersist = useCallback(async (delta: number) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
 
-    console.log('[RENDER]', {
-      countItemId: selectedCountItem?.id,
-      serverActual: selectedCountItem?.actual_quantity,
-    });
-
-    scanEngineV2.applyIncrement(
-      selectedCountItem.id,             // countItemId (inventory_count_items.id)
-      qtyPerScan,
-      selectedCountItem.actual_quantity ?? 0
-    );
-  };
+    debounceTimeoutRef.current = setTimeout(async () => {
+      if (selectedItem && selectedCountItem) {
+        try {
+          const currentActual = selectedCountItem.actual_quantity || 0;
+          const newActualQty = currentActual + sessionIncrementsRef.current;
+          console.log('SCANGUN_PERSIST:', { 
+            itemId: selectedItem.id, 
+            currentActual, 
+            sessionIncrements: sessionIncrementsRef.current, 
+            newActualQty 
+          });
+          
+          await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
+          
+          // Reset session increments after successful persist
+          setSessionIncrements(0);
+          sessionIncrementsRef.current = 0;
+          
+        } catch (error) {
+          console.error('SCANGUN_PERSIST_ERROR:', error);
+          
+          // Rollback optimistic update
+          setSessionIncrements(0);
+          sessionIncrementsRef.current = 0;
+          
+          // Show friendly error
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          if (errorMessage.includes('row-level security') || errorMessage.includes('permission')) {
+            toast({
+              title: 'Permission denied (policy)',
+              description: 'You do not have permission to update this count',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Save failed',
+              description: errorMessage,
+              variant: 'destructive',
+            });
+          }
+        }
+      }
+    }, 350);
+  }, [selectedItem, selectedCountItem, countId, toast]);
 
   // Handle scan detection
   const handleScanDetected = useCallback(async (code: string) => {
@@ -167,22 +196,40 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
       }
     }
 
-    // Handle increment using V2 engine
-    handleIncrement();
-  }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, handleIncrement]);
-
-  // Scanner trap state
-  const [scannerConnected, setScannerConnected] = useState(false);
-  
-  // Wire up refetch callback to V2 engine
-  useEffect(() => {
-    if (onItemsRefetched && countItems.length > 0) {
-      onItemsRefetched(countItems.map(ci => ({ 
-        id: ci.id, 
-        actual_quantity: ci.actual_quantity || 0 
-      })));
+    // Accept scan - increment optimistically
+    sessionIncrementsRef.current += qtyPerScan;
+    setSessionIncrements(sessionIncrementsRef.current);
+    
+    console.log('SCANGUN_INCREMENT:', { 
+      qtyPerScan, 
+      newSessionTotal: sessionIncrementsRef.current 
+    });
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
     }
-  }, [onItemsRefetched, countItems]);
+    
+    // Show feedback toast
+    const currentActual = selectedCountItem?.actual_quantity || 0;
+    const newInStock = currentActual + sessionIncrementsRef.current;
+    toast({
+      title: `+${qtyPerScan} scanned`,
+      description: `${selectedItem.name} • In-Stock: ${newInStock}`,
+      duration: 2000,
+    });
+    
+    // Debounced persist
+    debouncedPersist(qtyPerScan);
+  }, [selectedItem, selectedCountItem, qtyPerScan, attachFirstScan, autoSelectByBarcode, items, countId, toast, debouncedPersist]);
+
+  // Initialize scan gun
+  const { isListening, scannerConnected, reset } = useScanGun({
+    onScan: handleScanDetected,
+    onStart: () => console.log('SCANGUN_START'),
+    onStop: () => console.log('SCANGUN_STOP'),
+    enabled: true,
+  });
 
   const handleQtyPerScanChange = (increment: boolean) => {
     if (increment) {
@@ -197,8 +244,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   const totalItems = countItems.length;
   const progress = totalItems > 0 ? (countedItems / totalItems) * 100 : 0;
   
-  // Use V2 display calculation
-  const actualQty = displayActual;
+  const actualQty = (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
   const inStock = selectedCountItem?.in_stock_quantity ?? selectedItem?.current_stock ?? 0;
   const minThreshold = selectedCountItem?.template_minimum_quantity ?? selectedItem?.minimum_threshold;
   const maxThreshold = selectedCountItem?.template_maximum_quantity ?? selectedItem?.maximum_threshold;
@@ -211,10 +257,13 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Scanner trap for focus management */}
-      <ScanGunTrap 
-        handleScan={handleScanDetected}
-        active={true}
+      {/* Hidden input to maintain focus */}
+      <input
+        className="scangun-input opacity-0 absolute -z-10"
+        type="text"
+        autoFocus
+        style={{ width: 1, height: 1 }}
+        onChange={() => {}} // Prevent warnings
       />
 
       {/* Sticky Item Summary */}
@@ -244,9 +293,9 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                   Actual: {actualQty}
                 </div>
                 <Badge variant={status.variant}>{status.label}</Badge>
-                {selectedCountItem && scanEngineV2.pendingByKey[selectedCountItem.id] > 0 && (
+                {sessionIncrements > 0 && (
                   <Badge variant="outline" className="text-xs">
-                    +{scanEngineV2.pendingByKey[selectedCountItem.id]} pending
+                    +{sessionIncrements} this session
                   </Badge>
                 )}
               </div>
@@ -281,14 +330,16 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
       <Card>
         <CardContent className="p-4">
           <div className="space-y-4">
-            {/* Scanner Status - using ScanGunTrap's built-in status */}
+            {/* Scanner Status */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground">
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
+                scannerConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
+                'bg-muted text-muted-foreground'
+              }`}>
                 <Scan className="h-4 w-4" />
-                <ScanGunTrap 
-                  handleScan={handleScanDetected}
-                  active={true}
-                />
+                <span className="text-sm">
+                  {scannerConnected ? 'Scanner connected' : 'Waiting for scanner...'}
+                </span>
               </div>
               {lastScanRef.current && (
                 <Badge variant="outline" className="text-xs">
@@ -333,31 +384,16 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
                 />
               </div>
               
-              {!features.scanEngineV2 && (
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="auto-select" className="text-sm">
-                    Auto-select item by scanned barcode
-                  </Label>
-                  <Switch
-                    id="auto-select"
-                    checked={autoSelectByBarcode}
-                    onCheckedChange={setAutoSelectByBarcode}
-                  />
-                </div>
-              )}
-
-              {features.scanEngineV2 && (
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="global-scan" className="text-sm">
-                    Global scan mode (scan any item in count)
-                  </Label>
-                  <Switch
-                    id="global-scan"
-                    checked={globalScanMode}
-                    onCheckedChange={setGlobalScanMode}
-                  />
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="auto-select" className="text-sm">
+                  Auto-select item by scanned barcode
+                </Label>
+                <Switch
+                  id="auto-select"
+                  checked={autoSelectByBarcode}
+                  onCheckedChange={setAutoSelectByBarcode}
+                />
+              </div>
               
               <div className="flex items-center justify-between">
                 <Label htmlFor="scanner-suffix" className="text-sm">

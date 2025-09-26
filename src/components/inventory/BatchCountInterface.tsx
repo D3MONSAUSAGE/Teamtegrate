@@ -1,19 +1,16 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { InventoryCountItem, InventoryItem } from '@/contexts/inventory/types';
-import { CheckCircle, AlertTriangle, Package, Search, Loader2, TrendingUp, TrendingDown, Scan } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Package, Search, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StockStatusBadge } from './StockStatusBadge';
 import { getStockStatus } from '@/utils/stockStatus';
-import { useScanEngineV2 } from '@/hooks/useScanEngineV2';
-import { features } from '@/config/features';
 
 interface BatchCountInterfaceProps {
-  countId: string;
   countItems: InventoryCountItem[];
   items: InventoryItem[];
   onBulkUpdate: (updates: Array<{ itemId: string; actualQuantity: number }>) => Promise<void>;
@@ -25,7 +22,6 @@ interface BatchCountInterfaceProps {
 }
 
 export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
-  countId,
   countItems,
   items,
   onBulkUpdate,
@@ -40,9 +36,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentFocusIndex, setCurrentFocusIndex] = useState(0);
   const inputRefs = useRef<Record<string, HTMLInputElement>>({});
-
-  // Initialize V2 scan engine for global scanning if feature enabled
-  const scanEngineV2 = features.scanEngineV2 ? useScanEngineV2() : null;
 
   // Filter items based on search
   const filteredItems = items.filter(item => 
@@ -197,17 +190,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Hidden input to maintain focus for scanning */}
-      {features.scanEngineV2 && scanEngineV2 && (
-        <input
-          className="scangun-input opacity-0 absolute -z-10"
-          type="text"
-          autoFocus
-          style={{ width: 1, height: 1 }}
-          onChange={() => {}} // Prevent warnings
-        />
-      )}
-
       {/* Header with Progress */}
       <Card>
         <CardHeader>
@@ -215,29 +197,13 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Batch Count Entry
-              {features.scanEngineV2 && scanEngineV2 && (
-                <Badge variant="secondary" className="text-xs ml-2">
-                  🔍 Global Scan • {countItems.length} items
-                </Badge>
-              )}
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {completedItems} of {totalItems} counted
-              </Badge>
-              {features.scanEngineV2 && scanEngineV2 && (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-md text-sm bg-muted text-muted-foreground">
-                  <Scan className="h-4 w-4" />
-                  <span>Scanner V2</span>
-                </div>
-              )}
-            </div>
+            <Badge variant="secondary">
+              {completedItems} of {totalItems} counted
+            </Badge>
           </div>
           <CardDescription>
-            {features.scanEngineV2 
-              ? 'Enter quantities, scan barcodes globally, or submit all at once. Use Tab/Enter to move between fields.'
-              : 'Enter quantities and submit all at once. Use Tab/Enter to move between fields.'
-            }
+            Enter quantities and submit all at once. Use Tab/Enter to move between fields.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -349,7 +315,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                         </div>
                       </TableCell>
                       
-                      <TableCell className="text-center">
+                      <TableCell>
                         <div className="flex items-center justify-center">
                           <Input
                             ref={(el) => {
@@ -367,11 +333,6 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                             step="0.01"
                             disabled={isSubmitting}
                           />
-                          {features.scanEngineV2 && scanEngineV2 && scanEngineV2.pendingByKey[item.id] > 0 && (
-                            <Badge variant="outline" className="text-xs ml-2">
-                              +{scanEngineV2.pendingByKey[item.id]}
-                            </Badge>
-                          )}
                         </div>
                       </TableCell>
                       
