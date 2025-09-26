@@ -30,8 +30,8 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
   return (
     <div className="flex gap-2">
       <Select 
-        value={value || ''} 
-        onValueChange={(val) => onValueChange(val || undefined)}
+        value={value || 'none'} 
+        onValueChange={(val) => onValueChange(val === 'none' ? undefined : val)}
         disabled={disabled}
       >
         <SelectTrigger className="flex-1">
@@ -41,7 +41,7 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
           </div>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">
+          <SelectItem value="none">
             <span className="text-muted-foreground">None</span>
           </SelectItem>
           {vendors.map((vendor) => (
