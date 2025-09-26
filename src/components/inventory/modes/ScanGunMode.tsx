@@ -19,6 +19,7 @@ interface ScanGunModeProps {
   items: InventoryItem[];
   onUpdateCount: (countId: string, itemId: string, actualQuantity: number, notes?: string) => Promise<void>;
   onComplete?: () => void;
+  onRefetchCountItems?: () => Promise<void>;
 }
 
 export const ScanGunMode: React.FC<ScanGunModeProps> = ({
@@ -26,7 +27,8 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   countItems,
   items,
   onUpdateCount,
-  onComplete
+  onComplete,
+  onRefetchCountItems
 }) => {
   const { toast } = useToast();
   
@@ -91,7 +93,12 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
           await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
           console.log('[BUMP_RESPONSE] success');
           
-          // Reset session increments after successful persist
+          // Refetch count items to get updated server data
+          if (onRefetchCountItems) {
+            await onRefetchCountItems();
+          }
+          
+          // Reset session increments after successful persist and refetch
           setSessionIncrements(0);
           sessionIncrementsRef.current = 0;
           
