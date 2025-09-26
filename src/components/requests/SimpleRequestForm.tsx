@@ -16,6 +16,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import { cn } from '@/lib/utils';
+import { RequestFileUpload } from './RequestFileUpload';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface SimpleRequestType {
   id: string;
@@ -27,6 +30,7 @@ interface SimpleRequestType {
   parent_id?: string;
   is_subcategory?: boolean;
   display_order?: number;
+  allows_attachments?: boolean;
 }
 
 interface SimpleRequestFormProps {
@@ -55,6 +59,7 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
   const { user } = useAuth();
   const { requestTypes, createRequestWithAutoAssignment, loading: hookLoading } = useEnhancedRequests();
   const [loading, setLoading] = useState(false);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
 
   const form = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema),
@@ -77,13 +82,14 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
     subcategory: rt.subcategory,
     parent_id: rt.parent_category_id,
     is_subcategory: !!rt.parent_category_id,
-    display_order: 0
+    display_order: 0,
+    allows_attachments: rt.allows_attachments
   }));
 
   const onSubmit = async (data: RequestFormData) => {
     setLoading(true);
     try {
-      await createRequestWithAutoAssignment({
+      const newRequest = await createRequestWithAutoAssignment({
         request_type_id: data.request_type_id,
         title: data.title,
         description: data.description,
@@ -91,8 +97,58 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
         priority: data.priority,
         due_date: data.due_date ? data.due_date.toISOString().split('T')[0] : undefined,
       });
+
+      // If attachments are allowed and files are provided, upload them
+      const selectedType = simpleRequestTypes.find(rt => rt.id === data.request_type_id);
+      if (selectedType?.allows_attachments && attachmentFiles.length > 0 && newRequest) {
+        try {
+          for (const file of attachmentFiles) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}/${newRequest.id}/${Date.now()}-${file.name}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('request-attachments')
+              .upload(fileName, file);
+
+            if (uploadError) {
+              console.error('Error uploading file:', uploadError);
+              toast({
+                title: "File upload failed",
+                description: `Failed to upload ${file.name}`,
+                variant: "destructive",
+              });
+              continue;
+            }
+
+            // Create attachment record
+            const { error: attachmentError } = await supabase
+              .from('request_attachments')
+              .insert({
+                request_id: newRequest.id,
+                file_name: file.name,
+                file_path: fileName,
+                file_type: file.type,
+                file_size: file.size,
+                uploaded_by: user.id,
+                organization_id: user.organizationId
+              });
+
+            if (attachmentError) {
+              console.error('Error creating attachment record:', attachmentError);
+            }
+          }
+        } catch (error) {
+          console.error('Error handling attachments:', error);
+          toast({
+            title: "Attachment error",
+            description: "Some files may not have been uploaded properly",
+            variant: "destructive",
+          });
+        }
+      }
       
       form.reset();
+      setAttachmentFiles([]);
       onSuccess?.();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -316,6 +372,15 @@ export default function SimpleRequestForm({ onSuccess, onCancel }: SimpleRequest
           </div>
         </div>
       </div>
+
+      {/* File Upload Section */}
+      {selectedRequestType?.allows_attachments && (
+        <RequestFileUpload
+          onFilesChange={setAttachmentFiles}
+          maxFiles={5}
+          maxSizeMB={10}
+        />
+      )}
 
       {/* Request Type Info */}
       {selectedRequestType && (

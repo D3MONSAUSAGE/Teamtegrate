@@ -337,14 +337,15 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
               View Details
             </Button>
             
-            {!request.assigned_to_user && onAssign && (
+            {!request.assigned_to_user && onAssign && ['submitted', 'approved'].includes(request.status) && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onAssign(request)}
+                className="text-green-600 hover:text-green-700"
               >
                 <UserCheck className="h-4 w-4 mr-1" />
-                Assign
+                Accept Request
               </Button>
             )}
 
@@ -383,8 +384,8 @@ export const EnhancedRequestCard: React.FC<EnhancedRequestCardProps> = ({
               </Button>
             )}
 
-            {/* Mark Complete button for assignees when status is in_progress */}
-            {request.status === 'in_progress' && isAssignedToCurrentUser && onStatusChange && (
+            {/* Mark Complete button for assignees when status is in_progress or approved */}
+            {(['in_progress', 'approved'].includes(request.status)) && isAssignedToCurrentUser && onStatusChange && (
               <Button
                 variant="default"
                 size="sm"

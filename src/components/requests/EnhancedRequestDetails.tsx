@@ -13,6 +13,10 @@ import type { Request } from '@/types/requests';
 import { PRIORITY_COLORS, STATUS_COLORS } from '@/types/requests';
 import { cn } from '@/lib/utils';
 import RequestActivityFeed from '@/components/requests/RequestActivityFeed';
+import { RequestAttachment } from '@/types/requests';
+import { File, Download, Eye } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface EnhancedRequestDetailsProps {
   request: Request;
@@ -24,9 +28,32 @@ export default function EnhancedRequestDetails({ request, onClose }: EnhancedReq
   const { updateRequestStatus } = useEnhancedRequests();
   const [isProcessing, setIsProcessing] = useState(false);
   const [comments, setComments] = useState('');
+  const [attachments, setAttachments] = useState<RequestAttachment[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(true);
 
   const canApprove = user?.role && ['manager', 'admin', 'superadmin'].includes(user.role);
   const isRequester = user?.id === request.requested_by;
+
+  // Load attachments
+  React.useEffect(() => {
+    const loadAttachments = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('request_attachments')
+          .select('*')
+          .eq('request_id', request.id);
+
+        if (error) throw error;
+        setAttachments(data || []);
+      } catch (error) {
+        console.error('Error loading attachments:', error);
+      } finally {
+        setLoadingAttachments(false);
+      }
+    };
+
+    loadAttachments();
+  }, [request.id]);
 
   const handleStatusUpdate = async (newStatus: 'approved' | 'rejected' | 'completed') => {
     setIsProcessing(true);
@@ -144,6 +171,100 @@ export default function EnhancedRequestDetails({ request, onClose }: EnhancedReq
     );
   };
 
+  const renderAttachments = () => {
+    if (loadingAttachments) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <File className="h-5 w-5" />
+              Attachments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-2">
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div className="h-4 bg-muted rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (attachments.length === 0) {
+      return null;
+    }
+
+    const handleDownload = async (attachment: RequestAttachment) => {
+      try {
+        const { data, error } = await supabase.storage
+          .from('request-attachments')
+          .download(attachment.file_path);
+
+        if (error) throw error;
+
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = attachment.file_name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading file:', error);
+        toast({
+          title: "Download failed",
+          description: "Failed to download the file",
+          variant: "destructive",
+        });
+      }
+    };
+
+    const formatFileSize = (bytes: number) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <File className="h-5 w-5" />
+            Attachments ({attachments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {attachments.map((attachment) => (
+            <div key={attachment.id} className="flex items-center justify-between p-3 border rounded-md">
+              <div className="flex items-center gap-3">
+                <File className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">{attachment.file_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(attachment.file_size)} • Uploaded by {attachment.uploaded_by}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDownload(attachment)}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Request Header */}
@@ -207,6 +328,9 @@ export default function EnhancedRequestDetails({ request, onClose }: EnhancedReq
 
       {/* Form Data */}
       {renderFormData()}
+
+      {/* Attachments */}
+      {renderAttachments()}
 
       {/* Approval Actions */}
       {renderApprovalActions()}

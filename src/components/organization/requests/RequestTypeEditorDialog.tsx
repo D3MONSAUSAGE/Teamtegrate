@@ -39,6 +39,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
   const [defaultJobRoles, setDefaultJobRoles] = useState<string[]>([]);
   const [expertiseTags, setExpertiseTags] = useState<string[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [allowsAttachments, setAllowsAttachments] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setDefaultJobRoles((initial as any).default_job_roles || []);
       setExpertiseTags((initial as any).expertise_tags || []);
       setSelectedUserIds((initial as any).selected_user_ids || []);
+      setAllowsAttachments((initial as any).allows_attachments || false);
     } else {
       setName('');
       setCategory('custom');
@@ -68,6 +70,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       setDefaultJobRoles([]);
       setExpertiseTags([]);
       setSelectedUserIds([]);
+      setAllowsAttachments(false);
     }
   }, [initial, open]);
 
@@ -106,6 +109,7 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
       default_job_roles: defaultJobRoles.length > 0 ? defaultJobRoles : null,
       expertise_tags: expertiseTags.length > 0 ? expertiseTags : null,
       selected_user_ids: selectedUserIds.length > 0 ? selectedUserIds : null,
+      allows_attachments: allowsAttachments,
       permission_metadata: {}
     } as Partial<RequestType> & { created_by: string };
 
@@ -186,6 +190,14 @@ export default function RequestTypeEditorDialog({ open, onOpenChange, initial, o
                     </div>
                     <Switch checked={isActive} onCheckedChange={setIsActive} />
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between border rounded-md p-3">
+                  <div>
+                    <Label>Allow File Attachments</Label>
+                    <p className="text-sm text-muted-foreground">Users can upload files with their requests.</p>
+                  </div>
+                  <Switch checked={allowsAttachments} onCheckedChange={setAllowsAttachments} />
                 </div>
 
                 {requiresApproval && (

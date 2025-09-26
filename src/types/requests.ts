@@ -20,6 +20,7 @@ export interface RequestType {
   default_job_roles?: string[];
   selected_user_ids?: string[];
   expertise_tags?: string[];
+  allows_attachments?: boolean;
 }
 
 export interface FormField {
