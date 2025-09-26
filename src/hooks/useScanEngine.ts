@@ -51,6 +51,7 @@ export function useScanEngine(
   const sessionIncrementsRef = useRef<number>(0);
   const sessionIncrementsBackupRef = useRef<number>(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Add timeout ref for cleanup
   const lastAttachedRef = useRef<string | null>(null);
   const persistingRef = useRef<boolean>(false);
   const completionGuardRef = useRef<boolean>(false);
@@ -169,15 +170,27 @@ export function useScanEngine(
           await inventoryCountsApi.bumpActual(validatedCountId, validatedItemId, sessionIncrementsRef.current);
         });
         
-        // Simulate refetch completion (actual refetch would be handled by the calling component)
-        refetchCompletedRef.current = true;
+        console.log('SCAN_ENGINE_PERSIST_SUCCESS: Waiting for data refresh...');
         
-        // Only reset session increments after successful persist
-        if (refetchCompletedRef.current) {
-          setState(prev => ({ ...prev, sessionIncrements: 0 }));
-          sessionIncrementsRef.current = 0;
-          sessionIncrementsBackupRef.current = 0;
+        // Clear any existing reset timeout
+        if (resetTimeoutRef.current) {
+          clearTimeout(resetTimeoutRef.current);
+          resetTimeoutRef.current = null;
         }
+        
+        // Add delay to allow server data to refresh before clearing optimistic updates
+        // This prevents the "fall back" issue where counts revert immediately
+        resetTimeoutRef.current = setTimeout(() => {
+          // Only reset if we're not currently persisting another change
+          if (!persistingRef.current) {
+            console.log('SCAN_ENGINE_RESET_INCREMENTS: Clearing session increments after successful persist');
+            setState(prev => ({ ...prev, sessionIncrements: 0 }));
+            sessionIncrementsRef.current = 0;
+            sessionIncrementsBackupRef.current = 0;
+            refetchCompletedRef.current = true;
+          }
+          resetTimeoutRef.current = null;
+        }, 1500); // 1.5 second delay to allow data refresh
         
       } catch (error) {
         console.error('SCAN_ENGINE_PERSIST_ERROR:', error);
@@ -231,6 +244,12 @@ export function useScanEngine(
       switch (event.type) {
         case 'ITEM_SELECTED':
           if (event.itemId) {
+            // Clear any pending reset timeouts when switching items
+            if (resetTimeoutRef.current) {
+              clearTimeout(resetTimeoutRef.current);
+              resetTimeoutRef.current = null;
+            }
+            
             setState(prev => ({
               ...prev,
               currentItemId: event.itemId,
@@ -459,6 +478,10 @@ export function useScanEngine(
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+      resetTimeoutRef.current = null;
+    }
   }, []);
 
   // Cleanup on unmount
@@ -466,6 +489,9 @@ export function useScanEngine(
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
+      }
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
       }
     };
   }, []);
