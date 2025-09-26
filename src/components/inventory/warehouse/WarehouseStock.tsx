@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, Search, AlertTriangle } from 'lucide-react';
+import { Package, Search, AlertTriangle, Hash, Barcode, DollarSign, Package2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { 
   Table, 
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { toast } from 'sonner';
+import { formatCurrency, formatNumber } from '@/utils/formatters';
 
 interface WarehouseStockProps {
   warehouseId?: string;
@@ -54,16 +55,35 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+  const formatQuantity = (qty: number) => {
+    return formatNumber(qty);
   };
 
-  const formatQuantity = (qty: number) => {
-    return Number(qty).toLocaleString();
-  };
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    if (!items.length) {
+      return {
+        totalItems: 0,
+        totalSKUs: 0,
+        totalBarcodes: 0,
+        totalStockValue: 0
+      };
+    }
+
+    const totalItems = items.length;
+    const totalSKUs = items.filter(item => item.item?.sku).length;
+    const totalBarcodes = items.filter(item => item.item?.barcode).length;
+    const totalStockValue = items.reduce((sum, item) => {
+      return sum + (Number(item.on_hand) * Number(item.wac_unit_cost));
+    }, 0);
+
+    return {
+      totalItems,
+      totalSKUs,
+      totalBarcodes,
+      totalStockValue
+    };
+  }, [items]);
 
   if (!warehouseId) {
     return null; // WarehouseTab now handles the not configured state
@@ -106,15 +126,75 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
+          <>
+            {/* Summary Statistics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Package2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Items</p>
+                      <p className="text-2xl font-bold">{formatNumber(summaryStats.totalItems)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Hash className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total SKUs</p>
+                      <p className="text-2xl font-bold">{formatNumber(summaryStats.totalSKUs)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-green-500/5 to-green-500/10 border-green-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <Barcode className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Barcodes</p>
+                      <p className="text-2xl font-bold">{formatNumber(summaryStats.totalBarcodes)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-500/5 to-orange-500/10 border-orange-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-orange-500/10">
+                      <DollarSign className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Stock Value</p>
+                      <p className="text-2xl font-bold">{formatCurrency(summaryStats.totalStockValue)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Barcode</TableHead>
-                  <TableHead className="text-right">On Hand</TableHead>
-                  <TableHead className="text-right">WAC</TableHead>
+                  <TableHead className="text-right">In Stock</TableHead>
+                  <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Reorder Min</TableHead>
                   <TableHead className="text-right">Reorder Max</TableHead>
                 </TableRow>
@@ -165,7 +245,8 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
                 ))}
               </TableBody>
             </Table>
-          </div>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
