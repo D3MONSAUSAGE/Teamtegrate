@@ -80,6 +80,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
         try {
           const currentActual = selectedCountItem.actual_quantity || 0;
           const newActualQty = currentActual + sessionIncrementsRef.current;
+          console.log('[BUMP_REQUEST] {countId, countItemId, delta}', { countId, countItemId: selectedCountItem.id, delta: sessionIncrementsRef.current });
           console.log('SCANGUN_PERSIST:', { 
             itemId: selectedItem.id, 
             currentActual, 
@@ -88,12 +89,14 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
           });
           
           await inventoryCountsApi.bumpActual(countId, selectedItem.id, sessionIncrementsRef.current);
+          console.log('[BUMP_RESPONSE] success');
           
           // Reset session increments after successful persist
           setSessionIncrements(0);
           sessionIncrementsRef.current = 0;
           
         } catch (error) {
+          console.log('[BUMP_RESPONSE] error', error);
           console.error('SCANGUN_PERSIST_ERROR:', error);
           
           // Rollback optimistic update
@@ -122,6 +125,7 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
 
   // Handle scan detection
   const handleScanDetected = useCallback(async (code: string) => {
+    console.log('[SCAN] code=', code, 'suffix=enter/tab');
     console.log('SCANGUN_SCAN_DETECTED:', { code, selectedItem: selectedItem?.name });
     
     if (!selectedItem) {
@@ -200,6 +204,8 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
     sessionIncrementsRef.current += qtyPerScan;
     setSessionIncrements(sessionIncrementsRef.current);
     
+    console.log('[MATCH] countItemId=', selectedCountItem?.id || 'NO_COUNT_ITEM');
+    console.log('[INCREMENT] key=', selectedItem.id, 'delta=', qtyPerScan);
     console.log('SCANGUN_INCREMENT:', { 
       qtyPerScan, 
       newSessionTotal: sessionIncrementsRef.current 
@@ -246,6 +252,14 @@ export const ScanGunMode: React.FC<ScanGunModeProps> = ({
   
   const actualQty = (selectedCountItem?.actual_quantity || 0) + sessionIncrements;
   const inStock = selectedCountItem?.in_stock_quantity ?? selectedItem?.current_stock ?? 0;
+  
+  // Debug render
+  console.log('[RENDER]', {
+    countItemId: selectedCountItem?.id,
+    serverActual: selectedCountItem?.actual_quantity,
+    sessionIncrements,
+    displayActual: actualQty
+  });
   const minThreshold = selectedCountItem?.template_minimum_quantity ?? selectedItem?.minimum_threshold;
   const maxThreshold = selectedCountItem?.template_maximum_quantity ?? selectedItem?.maximum_threshold;
   

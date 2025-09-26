@@ -140,6 +140,7 @@ export const InventoryCountTab: React.FC = () => {
     setLoadingCountItems(true);
     try {
       const items = await inventoryCountsApi.getCountItems(countId);
+      console.log('[REFETCHED_ITEMS]', items.map(item => `[${item.id}, ${item.actual_quantity}]`), 'len=', items.length);
       setCountItems(items);
     } catch (error) {
       console.error('Failed to load count items:', error);
