@@ -42,18 +42,7 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
   const inputRefs = useRef<Record<string, HTMLInputElement>>({});
 
   // Initialize V2 scan engine for global scanning if feature enabled
-  const scanEngineV2 = features.scanEngineV2 ? useScanEngineV2(
-    {
-      countId,
-      globalScanMode: true,
-      attachFirstScan: true,
-      autoSwitchOnMatch: true,
-      qtyPerScan: 1,
-      dedupeMs: 100,
-    },
-    items,
-    countItems
-  ) : null;
+  const scanEngineV2 = features.scanEngineV2 ? useScanEngineV2() : null;
 
   // Filter items based on search
   const filteredItems = items.filter(item => 
@@ -237,14 +226,9 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                 {completedItems} of {totalItems} counted
               </Badge>
               {features.scanEngineV2 && scanEngineV2 && (
-                <div className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm ${
-                  scanEngineV2.scannerConnected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
-                  'bg-muted text-muted-foreground'
-                }`}>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-md text-sm bg-muted text-muted-foreground">
                   <Scan className="h-4 w-4" />
-                  <span>
-                    {scanEngineV2.scannerConnected ? 'Scanner ready' : 'Waiting for scanner...'}
-                  </span>
+                  <span>Scanner V2</span>
                 </div>
               )}
             </div>
@@ -383,9 +367,9 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
                             step="0.01"
                             disabled={isSubmitting}
                           />
-                          {features.scanEngineV2 && scanEngineV2 && scanEngineV2.pendingByItem[item.id] > 0 && (
+                          {features.scanEngineV2 && scanEngineV2 && scanEngineV2.pendingByKey[item.id] > 0 && (
                             <Badge variant="outline" className="text-xs ml-2">
-                              +{scanEngineV2.pendingByItem[item.id]}
+                              +{scanEngineV2.pendingByKey[item.id]}
                             </Badge>
                           )}
                         </div>

@@ -33,6 +33,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format, isToday, differenceInMinutes } from 'date-fns';
+import { useScanEngineV2 } from '@/hooks/useScanEngineV2';
 
 type CountInterface = 'batch' | 'mobile' | 'scan' | 'scangun';
 
@@ -40,7 +41,6 @@ type CountInterface = 'batch' | 'mobile' | 'scan' | 'scangun';
 export const InventoryCountTab: React.FC = () => {
   const { 
     items, 
-    counts, 
     templates, 
     categories,
     units,
@@ -55,7 +55,6 @@ export const InventoryCountTab: React.FC = () => {
   
   const [activeCount, setActiveCount] = useState<string | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<InventoryTemplate | null>(null);
-  const [countItems, setCountItems] = useState<InventoryCountItem[]>([]);
   const [templateItems, setTemplateItems] = useState<any[]>([]);
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -63,24 +62,32 @@ export const InventoryCountTab: React.FC = () => {
 
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = useQuery({
     queryKey: ['inventory-counts'],
-    queryFn: inventoryCountsApi.getCounts,
+    queryFn: inventoryCountsApi.getAll,
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: countItems, isLoading: itemsLoading, refetch: refetchItems } = useQuery({
-    queryKey: ['inventory-count-items', activeCount?.id],
-    queryFn: () => inventoryCountsApi.getCountItems(activeCount?.id || ''),
-    enabled: !!activeCount?.id,
+  const { data: countItems = [], isLoading: itemsLoading, refetch: refetchItems } = useQuery({
+    queryKey: ['inventory-count-items', activeCount],
+    queryFn: () => inventoryCountsApi.getCountItems(activeCount || ''),
+    enabled: !!activeCount,
     staleTime: 5000,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
     refetchOnWindowFocus: false,
-    onSuccess: (items) => {
-      scanEngineV2.onItemsRefetched(items || []);
-    },
   });
+
+  // Call scanEngineV2.onItemsRefetched when countItems changes
+  useEffect(() => {
+    if (countItems && countItems.length > 0) {
+      const mappedItems = countItems.map(item => ({
+        id: item.id,
+        actual_quantity: item.actual_quantity || 0
+      }));
+      scanEngineV2.onItemsRefetched(mappedItems);
+    }
+  }, [countItems, scanEngineV2]);
   
 
-  const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
+  const activeCountRecord = (counts || []).find(c => c.id === activeCount && c.status === 'in_progress');
 
   // Define handleItemCreated early to ensure it's available
   const handleItemCreated = async (itemData: any) => {
@@ -89,7 +96,7 @@ export const InventoryCountTab: React.FC = () => {
       if (newItem) {
         toast({ title: "Item created", description: `${newItem.name} has been added to inventory` });
       // Trigger React Query refetch instead of loadCountItems
-      countItemsQuery.refetch();
+      refetchItems();
       }
     } catch (error) {
       console.error('Failed to create item:', error);
@@ -139,7 +146,7 @@ export const InventoryCountTab: React.FC = () => {
       }
       
       // Trigger React Query refetch
-      countItemsQuery.refetch();
+      refetchItems();
       
       toast({
         title: 'Count Started',
@@ -159,7 +166,8 @@ export const InventoryCountTab: React.FC = () => {
     setLoadingCountItems(true);
     try {
       const items = await inventoryCountsApi.getCountItems(countId);
-      setCountItems(items);
+      // Items are now handled by React Query
+      refetchItems();
     } catch (error) {
       console.error('Failed to load count items:', error);
       toast({
@@ -178,20 +186,8 @@ export const InventoryCountTab: React.FC = () => {
     try {
       const result = await inventoryCountsApi.bulkUpdateCountItems(activeCount, [{ itemId, actualQuantity }]);
       
-      // Update local state only if successful
-      if (result.saved > 0 && result.failed.length === 0) {
-        setCountItems(prev => prev.map(item => 
-          item.item_id === itemId 
-            ? { ...item, actual_quantity: actualQuantity, counted_at: new Date().toISOString() }
-            : item
-        ));
-      } else if (result.failed.length > 0) {
-        toast({
-          title: 'Error',
-          description: 'Failed to update inventory count',
-          variant: 'destructive',
-        });
-      }
+      // Update via React Query refetch - optimistic update removed
+      refetchItems();
     } catch (error) {
       console.error('Failed to update count:', error);
       toast({
@@ -208,14 +204,8 @@ export const InventoryCountTab: React.FC = () => {
     try {
       const result = await inventoryCountsApi.bulkUpdateCountItems(activeCount, updates);
       
-      // Update local state for successfully saved items
-      setCountItems(prev => prev.map(item => {
-        const update = updates.find(u => u.itemId === item.item_id);
-        const wasSuccessful = update && !result.failed.some(f => f.itemId === update.itemId);
-        return wasSuccessful 
-          ? { ...item, actual_quantity: update.actualQuantity, counted_at: new Date().toISOString() }
-          : item;
-      }));
+      // Update via React Query refetch - optimistic update removed
+      refetchItems();
       
       // Show appropriate toast based on results
       if (result.failed.length === 0) {
@@ -246,12 +236,8 @@ export const InventoryCountTab: React.FC = () => {
     try {
       await inventoryCountsApi.updateCountItem(countId, itemId, actualQuantity, notes);
       
-      // Update local state
-      setCountItems(prev => prev.map(item => 
-        item.item_id === itemId 
-          ? { ...item, actual_quantity: actualQuantity, counted_at: new Date().toISOString(), notes }
-          : item
-      ));
+      // Update via React Query refetch - optimistic update removed
+      refetchItems();
     } catch (error) {
       console.error('Failed to update count:', error);
       throw error; // Let ScanMode handle the error
@@ -266,7 +252,6 @@ export const InventoryCountTab: React.FC = () => {
       await cancelInventoryCount(activeCount, cancelReason || undefined);
       setActiveCount(null);
       setActiveTemplate(null);
-      setCountItems([]);
       setTemplateItems([]);
       setCancelReason('');
       toast({
@@ -290,7 +275,6 @@ export const InventoryCountTab: React.FC = () => {
       await completeInventoryCount(activeCount);
       setActiveCount(null);
       setActiveTemplate(null);
-      setCountItems([]);
       setTemplateItems([]);
       toast({
         title: 'Success',
@@ -317,7 +301,7 @@ export const InventoryCountTab: React.FC = () => {
 
   useEffect(() => {
     // Check if there's an active count on load
-    const inProgressCount = counts.find(c => c.status === 'in_progress');
+    const inProgressCount = (counts || []).find(c => c.status === 'in_progress');
     if (inProgressCount) {
       setActiveCount(inProgressCount.id);
       loadCountItems(inProgressCount.id);
@@ -325,7 +309,7 @@ export const InventoryCountTab: React.FC = () => {
   }, [counts]);
 
   // Filter counts for today only
-  const todayCounts = counts.filter(count => isToday(new Date(count.created_at)));
+  const todayCounts = (counts || []).filter(count => isToday(new Date(count.created_at)));
   
   const formatExecutionTime = (count: any) => {
     const startTime = format(new Date(count.created_at), 'MMM dd, yyyy \'at\' h:mm a');
@@ -598,7 +582,7 @@ export const InventoryCountTab: React.FC = () => {
       {countInterface === 'mobile' && (
         <MobileScanMode
           countId={activeCount!}
-          countItems={countItems}
+          countItems={countItems || []}
           items={countableItems}
           onUpdateCount={handleScanModeUpdateCount}
           onComplete={handleCompleteCount}
@@ -608,7 +592,7 @@ export const InventoryCountTab: React.FC = () => {
       {countInterface === 'scan' && (
         <ScanMode
           countId={activeCount!}
-          countItems={countItems}
+          countItems={countItems || []}
           items={countableItems}
           onUpdateCount={handleScanModeUpdateCount}
           onComplete={handleCompleteCount}
@@ -618,7 +602,7 @@ export const InventoryCountTab: React.FC = () => {
       {countInterface === 'scangun' && (
         <ScanGunMode
           countId={activeCount!}
-          countItems={countItems}
+          countItems={countItems || []}
           items={countableItems}
           onUpdateCount={handleScanModeUpdateCount}
           onComplete={handleCompleteCount}

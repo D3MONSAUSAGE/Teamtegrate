@@ -367,7 +367,6 @@ export const inventoryCountsApi = {
   },
 
   async bumpActual(countId: string, countItemId: string, delta: number): Promise<{ id: string; actual_quantity: number } | null> {
-    const supabase = getSupabase();
 
     const { data, error } = await supabase.rpc('bump_count_item_actual', {
       p_count_id: countId,
