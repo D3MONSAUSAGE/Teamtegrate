@@ -11,7 +11,8 @@ import {
   inventoryAlertsApi,
   inventoryTemplatesApi,
   inventoryCategoriesApi,
-  inventoryUnitsApi
+  inventoryUnitsApi,
+  vendorsApi
 } from '@/contexts/inventory/api';
 import { 
   InventoryItem, 
@@ -22,7 +23,8 @@ import {
   InventoryTemplateItem,
   TeamInventoryAssignment,
   InventoryCategory,
-  InventoryUnit
+  InventoryUnit,
+  Vendor
 } from '@/contexts/inventory/types';
 import { useInventoryErrorHandler } from './useInventoryErrorHandler';
 
@@ -35,6 +37,7 @@ interface UseInventoryOperationsProps {
   refreshTeamAssignments: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
+  refreshVendors: () => Promise<void>;
   refreshTemplateItems: () => Promise<void>;
 }
 
@@ -47,6 +50,7 @@ export const useInventoryOperations = ({
   refreshTeamAssignments,
   refreshCategories,
   refreshUnits,
+  refreshVendors,
   refreshTemplateItems,
 }: UseInventoryOperationsProps) => {
   const { user } = useAuth();
@@ -204,6 +208,47 @@ export const useInventoryOperations = ({
       await refreshUnits();
     }
   }, [handleAsyncOperation, refreshUnits]);
+
+  // Vendor operations
+  const createVendor = useCallback(async (vendor: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'created_by'>): Promise<Vendor | null> => {
+    const result = await handleAsyncOperation(
+      () => vendorsApi.create(vendor),
+      'Create Vendor',
+      'Vendor created successfully'
+    );
+    
+    if (result) {
+      await refreshVendors();
+      return result;
+    }
+    return null;
+  }, [handleAsyncOperation, refreshVendors]);
+
+  const updateVendor = useCallback(async (id: string, updates: Partial<Vendor>): Promise<Vendor | null> => {
+    const result = await handleAsyncOperation(
+      () => vendorsApi.update(id, updates),
+      'Update Vendor',
+      'Vendor updated successfully'
+    );
+    
+    if (result) {
+      await refreshVendors();
+      return result;
+    }
+    return null;
+  }, [handleAsyncOperation, refreshVendors]);
+
+  const deleteVendor = useCallback(async (id: string): Promise<void> => {
+    const result = await handleAsyncOperation(
+      () => vendorsApi.delete(id),
+      'Delete Vendor',
+      'Vendor deleted successfully'
+    );
+    
+    if (result !== null) {
+      await refreshVendors();
+    }
+  }, [handleAsyncOperation, refreshVendors]);
 
   // Transaction operations
   const createTransaction = useCallback(async (transaction: Omit<InventoryTransaction, 'id' | 'created_at'>): Promise<InventoryTransaction | null> => {

@@ -2623,6 +2623,7 @@ export type Database = {
           unit_cost: number | null
           unit_of_measure: string
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
           barcode?: string | null
@@ -2655,6 +2656,7 @@ export type Database = {
           unit_cost?: number | null
           unit_of_measure?: string
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
           barcode?: string | null
@@ -2687,6 +2689,7 @@ export type Database = {
           unit_cost?: number | null
           unit_of_measure?: string
           updated_at?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -2715,6 +2718,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -8403,6 +8413,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          organization_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
       }
       video_library_categories: {
         Row: {

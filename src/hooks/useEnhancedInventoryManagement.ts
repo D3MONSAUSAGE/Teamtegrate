@@ -20,6 +20,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     teamAssignments,
     categories,
     units,
+    vendors,
     loading,
     itemsLoading,
     transactionsLoading,
@@ -28,6 +29,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     templatesLoading,
     categoriesLoading,
     unitsLoading,
+    vendorsLoading,
     refreshItems,
     refreshTransactions,
     refreshCounts,
@@ -36,6 +38,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
     refreshTemplateItems,
     refreshAll,
   } = useInventoryData();
@@ -50,6 +53,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
     refreshTemplateItems,
   });
 
@@ -71,6 +75,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     teamAssignments,
     categories,
     units,
+    vendors,
     
     // Loading states
     loading,
@@ -81,6 +86,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     templatesLoading,
     categoriesLoading,
     unitsLoading,
+    vendorsLoading,
     
     // Operations from the operations hook
     ...operations,
@@ -98,6 +104,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
     refreshTemplateItems,
     refreshData: refreshAll,
   }), [
@@ -111,6 +118,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     teamAssignments,
     categories,
     units,
+    vendors,
     
     // Loading dependencies
     loading,
@@ -121,6 +129,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     templatesLoading,
     categoriesLoading,
     unitsLoading,
+    vendorsLoading,
     
     // Operation dependencies
     operations,
@@ -136,6 +145,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
     refreshTemplateItems,
     refreshAll,
   ]);

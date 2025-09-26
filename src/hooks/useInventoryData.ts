@@ -7,7 +7,8 @@ import {
   inventoryAlertsApi,
   inventoryTemplatesApi,
   inventoryCategoriesApi,
-  inventoryUnitsApi
+  inventoryUnitsApi,
+  vendorsApi
 } from '@/contexts/inventory/api';
 import { 
   InventoryItem, 
@@ -18,7 +19,8 @@ import {
   InventoryTemplateItem,
   TeamInventoryAssignment,
   InventoryCategory,
-  InventoryUnit
+  InventoryUnit,
+  Vendor
 } from '@/contexts/inventory/types';
 import { useInventoryErrorHandler } from './useInventoryErrorHandler';
 
@@ -33,6 +35,7 @@ interface UseInventoryDataReturn {
   teamAssignments: TeamInventoryAssignment[];
   categories: InventoryCategory[];
   units: InventoryUnit[];
+  vendors: Vendor[];
   
   // Loading states
   loading: boolean;
@@ -43,6 +46,7 @@ interface UseInventoryDataReturn {
   templatesLoading: boolean;
   categoriesLoading: boolean;
   unitsLoading: boolean;
+  vendorsLoading: boolean;
   
   // Refresh functions
   refreshItems: () => Promise<void>;
@@ -53,6 +57,7 @@ interface UseInventoryDataReturn {
   refreshTeamAssignments: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
+  refreshVendors: () => Promise<void>;
   refreshTemplateItems: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
@@ -71,6 +76,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
   const [teamAssignments, setTeamAssignments] = useState<TeamInventoryAssignment[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [units, setUnits] = useState<InventoryUnit[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -81,6 +87,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [unitsLoading, setUnitsLoading] = useState(false);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
 
   // Optimized refresh functions with error handling
   const refreshItems = useCallback(async () => {
@@ -194,6 +201,20 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     }
   }, [user?.organizationId, handleAsyncOperation]);
 
+  const refreshVendors = useCallback(async () => {
+    if (!user?.organizationId) return;
+    setVendorsLoading(true);
+    try {
+      const data = await handleAsyncOperation(
+        () => vendorsApi.getAll(),
+        'Load Vendors'
+      );
+      if (data) setVendors(data);
+    } finally {
+      setVendorsLoading(false);
+    }
+  }, [user?.organizationId, handleAsyncOperation]);
+
   const refreshTemplateItems = useCallback(async () => {
     if (!user?.organizationId) return;
     try {
@@ -222,6 +243,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
       refreshTeamAssignments,
       refreshCategories,
       refreshUnits,
+      refreshVendors,
       refreshTemplateItems, // Load template items in parallel
     ];
     
@@ -236,6 +258,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
     refreshTemplateItems,
   ]);
 
@@ -262,6 +285,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
           refreshTeamAssignments,
           refreshCategories,
           refreshUnits,
+          refreshVendors,
           refreshTemplateItems, // Load template items in parallel during initial load
         ];
         
@@ -282,6 +306,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
   ]);
 
   return {
@@ -295,6 +320,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     teamAssignments,
     categories,
     units,
+    vendors,
     
     // Loading states
     loading,
@@ -305,6 +331,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     templatesLoading,
     categoriesLoading,
     unitsLoading,
+    vendorsLoading,
     
     // Refresh functions
     refreshItems,
@@ -315,6 +342,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshTeamAssignments,
     refreshCategories,
     refreshUnits,
+    refreshVendors,
     refreshTemplateItems,
     refreshAll,
   };

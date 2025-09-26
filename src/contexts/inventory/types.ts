@@ -20,6 +20,21 @@ export interface InventoryUnit {
   updated_at: string;
 }
 
+export interface Vendor {
+  id: string;
+  organization_id: string;
+  name: string;
+  contact_email?: string;
+  contact_phone?: string;
+  address?: string;
+  website?: string;
+  notes?: string;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface InventoryItem {
   id: string;
   organization_id: string;
@@ -28,6 +43,7 @@ export interface InventoryItem {
   description?: string;
   category_id?: string;
   base_unit_id?: string;
+  vendor_id?: string;
   purchase_unit?: string;
   conversion_factor?: number;
   purchase_price?: number;
@@ -52,6 +68,7 @@ export interface InventoryItem {
   // Relations
   category?: InventoryCategory;
   base_unit?: InventoryUnit;
+  vendor?: Vendor;
 }
 
 export interface InventoryTransaction {
@@ -177,6 +194,7 @@ export interface InventoryContextType {
   alerts: InventoryAlert[];
   categories: InventoryCategory[];
   units: InventoryUnit[];
+  vendors: Vendor[];
   
   // Team-based data
   templates: InventoryTemplate[];
@@ -192,9 +210,10 @@ export interface InventoryContextType {
   templatesLoading: boolean;
   categoriesLoading: boolean;
   unitsLoading: boolean;
+  vendorsLoading: boolean;
   
   // Operations
-  createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by'>) => Promise<InventoryItem>;
+  createItem: (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by' | 'vendor'>) => Promise<InventoryItem>;
   updateItem: (id: string, updates: Partial<InventoryItem>) => Promise<InventoryItem>;
   getItemById: (id: string) => Promise<InventoryItem | null>;
   deleteItem: (id: string) => Promise<void>;
@@ -219,6 +238,11 @@ export interface InventoryContextType {
   createUnit: (unit: Omit<InventoryUnit, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) => Promise<InventoryUnit>;
   updateUnit: (id: string, updates: Partial<InventoryUnit>) => Promise<InventoryUnit>;
   deleteUnit: (id: string) => Promise<void>;
+  
+  // Vendor operations
+  createVendor: (vendor: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'created_by'>) => Promise<Vendor>;
+  updateVendor: (id: string, updates: Partial<Vendor>) => Promise<Vendor>;
+  deleteVendor: (id: string) => Promise<void>;
   
   // Template operations
   createTemplate: (template: Omit<InventoryTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<InventoryTemplate>;
@@ -249,6 +273,7 @@ export interface InventoryContextType {
   refreshTeamAssignments: () => Promise<void>;
   refreshCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
+  refreshVendors: () => Promise<void>;
   refreshTemplateItems: () => Promise<void>;
   refreshData: () => Promise<void>;
 }
