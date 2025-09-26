@@ -59,7 +59,8 @@ export const InventoryCountTab: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [countInterface, setCountInterface] = useState<CountInterface>('batch');
 
-  const scanEngineV2 = React.useMemo(() => useScanEngineV2(activeCount || undefined), [activeCount]);
+  // Initialize scan engine only when activeCount exists
+  const scanEngineV2 = activeCount ? useScanEngineV2(activeCount) : null;
 
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = useQuery({
     queryKey: ['inventory-counts'],
@@ -78,14 +79,14 @@ export const InventoryCountTab: React.FC = () => {
 
   // Call scanEngineV2.onItemsRefetched when countItems changes
   useEffect(() => {
-    if (countItems && countItems.length > 0) {
+    if (scanEngineV2 && countItems && countItems.length > 0) {
       const mappedItems = countItems.map(item => ({
         id: item.id,
         actual_quantity: item.actual_quantity || 0
       }));
       scanEngineV2.onItemsRefetched(mappedItems);
     }
-  }, [countItems]); // Remove unstable scanEngineV2.onItemsRefetched from dependencies
+  }, [countItems, activeCount]); // Use activeCount instead of scanEngineV2
   
 
   const activeCountRecord = (counts || []).find(c => c.id === activeCount && c.status === 'in_progress');
