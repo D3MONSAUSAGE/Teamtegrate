@@ -79,10 +79,10 @@ export const InventoryCountTab: React.FC = () => {
     }
   };
   
-  // Use template items when in a template-based count, otherwise use all items
-  const countableItems = activeTemplate && templateItems.length > 0 
-    ? templateItems.map(ti => items.find(item => item.id === ti.item_id)).filter(Boolean)
-    : items;
+  // Use count items as the source of truth for what items belong to this count
+  const countableItems = countItems.length > 0
+    ? countItems.map(ci => items.find(item => item.id === ci.item_id)).filter(Boolean)
+    : [];
 
   const handleStartCount = async (template?: InventoryTemplate, selectedTeam?: { id: string; name: string }) => {
     try {
