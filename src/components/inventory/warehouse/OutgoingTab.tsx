@@ -186,17 +186,24 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
   };
   const handleScanItem = async (barcode: string) => {
     try {
-      // Find item by barcode in available inventory items
-      const item = inventoryItems.find(item => item.barcode === barcode);
+      // Find item by barcode in warehouse inventory items only
+      const item = warehouseInventoryItems.find(item => item.barcode === barcode);
       if (item) {
-        return item;
+        // Verify it has stock in warehouse
+        if (item.current_stock && item.current_stock > 0) {
+          return item;
+        } else {
+          toast.error(`${item.name} has no stock available in this warehouse`);
+          return null;
+        }
       }
       
-      // If not found locally, try to fetch from database
-      const foundItem = await getItemById(barcode);
-      return foundItem;
+      // Item not found in warehouse stock
+      toast.error(`Item with barcode ${barcode} not found in warehouse inventory`);
+      return null;
     } catch (error) {
       console.error('Failed to scan item:', error);
+      toast.error('Failed to scan item');
       return null;
     }
   };
