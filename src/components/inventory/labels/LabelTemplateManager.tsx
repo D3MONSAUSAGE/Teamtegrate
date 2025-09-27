@@ -33,7 +33,11 @@ export const LabelTemplateManager: React.FC = () => {
 
   useEffect(() => {
     console.log('LabelTemplateManager: Loading templates...');
-    loadTemplates();
+    // Add a small delay to ensure auth is established
+    const timer = setTimeout(() => {
+      loadTemplates();
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const loadTemplates = async () => {
@@ -45,7 +49,13 @@ export const LabelTemplateManager: React.FC = () => {
       setTemplates(data);
     } catch (error) {
       console.error('LabelTemplateManager: Error loading templates:', error);
-      toast.error('Failed to load label templates');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load label templates';
+      toast.error(errorMessage);
+      
+      // If it's an auth error, show a more specific message
+      if (errorMessage.includes('Authentication required')) {
+        toast.error('Please ensure you are logged in to access label templates');
+      }
     } finally {
       setLoading(false);
     }
