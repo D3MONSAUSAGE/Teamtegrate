@@ -12,11 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { LabelTemplate, labelTemplatesApi } from '@/contexts/inventory/api/labelTemplates';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { InventoryLot } from '@/contexts/inventory/api/inventoryLots';
-import { Printer, Download, FileText } from 'lucide-react';
+import { nutritionalInfoApi, NutritionalInfo } from '@/contexts/inventory/api/nutritionalInfo';
+import { LabelContentSelector, LabelContentConfig } from './LabelContentSelector';
+import { SaveTemplateDialog } from './SaveTemplateDialog';
+import { Printer, Download, FileText, Save, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LabelPrintDialogProps {
@@ -40,12 +44,82 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
   const [printerType, setPrinterType] = useState<'universal' | 'zebra' | 'brother' | 'dymo'>('universal');
   const [labelPreview, setLabelPreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [nutritionalInfo, setNutritionalInfo] = useState<NutritionalInfo | null>(null);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('template');
+  
+  // Content configuration state
+  const [contentConfig, setContentConfig] = useState<LabelContentConfig>({
+    name: true,
+    sku: true,
+    barcode: true,
+    qrCode: false,
+    category: false,
+    vendor: false,
+    location: false,
+    currentStock: false,
+    unit: false,
+    lotNumber: !!lot,
+    manufacturingDate: !!lot,
+    expirationDate: !!lot,
+    nutritionalFacts: false,
+    ingredients: false,
+    allergens: false,
+    servingSize: false,
+    customText: ''
+  });
 
   useEffect(() => {
     if (open) {
       loadTemplates();
+      loadNutritionalInfo();
+      resetContentConfig();
     }
-  }, [open]);
+  }, [open, item, lot]);
+
+  const resetContentConfig = () => {
+    setContentConfig({
+      name: true,
+      sku: true,
+      barcode: true,
+      qrCode: false,
+      category: false,
+      vendor: false,
+      location: false,
+      currentStock: false,
+      unit: false,
+      lotNumber: !!lot,
+      manufacturingDate: !!lot,
+      expirationDate: !!lot,
+      nutritionalFacts: false,
+      ingredients: false,
+      allergens: false,
+      servingSize: false,
+      customText: ''
+    });
+  };
+
+  const loadNutritionalInfo = async () => {
+    if (!item?.id) return;
+    
+    try {
+      const data = await nutritionalInfoApi.getByItemId(item.id);
+      setNutritionalInfo(data);
+      
+      // Auto-enable nutritional fields if data exists
+      if (data) {
+        setContentConfig(prev => ({
+          ...prev,
+          nutritionalFacts: !!(data.calories || data.total_fat || data.protein),
+          ingredients: !!data.ingredients?.trim(),
+          allergens: !!(data.allergens && data.allergens.length > 0),
+          servingSize: !!data.serving_size?.trim()
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading nutritional info:', error);
+    }
+  };
 
   const loadTemplates = async () => {
     try {
@@ -90,27 +164,156 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
         name: item.name,
         sku: item.sku,
         lot: lot?.lot_number
-      })
+      }),
+      // Nutritional data
+      ingredients: nutritionalInfo?.ingredients || '',
+      allergens: nutritionalInfo?.allergens?.join(', ') || '',
+      serving_size: nutritionalInfo?.serving_size || '',
+      calories: nutritionalInfo?.calories || 0,
+      total_fat: nutritionalInfo?.total_fat || 0,
+      protein: nutritionalInfo?.protein || 0
     };
   };
 
+  const generateFieldsFromContentConfig = () => {
+    const fields: any[] = [];
+    let yOffset = 30;
+
+    if (contentConfig.name) {
+      fields.push({
+        type: 'text',
+        field: 'name',
+        x: 20,
+        y: yOffset,
+        fontSize: 16,
+        fontWeight: 'bold',
+        width: 250
+      });
+      yOffset += 25;
+    }
+
+    if (contentConfig.sku) {
+      fields.push({
+        type: 'text',
+        field: 'sku',
+        x: 20,
+        y: yOffset,
+        fontSize: 10,
+        fontWeight: 'normal'
+      });
+      yOffset += 20;
+    }
+
+    if (contentConfig.barcode) {
+      fields.push({
+        type: 'barcode',
+        field: 'sku',
+        x: 20,
+        y: yOffset,
+        format: 'CODE128',
+        width: 150,
+        height: 30
+      });
+      yOffset += 40;
+    }
+
+    if (contentConfig.qrCode) {
+      fields.push({
+        type: 'qr',
+        field: 'item_data',
+        x: 200,
+        y: yOffset - 40,
+        size: 40
+      });
+    }
+
+    if (contentConfig.lotNumber && lot) {
+      fields.push({
+        type: 'text',
+        field: 'lot_number',
+        x: 20,
+        y: yOffset,
+        fontSize: 9,
+        fontWeight: 'bold'
+      });
+      yOffset += 20;
+    }
+
+    if (contentConfig.expirationDate && lot) {
+      fields.push({
+        type: 'text',
+        field: 'expiration_date',
+        x: 120,
+        y: yOffset - 20,
+        fontSize: 9
+      });
+    }
+
+    if (contentConfig.nutritionalFacts && nutritionalInfo) {
+      fields.push({
+        type: 'nutritional_facts',
+        field: 'nutritional_info',
+        x: 20,
+        y: yOffset,
+        fontSize: 8,
+        width: 120,
+        height: 200
+      });
+      yOffset += 210;
+    }
+
+    if (contentConfig.ingredients && nutritionalInfo?.ingredients) {
+      fields.push({
+        type: 'text',
+        field: 'ingredients',
+        x: 20,
+        y: yOffset,
+        fontSize: 7,
+        width: 250,
+        wordWrap: true
+      });
+      yOffset += 40;
+    }
+
+    if (contentConfig.allergens && nutritionalInfo?.allergens) {
+      fields.push({
+        type: 'text',
+        field: 'allergens',
+        x: 20,
+        y: yOffset,
+        fontSize: 8,
+        fontWeight: 'bold'
+      });
+    }
+
+    return fields;
+  };
+
   const generatePreview = async () => {
-    if (!selectedTemplate || !item) {
+    if (!item) {
       setLabelPreview('');
       return;
     }
 
     const labelData = generateLabelData();
-    const template = selectedTemplate.template_data as any;
-    
-    if (!template?.fields) {
+    let fields = generateFieldsFromContentConfig();
+
+    // Use template fields if available and no custom content config
+    if (selectedTemplate?.template_data) {
+      const templateData = selectedTemplate.template_data as any;
+      if (templateData.fields && !templateData.content_config) {
+        fields = templateData.fields;
+      }
+    }
+
+    if (fields.length === 0) {
       setLabelPreview('');
       return;
     }
 
     // Create a simple HTML preview
-    const dimensions = selectedTemplate.dimensions as any;
-    const width = (dimensions?.width || 2) * 72; // Convert to pixels (rough estimate)
+    const dimensions = selectedTemplate?.dimensions as any || { width: 4, height: 6 };
+    const width = (dimensions?.width || 2) * 72;
     const height = (dimensions?.height || 1) * 72;
 
     let previewHTML = `
@@ -124,7 +327,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
       ">
     `;
 
-    for (const field of template.fields) {
+    for (const field of fields) {
       const value = labelData[field.field as keyof typeof labelData] || field.field;
       
       if (field.type === 'text') {
@@ -190,35 +393,41 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
   };
 
   useEffect(() => {
-    if (selectedTemplate && item) {
+    if (item && (selectedTemplate || Object.values(contentConfig).some(v => v === true))) {
       generatePreview();
     }
-  }, [selectedTemplate, item, lot]);
+  }, [selectedTemplate, item, lot, contentConfig, nutritionalInfo]);
 
   const handlePrint = () => {
-    if (!selectedTemplate || !item) {
-      toast.error('Please select a template and ensure item data is available');
+    if (!item) {
+      toast.error('Please select an item to print labels for');
       return;
     }
 
     if (printerType === 'universal') {
-      // Generate PDF and print
       handleDownloadPDF();
     } else {
-      // Generate printer-specific commands
       toast.info(`${printerType} printer support is coming soon!`);
     }
   };
 
   const handleDownloadPDF = () => {
-    if (!selectedTemplate || !item) return;
+    if (!item) return;
 
     try {
       const labelData = generateLabelData();
-      const template = selectedTemplate.template_data as any;
-      const dimensions = selectedTemplate.dimensions as any;
+      let fields = generateFieldsFromContentConfig();
+      const dimensions = selectedTemplate?.dimensions as any || { width: 4, height: 6, unit: 'inches' };
 
-      const content = template.fields?.map((field: any) => ({
+      // Use template fields if available
+      if (selectedTemplate?.template_data) {
+        const templateData = selectedTemplate.template_data as any;
+        if (templateData.fields && !templateData.content_config) {
+          fields = templateData.fields;
+        }
+      }
+
+      const content = fields.map((field: any) => ({
         type: field.type,
         value: labelData[field.field as keyof typeof labelData] || field.field,
         x: field.x,
@@ -230,7 +439,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
           format: field.format,
           size: field.size
         }
-      })) || [];
+      }));
 
       const pdf = BarcodeGenerator.createLabelPDF(content, dimensions);
       pdf.save(`label-${item.name}-${Date.now()}.pdf`);
@@ -246,15 +455,21 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Print Labels</DialogTitle>
+          <DialogTitle>Generate Labels</DialogTitle>
           <DialogDescription>
-            {item ? `Generate labels for ${item.name}` : 'Generate custom labels'}
+            {item ? `Create custom labels for ${item.name}` : 'Create custom labels with flexible content selection'}
             {lot && ` (Lot: ${lot.lot_number})`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="template">Template</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="template" className="space-y-4 mt-6">
             <div className="space-y-2">
               <Label htmlFor="template-select">Label Template</Label>
               <Select
@@ -262,6 +477,14 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
                 onValueChange={(value) => {
                   const template = templates.find(t => t.id === value);
                   setSelectedTemplate(template || null);
+                  
+                  // Load template content config if available
+                  if (template?.template_data) {
+                    const templateData = template.template_data as any;
+                    if (templateData.content_config) {
+                      setContentConfig(templateData.content_config);
+                    }
+                  }
                 }}
               >
                 <SelectTrigger>
@@ -318,9 +541,20 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
                 </CardContent>
               </Card>
             )}
-          </div>
+          </TabsContent>
 
-          <div className="space-y-4">
+          <TabsContent value="content" className="mt-6">
+            <LabelContentSelector
+              item={item}
+              lot={lot}
+              nutritionalInfo={nutritionalInfo}
+              contentConfig={contentConfig}
+              onContentChange={setContentConfig}
+              templateCategory={selectedTemplate?.category}
+            />
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4 mt-6">
             <Label>Label Preview</Label>
             {labelPreview ? (
               <Card>
@@ -334,19 +568,29 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
             ) : (
               <Card>
                 <CardContent className="p-4 text-center text-muted-foreground">
-                  Select a template to see preview
+                  Configure content and select a template to see preview
                 </CardContent>
               </Card>
             )}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
 
         <Separator />
 
         <div className="flex justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setSaveTemplateOpen(true)}
+              disabled={!item}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save as Template
+            </Button>
+          </div>
           
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleDownloadPDF}>
@@ -359,6 +603,18 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
             </Button>
           </div>
         </div>
+
+        <SaveTemplateDialog
+          open={saveTemplateOpen}
+          onOpenChange={setSaveTemplateOpen}
+          contentConfig={contentConfig}
+          templateData={selectedTemplate?.template_data || {}}
+          dimensions={selectedTemplate?.dimensions as any || { width: 4, height: 6, unit: 'inches' }}
+          onTemplateSaved={(template) => {
+            toast.success('Template saved! You can now find it in the Templates tab.');
+            loadTemplates(); // Refresh template list
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

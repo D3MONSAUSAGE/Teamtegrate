@@ -4,11 +4,13 @@ import { BarcodeGenerator } from './BarcodeGenerator';
 import { LabelTemplateManager } from './LabelTemplateManager';
 import { LabelPrintDialog } from './LabelPrintDialog';
 import { BatchLabelGenerator } from './BatchLabelGenerator';
+import { ReprintDialog } from './ReprintDialog';
 import { Button } from '@/components/ui/button';
-import { QrCode, Tag, Printer, Layers, Plus } from 'lucide-react';
+import { QrCode, Tag, Printer, Layers, Plus, RotateCcw } from 'lucide-react';
 
 export const LabelsAndBarcodesTab: React.FC = () => {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [reprintDialogOpen, setReprintDialogOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -23,7 +25,11 @@ export const LabelsAndBarcodesTab: React.FC = () => {
         <div className="flex gap-2">
           <Button onClick={() => setPrintDialogOpen(true)}>
             <Printer className="h-4 w-4 mr-2" />
-            Print Labels
+            Generate Labels
+          </Button>
+          <Button variant="outline" onClick={() => setReprintDialogOpen(true)}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reprint from Template
           </Button>
         </div>
       </div>
@@ -79,6 +85,11 @@ export const LabelsAndBarcodesTab: React.FC = () => {
       <LabelPrintDialog
         open={printDialogOpen}
         onOpenChange={setPrintDialogOpen}
+      />
+
+      <ReprintDialog
+        open={reprintDialogOpen}
+        onOpenChange={setReprintDialogOpen}
       />
     </div>
   );
