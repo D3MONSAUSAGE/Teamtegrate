@@ -263,12 +263,9 @@ export const WarehouseTab: React.FC = () => {
   const handleSelectWarehouse = (teamId: string | null) => {
     console.log('handleSelectWarehouse called with teamId:', teamId);
     if (teamId) {
+      console.log('Setting selected team to:', teamId);
       setSelectedTeamId(teamId);
       setShowOverview(false);
-      setLoading(true);
-      setError(null);
-      // Force immediate warehouse load for selected team
-      setTimeout(() => loadWarehouse(), 0);
     }
   };
 
@@ -378,7 +375,7 @@ export const WarehouseTab: React.FC = () => {
             <div className="text-sm text-muted-foreground">{error}</div>
           </div>
         </div>
-      ) : shouldShowOverview || showOverview ? (
+      ) : showOverview || (shouldShowOverview && !warehouse) ? (
         <React.Suspense fallback={<div className="flex items-center justify-center py-12">Loading dashboard...</div>}>
           <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
         </React.Suspense>
