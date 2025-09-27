@@ -397,7 +397,7 @@ export const WarehouseTab: React.FC = () => {
             {renderTabContent()}
           </div>
         </ScrollableTabs>
-      ) : showOverview || shouldShowOverview ? (
+      ) : (showOverview || shouldShowOverview) && selectedTeamId === null ? (
         <React.Suspense fallback={<div className="flex items-center justify-center py-12">Loading dashboard...</div>}>
           <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
         </React.Suspense>
