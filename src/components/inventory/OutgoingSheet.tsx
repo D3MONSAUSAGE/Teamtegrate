@@ -496,7 +496,33 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
               </div>
             )}
 
-            {/* Customer Information (replaced with ClientSelector above) */}
+            {/* Customer Information for Sales */}
+            {currentReason?.requiresCustomer && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <ClientSelector
+                    selectedClient={selectedClient}
+                    onClientSelect={setSelectedClient}
+                  />
+                </div>
+                
+                {/* Invoice Creation Option */}
+                {selectedClient && (
+                  <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="create-invoice"
+                      checked={createInvoiceOption}
+                      onChange={(e) => setCreateInvoiceOption(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="create-invoice" className="text-sm">
+                      Create invoice for this sale
+                    </Label>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Notes */}
             <div className="space-y-2">

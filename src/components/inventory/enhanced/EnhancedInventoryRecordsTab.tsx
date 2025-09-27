@@ -25,6 +25,7 @@ import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
 import { EnhancedDailyAnalysis } from '../daily/EnhancedDailyAnalysis';
 import { TimezoneIndicator } from '../TimezoneIndicator';
+import { WithdrawalReportsTab } from '../reports/WithdrawalReportsTab';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
   BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays,
@@ -343,6 +344,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               onClick={() => setActiveTab('teams')}
             >
               Team Performance
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'transactions'} 
+              onClick={() => setActiveTab('transactions')}
+            >
+              Transaction Reports
             </ScrollableTabsTrigger>
           </ScrollableTabsList>
         </ScrollableTabs>
@@ -900,6 +907,10 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             </div>
           )}
           </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <WithdrawalReportsTab />
         )}
       </div>
 
