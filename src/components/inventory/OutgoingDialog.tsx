@@ -559,76 +559,128 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
                 )}
               </div>
 
-              {/* Line Items */}
-              {lineItems.length > 0 && (
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">Scanned Items</Label>
-                      {lineItems.map((line) => (
-                        <div key={line.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{line.name}</div>
-                            {line.sku && (
-                              <div className="text-xs text-muted-foreground">SKU: {line.sku}</div>
-                            )}
+              {/* Line Items - Always show structure */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">
+                        Withdrawal Items ({lineItems.length})
+                      </Label>
+                      {lineItems.length === 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          Scan or search items above to add to withdrawal list
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Show line items if any */}
+                    {lineItems.length > 0 ? (
+                      <div className="space-y-3">
+                        {lineItems.map((line) => (
+                          <div key={line.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">{line.name}</div>
+                              {line.sku && (
+                                <div className="text-xs text-muted-foreground">SKU: {line.sku}</div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs">Qty:</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={line.qty}
+                                onChange={(e) => updateLineItem(line.id, 'qty', parseFloat(e.target.value) || 0)}
+                                className="w-20 h-8"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs">Unit Price:</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={line.unit_price || 0}
+                                onChange={(e) => updateLineItem(line.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                className="w-24 h-8"
+                                placeholder="0.00"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs">Reason:</Label>
+                              <Select onValueChange={(value) => updateLineItem(line.id, 'reason', value)} value={line.reason}>
+                                <SelectTrigger className="w-36 h-8">
+                                  <SelectValue placeholder="Select reason" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {withdrawalReasons.map((reason) => (
+                                    <SelectItem key={reason.value} value={reason.value}>
+                                      {reason.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeLineItem(line.id)}
+                              className="p-1 h-8 w-8"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+
+                        {/* Cost Summary */}
+                        <div className="border-t pt-3 mt-4">
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm font-medium">Total Value:</div>
+                            <div className="text-lg font-bold">
+                              ${lineItems.reduce((total, item) => total + (item.qty * (item.unit_price || 0)), 0).toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {lineItems.length} items • {lineItems.reduce((total, item) => total + item.qty, 0)} total units
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Empty state showing available options */
+                      <div className="space-y-4 p-6 text-center border-2 border-dashed border-muted rounded-lg">
+                        <Package className="h-8 w-8 mx-auto text-muted-foreground" />
+                        <div>
+                          <div className="font-medium text-sm mb-2">No items selected for withdrawal</div>
+                          <div className="text-xs text-muted-foreground mb-4">
+                            Scan barcodes or search by name/SKU to add items
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs">Qty:</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={line.qty}
-                              onChange={(e) => updateLineItem(line.id, 'qty', parseFloat(e.target.value) || 0)}
-                              className="w-20 h-8"
-                            />
+                          {/* Show available withdrawal reasons */}
+                          <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                            {withdrawalReasons.map((reason) => (
+                              <div key={reason.value} className="flex items-center gap-2 p-2 bg-muted/30 rounded text-xs">
+                                <div className="w-2 h-2 rounded-full bg-primary/60" />
+                                {reason.label}
+                              </div>
+                            ))}
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs">Price:</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={line.unit_price || 0}
-                              onChange={(e) => updateLineItem(line.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className="w-20 h-8"
-                            />
+                          
+                          <div className="text-xs text-muted-foreground mt-3">
+                            Each item tracks: quantity, unit price, withdrawal reason, and generates batch numbers for full traceability
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs">Reason:</Label>
-                            <Select onValueChange={(value) => updateLineItem(line.id, 'reason', value)} value={line.reason}>
-                              <SelectTrigger className="w-32 h-8">
-                                <SelectValue placeholder="Select" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {withdrawalReasons.map((reason) => (
-                                  <SelectItem key={reason.value} value={reason.value}>
-                                    {reason.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeLineItem(line.id)}
-                            className="p-1 h-8 w-8"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
 
