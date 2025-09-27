@@ -6,3 +6,7 @@ export * from './inventoryTemplates';
 export * from './inventoryCategories';
 export * from './inventoryUnits';
 export * from './vendors';
+export * from './inventoryLots';
+export * from './nutritionalInfo';
+export * from './labelTemplates';
+export * from './generatedLabels';

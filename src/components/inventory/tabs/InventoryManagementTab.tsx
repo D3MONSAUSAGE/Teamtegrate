@@ -13,12 +13,13 @@ import { VendorDialog } from '../dialogs/VendorDialog';
 import { ItemCard } from '../ItemCard';
 import { ItemTableRow } from '../ItemTableRow';
 import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
-import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2, Building2, Mail, Phone, Globe } from 'lucide-react';
+import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2, Building2, Mail, Phone, Globe, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { LabelsAndBarcodesTab } from '../labels/LabelsAndBarcodesTab';
 import { toast } from 'sonner';
 import { DEFAULT_CATEGORIES, DEFAULT_UNITS, shouldSeedDefaults } from '@/utils/inventorySeeds';
 
@@ -266,10 +267,14 @@ export const InventoryManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="items" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Items
+          </TabsTrigger>
+          <TabsTrigger value="labels" className="flex items-center gap-2">
+            <QrCode className="h-4 w-4" />
+            Labels
           </TabsTrigger>
           <TabsTrigger value="categories" className="flex items-center gap-2">
             <FolderOpen className="h-4 w-4" />

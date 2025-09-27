@@ -2324,6 +2324,45 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_labels: {
+        Row: {
+          id: string
+          item_id: string | null
+          label_data: Json
+          lot_id: string | null
+          organization_id: string
+          print_format: string
+          printed_at: string
+          printed_by: string
+          quantity_printed: number
+          template_id: string
+        }
+        Insert: {
+          id?: string
+          item_id?: string | null
+          label_data?: Json
+          lot_id?: string | null
+          organization_id: string
+          print_format?: string
+          printed_at?: string
+          printed_by: string
+          quantity_printed?: number
+          template_id: string
+        }
+        Update: {
+          id?: string
+          item_id?: string | null
+          label_data?: Json
+          lot_id?: string | null
+          organization_id?: string
+          print_format?: string
+          printed_at?: string
+          printed_by?: string
+          quantity_printed?: number
+          template_id?: string
+        }
+        Relationships: []
+      }
       google_calendar_sync_preferences: {
         Row: {
           auto_create_meet_links: boolean | null
@@ -2819,6 +2858,147 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_lots: {
+        Row: {
+          cost_per_unit: number | null
+          created_at: string
+          created_by: string
+          expiration_date: string | null
+          id: string
+          is_active: boolean
+          item_id: string
+          lot_number: string
+          manufacturing_date: string | null
+          notes: string | null
+          organization_id: string
+          quantity_received: number
+          quantity_remaining: number
+          supplier_info: Json | null
+          updated_at: string
+        }
+        Insert: {
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by: string
+          expiration_date?: string | null
+          id?: string
+          is_active?: boolean
+          item_id: string
+          lot_number: string
+          manufacturing_date?: string | null
+          notes?: string | null
+          organization_id: string
+          quantity_received?: number
+          quantity_remaining?: number
+          supplier_info?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          cost_per_unit?: number | null
+          created_at?: string
+          created_by?: string
+          expiration_date?: string | null
+          id?: string
+          is_active?: boolean
+          item_id?: string
+          lot_number?: string
+          manufacturing_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          quantity_received?: number
+          quantity_remaining?: number
+          supplier_info?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_nutritional_info: {
+        Row: {
+          added_sugars: number | null
+          additional_nutrients: Json | null
+          allergens: string[] | null
+          calcium: number | null
+          calories: number | null
+          cholesterol: number | null
+          created_at: string
+          created_by: string
+          dietary_fiber: number | null
+          id: string
+          ingredients: string | null
+          iron: number | null
+          item_id: string
+          organization_id: string
+          potassium: number | null
+          protein: number | null
+          saturated_fat: number | null
+          serving_size: string | null
+          servings_per_container: number | null
+          sodium: number | null
+          total_carbohydrates: number | null
+          total_fat: number | null
+          total_sugars: number | null
+          trans_fat: number | null
+          updated_at: string
+          vitamin_d: number | null
+        }
+        Insert: {
+          added_sugars?: number | null
+          additional_nutrients?: Json | null
+          allergens?: string[] | null
+          calcium?: number | null
+          calories?: number | null
+          cholesterol?: number | null
+          created_at?: string
+          created_by: string
+          dietary_fiber?: number | null
+          id?: string
+          ingredients?: string | null
+          iron?: number | null
+          item_id: string
+          organization_id: string
+          potassium?: number | null
+          protein?: number | null
+          saturated_fat?: number | null
+          serving_size?: string | null
+          servings_per_container?: number | null
+          sodium?: number | null
+          total_carbohydrates?: number | null
+          total_fat?: number | null
+          total_sugars?: number | null
+          trans_fat?: number | null
+          updated_at?: string
+          vitamin_d?: number | null
+        }
+        Update: {
+          added_sugars?: number | null
+          additional_nutrients?: Json | null
+          allergens?: string[] | null
+          calcium?: number | null
+          calories?: number | null
+          cholesterol?: number | null
+          created_at?: string
+          created_by?: string
+          dietary_fiber?: number | null
+          id?: string
+          ingredients?: string | null
+          iron?: number | null
+          item_id?: string
+          organization_id?: string
+          potassium?: number | null
+          protein?: number | null
+          saturated_fat?: number | null
+          serving_size?: string | null
+          servings_per_container?: number | null
+          sodium?: number | null
+          total_carbohydrates?: number | null
+          total_fat?: number | null
+          total_sugars?: number | null
+          trans_fat?: number | null
+          updated_at?: string
+          vitamin_d?: number | null
+        }
+        Relationships: []
       }
       inventory_template_items: {
         Row: {
@@ -3372,6 +3552,54 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      label_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          dimensions: Json
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          organization_id: string
+          printer_type: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          dimensions?: Json
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          organization_id: string
+          printer_type?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dimensions?: Json
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          organization_id?: string
+          printer_type?: string
+          template_data?: Json
+          updated_at?: string
         }
         Relationships: []
       }
