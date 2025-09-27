@@ -10,12 +10,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CreatedInvoice } from '@/types/invoices';
 import { invoiceService } from '@/services/invoiceService';
 import { formatCurrency } from '@/utils/formatters';
+import { generateInvoicePDF } from '@/utils/generateInvoicePDF';
+import { InvoiceViewerModal } from './InvoiceViewerModal';
 
 export const SalesInvoicesTab: React.FC = () => {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<CreatedInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedInvoice, setSelectedInvoice] = useState<CreatedInvoice | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   useEffect(() => {
     loadSalesInvoices();
@@ -65,6 +69,15 @@ export const SalesInvoicesTab: React.FC = () => {
       case 'draft': return 'Draft';
       default: return status;
     }
+  };
+
+  const handleViewInvoice = (invoice: CreatedInvoice) => {
+    setSelectedInvoice(invoice);
+    setIsViewerOpen(true);
+  };
+
+  const handleDownloadInvoice = (invoice: CreatedInvoice) => {
+    generateInvoicePDF(invoice);
   };
 
   if (loading) {
@@ -223,10 +236,18 @@ export const SalesInvoicesTab: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDownloadInvoice(invoice)}
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
                       </div>
@@ -238,6 +259,12 @@ export const SalesInvoicesTab: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <InvoiceViewerModal
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        invoice={selectedInvoice}
+      />
     </div>
   );
 };
