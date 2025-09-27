@@ -53,6 +53,7 @@ export interface InventoryItem {
   maximum_threshold?: number;
   reorder_point?: number;
   unit_cost?: number;
+  sale_price?: number; // Optional sale price for profit calculation
   supplier_info?: Record<string, any>;
   barcode?: string;
   sku?: string;

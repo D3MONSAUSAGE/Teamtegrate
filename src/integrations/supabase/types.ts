@@ -2738,6 +2738,7 @@ export type Database = {
           purchase_price: number | null
           purchase_unit: string | null
           reorder_point: number | null
+          sale_price: number | null
           sku: string | null
           sort_order: number | null
           supplier_info: Json | null
@@ -2771,6 +2772,7 @@ export type Database = {
           purchase_price?: number | null
           purchase_unit?: string | null
           reorder_point?: number | null
+          sale_price?: number | null
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
@@ -2804,6 +2806,7 @@ export type Database = {
           purchase_price?: number | null
           purchase_unit?: string | null
           reorder_point?: number | null
+          sale_price?: number | null
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null

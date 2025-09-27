@@ -42,6 +42,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
     reorder_point: 0,
     reorder_quantity: 0,
     unit_cost: 0,
+    sale_price: 0,
     team_id: null as string | null,
     vendor_id: null as string | null,
   });
@@ -82,20 +83,21 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
       console.log('📋 CreateItemDialog submitting form data:', formData);
       onItemCreated(formData);
       onClose();
-      setFormData({
-        name: '',
-        sku: '',
-        barcode: '',
-        description: '',
-        category_id: '',
-        base_unit_id: '',
-        current_stock: 0,
-        reorder_point: 0,
-        reorder_quantity: 0,
-        unit_cost: 0,
-        team_id: null,
-        vendor_id: null,
-      });
+        setFormData({
+          name: '',
+          sku: '',
+          barcode: '',
+          description: '',
+          category_id: '',
+          base_unit_id: '',
+          current_stock: 0,
+          reorder_point: 0,
+          reorder_quantity: 0,
+          unit_cost: 0,
+          sale_price: 0,
+          team_id: null,
+          vendor_id: null,
+        });
     } catch (error) {
       console.error('❌ CreateItemDialog error:', error);
       toast.error('Failed to create item');
@@ -212,6 +214,19 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
                 step="0.01"
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="sale_price">Sale Price (optional)</Label>
+            <Input
+              id="sale_price"
+              type="number"
+              value={formData.sale_price}
+              onChange={(e) => setFormData(prev => ({ ...prev, sale_price: parseFloat(e.target.value) || 0 }))}
+              min="0"
+              step="0.01"
+              placeholder="Enter sale price for profit calculation"
+            />
           </div>
 
           <div>

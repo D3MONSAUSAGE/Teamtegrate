@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TruckIcon, ShoppingCart, Plus, Package, BarChart3 } from 'lucide-react';
-import { OutgoingDialog } from '../OutgoingDialog';
+import { OutgoingSheet } from '../OutgoingSheet';
 import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
+import { useInventory } from '@/contexts/inventory';
+import { toast } from 'sonner';
 
 interface OutgoingTabProps {
   warehouseId: string;
 }
 
 export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
+  const { items: inventoryItems, getItemById, createTransaction } = useInventory();
   const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOutgoingDialogOpen, setIsOutgoingDialogOpen] = useState(false);
+  const [isOutgoingSheetOpen, setIsOutgoingSheetOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   
   useEffect(() => {
@@ -28,8 +31,55 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       setWarehouseItems(itemsWithStock);
     } catch (error) {
       console.error('Error loading warehouse items:', error);
+      toast.error('Failed to load warehouse items');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle item withdrawal
+  const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
+    try {
+      // Process each line item
+      for (const lineItem of lineItems) {
+        // Create outbound transaction
+        await createTransaction({
+          organization_id: '', // Will be set by the API
+          item_id: lineItem.item.id,
+          transaction_type: 'out',
+          quantity: -lineItem.quantity, // Negative for outbound
+          unit_cost: lineItem.unitPrice,
+          reference_number: `${reason.toUpperCase()}-${Date.now()}`,
+          notes: `${reason}: ${notes || ''}${customerInfo ? ` | Customer: ${customerInfo.name}` : ''}`.trim(),
+          user_id: '', // Will be set by the API
+          transaction_date: new Date().toISOString()
+        });
+      }
+      
+      // Reload warehouse items to reflect changes
+      await loadWarehouseItems();
+      toast.success(`Successfully withdrew ${lineItems.length} item${lineItems.length !== 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Failed to withdraw items:', error);
+      throw error; // Re-throw to let OutgoingSheet handle the error toast
+    }
+  };
+
+  // Handle barcode scanning
+  const handleScanItem = async (barcode: string) => {
+    try {
+      // Find item by barcode in available inventory items
+      const item = inventoryItems.find(item => item.barcode === barcode);
+      if (item) {
+        return item;
+      }
+      
+      // If not found locally, try to fetch from database
+      const foundItem = await getItemById(barcode);
+      return foundItem;
+    } catch (error) {
+      console.error('Failed to scan item:', error);
+      return null;
     }
   };
 
@@ -93,7 +143,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
               <TruckIcon className="h-5 w-5" />
               Outgoing & Sales
             </CardTitle>
-            <Button onClick={() => setIsOutgoingDialogOpen(true)}>
+            <Button onClick={() => setIsOutgoingSheetOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Withdraw/Sell Stock
             </Button>
@@ -141,7 +191,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
                         className="w-full mt-3"
                         onClick={() => {
                           setSelectedItemId(warehouseItem.item_id);
-                          setIsOutgoingDialogOpen(true);
+                          setIsOutgoingSheetOpen(true);
                         }}
                       >
                         Withdraw/Sell
@@ -163,15 +213,16 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      <OutgoingDialog
-        open={isOutgoingDialogOpen}
-        onOpenChange={(open) => {
-          setIsOutgoingDialogOpen(open);
-          if (!open) setSelectedItemId(null);
+      {/* Outgoing Sheet */}
+      <OutgoingSheet
+        open={isOutgoingSheetOpen}
+        onClose={() => {
+          setIsOutgoingSheetOpen(false);
+          setSelectedItemId(null);
         }}
-        selectedItemId={selectedItemId}
-        warehouseId={warehouseId}
+        onItemsWithdrawn={handleItemsWithdrawn}
+        availableItems={inventoryItems}
+        onScanItem={handleScanItem}
       />
     </div>
   );
