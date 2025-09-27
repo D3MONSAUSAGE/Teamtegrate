@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { formatCurrency } from '@/utils/formatters';
-import { Trash2 } from 'lucide-react';
+import { Trash2, MoreHorizontal, QrCode } from 'lucide-react';
+import { LabelPrintDialog } from './labels/LabelPrintDialog';
 
 interface ItemTableRowProps {
   item: InventoryItem;
@@ -13,9 +15,16 @@ interface ItemTableRowProps {
 }
 
 export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDelete }) => {
+  const [showLabelDialog, setShowLabelDialog] = useState(false);
+
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.(item.id);
+  };
+
+  const handleGenerateLabel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowLabelDialog(true);
   };
 
   return (
@@ -42,18 +51,36 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
       <TableCell>
         {item.vendor?.name || 'No Vendor'}
       </TableCell>
-      {onDelete && (
-        <TableCell>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDeleteClick}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </TableCell>
-      )}
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleGenerateLabel}>
+              <QrCode className="h-4 w-4 mr-2" />
+              Generate Label
+            </DropdownMenuItem>
+            {onDelete && (
+              <DropdownMenuItem 
+                onClick={handleDeleteClick}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+      
+      <LabelPrintDialog
+        open={showLabelDialog}
+        onOpenChange={setShowLabelDialog}
+        item={item}
+      />
     </TableRow>
   );
 };
