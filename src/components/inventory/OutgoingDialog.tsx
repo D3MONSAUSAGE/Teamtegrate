@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShoppingCart, Package, AlertCircle, Calendar, Search, X, Plus, Scan, Zap } from 'lucide-react';
+import { ShoppingCart, Package, AlertCircle, Calendar, Search, X, Plus, Scan, Zap, DollarSign, Users } from 'lucide-react';
 import { inventoryLotsApi, InventoryLot } from '@/contexts/inventory/api/inventoryLots';
 import { inventoryItemsApi } from '@/contexts/inventory/api/inventoryItems';
 import { inventoryTransactionsApi } from '@/contexts/inventory/api/inventoryTransactions';
@@ -408,379 +408,478 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
-            Withdraw/Sell Warehouse Stock
-          </DialogTitle>
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+        {/* Enhanced Header */}
+        <DialogHeader className="space-y-4 pb-4 border-b">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20">
+              <ShoppingCart className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Warehouse Stock Withdrawal
+              </DialogTitle>
+              <p className="text-muted-foreground text-sm">
+                Process sales, waste, transfers, and other inventory movements with full lot traceability
+              </p>
+            </div>
+            
+            {/* Scanner Status in Header */}
+            {scannerConnected && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-medium text-primary">Hardware Scanner Active</span>
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+            )}
+          </div>
+          
+          {/* Quick Stats */}
+          {lineItems.length > 0 && (
+            <div className="grid grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+              <div className="text-center">
+                <div className="text-lg font-bold text-primary">{lineItems.length}</div>
+                <div className="text-xs text-muted-foreground">Items</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-accent">
+                  {lineItems.reduce((sum, item) => sum + item.qty, 0)}
+                </div>
+                <div className="text-xs text-muted-foreground">Total Qty</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-secondary">
+                  ${lineItems.reduce((sum, item) => sum + ((item.unit_price || 0) * item.qty), 0).toFixed(2)}
+                </div>
+                <div className="text-xs text-muted-foreground">Total Value</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-orange-600">
+                  {new Set(lineItems.map(item => item.reason)).size}
+                </div>
+                <div className="text-xs text-muted-foreground">Reasons</div>
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Items to Withdraw */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center justify-between">
-                Items to Withdraw
-                
-                {/* Hardware Scanner Status & Controls */}
-                <div className="flex items-center gap-4">
-                  {/* Hardware Scanner Status */}
-                  {scannerConnected && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
-                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                      <span className="text-sm font-medium text-primary">Hardware Scanner Active</span>
-                      <Zap className="h-3 w-3 text-primary" />
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-hidden">
+          <div className="grid grid-cols-12 gap-6 h-full">
+            
+            {/* Left Panel - Search & Scan (4 columns) */}
+            <div className="col-span-4 space-y-6 overflow-y-auto">
+              {/* Scanning Section */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Scan className="h-5 w-5 text-primary" />
+                      Item Selection
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="scan-mode" className="text-sm font-medium">
+                        Scan Mode
+                      </Label>
+                      <Switch
+                        id="scan-mode"
+                        checked={scanMode}
+                        onCheckedChange={setScanMode}
+                      />
                     </div>
-                  )}
-                  
-                  {/* Scan Mode Toggle */}
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="scan-mode" className="text-sm">
-                      {scannerConnected ? 'Scanning' : 'Scan Mode'}
-                    </Label>
-                    <Switch
-                      id="scan-mode"
-                      checked={scanMode}
-                      onCheckedChange={setScanMode}
-                    />
                   </div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Item Search/Scan */}
-              <div className="space-y-3">
-                {/* Search Input with Results */}
-                <div className="relative">
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Search Input */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder={
                         scanMode && scannerConnected 
-                          ? "Ready for hardware scanner - or search manually..." 
+                          ? "Hardware scanner ready..." 
                           : scanMode 
-                            ? "Scan with camera or search manually..." 
-                            : "Search items by name, SKU, or barcode..."
+                            ? "Scan with camera or search..." 
+                            : "Search by name, SKU, barcode..."
                       }
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onFocus={() => {
                         if (searchResults.length > 0) setShowResults(true);
                       }}
-                      className="pl-10"
+                      className="pl-10 h-12"
                       disabled={scanMode && !searchQuery}
                     />
-                  </div>
-                  
-                  {/* Scan Button */}
-                  {scanMode && (
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    
+                    {/* Camera Scan Button */}
+                    {scanMode && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowScanner(true)}
-                        className="p-2"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2"
                       >
                         <Scan className="h-4 w-4" />
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   
                   {/* Search Results */}
                   {showResults && searchResults.length > 0 && (
-                    <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto border shadow-lg bg-background">
+                    <Card className="border shadow-lg max-h-80 overflow-y-auto">
                       <CardContent className="p-2">
                         {searchResults.map((item) => (
                           <div
                             key={item.id}
+                            className="p-3 hover:bg-muted rounded-lg cursor-pointer flex items-center justify-between transition-colors"
                             onClick={() => handleItemSelect(item)}
-                            className="flex items-center justify-between p-3 hover:bg-muted rounded-md cursor-pointer"
                           >
                             <div className="flex-1">
                               <div className="font-medium">{item.name}</div>
-                              <div className="text-sm text-muted-foreground flex gap-2">
+                              <div className="text-sm text-muted-foreground flex gap-4">
                                 {item.sku && <span>SKU: {item.sku}</span>}
-                                {item.barcode && <span>| {item.barcode}</span>}
+                                {item.barcode && <span>Barcode: {item.barcode}</span>}
                               </div>
                             </div>
-                            {item.unit_cost && (
-                              <div className="text-sm font-medium">
-                                ${item.unit_cost.toFixed(2)}
-                              </div>
-                            )}
+                            <Plus className="h-4 w-4 text-primary" />
                           </div>
                         ))}
                       </CardContent>
                     </Card>
                   )}
                   
-                  {/* No Results */}
-                  {showResults && searchResults.length === 0 && debouncedSearchQuery && !searchLoading && (
-                    <Card className="absolute top-full left-0 right-0 z-50 mt-1 border shadow-lg bg-background">
-                      <CardContent className="p-4 text-center text-muted-foreground">
-                        No items found matching "{debouncedSearchQuery}"
-                      </CardContent>
-                    </Card>
+                  {/* Loading indicator */}
+                  {searchLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                      <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
+                    </div>
                   )}
-                </div>
-                
-                {/* Scanning Status */}
-                {scanMode && (
-                  <div className={`rounded-lg p-3 border ${
-                    scannerConnected 
-                      ? 'bg-primary/5 border-primary/20' 
-                      : 'bg-muted/50 border-muted'
-                  }`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        scannerConnected ? 'bg-primary animate-pulse' : 'bg-muted-foreground/40'
-                      }`} />
-                      <div className="flex-1">
-                        {scannerConnected ? (
-                          <div>
-                            <div className="font-medium text-primary text-sm">🎯 Hardware Scanner Connected</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              Point scanner at any barcode to add items instantly
-                            </div>
+
+                  {/* Quick Actions */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Quick Actions</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setScanMode(!scanMode)}>
+                        <Scan className="h-4 w-4 mr-2" />
+                        {scanMode ? 'Disable' : 'Enable'} Scan
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSearchResults([]);
+                          setShowResults(false);
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Clear Search
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Withdrawal Reasons Reference */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                    Available Withdrawal Types
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {withdrawalReasons.map((reason) => (
+                      <Badge key={reason.value} variant="outline" className="justify-center py-1">
+                        {reason.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Panel - Line Items & Summary (8 columns) */}
+            <div className="col-span-8 space-y-6 overflow-y-auto">
+              
+              {/* Line Items Section */}
+              <Card className="h-fit">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Selected Items
+                    {lineItems.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {lineItems.length} items
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {lineItems.length === 0 ? (
+                    <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-12 text-center">
+                      <Package className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" />
+                      <h3 className="text-xl font-semibold text-muted-foreground mb-2">Ready to Process Withdrawals</h3>
+                      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                        Use the search or scanner on the left to add items for withdrawal. Each scanned item will appear here with full control over quantities, pricing, and withdrawal reasons.
+                      </p>
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Scan className="h-4 w-4" />
+                          <span>Hardware & Camera Scanning</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Search className="h-4 w-4" />
+                          <span>Manual Search</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Package className="h-4 w-4" />
+                          <span>FIFO Lot Tracking</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Line Items as Cards */}
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {lineItems.map((line) => (
+                          <Card key={line.id} className="border-l-4 border-l-primary/20">
+                            <CardContent className="p-4">
+                              <div className="grid grid-cols-12 gap-4 items-center">
+                                {/* Item Info (4 cols) */}
+                                <div className="col-span-4">
+                                  <div className="font-semibold text-lg">{line.name}</div>
+                                  <div className="text-sm text-muted-foreground space-y-1">
+                                    {line.sku && <div>SKU: {line.sku}</div>}
+                                    {line.barcode && <div>Barcode: {line.barcode}</div>}
+                                  </div>
+                                </div>
+                                
+                                {/* Quantity (2 cols) */}
+                                <div className="col-span-2">
+                                  <Label className="text-xs font-medium">Quantity</Label>
+                                  <Input
+                                    type="number"
+                                    value={line.qty}
+                                    onChange={(e) => updateLineItem(line.id, 'qty', Math.max(0, parseInt(e.target.value) || 0))}
+                                    className="h-9"
+                                    min="0"
+                                  />
+                                </div>
+                                
+                                {/* Unit Price (2 cols) */}
+                                <div className="col-span-2">
+                                  <Label className="text-xs font-medium">Unit Price</Label>
+                                  <Input
+                                    type="number"
+                                    value={line.unit_price || 0}
+                                    onChange={(e) => updateLineItem(line.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                    className="h-9"
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                </div>
+                                
+                                {/* Reason (3 cols) */}
+                                <div className="col-span-3">
+                                  <Label className="text-xs font-medium">Withdrawal Reason</Label>
+                                  <Select
+                                    value={line.reason}
+                                    onValueChange={(value) => updateLineItem(line.id, 'reason', value)}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Select reason" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {withdrawalReasons.map((reason) => (
+                                        <SelectItem key={reason.value} value={reason.value}>
+                                          {reason.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                {/* Total & Remove (1 col) */}
+                                <div className="col-span-1 text-right">
+                                  <div className="font-bold text-lg text-primary mb-2">
+                                    ${((line.unit_price || 0) * line.qty).toFixed(2)}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeLineItem(line.id)}
+                                    className="text-destructive hover:text-destructive/80 p-1"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section - Customer Info & Summary */}
+        {lineItems.length > 0 && (
+          <div className="border-t pt-6 space-y-4">
+            <div className="grid grid-cols-2 gap-6">
+              
+              {/* Customer Information (for sales) */}
+              {lineItems.some(item => item.reason === 'sale') && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      Customer Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="customer_name">Customer Name</Label>
+                      <Input
+                        id="customer_name"
+                        value={formData.customer_name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                        placeholder="Enter customer name for sales"
+                        className="h-10"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Transaction Notes */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Transaction Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Add notes about this withdrawal transaction..."
+                    rows={3}
+                    className="resize-none"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                {lineItems.length > 0 && (
+                  <span>
+                    Ready to withdraw {lineItems.filter(item => item.qty > 0 && item.reason).length} of {lineItems.length} items
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleWithdraw} 
+                  disabled={loading || lineItems.length === 0 || lineItems.every(item => item.qty === 0 || !item.reason)}
+                  className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 px-6"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                      Processing Withdrawal...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Process Withdrawal ({lineItems.filter(item => item.qty > 0 && item.reason).length})
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Available Lots Information - Only show when relevant */}
+        {selectedItem && availableLots.length > 0 && formData.quantity > 0 && (
+          <Card className="mt-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                FIFO Lot Consumption Preview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availableLots.map((lot) => {
+                  const isConsumed = consumption.some(c => c.lotId === lot.id);
+                  const consumedAmount = consumption.find(c => c.lotId === lot.id)?.quantity || 0;
+                  
+                  return (
+                    <div 
+                      key={lot.id} 
+                      className={`p-3 rounded-lg border transition-colors ${
+                        isConsumed ? 'bg-primary/5 border-primary/30' : 'bg-muted/30 border-muted'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant={isConsumed ? "default" : "outline"}>
+                          {lot.lot_number}
+                        </Badge>
+                        {isExpired(lot.expiration_date) && (
+                          <AlertCircle className="h-4 w-4 text-destructive" />
+                        )}
+                        {isExpiringSoon(lot.expiration_date) && !isExpired(lot.expiration_date) && (
+                          <AlertCircle className="h-4 w-4 text-orange-600" />
+                        )}
+                      </div>
+                      
+                      <div className="text-sm space-y-1">
+                        <div>Available: {lot.quantity_remaining}</div>
+                        {lot.expiration_date && (
+                          <div className={`text-xs ${
+                            isExpired(lot.expiration_date) ? 'text-destructive' :
+                            isExpiringSoon(lot.expiration_date) ? 'text-orange-600' :
+                            'text-muted-foreground'
+                          }`}>
+                            Exp: {format(parseISO(lot.expiration_date), 'MMM d, yyyy')}
                           </div>
-                        ) : (
-                          <div>
-                            <div className="font-medium text-sm">📱 Camera Scanning Available</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              Click scan button above to use device camera
-                            </div>
+                        )}
+                        {isConsumed && (
+                          <div className="text-primary font-medium">
+                            Will consume: {consumedAmount}
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-
-              {/* Line Items - Always show structure */}
-              <Card>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">
-                        Withdrawal Items ({lineItems.length})
-                      </Label>
-                      {lineItems.length === 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          Scan or search items above to add to withdrawal list
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Show line items if any */}
-                    {lineItems.length > 0 ? (
-                      <div className="space-y-3">
-                        {lineItems.map((line) => (
-                          <div key={line.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{line.name}</div>
-                              {line.sku && (
-                                <div className="text-xs text-muted-foreground">SKU: {line.sku}</div>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs">Qty:</Label>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={line.qty}
-                                onChange={(e) => updateLineItem(line.id, 'qty', parseFloat(e.target.value) || 0)}
-                                className="w-20 h-8"
-                              />
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs">Unit Price:</Label>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={line.unit_price || 0}
-                                onChange={(e) => updateLineItem(line.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                                className="w-24 h-8"
-                                placeholder="0.00"
-                              />
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <Label className="text-xs">Reason:</Label>
-                              <Select onValueChange={(value) => updateLineItem(line.id, 'reason', value)} value={line.reason}>
-                                <SelectTrigger className="w-36 h-8">
-                                  <SelectValue placeholder="Select reason" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {withdrawalReasons.map((reason) => (
-                                    <SelectItem key={reason.value} value={reason.value}>
-                                      {reason.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeLineItem(line.id)}
-                              className="p-1 h-8 w-8"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-
-                        {/* Cost Summary */}
-                        <div className="border-t pt-3 mt-4">
-                          <div className="flex justify-between items-center">
-                            <div className="text-sm font-medium">Total Value:</div>
-                            <div className="text-lg font-bold">
-                              ${lineItems.reduce((total, item) => total + (item.qty * (item.unit_price || 0)), 0).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {lineItems.length} items • {lineItems.reduce((total, item) => total + item.qty, 0)} total units
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Empty state showing available options */
-                      <div className="space-y-4 p-6 text-center border-2 border-dashed border-muted rounded-lg">
-                        <Package className="h-8 w-8 mx-auto text-muted-foreground" />
-                        <div>
-                          <div className="font-medium text-sm mb-2">No items selected for withdrawal</div>
-                          <div className="text-xs text-muted-foreground mb-4">
-                            Scan barcodes or search by name/SKU to add items
-                          </div>
-                          
-                          {/* Show available withdrawal reasons */}
-                          <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
-                            {withdrawalReasons.map((reason) => (
-                              <div key={reason.value} className="flex items-center gap-2 p-2 bg-muted/30 rounded text-xs">
-                                <div className="w-2 h-2 rounded-full bg-primary/60" />
-                                {reason.label}
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div className="text-xs text-muted-foreground mt-3">
-                            Each item tracks: quantity, unit price, withdrawal reason, and generates batch numbers for full traceability
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </CardContent>
           </Card>
-
-          {/* Available Lots */}
-          {selectedItem && availableLots.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Available Lots (FIFO Order)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Lot Number</TableHead>
-                        <TableHead>Expiration</TableHead>
-                        <TableHead>Available</TableHead>
-                        <TableHead>Will Consume</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {availableLots
-                        .sort((a, b) => {
-                          if (a.expiration_date && b.expiration_date) {
-                            return new Date(a.expiration_date).getTime() - new Date(b.expiration_date).getTime();
-                          }
-                          if (a.expiration_date && !b.expiration_date) return -1;
-                          if (!a.expiration_date && b.expiration_date) return 1;
-                          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-                        })
-                        .map((lot) => {
-                          const consumeAmount = consumption.find(c => c.lotId === lot.id)?.quantity || 0;
-                          return (
-                            <TableRow key={lot.id}>
-                              <TableCell className="font-medium">{lot.lot_number}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  {lot.expiration_date ? (
-                                    <>
-                                      {format(parseISO(lot.expiration_date), 'MMM dd, yyyy')}
-                                      {isExpired(lot.expiration_date) && (
-                                        <Badge variant="destructive" className="text-xs">
-                                          <AlertCircle className="h-3 w-3 mr-1" />
-                                          Expired
-                                        </Badge>
-                                      )}
-                                      {!isExpired(lot.expiration_date) && isExpiringSoon(lot.expiration_date) && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          <Calendar className="h-3 w-3 mr-1" />
-                                          Soon
-                                        </Badge>
-                                      )}
-                                    </>
-                                  ) : (
-                                    'No expiration'
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell>{lot.quantity_remaining}</TableCell>
-                              <TableCell>
-                                {consumeAmount > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    -{consumeAmount}
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="secondary">Available</Badge>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-4">
-            <Button onClick={handleWithdraw} disabled={loading || lineItems.length === 0}>
-              {loading ? 'Processing...' : `Withdraw ${lineItems.length} Item(s)`}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-
-        {/* Scanner Overlay */}
-        {showScanner && (
-          <ScannerOverlay
-            open={showScanner}
-            onBarcode={handleBarcodeScanned}
-            onClose={() => setShowScanner(false)}
-          />
         )}
       </DialogContent>
+
+      {/* Scanner Overlay */}
+      <ScannerOverlay
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleBarcodeScanned}
+      />
     </Dialog>
   );
 };
