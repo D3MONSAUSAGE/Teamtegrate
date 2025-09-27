@@ -342,16 +342,10 @@ export const InventoryManagementTab: React.FC = () => {
 
 
                 {hasRoleAccess('admin') && (
-                  <div className="flex gap-2">
-                    <Button onClick={handleAddItem}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Item
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsReceivingDialogOpen(true)}>
-                      <TruckIcon className="h-4 w-4 mr-2" />
-                      Receive Stock
-                    </Button>
-                  </div>
+                  <Button onClick={handleAddItem}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
                 )}
               </div>
             </div>
