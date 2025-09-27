@@ -77,26 +77,43 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     }
   }, [open, item, lot]);
 
+  // Set smart defaults based on template category and available data
   const resetContentConfig = () => {
-    setContentConfig({
+    const hasNutritionalInfo = !!nutritionalInfo;
+    const hasLotData = !!lot;
+    const isFoodItem = item?.name && ['asada', 'pastor', 'pollo', 'food'].some(food => 
+      item.name.toLowerCase().includes(food)
+    );
+    
+    const smartDefaults: LabelContentConfig = {
+      // Essential fields - always on
       name: true,
       sku: true,
       barcode: true,
       qrCode: false,
-      category: false,
-      vendor: false,
+      
+      // Context-aware defaults
+      category: !!(item?.category?.name),
+      vendor: !!(item?.vendor?.name),
       location: false,
       currentStock: false,
       unit: false,
-      lotNumber: !!lot,
-      manufacturingDate: !!lot,
-      expirationDate: !!lot,
-      nutritionalFacts: false,
-      ingredients: false,
-      allergens: false,
-      servingSize: false,
+      
+      // Lot fields - auto-enable if lot data available
+      lotNumber: hasLotData,
+      manufacturingDate: hasLotData,
+      expirationDate: hasLotData || isFoodItem,
+      
+      // Nutritional fields - smart defaults for food items
+      nutritionalFacts: hasNutritionalInfo || isFoodItem,
+      ingredients: hasNutritionalInfo || isFoodItem,
+      allergens: hasNutritionalInfo,
+      servingSize: hasNutritionalInfo || isFoodItem,
+      
       customText: ''
-    });
+    };
+    
+    setContentConfig(smartDefaults);
   };
 
   const loadNutritionalInfo = async () => {
@@ -390,19 +407,21 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
       return;
     }
 
-    // Create a simple HTML preview
+    // Create a thermal-optimized HTML preview for 4x6 labels
     const dimensions = selectedTemplate?.dimensions as any || { width: 4, height: 6 };
-    const width = (dimensions?.width || 2) * 72;
-    const height = (dimensions?.height || 1) * 72;
+    const width = (dimensions?.width || 4) * 72; // 4 inches = 288px
+    const height = (dimensions?.height || 6) * 72; // 6 inches = 432px
 
     let previewHTML = `
       <div style="
         width: ${width}px; 
         height: ${height}px; 
-        border: 1px solid #ccc; 
+        border: 2px solid #333; 
         position: relative; 
         background: white;
         overflow: hidden;
+        font-family: 'Courier New', monospace;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       ">
     `;
 
