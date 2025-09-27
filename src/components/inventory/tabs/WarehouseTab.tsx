@@ -145,7 +145,7 @@ export const WarehouseTab: React.FC = () => {
       setTeamSwitching(false);
       setIsRetrying(false);
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse, user?.id, loading, teamSwitching, isRetrying]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse, user?.id]);
 
   // Immediate state clearing when team changes (SECURITY FIX)
   useEffect(() => {
