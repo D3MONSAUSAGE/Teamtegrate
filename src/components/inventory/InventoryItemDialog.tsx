@@ -305,12 +305,53 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         console.log('✏️ Updating existing item:', itemId);
         result = await updateItem(itemId, itemData);
         console.log('✅ Update result:', result);
-        toast.success('Item updated successfully');
       } else {
         console.log('➕ Creating new item...');
         result = await createItem(itemData);
         console.log('✅ Create result:', result);
-        toast.success('Item created successfully');
+      }
+      
+      // Save ingredients and nutritional info using the result item ID
+      const savedItemId = itemId || result?.id;
+      if (savedItemId && (ingredientsData.ingredients || ingredientsData.allergens.length > 0 || 
+          Object.values(nutritionalData).some(val => val !== '' && val !== 0))) {
+        try {
+          console.log('💊 Saving nutritional info for item:', savedItemId);
+          await nutritionalInfoApi.upsert({
+            item_id: savedItemId,
+            ingredients: ingredientsData.ingredients || null,
+            allergens: ingredientsData.allergens.length > 0 ? ingredientsData.allergens : null,
+            serving_size: nutritionalData.serving_size || null,
+            servings_per_container: nutritionalData.servings_per_container > 0 ? nutritionalData.servings_per_container : null,
+            calories: nutritionalData.calories > 0 ? nutritionalData.calories : null,
+            total_fat: nutritionalData.total_fat > 0 ? nutritionalData.total_fat : null,
+            saturated_fat: nutritionalData.saturated_fat > 0 ? nutritionalData.saturated_fat : null,
+            trans_fat: nutritionalData.trans_fat > 0 ? nutritionalData.trans_fat : null,
+            cholesterol: nutritionalData.cholesterol > 0 ? nutritionalData.cholesterol : null,
+            sodium: nutritionalData.sodium > 0 ? nutritionalData.sodium : null,
+            total_carbohydrates: nutritionalData.total_carbohydrates > 0 ? nutritionalData.total_carbohydrates : null,
+            dietary_fiber: nutritionalData.dietary_fiber > 0 ? nutritionalData.dietary_fiber : null,
+            total_sugars: nutritionalData.total_sugars > 0 ? nutritionalData.total_sugars : null,
+            added_sugars: nutritionalData.added_sugars > 0 ? nutritionalData.added_sugars : null,
+            protein: nutritionalData.protein > 0 ? nutritionalData.protein : null,
+            vitamin_d: nutritionalData.vitamin_d > 0 ? nutritionalData.vitamin_d : null,
+            calcium: nutritionalData.calcium > 0 ? nutritionalData.calcium : null,
+            iron: nutritionalData.iron > 0 ? nutritionalData.iron : null,
+            potassium: nutritionalData.potassium > 0 ? nutritionalData.potassium : null,
+            additional_nutrients: Object.keys(nutritionalData.additional_nutrients).length > 0 ? nutritionalData.additional_nutrients : null
+          });
+          console.log('✅ Nutritional info saved successfully');
+        } catch (nutritionalError) {
+          console.error('❌ Error saving nutritional info:', nutritionalError);
+          toast.error('Item saved but failed to save nutritional information');
+        }
+      }
+      
+      // Success message after everything is saved
+      if (itemId) {
+        toast.success('Item and nutritional info updated successfully');
+      } else {
+        toast.success('Item and nutritional info created successfully');
       }
       
       // Only close dialog and reset form on success

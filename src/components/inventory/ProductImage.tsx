@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,13 +15,22 @@ export const ProductImage: React.FC<ProductImageProps> = ({
   className,
   size = 'md'
 }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12', 
     lg: 'w-24 h-24'
   };
 
-  if (!src) {
+  const iconSizes = {
+    sm: 'h-3 w-3',
+    md: 'h-4 w-4',
+    lg: 'h-8 w-8'
+  };
+
+  if (!src || imageError) {
     return (
       <div className={cn(
         'flex items-center justify-center bg-muted rounded-lg border border-border',
@@ -30,7 +39,7 @@ export const ProductImage: React.FC<ProductImageProps> = ({
       )}>
         <Package className={cn(
           'text-muted-foreground',
-          size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-8 w-8'
+          iconSizes[size]
         )} />
       </div>
     );
@@ -38,27 +47,29 @@ export const ProductImage: React.FC<ProductImageProps> = ({
 
   return (
     <div className={cn(
-      'overflow-hidden rounded-lg border border-border bg-muted',
+      'overflow-hidden rounded-lg border border-border bg-muted relative',
       sizeClasses[size],
       className
     )}>
+      {imageLoading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Package className={cn(
+            'text-muted-foreground animate-pulse',
+            iconSizes[size]
+          )} />
+        </div>
+      )}
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          // Hide broken image and show placeholder
-          e.currentTarget.style.display = 'none';
-          const parent = e.currentTarget.parentElement;
-          if (parent) {
-            parent.innerHTML = `
-              <div class="flex items-center justify-center w-full h-full">
-                <svg class="text-muted-foreground ${size === 'sm' ? 'h-3 w-3' : size === 'md' ? 'h-4 w-4' : 'h-8 w-8'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
-              </div>
-            `;
-          }
+        className={cn(
+          "w-full h-full object-cover transition-opacity",
+          imageLoading ? "opacity-0" : "opacity-100"
+        )}
+        onLoad={() => setImageLoading(false)}
+        onError={() => {
+          setImageError(true);
+          setImageLoading(false);
         }}
       />
     </div>
