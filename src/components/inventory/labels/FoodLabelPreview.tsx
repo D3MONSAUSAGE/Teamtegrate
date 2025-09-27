@@ -23,6 +23,7 @@ export const FoodLabelPreview: React.FC<FoodLabelPreviewProps> = ({ itemData }) 
     expiration_date: itemData?.expiration_date || '2025-12-15',
     ingredients: itemData?.ingredients || 'Organic oats, almonds, honey, dried cranberries, sunflower oil, vanilla extract, sea salt',
     allergens: itemData?.allergens || 'Tree nuts (almonds), Manufactured in facility that processes peanuts',
+    image_url: (itemData as any)?.image_url || '',
     nutritional_info: itemData?.nutritional_info || {
       servingSize: '1/2 cup (40g)',
       calories: 180,
@@ -41,9 +42,27 @@ export const FoodLabelPreview: React.FC<FoodLabelPreviewProps> = ({ itemData }) 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-xs">
-        {/* SKU and Barcode */}
+        {/* Product Image and SKU Row */}
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <div className="text-sm font-medium">SKU: {sampleData.sku}</div>
+          </div>
+          {sampleData.image_url && (
+            <div className="w-12 h-12 border border-border rounded overflow-hidden bg-muted">
+              <img 
+                src={sampleData.image_url} 
+                alt={sampleData.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Barcode */}
         <div className="space-y-1">
-          <div className="text-sm font-medium">SKU: {sampleData.sku}</div>
           <div className="flex justify-center">
             <div className="bg-black text-white px-2 py-1 font-mono text-xs">
               ||||| |||| ||||| BARCODE |||||

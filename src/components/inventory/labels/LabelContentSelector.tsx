@@ -19,6 +19,7 @@ export interface LabelContentConfig {
   vendor: boolean;
   location: boolean;
   currentStock: boolean;
+  productImage: boolean;
   
   // Lot fields
   lotNumber: boolean;
@@ -71,6 +72,7 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
       vendor: !!(item?.vendor?.name || item?.vendor_id),
       location: !!(item?.location),
       currentStock: item !== undefined, // Always show if item exists
+      productImage: !!(item?.image_url), // Available if image URL exists
       
       // Lot fields - available if lot exists or can be generated
       lotNumber: !!(lot?.lot_number || item), // Can generate lot number
@@ -84,20 +86,20 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
         nutritionalInfo.protein !== null ||
         nutritionalInfo.total_carbohydrates !== null ||
         nutritionalInfo.sodium !== null
-      )) || (item && ['food', 'beverage'].some(type => 
+      )) || (item && ['food', 'beverage', 'supplement', 'collagen'].some(type => 
         item.name?.toLowerCase().includes(type) ||
         item.category?.name?.toLowerCase().includes(type)
       )),
       ingredients: !!(nutritionalInfo?.ingredients?.trim()) || 
-        (item && ['asada', 'pastor', 'pollo', 'food'].some(food => 
+        (item && ['asada', 'pastor', 'pollo', 'food', 'supplement', 'collagen'].some(food => 
           item.name?.toLowerCase().includes(food)
         )),
       allergens: !!(nutritionalInfo?.allergens && nutritionalInfo.allergens.length > 0) ||
-        (item && ['dairy', 'gluten', 'soy', 'nuts'].some(allergen => 
+        (item && ['dairy', 'gluten', 'soy', 'nuts', 'supplement'].some(allergen => 
           item.name?.toLowerCase().includes(allergen)
         )),
       servingSize: !!(nutritionalInfo?.serving_size?.trim()) ||
-        (item && ['food', 'beverage'].some(type => 
+        (item && ['food', 'beverage', 'supplement', 'collagen'].some(type => 
           item.name?.toLowerCase().includes(type)
         ))
     };
@@ -196,6 +198,11 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
             field="currentStock" 
             label="Current Stock" 
             description="Available quantity"
+          />
+          <FieldCheckbox 
+            field="productImage" 
+            label="Product Image" 
+            description="Item photo on label"
           />
         </CardContent>
       </Card>

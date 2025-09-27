@@ -62,6 +62,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     vendor: false,
     location: false,
     currentStock: false,
+    productImage: false,
     lotNumber: !!lot,
     manufacturingDate: !!lot,
     expirationDate: !!lot,
@@ -123,9 +124,10 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
       qrCode: false,
       
       // Context-aware defaults
-      vendor: !!(item?.vendor?.name),
+      vendor: !!(currentItem?.vendor?.name),
       location: false,
       currentStock: false,
+      productImage: !!(currentItem?.image_url),
       
       // Lot fields - auto-enable if lot data available
       lotNumber: hasLotData,
@@ -207,6 +209,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
       vendor: currentItem.vendor?.name || 'Supplier',
       location: currentItem.location || 'Warehouse',
       current_stock: currentItem.current_stock || 0,
+      image_url: currentItem.image_url || '',
       lot_number: currentLot?.lot_number || `LOT-${Date.now().toString().slice(-6)}`,
       manufacturing_date: currentLot?.manufacturing_date || today,
       expiration_date: currentLot?.expiration_date || futureDate.toISOString().split('T')[0],
@@ -218,28 +221,39 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
         sku: currentItem.sku,
         lot: currentLot?.lot_number || 'BATCH-001'
       }),
-      // Enhanced nutritional data with fallbacks for food items
+      // Use actual nutritional data from database with intelligent fallbacks
       ingredients: nutritionalInfo?.ingredients || (
         currentItem.name?.toLowerCase().includes('asada') ? 'Beef chuck roast, onions, garlic, bay leaves, cumin, black pepper, salt, beef broth, lime juice, cilantro' :
         currentItem.name?.toLowerCase().includes('pastor') ? 'Pork shoulder, pineapple, onions, garlic, achiote paste, orange juice, white vinegar, cumin, oregano, chipotle peppers, salt' :
         currentItem.name?.toLowerCase().includes('pollo') ? 'Chicken thighs, lime juice, orange juice, garlic, cumin, chili powder, paprika, oregano, salt, black pepper, olive oil' :
+        currentItem.name?.toLowerCase().includes('collagen') ? 'Hydrolyzed collagen peptides, natural flavors, stevia leaf extract' :
         'See package for complete ingredient list'
       ),
       allergens: nutritionalInfo?.allergens?.join(', ') || 'None known',
-      serving_size: nutritionalInfo?.serving_size || '4 oz (113g)',
+      serving_size: nutritionalInfo?.serving_size || (
+        currentItem.name?.toLowerCase().includes('collagen') ? '1 scoop (10g)' : '4 oz (113g)'
+      ),
       calories: nutritionalInfo?.calories || (
         currentItem.name?.toLowerCase().includes('asada') ? 290 :
         currentItem.name?.toLowerCase().includes('pastor') ? 275 :
-        currentItem.name?.toLowerCase().includes('pollo') ? 195 : 250
+        currentItem.name?.toLowerCase().includes('pollo') ? 195 :
+        currentItem.name?.toLowerCase().includes('collagen') ? 40 : 250
       ),
-      total_fat: nutritionalInfo?.total_fat || 15,
+      total_fat: nutritionalInfo?.total_fat || (
+        currentItem.name?.toLowerCase().includes('collagen') ? 0 : 15
+      ),
       protein: nutritionalInfo?.protein || (
         currentItem.name?.toLowerCase().includes('asada') ? 28 :
         currentItem.name?.toLowerCase().includes('pastor') ? 27 :
-        currentItem.name?.toLowerCase().includes('pollo') ? 36 : 20
+        currentItem.name?.toLowerCase().includes('pollo') ? 36 :
+        currentItem.name?.toLowerCase().includes('collagen') ? 9 : 20
       ),
-      total_carbohydrates: nutritionalInfo?.total_carbohydrates || 3,
-      sodium: nutritionalInfo?.sodium || 350
+      total_carbohydrates: nutritionalInfo?.total_carbohydrates || (
+        currentItem.name?.toLowerCase().includes('collagen') ? 0 : 3
+      ),
+      sodium: nutritionalInfo?.sodium || (
+        currentItem.name?.toLowerCase().includes('collagen') ? 35 : 350
+      )
     };
   };
 
@@ -253,6 +267,18 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     const usableWidth = THERMAL_WIDTH - (MARGIN * 2);
     
     let yOffset = MARGIN + 10;
+
+    // Product image - positioned at top right if enabled
+    if (contentConfig.productImage) {
+      fields.push({
+        type: 'image',
+        field: 'image_url',
+        x: THERMAL_WIDTH - MARGIN - 60,
+        y: yOffset,
+        width: 60,
+        height: 60
+      });
+    }
 
     // Product name - prominent at top
     if (contentConfig.name) {
@@ -523,6 +549,41 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
           }
         } catch (error) {
           console.error('Error generating QR code preview:', error);
+        }
+      } else if (field.type === 'image') {
+        if (value && value !== '') {
+          previewHTML += `
+            <img src="${value}" style="
+              position: absolute;
+              left: ${field.x}px;
+              top: ${field.y}px;
+              width: ${field.width || 60}px;
+              height: ${field.height || 60}px;
+              object-fit: cover;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+            " onerror="this.style.display='none'" />
+          `;
+        } else {
+          // Show placeholder for missing image
+          previewHTML += `
+            <div style="
+              position: absolute;
+              left: ${field.x}px;
+              top: ${field.y}px;
+              width: ${field.width || 60}px;
+              height: ${field.height || 60}px;
+              border: 2px dashed #ccc;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 10px;
+              color: #999;
+              background: #f5f5f5;
+            ">
+              No Image
+            </div>
+          `;
         }
       } else if (field.type === 'nutritional_facts') {
         const nutritionData = {
