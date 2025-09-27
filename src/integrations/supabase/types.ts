@@ -2926,6 +2926,7 @@ export type Database = {
           organization_id: string
           quantity_received: number
           quantity_remaining: number
+          shipment_id: string | null
           supplier_info: Json | null
           updated_at: string
         }
@@ -2943,6 +2944,7 @@ export type Database = {
           organization_id: string
           quantity_received?: number
           quantity_remaining?: number
+          shipment_id?: string | null
           supplier_info?: Json | null
           updated_at?: string
         }
@@ -2960,10 +2962,19 @@ export type Database = {
           organization_id?: string
           quantity_received?: number
           quantity_remaining?: number
+          shipment_id?: string | null
           supplier_info?: Json | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_lots_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_nutritional_info: {
         Row: {
@@ -7451,6 +7462,45 @@ export type Database = {
           },
         ]
       }
+      shipments: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          organization_id: string
+          received_date: string
+          reference_number: string | null
+          shipment_number: string
+          supplier_info: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          received_date?: string
+          reference_number?: string | null
+          shipment_number: string
+          supplier_info?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          received_date?: string
+          reference_number?: string | null
+          shipment_number?: string
+          supplier_info?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       task_assignment_audit: {
         Row: {
           change_reason: string | null
@@ -10206,6 +10256,10 @@ export type Database = {
       }
       generate_recurring_task_occurrence: {
         Args: { organization_id_param: string; parent_task_id: string }
+        Returns: string
+      }
+      generate_shipment_number: {
+        Args: { org_id: string }
         Returns: string
       }
       generate_ticket_number: {
