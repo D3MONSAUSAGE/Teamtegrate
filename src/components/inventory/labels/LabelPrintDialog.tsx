@@ -10,18 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { LabelTemplate, labelTemplatesApi } from '@/contexts/inventory/api/labelTemplates';
 import { InventoryItem } from '@/contexts/inventory/types';
-import { InventoryLot } from '@/contexts/inventory/api/inventoryLots';
+import { InventoryLot, inventoryLotsApi } from '@/contexts/inventory/api/inventoryLots';
 import { nutritionalInfoApi, NutritionalInfo } from '@/contexts/inventory/api/nutritionalInfo';
 import { LabelContentSelector, LabelContentConfig } from './LabelContentSelector';
 import { SaveTemplateDialog } from './SaveTemplateDialog';
-import { Printer, Download, FileText, Save, Settings } from 'lucide-react';
+import { Printer, Download, FileText, Save, Settings, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import { useInventory } from '@/contexts/inventory';
 
 interface LabelPrintDialogProps {
   open: boolean;
@@ -38,8 +39,12 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
   lot,
   initialTemplate
 }) => {
+  const { items } = useInventory();
   const [templates, setTemplates] = useState<LabelTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<LabelTemplate | null>(initialTemplate || null);
+  const [selectedItemId, setSelectedItemId] = useState<string>(item?.id || '');
+  const [selectedLotId, setSelectedLotId] = useState<string | null>(lot?.id || null);
+  const [availableLots, setAvailableLots] = useState<InventoryLot[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [printerType, setPrinterType] = useState<'universal' | 'zebra' | 'brother' | 'dymo'>('universal');
   const [labelPreview, setLabelPreview] = useState<string>('');
@@ -54,11 +59,9 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     sku: true,
     barcode: true,
     qrCode: false,
-    category: false,
     vendor: false,
     location: false,
     currentStock: false,
-    unit: false,
     lotNumber: !!lot,
     manufacturingDate: !!lot,
     expirationDate: !!lot,
@@ -73,16 +76,43 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     if (open) {
       loadTemplates();
       loadNutritionalInfo();
+      loadAvailableLots();
       resetContentConfig();
     }
-  }, [open, item, lot]);
+  }, [open, selectedItemId, lot]);
+
+  // Update data when selectedItemId changes
+  useEffect(() => {
+    if (selectedItemId) {
+      loadNutritionalInfo();
+      loadAvailableLots();
+    }
+  }, [selectedItemId]);
+
+  // Load available lots when item changes
+  const loadAvailableLots = async () => {
+    if (!selectedItemId) {
+      setAvailableLots([]);
+      return;
+    }
+    
+    try {
+      const lots = await inventoryLotsApi.getByItemId(selectedItemId);
+      setAvailableLots(lots.filter(lot => lot.quantity_remaining > 0));
+    } catch (error) {
+      console.error('Error loading lots:', error);
+      setAvailableLots([]);
+    }
+  };
 
   // Set smart defaults based on template category and available data
   const resetContentConfig = () => {
+    const currentItem = items.find(i => i.id === selectedItemId);
     const hasNutritionalInfo = !!nutritionalInfo;
-    const hasLotData = !!lot;
-    const isFoodItem = item?.name && ['asada', 'pastor', 'pollo', 'food'].some(food => 
-      item.name.toLowerCase().includes(food)
+    const currentLot = availableLots.find(l => l.id === selectedLotId);
+    const hasLotData = !!currentLot;
+    const isFoodItem = currentItem?.name && ['asada', 'pastor', 'pollo', 'food'].some(food => 
+      currentItem.name.toLowerCase().includes(food)
     );
     
     const smartDefaults: LabelContentConfig = {
@@ -93,11 +123,9 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
       qrCode: false,
       
       // Context-aware defaults
-      category: !!(item?.category?.name),
       vendor: !!(item?.vendor?.name),
       location: false,
       currentStock: false,
-      unit: false,
       
       // Lot fields - auto-enable if lot data available
       lotNumber: hasLotData,
@@ -117,10 +145,10 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
   };
 
   const loadNutritionalInfo = async () => {
-    if (!item?.id) return;
+    if (!selectedItemId) return;
     
     try {
-      const data = await nutritionalInfoApi.getByItemId(item.id);
+      const data = await nutritionalInfoApi.getByItemId(selectedItemId);
       setNutritionalInfo(data);
       
       // Auto-enable nutritional fields if data exists
@@ -160,7 +188,12 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
   };
 
   const generateLabelData = () => {
-    if (!selectedTemplate || !item) return {};
+    if (!selectedTemplate || !selectedItemId) return {};
+    
+    const currentItem = items.find(i => i.id === selectedItemId);
+    const currentLot = availableLots.find(l => l.id === selectedLotId);
+    
+    if (!currentItem) return {};
 
     // Generate fallback data for missing fields to improve usability
     const today = new Date().toISOString().split('T')[0];
@@ -168,44 +201,42 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
     futureDate.setMonth(futureDate.getMonth() + 6);
     
     return {
-      name: item.name,
-      sku: item.sku || '',
-      barcode: item.barcode || item.sku || '',
-      category: item.category?.name || 'General',
-      vendor: item.vendor?.name || 'Supplier',
-      location: item.location || 'Warehouse',
-      current_stock: item.current_stock || 0,
-      unit: item.base_unit?.name || 'pcs',
-      lot_number: lot?.lot_number || `LOT-${Date.now().toString().slice(-6)}`,
-      manufacturing_date: lot?.manufacturing_date || today,
-      expiration_date: lot?.expiration_date || futureDate.toISOString().split('T')[0],
-      quantity_received: lot?.quantity_received || 50,
-      quantity_remaining: lot?.quantity_remaining || 45,
+      name: currentItem.name,
+      sku: currentItem.sku || '',
+      barcode: currentItem.barcode || currentItem.sku || '',
+      vendor: currentItem.vendor?.name || 'Supplier',
+      location: currentItem.location || 'Warehouse',
+      current_stock: currentItem.current_stock || 0,
+      lot_number: currentLot?.lot_number || `LOT-${Date.now().toString().slice(-6)}`,
+      manufacturing_date: currentLot?.manufacturing_date || today,
+      expiration_date: currentLot?.expiration_date || futureDate.toISOString().split('T')[0],
+      quantity_received: currentLot?.quantity_received || 50,
+      quantity_remaining: currentLot?.quantity_remaining || 45,
       item_data: JSON.stringify({
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        lot: lot?.lot_number || 'BATCH-001'
+        id: currentItem.id,
+        name: currentItem.name,
+        sku: currentItem.sku,
+        lot: currentLot?.lot_number || 'BATCH-001'
       }),
       // Enhanced nutritional data with fallbacks for food items
       ingredients: nutritionalInfo?.ingredients || (
-        item.name?.toLowerCase().includes('asada') ? 'Beef chuck roast, onions, garlic, bay leaves, cumin, black pepper, salt, beef broth, lime juice, cilantro' :
-        item.name?.toLowerCase().includes('pastor') ? 'Pork shoulder, pineapple, onions, garlic, achiote paste, orange juice, white vinegar, cumin, oregano, chipotle peppers, salt' :
-        item.name?.toLowerCase().includes('pollo') ? 'Chicken thighs, lime juice, orange juice, garlic, cumin, chili powder, paprika, oregano, salt, black pepper, olive oil' :
+        currentItem.name?.toLowerCase().includes('asada') ? 'Beef chuck roast, onions, garlic, bay leaves, cumin, black pepper, salt, beef broth, lime juice, cilantro' :
+        currentItem.name?.toLowerCase().includes('pastor') ? 'Pork shoulder, pineapple, onions, garlic, achiote paste, orange juice, white vinegar, cumin, oregano, chipotle peppers, salt' :
+        currentItem.name?.toLowerCase().includes('pollo') ? 'Chicken thighs, lime juice, orange juice, garlic, cumin, chili powder, paprika, oregano, salt, black pepper, olive oil' :
         'See package for complete ingredient list'
       ),
       allergens: nutritionalInfo?.allergens?.join(', ') || 'None known',
       serving_size: nutritionalInfo?.serving_size || '4 oz (113g)',
       calories: nutritionalInfo?.calories || (
-        item.name?.toLowerCase().includes('asada') ? 290 :
-        item.name?.toLowerCase().includes('pastor') ? 275 :
-        item.name?.toLowerCase().includes('pollo') ? 195 : 250
+        currentItem.name?.toLowerCase().includes('asada') ? 290 :
+        currentItem.name?.toLowerCase().includes('pastor') ? 275 :
+        currentItem.name?.toLowerCase().includes('pollo') ? 195 : 250
       ),
       total_fat: nutritionalInfo?.total_fat || 15,
       protein: nutritionalInfo?.protein || (
-        item.name?.toLowerCase().includes('asada') ? 28 :
-        item.name?.toLowerCase().includes('pastor') ? 27 :
-        item.name?.toLowerCase().includes('pollo') ? 36 : 20
+        currentItem.name?.toLowerCase().includes('asada') ? 28 :
+        currentItem.name?.toLowerCase().includes('pastor') ? 27 :
+        currentItem.name?.toLowerCase().includes('pollo') ? 36 : 20
       ),
       total_carbohydrates: nutritionalInfo?.total_carbohydrates || 3,
       sodium: nutritionalInfo?.sodium || 350
@@ -278,29 +309,18 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
       if (!contentConfig.barcode) yOffset += 40;
     }
 
-    // Category and Vendor - side by side if both present
-    let categoryVendorY = yOffset;
-    if (contentConfig.category) {
-      fields.push({
-        type: 'text',
-        field: 'category',
-        x: MARGIN,
-        y: categoryVendorY,
-        fontSize: 8,
-        fontWeight: 'normal'
-      });
-    }
+    // Vendor info if enabled
     if (contentConfig.vendor) {
       fields.push({
         type: 'text',
         field: 'vendor',
-        x: contentConfig.category ? MARGIN + 80 : MARGIN,
-        y: categoryVendorY,
+        x: MARGIN,
+        y: yOffset,
         fontSize: 8,
         fontWeight: 'normal'
       });
+      yOffset += 14;
     }
-    if (contentConfig.category || contentConfig.vendor) yOffset += 14;
 
     // Lot info - compact format
     if (contentConfig.lotNumber) {
@@ -406,7 +426,8 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
   };
 
   const generatePreview = async () => {
-    if (!item) {
+    const currentItem = items.find(i => i.id === selectedItemId);
+    if (!currentItem) {
       setLabelPreview('');
       return;
     }
@@ -725,8 +746,8 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
 
           <TabsContent value="content" className="mt-6">
             <LabelContentSelector
-              item={item}
-              lot={lot}
+              item={items.find(i => i.id === selectedItemId)}
+              lot={availableLots.find(l => l.id === selectedLotId)}
               nutritionalInfo={nutritionalInfo}
               contentConfig={contentConfig}
               onContentChange={setContentConfig}
@@ -765,7 +786,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
             <Button 
               variant="outline" 
               onClick={() => setSaveTemplateOpen(true)}
-              disabled={!item}
+              disabled={!selectedItemId}
             >
               <Save className="h-4 w-4 mr-2" />
               Save as Template
@@ -777,7 +798,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
               <Download className="h-4 w-4 mr-2" />
               Download PDF
             </Button>
-            <Button onClick={handlePrint}>
+            <Button onClick={handlePrint} disabled={!selectedItemId || loading}>
               <Printer className="h-4 w-4 mr-2" />
               Print ({quantity})
             </Button>

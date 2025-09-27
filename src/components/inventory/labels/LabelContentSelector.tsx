@@ -16,11 +16,9 @@ export interface LabelContentConfig {
   
   // Optional fields
   qrCode: boolean;
-  category: boolean;
   vendor: boolean;
   location: boolean;
   currentStock: boolean;
-  unit: boolean;
   
   // Lot fields
   lotNumber: boolean;
@@ -70,11 +68,9 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
       qrCode: !!item, // QR codes always available - generated from SKU/item data
       
       // Optional basic fields - more lenient availability  
-      category: !!(item?.category?.name || item?.category_id),
       vendor: !!(item?.vendor?.name || item?.vendor_id),
       location: !!(item?.location),
       currentStock: item !== undefined, // Always show if item exists
-      unit: !!(item?.base_unit?.name),
       
       // Lot fields - available if lot exists or can be generated
       lotNumber: !!(lot?.lot_number || item), // Can generate lot number
@@ -187,11 +183,6 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
             description="2D barcode for additional information"
           />
           <FieldCheckbox 
-            field="category" 
-            label="Category" 
-            description="Product category classification"
-          />
-          <FieldCheckbox 
             field="vendor" 
             label="Vendor" 
             description="Supplier information"
@@ -205,11 +196,6 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
             field="currentStock" 
             label="Current Stock" 
             description="Available quantity"
-          />
-          <FieldCheckbox 
-            field="unit" 
-            label="Unit of Measure" 
-            description="Base unit (kg, pcs, etc.)"
           />
         </CardContent>
       </Card>
