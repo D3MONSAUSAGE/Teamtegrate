@@ -5,6 +5,7 @@ import { TruckIcon, ShoppingCart, Plus, Package, BarChart3 } from 'lucide-react'
 import { OutgoingSheet } from '../OutgoingSheet';
 import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { useInventory } from '@/contexts/inventory';
+import { InventoryItem } from '@/contexts/inventory/types';
 import { InvoiceClient } from '@/types/invoices';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -40,6 +41,62 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
     }
   };
 
+  // Transform warehouse items to inventory items for OutgoingSheet
+  const warehouseInventoryItems = warehouseItems.map((warehouseItem): InventoryItem => ({
+    id: warehouseItem.item?.id || warehouseItem.item_id,
+    organization_id: user?.organizationId || '',
+    team_id: warehouseId,
+    name: warehouseItem.item?.name || 'Unknown Item',
+    description: undefined,
+    category_id: undefined,
+    base_unit_id: undefined,
+    vendor_id: undefined,
+    purchase_unit: undefined,
+    conversion_factor: undefined,
+    purchase_price: undefined,
+    calculated_unit_price: undefined,
+    current_stock: warehouseItem.on_hand, // Use warehouse stock, not organization stock
+    minimum_threshold: warehouseItem.reorder_min,
+    maximum_threshold: warehouseItem.reorder_max,
+    reorder_point: warehouseItem.reorder_min,
+    unit_cost: warehouseItem.wac_unit_cost,
+    sale_price: undefined, // TODO: Add sale price to warehouse items if needed
+    supplier_info: undefined,
+    barcode: warehouseItem.item?.barcode,
+    sku: warehouseItem.item?.sku,
+    location: undefined,
+    image_url: undefined,
+    created_by: user?.id || '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true,
+    is_template: false,
+    template_name: undefined,
+    expected_cost: undefined,
+    sort_order: 0,
+    category: warehouseItem.item?.category ? {
+      id: '',
+      organization_id: user?.organizationId || '',
+      name: warehouseItem.item.category.name,
+      description: undefined,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } : undefined,
+    base_unit: warehouseItem.item?.base_unit ? {
+      id: '',
+      organization_id: user?.organizationId || '',
+      name: warehouseItem.item.base_unit.name,
+      abbreviation: warehouseItem.item.base_unit.abbreviation,
+      unit_type: 'count',
+      measurement_type: undefined,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } : undefined,
+    vendor: undefined
+  }));
+
   // Handle item withdrawal
   const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
     try {
@@ -47,6 +104,17 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       
       if (!user?.id || !user?.organizationId) {
         throw new Error('User authentication required for transactions');
+      }
+      
+      // Validate that all items have sufficient warehouse stock
+      for (const lineItem of lineItems) {
+        const warehouseItem = warehouseItems.find(item => item.item_id === lineItem.item.id);
+        if (!warehouseItem) {
+          throw new Error(`Item ${lineItem.item.name} is not available in this warehouse`);
+        }
+        if (warehouseItem.on_hand < lineItem.quantity) {
+          throw new Error(`Insufficient stock for ${lineItem.item.name}. Available: ${warehouseItem.on_hand}, Requested: ${lineItem.quantity}`);
+        }
       }
       
       // Process each line item
@@ -271,7 +339,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
           setSelectedItemId(null);
         }}
         onItemsWithdrawn={handleItemsWithdrawn}
-        availableItems={inventoryItems}
+        availableItems={warehouseInventoryItems} // Use warehouse-specific items only
         onScanItem={handleScanItem}
         onCreateInvoice={handleCreateInvoice}
       />

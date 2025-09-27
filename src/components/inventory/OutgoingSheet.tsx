@@ -395,7 +395,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Stock: {item.current_stock} • ${(item.unit_cost || 0).toFixed(2)}
+                          Warehouse Stock: {item.current_stock} • ${(item.unit_cost || 0).toFixed(2)}
                           {currentReason?.allowsPricing && item.sale_price && (
                             <span className="text-green-600 ml-2">Sale: ${item.sale_price.toFixed(2)}</span>
                           )}
@@ -420,7 +420,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium truncate">{lineItem.item.name}</h4>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <span>Stock: {lineItem.item.current_stock}</span>
+                              <span>Warehouse Stock: {lineItem.item.current_stock}</span>
                               {lineItem.item.sku && <span>• SKU: {lineItem.item.sku}</span>}
                             </div>
                           </div>
@@ -447,18 +447,31 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <Input
+                               <Input
                                 type="number"
                                 value={lineItem.quantity}
-                                onChange={(e) => updateLineItemQuantity(lineItem.id, parseFloat(e.target.value) || 1)}
+                                onChange={(e) => {
+                                  const newQuantity = parseFloat(e.target.value) || 1;
+                                  if (newQuantity > lineItem.item.current_stock) {
+                                    toast.error(`Cannot exceed available warehouse stock (${lineItem.item.current_stock})`);
+                                    return;
+                                  }
+                                  updateLineItemQuantity(lineItem.id, newQuantity);
+                                }}
                                 min="1"
                                 max={lineItem.item.current_stock}
                                 className="h-8 text-center"
                               />
-                              <Button
+                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => updateLineItemQuantity(lineItem.id, lineItem.quantity + 1)}
+                                onClick={() => {
+                                  if (lineItem.quantity >= lineItem.item.current_stock) {
+                                    toast.error(`Cannot exceed available warehouse stock (${lineItem.item.current_stock})`);
+                                    return;
+                                  }
+                                  updateLineItemQuantity(lineItem.id, lineItem.quantity + 1);
+                                }}
                                 disabled={lineItem.quantity >= lineItem.item.current_stock}
                               >
                                 <Plus className="h-3 w-3" />
