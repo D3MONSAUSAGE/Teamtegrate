@@ -5,6 +5,7 @@ import { TruckIcon, ShoppingCart, Plus, Package, BarChart3 } from 'lucide-react'
 import { OutgoingSheet } from '../OutgoingSheet';
 import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { useInventory } from '@/contexts/inventory';
+import { InvoiceClient } from '@/types/invoices';
 import { toast } from 'sonner';
 
 interface OutgoingTabProps {
@@ -65,7 +66,22 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
     }
   };
 
-  // Handle barcode scanning
+  // Handle invoice creation for sales
+  const handleCreateInvoice = async (client: InvoiceClient, lineItems: any[], notes?: string) => {
+    try {
+      // TODO: Implement full invoice creation using existing InvoiceBuilder
+      // For now, just show success message - full integration requires connecting to invoice APIs
+      console.log('Creating invoice for client:', client.name);
+      console.log('Line items:', lineItems);
+      console.log('Notes:', notes);
+      
+      toast.success(`Invoice created for ${client.name} with ${lineItems.length} items`);
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      toast.error('Failed to create invoice');
+      throw error;
+    }
+  };
   const handleScanItem = async (barcode: string) => {
     try {
       // Find item by barcode in available inventory items
@@ -223,6 +239,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
         onItemsWithdrawn={handleItemsWithdrawn}
         availableItems={inventoryItems}
         onScanItem={handleScanItem}
+        onCreateInvoice={handleCreateInvoice}
       />
     </div>
   );

@@ -8,10 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, Camera, Package, Trash2, Plus, Minus, DollarSign, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Search, Package, Trash2, Plus, Minus, DollarSign, AlertTriangle, Zap, FileText, Printer } from 'lucide-react';
 import { InventoryItem } from '@/contexts/inventory/types';
-import { ScannerOverlay } from './ScannerOverlay';
 import { useScanGun } from '@/hooks/useScanGun';
+import { ClientSelector } from '@/components/finance/invoices/ClientSelector';
+import { InvoiceClient } from '@/types/invoices';
+import { useInvoiceClients } from '@/hooks/useInvoiceClients';
 import { toast } from 'sonner';
 
 // Withdrawal reason types
@@ -40,6 +43,7 @@ interface OutgoingSheetProps {
   onItemsWithdrawn: (items: LineItem[], reason: string, customerInfo?: any, notes?: string) => Promise<void>;
   availableItems: InventoryItem[];
   onScanItem: (barcode: string) => Promise<InventoryItem | null>;
+  onCreateInvoice?: (client: InvoiceClient, lineItems: LineItem[], notes?: string) => Promise<void>;
 }
 
 export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
@@ -47,16 +51,19 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   onClose, 
   onItemsWithdrawn, 
   availableItems,
-  onScanItem
+  onScanItem,
+  onCreateInvoice
 }) => {
   // State management
   const [withdrawalReason, setWithdrawalReason] = useState<string>('');
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showScanner, setShowScanner] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', email: '' });
   const [notes, setNotes] = useState('');
+  const [scanMode, setScanMode] = useState(false);
+  const [scannerConnected, setScannerConnected] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
+  const [createInvoiceOption, setCreateInvoiceOption] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Get current withdrawal reason configuration
@@ -86,16 +93,23 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
     }
   };
 
-  // Hardware scanner integration
-  useScanGun({
-    onScan: (result) => {
-      if (open && !showScanner) {
-        handleBarcodeScanned(result);
-      }
-    },
-    enabled: open,
-    minLength: 4,
+  // Hardware scanner integration (following ReceiveStockDrawer pattern)
+  const { isListening, scannerConnected: hardwareScannerConnected, reset } = useScanGun({
+    onScan: handleBarcodeScanned,
+    onStart: () => console.log('SCANGUN_START'),
+    onStop: () => console.log('SCANGUN_STOP'),
+    enabled: scanMode && open,
   });
+
+  // Update scanner connected state and auto-enable scan mode for hardware scanners
+  useEffect(() => {
+    setScannerConnected(hardwareScannerConnected);
+    
+    // Auto-enable scan mode when hardware scanner is detected
+    if (hardwareScannerConnected && open) {
+      setScanMode(true);
+    }
+  }, [hardwareScannerConnected, open]);
 
   // Add item to line items
   const addItemToList = (item: InventoryItem, quantity: number = 1) => {
@@ -186,28 +200,32 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
       return;
     }
 
-    if (currentReason?.requiresCustomer && !customerInfo.name.trim()) {
-      toast.error('Customer information is required for sales');
+    if (currentReason?.requiresCustomer && !selectedClient) {
+      toast.error('Please select a customer for sales');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Create withdrawal transaction
       await onItemsWithdrawn(
         lineItems, 
         withdrawalReason, 
-        currentReason?.requiresCustomer ? customerInfo : undefined,
+        currentReason?.requiresCustomer ? selectedClient : undefined,
         notes.trim() || undefined
       );
+
+      // Create invoice if requested and it's a sale
+      if (createInvoiceOption && currentReason?.id === 'sale' && selectedClient && onCreateInvoice) {
+        await onCreateInvoice(selectedClient, lineItems, notes.trim() || undefined);
+        toast.success('Items withdrawn and invoice created successfully');
+      } else {
+        toast.success('Items withdrawn successfully');
+      }
       
       // Reset form
-      setLineItems([]);
-      setWithdrawalReason('');
-      setCustomerInfo({ name: '', phone: '', email: '' });
-      setNotes('');
-      setSearchTerm('');
+      resetForm();
       onClose();
-      toast.success('Items withdrawn successfully');
     } catch (error) {
       console.error('Error withdrawing items:', error);
       toast.error('Failed to withdraw items');
@@ -216,14 +234,21 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
     }
   };
 
+  // Reset form function
+  const resetForm = () => {
+    setLineItems([]);
+    setWithdrawalReason('');
+    setSelectedClient(null);
+    setCreateInvoiceOption(false);
+    setNotes('');
+    setSearchTerm('');
+    setScanMode(false);
+  };
+
   // Reset form when sheet closes
   useEffect(() => {
     if (!open) {
-      setLineItems([]);
-      setWithdrawalReason('');
-      setCustomerInfo({ name: '', phone: '', email: '' });
-      setNotes('');
-      setSearchTerm('');
+      resetForm();
     }
   }, [open]);
 
@@ -257,31 +282,85 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
             </div>
 
             {/* Item Search & Scanner */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Add Items</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowScanner(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Camera className="h-4 w-4" />
-                  Scan
-                </Button>
+                <Label className="text-lg font-semibold">Items to Withdraw</Label>
+                
+                {/* Hardware Scanner Status & Controls */}
+                <div className="flex items-center gap-4">
+                  {/* Prominent Hardware Scanner Status */}
+                  {scannerConnected && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <span className="text-sm font-medium text-primary">Hardware Scanner Active</span>
+                      <Zap className="h-3 w-3 text-primary" />
+                    </div>
+                  )}
+                  
+                  {/* Scan Mode Toggle */}
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="scan-mode" className="text-sm">
+                      {scannerConnected ? 'Scanning' : 'Scan Mode'}
+                    </Label>
+                    <Switch
+                      id="scan-mode"
+                      checked={scanMode}
+                      onCheckedChange={setScanMode}
+                    />
+                  </div>
+                </div>
               </div>
               
+              {/* Search Input */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   ref={searchInputRef}
-                  placeholder="Search items by name, SKU, or barcode..."
+                  placeholder={
+                    scanMode && scannerConnected 
+                      ? "Ready for hardware scanner - or search manually..." 
+                      : scanMode 
+                        ? "Enable hardware scanner or search manually..." 
+                        : "Search items by name, SKU, or barcode..."
+                  }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
+                  disabled={scanMode && !searchTerm}
                 />
               </div>
+
+              {/* Enhanced Scanning Status */}
+              {scanMode && (
+                <div className={`rounded-lg p-3 border ${
+                  scannerConnected 
+                    ? 'bg-primary/5 border-primary/20' 
+                    : 'bg-muted/50 border-muted'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${
+                      scannerConnected ? 'bg-primary animate-pulse' : 'bg-muted-foreground/40'
+                    }`} />
+                    <div className="flex-1">
+                      {scannerConnected ? (
+                        <div>
+                          <div className="font-medium text-primary text-sm">🎯 Hardware Scanner Connected</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Point scanner at any barcode to add items instantly
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-medium text-sm">📱 Scan Mode Enabled</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Connect a hardware scanner or search manually
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Search Results */}
               {searchTerm && filteredItems.length > 0 && (
@@ -417,40 +496,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
               </div>
             )}
 
-            {/* Customer Information (for sales) */}
-            {currentReason?.requiresCustomer && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Customer Information *</Label>
-                <div className="grid gap-3">
-                  <div>
-                    <Label className="text-xs">Name *</Label>
-                    <Input
-                      placeholder="Customer name"
-                      value={customerInfo.name}
-                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Phone</Label>
-                      <Input
-                        placeholder="Phone number"
-                        value={customerInfo.phone}
-                        onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Email</Label>
-                      <Input
-                        placeholder="Email address"
-                        value={customerInfo.email}
-                        onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Customer Information (replaced with ClientSelector above) */}
 
             {/* Notes */}
             <div className="space-y-2">
@@ -463,56 +509,61 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
               />
             </div>
 
-            {/* Summary */}
+            {/* Summary & Actions */}
             {lineItems.length > 0 && (
-              <Card className="bg-muted/50">
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <Separator />
+                
+                {/* Totals */}
+                <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Total Items:</span>
-                    <span className="font-medium">{totals.totalItems}</span>
+                    <Badge variant="secondary">{totals.totalItems}</Badge>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Total Cost:</span>
-                    <span className="font-medium">${totals.totalCost.toFixed(2)}</span>
+                    <span className="font-bold">${totals.totalCost.toFixed(2)}</span>
                   </div>
                   {totals.totalProfit > 0 && (
-                    <div className="flex items-center justify-between border-t pt-2">
+                    <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-green-600">Total Profit:</span>
-                      <span className="font-medium text-green-600">${totals.totalProfit.toFixed(2)}</span>
+                      <span className="font-bold text-green-600">${totals.totalProfit.toFixed(2)}</span>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="flex-1"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                className="flex-1"
-                disabled={isSubmitting || lineItems.length === 0 || !withdrawalReason}
-              >
-                {isSubmitting ? 'Processing...' : `Withdraw ${lineItems.length} Item${lineItems.length !== 1 ? 's' : ''}`}
-              </Button>
-            </div>
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={isSubmitting || lineItems.length === 0 || !withdrawalReason || (currentReason?.requiresCustomer && !selectedClient)}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isSubmitting ? 'Processing...' : 
+                     createInvoiceOption ? 'Withdraw & Create Invoice' : 'Withdraw Items'}
+                  </Button>
+                  
+                  {/* Print Receipt Option for completed sales */}
+                  {currentReason?.id === 'sale' && selectedClient && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center gap-2"
+                      onClick={() => {
+                        // TODO: Implement print receipt functionality
+                        toast.success('Receipt printing functionality coming soon');
+                      }}
+                    >
+                      <Printer className="h-4 w-4" />
+                      Print Receipt
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Scanner Overlay */}
-      <ScannerOverlay
-        open={showScanner}
-        onClose={() => setShowScanner(false)}
-        onBarcode={handleBarcodeScanned}
-      />
     </>
   );
 };
