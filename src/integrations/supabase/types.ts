@@ -1415,6 +1415,90 @@ export type Database = {
         }
         Relationships: []
       }
+      created_invoices: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          due_date: string
+          footer_text: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          organization_id: string
+          paid_at: string | null
+          payment_terms: string | null
+          sent_at: string | null
+          status: string | null
+          stripe_invoice_id: string | null
+          subtotal: number
+          tax_amount: number | null
+          template_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          due_date: string
+          footer_text?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          organization_id: string
+          paid_at?: string | null
+          payment_terms?: string | null
+          sent_at?: string | null
+          status?: string | null
+          stripe_invoice_id?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          template_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          footer_text?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          organization_id?: string
+          paid_at?: string | null
+          payment_terms?: string | null
+          sent_at?: string | null
+          status?: string | null
+          stripe_invoice_id?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          template_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_created_invoices_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_created_invoices_template"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_time_summaries: {
         Row: {
           approved_at: string | null
@@ -2944,6 +3028,146 @@ export type Database = {
           name?: string
           organization_id?: string
           unit_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_line_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          organization_id: string
+          quantity: number
+          sort_order: number | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          organization_id: string
+          quantity?: number
+          sort_order?: number | null
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          organization_id?: string
+          quantity?: number
+          sort_order?: number | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_invoice_line_items_invoice"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "created_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          default_payment_terms: string | null
+          default_tax_rate: number | null
+          description: string | null
+          footer_text: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number | null
+          description?: string | null
+          footer_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number | null
+          description?: string | null
+          footer_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -4544,6 +4768,57 @@ export type Database = {
           },
         ]
       }
+      organization_payment_settings: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_address: string | null
+          bank_name: string | null
+          bank_routing_number: string | null
+          created_at: string
+          default_payment_terms: string | null
+          default_tax_rate: number | null
+          id: string
+          invoice_footer: string | null
+          organization_id: string
+          stripe_account_id: string | null
+          stripe_publishable_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_address?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          created_at?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number | null
+          id?: string
+          invoice_footer?: string | null
+          organization_id: string
+          stripe_account_id?: string | null
+          stripe_publishable_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_address?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          created_at?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number | null
+          id?: string
+          invoice_footer?: string | null
+          organization_id?: string
+          stripe_account_id?: string | null
+          stripe_publishable_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string
@@ -4641,6 +4916,56 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_records: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          organization_id: string
+          payment_date: string
+          payment_method: string | null
+          recorded_by: string
+          reference_number: string | null
+          stripe_payment_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          organization_id: string
+          payment_date?: string
+          payment_method?: string | null
+          recorded_by: string
+          reference_number?: string | null
+          stripe_payment_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          organization_id?: string
+          payment_date?: string
+          payment_method?: string | null
+          recorded_by?: string
+          reference_number?: string | null
+          stripe_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_payment_records_invoice"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "created_invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -9494,6 +9819,10 @@ export type Database = {
       }
       generate_invoice_file_path: {
         Args: { filename: string; org_id: string; user_id: string }
+        Returns: string
+      }
+      generate_invoice_number: {
+        Args: { org_id: string }
         Returns: string
       }
       generate_recurring_task_occurrence: {
