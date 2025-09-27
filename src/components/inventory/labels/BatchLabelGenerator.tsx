@@ -7,13 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useInventory } from '@/contexts/inventory';
+import { useAuth } from '@/contexts/AuthContext';
 import { LabelTemplate, labelTemplatesApi } from '@/contexts/inventory/api/labelTemplates';
+import { generatedLabelsApi } from '@/contexts/inventory/api/generatedLabels';
 import { InventoryItem } from '@/contexts/inventory/types';
+import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { Download, Printer, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const BatchLabelGenerator: React.FC = () => {
   const { items, categories } = useInventory();
+  const { user } = useAuth();
   const [templates, setTemplates] = useState<LabelTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -82,15 +86,13 @@ export const BatchLabelGenerator: React.FC = () => {
       return;
     }
 
+    if (!user || !user.organizationId) {
+      toast.error('Authentication error - please log in again');
+      return;
+    }
+
     try {
       toast.success(`Generating ${selectedItems.size * labelsPerItem} labels...`);
-      
-      // TODO: Implement actual batch label generation
-      // This would involve:
-      // 1. Get the selected template
-      // 2. For each selected item, generate the label data
-      // 3. Create a multi-page PDF or multiple files
-      // 4. Log the generation in the generated_labels table
       
       const template = templates.find(t => t.id === selectedTemplate);
       if (!template) {
@@ -98,8 +100,125 @@ export const BatchLabelGenerator: React.FC = () => {
         return;
       }
 
-      // For now, just show success message
-      toast.success(`Batch label generation completed! Generated ${selectedItems.size * labelsPerItem} labels.`);
+      const selectedItemsData = items.filter(item => selectedItems.has(item.id));
+      const allLabelContent: any[] = [];
+      let totalLabelsGenerated = 0;
+
+      // Generate label content for each selected item
+      for (const item of selectedItemsData) {
+        for (let labelIndex = 0; labelIndex < labelsPerItem; labelIndex++) {
+          const labelContent = template.template_data.fields.map((field: any) => {
+            let value = '';
+            
+            switch (field.field) {
+              case 'name':
+                value = item.name;
+                break;
+              case 'sku':
+                value = item.sku || '';
+                break;
+              case 'barcode':
+                value = item.barcode || item.sku || item.id;
+                break;
+              case 'lot_number':
+                value = (item as any).lot_number || BarcodeGenerator.generateLotNumber();
+                break;
+              case 'expiration_date':
+                value = (item as any).expiration_date ? new Date((item as any).expiration_date).toLocaleDateString() : '';
+                break;
+              case 'serving_size':
+                value = (item as any).serving_size || '';
+                break;
+              case 'calories':
+                value = (item as any).calories?.toString() || '';
+                break;
+              default:
+                value = '';
+            }
+
+            // Add prefix if specified
+            if (field.prefix && value) {
+              value = field.prefix + value;
+            }
+
+            return {
+              type: field.type,
+              value,
+              x: field.x,
+              y: field.y,
+              options: {
+                fontSize: field.fontSize,
+                fontWeight: field.fontWeight,
+                width: field.width,
+                height: field.height,
+                format: field.format,
+                size: field.size
+              }
+            };
+          });
+
+          allLabelContent.push(labelContent);
+          totalLabelsGenerated++;
+        }
+
+        // Log each item's label generation to database
+        await generatedLabelsApi.create({
+          organization_id: user.organizationId,
+          template_id: template.id,
+          item_id: item.id,
+          label_data: {
+            item_name: item.name,
+            item_sku: item.sku,
+            labels_generated: labelsPerItem
+          },
+          print_format: 'PDF',
+          quantity_printed: labelsPerItem,
+          printed_by: user.id
+        });
+      }
+
+      // Create multi-page PDF
+      const pdf = BarcodeGenerator.createLabelPDF(
+        allLabelContent[0], // Use first label as base
+        template.dimensions
+      );
+
+      // Add additional pages for remaining labels
+      for (let i = 1; i < allLabelContent.length; i++) {
+        pdf.addPage();
+        const content = allLabelContent[i];
+        
+        content.forEach((item: any) => {
+          switch (item.type) {
+            case 'text':
+              pdf.setFontSize(item.options?.fontSize || 12);
+              pdf.text(item.value, item.x, item.y);
+              break;
+              
+            case 'barcode':
+              const barcodeImg = BarcodeGenerator.generateBarcode(item.value, item.options);
+              if (barcodeImg) {
+                pdf.addImage(barcodeImg, 'PNG', item.x, item.y, item.options?.width || 100, item.options?.height || 30);
+              }
+              break;
+              
+            case 'qr':
+              BarcodeGenerator.generateQRCode(item.value, item.options).then(qrImg => {
+                if (qrImg) {
+                  pdf.addImage(qrImg, 'PNG', item.x, item.y, item.options?.size || 40, item.options?.size || 40);
+                }
+              });
+              break;
+          }
+        });
+      }
+
+      // Download the PDF
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `batch-labels-${timestamp}.pdf`;
+      pdf.save(filename);
+
+      toast.success(`Batch label generation completed! Generated ${totalLabelsGenerated} labels.`);
       
     } catch (error) {
       console.error('Error generating batch labels:', error);
