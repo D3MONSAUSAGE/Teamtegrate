@@ -20,6 +20,7 @@ import { InventoryLot, inventoryLotsApi } from '@/contexts/inventory/api/invento
 import { nutritionalInfoApi, NutritionalInfo } from '@/contexts/inventory/api/nutritionalInfo';
 import { LabelContentSelector, LabelContentConfig } from './LabelContentSelector';
 import { SaveTemplateDialog } from './SaveTemplateDialog';
+import { FoodLabelPreview } from './FoodLabelPreview';
 import { Printer, Download, FileText, Save, Settings, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useInventory } from '@/contexts/inventory';
@@ -818,22 +819,12 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
 
           <TabsContent value="preview" className="space-y-4 mt-6">
             <Label>Label Preview</Label>
-            {labelPreview ? (
-              <Card>
-                <CardContent className="p-4">
-                  <div 
-                    className="border rounded bg-white flex items-center justify-center min-h-[200px]"
-                    dangerouslySetInnerHTML={{ __html: labelPreview }}
-                  />
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-4 text-center text-muted-foreground">
-                  Configure content and select a template to see preview
-                </CardContent>
-              </Card>
-            )}
+            <div className="flex justify-center">
+              <FoodLabelPreview 
+                selectedItems={selectedItemId ? [items.find(i => i.id === selectedItemId)!].filter(Boolean) : []}
+                selectedItemId={selectedItemId}
+              />
+            </div>
           </TabsContent>
         </Tabs>
 

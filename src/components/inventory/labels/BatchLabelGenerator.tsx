@@ -506,7 +506,10 @@ export const BatchLabelGenerator: React.FC = () => {
             <p className="text-sm text-muted-foreground mb-6">
               Preview shows how your food labels will appear with comprehensive nutrition information
             </p>
-            <FoodLabelPreview itemData={previewData} />
+            <FoodLabelPreview 
+              selectedItems={filteredItems.filter(item => selectedItems.has(item.id))}
+              selectedItemId={filteredItems.find(item => selectedItems.has(item.id))?.id}
+            />
           </div>
         </TabsContent>
       </Tabs>
