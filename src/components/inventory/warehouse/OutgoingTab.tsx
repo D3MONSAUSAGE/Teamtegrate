@@ -29,9 +29,16 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
   const loadWarehouseItems = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [OutgoingTab] Loading warehouse items for warehouse:', warehouseId);
       const items = await warehouseApi.listWarehouseItems(warehouseId);
+      console.log('🔍 [OutgoingTab] Raw warehouse items from API:', items);
+      
       // Only show items with stock > 0
       const itemsWithStock = items.filter(item => item.on_hand > 0);
+      console.log('🔍 [OutgoingTab] Warehouse items with stock:', itemsWithStock);
+      console.log('🔍 [OutgoingTab] Warehouse items count:', itemsWithStock.length);
+      console.log('🔍 [OutgoingTab] Warehouse items names:', itemsWithStock.map(item => `${item.item?.name} (stock: ${item.on_hand})`));
+      
       setWarehouseItems(itemsWithStock);
     } catch (error) {
       console.error('Error loading warehouse items:', error);
@@ -96,6 +103,11 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
     } : undefined,
     vendor: undefined
   }));
+
+  // Debug log the transformed items
+  console.log('🔍 [OutgoingTab] Transformed warehouseInventoryItems:', warehouseInventoryItems);
+  console.log('🔍 [OutgoingTab] Transformed items count:', warehouseInventoryItems.length);
+  console.log('🔍 [OutgoingTab] Transformed items names:', warehouseInventoryItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
 
   // Handle item withdrawal
   const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
@@ -340,6 +352,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
 
       {/* Outgoing Sheet */}
       <OutgoingSheet
+        key={`${warehouseId}-${isOutgoingSheetOpen}-${warehouseInventoryItems.length}`} // Force re-mount when warehouse changes
         open={isOutgoingSheetOpen}
         onClose={() => {
           setIsOutgoingSheetOpen(false);

@@ -55,6 +55,10 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   onScanItem,
   onCreateInvoice
 }) => {
+  // Debug logging for available items
+  console.log('🔍 [OutgoingSheet] Component received availableItems:', availableItems);
+  console.log('🔍 [OutgoingSheet] Available items count:', availableItems.length);
+  console.log('🔍 [OutgoingSheet] Available items names:', availableItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
   // State management
   const [withdrawalReason, setWithdrawalReason] = useState<string>('');
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -190,6 +194,24 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
     (item.barcode && item.barcode.includes(searchTerm))
   ).slice(0, 10);
 
+  // Debug logging for search results
+  if (searchTerm) {
+    console.log('🔍 [OutgoingSheet] Search term:', searchTerm);
+    console.log('🔍 [OutgoingSheet] Filtered items from search:', filteredItems);
+    console.log('🔍 [OutgoingSheet] Filtered items count:', filteredItems.length);
+    console.log('🔍 [OutgoingSheet] Filtered items names:', filteredItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
+    
+    // Runtime validation - ensure all filtered items are actually in availableItems
+    const validatedItems = filteredItems.filter(filteredItem => 
+      availableItems.some(availableItem => availableItem.id === filteredItem.id)
+    );
+    if (validatedItems.length !== filteredItems.length) {
+      console.error('🔍 [OutgoingSheet] ERROR: Some filtered items are not in availableItems!');
+      console.error('🔍 [OutgoingSheet] Available items IDs:', availableItems.map(item => item.id));
+      console.error('🔍 [OutgoingSheet] Filtered items IDs:', filteredItems.map(item => item.id));
+    }
+  }
+
   // Handle form submission
   const handleSubmit = async () => {
     if (!withdrawalReason) {
@@ -258,6 +280,13 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
       resetForm();
     }
   }, [open]);
+
+  // Reset search and clear state when availableItems change (warehouse change)
+  useEffect(() => {
+    console.log('🔍 [OutgoingSheet] availableItems changed, resetting search state');
+    setSearchTerm('');
+    setLineItems([]);
+  }, [availableItems]);
 
   return (
     <>
