@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { LabelTemplate, labelTemplatesApi } from '@/contexts/inventory/api/labelTemplates';
 import { Plus, Edit, Trash2, Copy, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 
 export const LabelTemplateManager: React.FC = () => {
+  const { user } = useAuth();
   const [templates, setTemplates] = useState<LabelTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<LabelTemplate | null>(null);
@@ -61,6 +63,22 @@ export const LabelTemplateManager: React.FC = () => {
       printer_type: 'universal'
     });
     setEditDialogOpen(true);
+  };
+
+  const handleCreateFoodTemplate = async () => {
+    if (!user) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      await labelTemplatesApi.createDefaultFoodTemplate(user.organizationId, user.id);
+      toast.success('Food label template created successfully');
+      loadTemplates();
+    } catch (error) {
+      console.error('Error creating food template:', error);
+      toast.error('Failed to create food template');
+    }
   };
 
   const handleEditTemplate = (template: LabelTemplate) => {
@@ -158,6 +176,7 @@ export const LabelTemplateManager: React.FC = () => {
       case 'product': return 'bg-blue-100 text-blue-800';
       case 'lot': return 'bg-green-100 text-green-800';
       case 'nutritional': return 'bg-orange-100 text-orange-800';
+      case 'food_product': return 'bg-emerald-100 text-emerald-800';
       case 'qr': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -165,6 +184,7 @@ export const LabelTemplateManager: React.FC = () => {
 
   const getPrinterTypeColor = (type: string) => {
     switch (type) {
+      case 'thermal': return 'bg-cyan-100 text-cyan-800';
       case 'zebra': return 'bg-yellow-100 text-yellow-800';
       case 'brother': return 'bg-red-100 text-red-800';
       case 'dymo': return 'bg-indigo-100 text-indigo-800';
@@ -188,6 +208,13 @@ export const LabelTemplateManager: React.FC = () => {
         <Button onClick={handleCreateTemplate}>
           <Plus className="h-4 w-4 mr-2" />
           New Template
+        </Button>
+        <Button 
+          variant="outline" 
+          onClick={handleCreateFoodTemplate}
+          className="ml-2"
+        >
+          Create Food Label
         </Button>
       </div>
 
@@ -308,6 +335,7 @@ export const LabelTemplateManager: React.FC = () => {
                     <SelectItem value="product">Product</SelectItem>
                     <SelectItem value="lot">Lot Tracking</SelectItem>
                     <SelectItem value="nutritional">Nutritional</SelectItem>
+                    <SelectItem value="food_product">Food Product</SelectItem>
                     <SelectItem value="qr">QR Code</SelectItem>
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
@@ -325,6 +353,7 @@ export const LabelTemplateManager: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="universal">Universal</SelectItem>
+                    <SelectItem value="thermal">Thermal</SelectItem>
                     <SelectItem value="zebra">Zebra</SelectItem>
                     <SelectItem value="brother">Brother</SelectItem>
                     <SelectItem value="dymo">DYMO</SelectItem>
