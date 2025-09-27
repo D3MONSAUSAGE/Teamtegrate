@@ -64,7 +64,6 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
       { name: 'Schedule', href: '/dashboard/schedule', icon: CalendarDays },
       { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
-      { name: 'Training', href: '/dashboard/training', icon: GraduationCap },
       { name: 'Checklists', href: '/dashboard/checklists', icon: ClipboardList },
       { name: 'Focus', href: '/dashboard/focus', icon: Target },
       { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
@@ -169,7 +168,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       <InventoryNavMenu onNavigation={onNavigation} isCollapsed={isCollapsed} />
       
       {/* Training Navigation Menu */}
-      <TrainingNavMenu />
+      <TrainingNavMenu onNavigation={onNavigation} isCollapsed={isCollapsed} />
     </div>
   );
 });
