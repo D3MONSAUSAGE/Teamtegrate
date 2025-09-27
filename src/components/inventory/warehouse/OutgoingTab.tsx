@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TruckIcon, ShoppingCart, Plus, Package, BarChart3 } from 'lucide-react';
@@ -48,66 +48,72 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
     }
   };
 
-  // Transform warehouse items to inventory items for OutgoingSheet
-  const warehouseInventoryItems = warehouseItems.map((warehouseItem): InventoryItem => ({
-    id: warehouseItem.item?.id || warehouseItem.item_id,
-    organization_id: user?.organizationId || '',
-    team_id: warehouseId,
-    name: warehouseItem.item?.name || 'Unknown Item',
-    description: undefined,
-    category_id: undefined,
-    base_unit_id: undefined,
-    vendor_id: undefined,
-    purchase_unit: undefined,
-    conversion_factor: undefined,
-    purchase_price: undefined,
-    calculated_unit_price: undefined,
-    current_stock: warehouseItem.on_hand, // Use warehouse stock, not organization stock
-    minimum_threshold: warehouseItem.reorder_min,
-    maximum_threshold: warehouseItem.reorder_max,
-    reorder_point: warehouseItem.reorder_min,
-    unit_cost: warehouseItem.wac_unit_cost,
-    sale_price: undefined, // TODO: Add sale price to warehouse items if needed
-    supplier_info: undefined,
-    barcode: warehouseItem.item?.barcode,
-    sku: warehouseItem.item?.sku,
-    location: undefined,
-    image_url: undefined,
-    created_by: user?.id || '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    is_active: true,
-    is_template: false,
-    template_name: undefined,
-    expected_cost: undefined,
-    sort_order: 0,
-    category: warehouseItem.item?.category ? {
-      id: '',
+  // Transform warehouse items to inventory items for OutgoingSheet - MEMOIZED to prevent stale data
+  const warehouseInventoryItems = useMemo(() => {
+    console.log('🔍 [OutgoingTab] Creating warehouseInventoryItems from warehouseItems:', warehouseItems.length);
+    
+    const transformedItems = warehouseItems.map((warehouseItem): InventoryItem => ({
+      id: warehouseItem.item?.id || warehouseItem.item_id,
       organization_id: user?.organizationId || '',
-      name: warehouseItem.item.category.name,
+      team_id: warehouseId,
+      name: warehouseItem.item?.name || 'Unknown Item',
       description: undefined,
-      is_active: true,
+      category_id: undefined,
+      base_unit_id: undefined,
+      vendor_id: undefined,
+      purchase_unit: undefined,
+      conversion_factor: undefined,
+      purchase_price: undefined,
+      calculated_unit_price: undefined,
+      current_stock: warehouseItem.on_hand, // Use warehouse stock, not organization stock
+      minimum_threshold: warehouseItem.reorder_min,
+      maximum_threshold: warehouseItem.reorder_max,
+      reorder_point: warehouseItem.reorder_min,
+      unit_cost: warehouseItem.wac_unit_cost,
+      sale_price: undefined, // TODO: Add sale price to warehouse items if needed
+      supplier_info: undefined,
+      barcode: warehouseItem.item?.barcode,
+      sku: warehouseItem.item?.sku,
+      location: undefined,
+      image_url: undefined,
+      created_by: user?.id || '',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    } : undefined,
-    base_unit: warehouseItem.item?.base_unit ? {
-      id: '',
-      organization_id: user?.organizationId || '',
-      name: warehouseItem.item.base_unit.name,
-      abbreviation: warehouseItem.item.base_unit.abbreviation,
-      unit_type: 'count',
-      measurement_type: undefined,
+      updated_at: new Date().toISOString(),
       is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    } : undefined,
-    vendor: undefined
-  }));
+      is_template: false,
+      template_name: undefined,
+      expected_cost: undefined,
+      sort_order: 0,
+      category: warehouseItem.item?.category ? {
+        id: '',
+        organization_id: user?.organizationId || '',
+        name: warehouseItem.item.category.name,
+        description: undefined,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } : undefined,
+      base_unit: warehouseItem.item?.base_unit ? {
+        id: '',
+        organization_id: user?.organizationId || '',
+        name: warehouseItem.item.base_unit.name,
+        abbreviation: warehouseItem.item.base_unit.abbreviation,
+        unit_type: 'count',
+        measurement_type: undefined,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } : undefined,
+      vendor: undefined
+    }));
 
-  // Debug log the transformed items
-  console.log('🔍 [OutgoingTab] Transformed warehouseInventoryItems:', warehouseInventoryItems);
-  console.log('🔍 [OutgoingTab] Transformed items count:', warehouseInventoryItems.length);
-  console.log('🔍 [OutgoingTab] Transformed items names:', warehouseInventoryItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
+    // Debug log the transformed items
+    console.log('🔍 [OutgoingTab] Transformed warehouseInventoryItems:', transformedItems);
+    console.log('🔍 [OutgoingTab] Transformed items count:', transformedItems.length);
+    console.log('🔍 [OutgoingTab] Transformed items names:', transformedItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
+    
+    return transformedItems;
+  }, [warehouseItems, warehouseId, user?.id, user?.organizationId]);
 
   // Handle item withdrawal
   const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
@@ -350,19 +356,44 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
         </CardContent>
       </Card>
 
-      {/* Outgoing Sheet */}
-      <OutgoingSheet
-        key={`${warehouseId}-${isOutgoingSheetOpen}-${warehouseInventoryItems.length}`} // Force re-mount when warehouse changes
-        open={isOutgoingSheetOpen}
-        onClose={() => {
-          setIsOutgoingSheetOpen(false);
-          setSelectedItemId(null);
-        }}
-        onItemsWithdrawn={handleItemsWithdrawn}
-        availableItems={warehouseInventoryItems} // Use warehouse-specific items only
-        onScanItem={handleScanItem}
-        onCreateInvoice={handleCreateInvoice}
-      />
+      {/* Outgoing Sheet - Only render when warehouse items are loaded and available */}
+      {!loading && warehouseInventoryItems.length > 0 && (
+        <OutgoingSheet
+          key={`${warehouseId}-${isOutgoingSheetOpen}-${warehouseInventoryItems.length}`} // Force re-mount when warehouse changes
+          open={isOutgoingSheetOpen}
+          onClose={() => {
+            setIsOutgoingSheetOpen(false);
+            setSelectedItemId(null);
+          }}
+          onItemsWithdrawn={handleItemsWithdrawn}
+          availableItems={warehouseInventoryItems} // Use warehouse-specific items only
+          onScanItem={handleScanItem}
+          onCreateInvoice={handleCreateInvoice}
+        />
+      )}
+      
+      {/* Debug: Show current state */}
+      {loading && isOutgoingSheetOpen && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card p-6 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading warehouse items...</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Runtime validation error */}
+      {!loading && warehouseInventoryItems.length === 0 && isOutgoingSheetOpen && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card p-6 rounded-lg shadow-lg border-destructive border">
+            <p className="text-destructive font-medium mb-4">No warehouse items available</p>
+            <p className="text-muted-foreground mb-4">The outgoing sheet cannot be opened because there are no items in warehouse stock.</p>
+            <Button onClick={() => setIsOutgoingSheetOpen(false)} variant="outline">
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
