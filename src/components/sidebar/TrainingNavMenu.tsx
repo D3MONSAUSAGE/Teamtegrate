@@ -52,7 +52,7 @@ export const TrainingNavMenu: React.FC<TrainingNavMenuProps> = ({
     },
     {
       name: 'Management',
-      href: '/dashboard/training/management',
+      href: '/dashboard/training/management/content',
       icon: Settings,
       requiresRole: 'manager' as const,
       subItems: [

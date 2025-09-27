@@ -35,12 +35,7 @@ const TrainingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect to training dashboard if directly accessing /dashboard/training
-  useEffect(() => {
-    if (location.pathname === '/dashboard/training') {
-      navigate('/dashboard/training/dashboard', { replace: true });
-    }
-  }, [location.pathname, navigate]);
+  // No redirect needed - let the page render normally
   const [isQuizCreatorOpen, setIsQuizCreatorOpen] = useState(false);
   const [isCourseCreatorOpen, setIsCourseCreatorOpen] = useState(false);
   const [isCourseEditorOpen, setIsCourseEditorOpen] = useState(false);
