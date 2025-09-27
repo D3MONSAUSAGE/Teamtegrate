@@ -870,12 +870,7 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
           open={saveTemplateOpen}
           onOpenChange={setSaveTemplateOpen}
           contentConfig={contentConfig}
-          templateData={selectedTemplate?.template_data || {}}
-          dimensions={selectedTemplate?.dimensions as any || { width: 4, height: 6, unit: 'inches' }}
-          onTemplateSaved={(template) => {
-            toast.success('Template saved! You can now find it in the Templates tab.');
-            loadTemplates(); // Refresh template list
-          }}
+          selectedItems={selectedItemId ? [{ id: selectedItemId }] : []}
         />
       </DialogContent>
     </Dialog>

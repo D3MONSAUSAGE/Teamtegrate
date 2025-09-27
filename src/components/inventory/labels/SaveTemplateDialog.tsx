@@ -11,11 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { labelTemplatesApi, LabelTemplate } from '@/contexts/inventory/api/labelTemplates';
+import { labelTemplatesApi } from '@/contexts/inventory/api/labelTemplates';
 import { LabelContentConfig } from './LabelContentSelector';
-import { Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,86 +20,167 @@ interface SaveTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contentConfig: LabelContentConfig;
-  templateData: any;
-  dimensions: { width: number; height: number; unit: string };
-  onTemplateSaved?: (template: LabelTemplate) => void;
+  selectedItems?: any[];
 }
 
 export const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
   open,
   onOpenChange,
   contentConfig,
-  templateData,
-  dimensions,
-  onTemplateSaved
+  selectedItems = []
 }) => {
   const { user } = useAuth();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<string>('product');
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'product' as const,
-    printer_type: 'thermal' as const
-  });
 
-  const getSelectedFields = () => {
-    return Object.entries(contentConfig)
-      .filter(([key, value]) => typeof value === 'boolean' && value)
-      .map(([key]) => key);
-  };
-
-  const handleSaveTemplate = async () => {
-    if (!user) {
-      toast.error('User not authenticated');
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error('Please enter a template name');
       return;
     }
 
-    if (!formData.name.trim()) {
-      toast.error('Template name is required');
+    if (!user?.organizationId) {
+      toast.error('User authentication error');
       return;
     }
-
-    setSaving(true);
 
     try {
-      // Create template with content configuration
-      const templatePayload = {
+      setSaving(true);
+
+      // Generate field definitions from content config
+      const fields: any[] = [];
+      
+      if (contentConfig.name) {
+        fields.push({
+          type: 'text',
+          field: 'name',
+          x: 10,
+          y: 10,
+          fontSize: 14,
+          fontWeight: 'bold'
+        });
+      }
+
+      if (contentConfig.sku) {
+        fields.push({
+          type: 'text',
+          field: 'sku',
+          x: 10,
+          y: 30,
+          fontSize: 10
+        });
+      }
+
+      if (contentConfig.barcode) {
+        fields.push({
+          type: 'barcode',
+          field: 'sku',
+          x: 10,
+          y: 50,
+          format: 'CODE128',
+          width: 150,
+          height: 30
+        });
+      }
+
+      if (contentConfig.qrCode) {
+        fields.push({
+          type: 'qr',
+          field: 'item_data',
+          x: 170,
+          y: 50,
+          size: 40
+        });
+      }
+
+      if (contentConfig.lotNumber) {
+        fields.push({
+          type: 'text',
+          field: 'lot_number',
+          x: 10,
+          y: 90,
+          fontSize: 9,
+          fontWeight: 'bold'
+        });
+      }
+
+      if (contentConfig.expirationDate) {
+        fields.push({
+          type: 'text',
+          field: 'expiration_date',
+          x: 120,
+          y: 90,
+          fontSize: 9
+        });
+      }
+
+      if (contentConfig.ingredients) {
+        fields.push({
+          type: 'text',
+          field: 'ingredients',
+          x: 10,
+          y: 110,
+          fontSize: 8,
+          wordWrap: true,
+          width: 200
+        });
+      }
+
+      if (contentConfig.allergens) {
+        fields.push({
+          type: 'text',
+          field: 'allergens',
+          x: 10,
+          y: 130,
+          fontSize: 8,
+          fontWeight: 'bold',
+          highlightAllergens: true
+        });
+      }
+
+      if (contentConfig.nutritionalFacts) {
+        fields.push({
+          type: 'nutritional',
+          field: 'nutritional_info',
+          x: 10,
+          y: 150,
+          fontSize: 7,
+          width: 200,
+          height: 80
+        });
+      }
+
+      const templateData = {
+        name: name.trim(),
+        description: description.trim() || null,
+        category,
         organization_id: user.organizationId,
         created_by: user.id,
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        printer_type: formData.printer_type,
-        is_default: false,
         is_active: true,
-        dimensions,
+        is_default: false,
+        dimensions: { width: 4, height: 6, unit: 'inches' },
+        printer_type: 'thermal',
         template_data: {
-          ...templateData,
-          content_config: contentConfig,
-          selected_fields: getSelectedFields(),
           created_from_generator: true,
-          created_at: new Date().toISOString()
+          content_config: contentConfig,
+          fields,
+          source_items: selectedItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            sku: item.sku
+          }))
         }
       };
 
-      const savedTemplate = await labelTemplatesApi.create(templatePayload as any);
+      await labelTemplatesApi.create(templateData as any);
       
-      toast.success(`Template "${formData.name}" saved successfully`);
-      
-      if (onTemplateSaved) {
-        onTemplateSaved(savedTemplate);
-      }
-      
+      toast.success('Template saved successfully');
       onOpenChange(false);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        category: 'product',
-        printer_type: 'thermal'
-      });
-      
+      setName('');
+      setDescription('');
+      setCategory('product');
     } catch (error) {
       console.error('Error saving template:', error);
       toast.error('Failed to save template');
@@ -111,158 +189,61 @@ export const SaveTemplateDialog: React.FC<SaveTemplateDialogProps> = ({
     }
   };
 
-  const getCategoryFromFields = () => {
-    const fields = getSelectedFields();
-    
-    if (fields.includes('nutritionalFacts') || fields.includes('ingredients')) {
-      return 'food_product';
-    }
-    
-    if (fields.includes('lotNumber') || fields.includes('expirationDate')) {
-      return 'lot';
-    }
-    
-    if (fields.includes('qrCode') && fields.length <= 3) {
-      return 'qr';
-    }
-    
-    return 'product';
-  };
-
-  // Auto-suggest category based on selected fields
-  React.useEffect(() => {
-    if (formData.category === 'product') {
-      const suggestedCategory = getCategoryFromFields();
-      if (suggestedCategory !== 'product') {
-        setFormData(prev => ({ ...prev, category: suggestedCategory as any }));
-      }
-    }
-  }, [contentConfig]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Save className="h-5 w-5" />
-            Save as Template
-          </DialogTitle>
+          <DialogTitle>Save Label Template</DialogTitle>
           <DialogDescription>
-            Save this label configuration as a reusable template for future use
+            Save this label configuration as a template for future use and reprinting
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="template-name">Template Name *</Label>
-              <Input
-                id="template-name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Food Product Label"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="template-description">Description</Label>
-              <Textarea
-                id="template-description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description of when to use this template"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="template-category">Category</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value: any) => setFormData(prev => ({ ...prev, category: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="product">Product</SelectItem>
-                    <SelectItem value="lot">Lot Tracking</SelectItem>
-                    <SelectItem value="food_product">Food Product</SelectItem>
-                    <SelectItem value="nutritional">Nutritional</SelectItem>
-                    <SelectItem value="qr">QR Code</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="template-printer">Printer Type</Label>
-                <Select
-                  value={formData.printer_type}
-                  onValueChange={(value: any) => setFormData(prev => ({ ...prev, printer_type: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="thermal">Thermal</SelectItem>
-                    <SelectItem value="universal">Universal</SelectItem>
-                    <SelectItem value="zebra">Zebra</SelectItem>
-                    <SelectItem value="brother">Brother</SelectItem>
-                    <SelectItem value="dymo">DYMO</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Dimensions</Label>
-              <div className="text-sm text-muted-foreground">
-                {dimensions.width}" × {dimensions.height}" ({dimensions.unit})
-              </div>
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="template-name">Template Name</Label>
+            <Input
+              id="template-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Food Product Label, Standard Product Label"
+            />
           </div>
 
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="p-4">
-                <h4 className="font-medium mb-3 flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Selected Fields ({getSelectedFields().length})
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {getSelectedFields().map((field) => (
-                    <Badge key={field} variant="secondary" className="text-xs">
-                      {field.replace(/([A-Z])/g, ' $1').toLowerCase().replace(/^./, str => str.toUpperCase())}
-                    </Badge>
-                  ))}
-                </div>
-                {getSelectedFields().length === 0 && (
-                  <p className="text-sm text-muted-foreground">No fields selected</p>
-                )}
-              </CardContent>
-            </Card>
+          <div className="space-y-2">
+            <Label htmlFor="template-description">Description (Optional)</Label>
+            <Textarea
+              id="template-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe when to use this template..."
+              rows={2}
+            />
+          </div>
 
-            <Card>
-              <CardContent className="p-4">
-                <h4 className="font-medium mb-2">Template Benefits</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Consistent labeling across your inventory</li>
-                  <li>• Quick reprinting with lot number updates</li>
-                  <li>• Reuse configuration for similar products</li>
-                  <li>• Team-wide access to standardized templates</li>
-                </ul>
-              </CardContent>
-            </Card>
+          <div className="space-y-2">
+            <Label htmlFor="template-category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="product">Product</SelectItem>
+                <SelectItem value="food_product">Food Product</SelectItem>
+                <SelectItem value="lot">Lot Tracking</SelectItem>
+                <SelectItem value="nutritional">Nutritional</SelectItem>
+                <SelectItem value="qr">QR Code</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSaveTemplate} disabled={saving || !formData.name.trim()}>
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save Template'}
           </Button>
         </div>

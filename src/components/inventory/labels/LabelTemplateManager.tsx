@@ -28,7 +28,7 @@ export const LabelTemplateManager: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'product' as const,
+    category: 'product' as 'product' | 'food_product' | 'lot' | 'nutritional' | 'qr' | 'custom',
     dimensions: { width: 2, height: 1, unit: 'inches' as const },
     printer_type: 'universal' as const
   });
@@ -107,6 +107,18 @@ export const LabelTemplateManager: React.FC = () => {
         is_active: true,
         is_default: false,
         template_data: {
+          created_from_generator: false,
+          content_config: {
+            name: true,
+            sku: true,
+            barcode: true,
+            qrCode: false,
+            lotNumber: formData.category === 'food_product',
+            expirationDate: formData.category === 'food_product',
+            ingredients: formData.category === 'food_product',
+            allergens: formData.category === 'food_product',
+            nutritionalFacts: formData.category === 'food_product'
+          },
           fields: [
             {
               type: 'text',
@@ -115,6 +127,22 @@ export const LabelTemplateManager: React.FC = () => {
               y: 10,
               fontSize: 14,
               fontWeight: 'bold'
+            },
+            {
+              type: 'text',
+              field: 'sku',
+              x: 10,
+              y: 30,
+              fontSize: 10
+            },
+            {
+              type: 'barcode',
+              field: 'sku',
+              x: 10,
+              y: 50,
+              format: 'CODE128',
+              width: 150,
+              height: 30
             }
           ]
         }
