@@ -53,6 +53,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       for (const lineItem of lineItems) {
         const transactionData = {
           organization_id: user.organizationId,
+          team_id: warehouseId, // Link transaction to team/warehouse
           item_id: lineItem.item.id,
           transaction_type: 'out' as const,
           quantity: -lineItem.quantity, // Negative for outbound
@@ -101,7 +102,8 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
         lineItems: formattedLineItems,
         notes: `Sale: ${notes || ''}`.trim(),
         payment_terms: 'Net 30',
-        tax_rate: 0 // Can be made configurable later
+        tax_rate: 0, // Can be made configurable later
+        team_id: warehouseId // Link invoice to team/warehouse
       });
 
       console.log('Created invoice:', createdInvoice);

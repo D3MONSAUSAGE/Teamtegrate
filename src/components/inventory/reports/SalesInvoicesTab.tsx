@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Eye, Download, Search, DollarSign, Users, Calendar } from 'lucide-react';
+import { FileText, Eye, Download, Search, DollarSign, Users, Calendar, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { CreatedInvoice } from '@/types/invoices';
@@ -12,6 +12,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { formatCurrency } from '@/utils/formatters';
 import { generateInvoicePDF } from '@/utils/generateInvoicePDF';
 import { InvoiceViewerModal } from './InvoiceViewerModal';
+import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 
 export const SalesInvoicesTab: React.FC = () => {
   const { user } = useAuth();
@@ -20,17 +21,18 @@ export const SalesInvoicesTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<CreatedInvoice | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     loadSalesInvoices();
-  }, [user?.organizationId]);
+  }, [user?.organizationId, selectedTeamId]);
 
   const loadSalesInvoices = async () => {
     if (!user?.organizationId) return;
     
     try {
       setLoading(true);
-      const data = await invoiceService.getSalesInvoices(user.organizationId);
+      const data = await invoiceService.getSalesInvoices(user.organizationId, selectedTeamId);
       setInvoices(data);
     } catch (error) {
       console.error('Error loading sales invoices:', error);
@@ -161,7 +163,18 @@ export const SalesInvoicesTab: React.FC = () => {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-4">
+          {/* Team Filter */}
+          <UnifiedTeamSelector
+            selectedTeamId={selectedTeamId}
+            onTeamChange={setSelectedTeamId}
+            showAllOption={true}
+            placeholder="All teams"
+            variant="simple"
+            title="Filter by Team"
+          />
+          
+          {/* Search Filter */}
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -170,6 +183,19 @@ export const SalesInvoicesTab: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
+          </div>
+          
+          {/* Refresh Button */}
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadSalesInvoices}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -1434,6 +1434,7 @@ export type Database = {
           stripe_invoice_id: string | null
           subtotal: number
           tax_amount: number | null
+          team_id: string | null
           template_id: string | null
           total_amount: number
           updated_at: string
@@ -1456,6 +1457,7 @@ export type Database = {
           stripe_invoice_id?: string | null
           subtotal?: number
           tax_amount?: number | null
+          team_id?: string | null
           template_id?: string | null
           total_amount?: number
           updated_at?: string
@@ -1478,11 +1480,26 @@ export type Database = {
           stripe_invoice_id?: string | null
           subtotal?: number
           tax_amount?: number | null
+          team_id?: string | null
           template_id?: string | null
           total_amount?: number
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_created_invoices_client"
             columns: ["client_id"]
@@ -3138,6 +3155,7 @@ export type Database = {
           organization_id: string
           quantity: number
           reference_number: string | null
+          team_id: string | null
           transaction_date: string
           transaction_type: string
           unit_cost: number | null
@@ -3151,6 +3169,7 @@ export type Database = {
           organization_id: string
           quantity: number
           reference_number?: string | null
+          team_id?: string | null
           transaction_date?: string
           transaction_type: string
           unit_cost?: number | null
@@ -3164,6 +3183,7 @@ export type Database = {
           organization_id?: string
           quantity?: number
           reference_number?: string | null
+          team_id?: string | null
           transaction_date?: string
           transaction_type?: string
           unit_cost?: number | null
@@ -3175,6 +3195,20 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -3231,6 +3265,7 @@ export type Database = {
           postal_code: string | null
           state: string | null
           tax_id: string | null
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3248,6 +3283,7 @@ export type Database = {
           postal_code?: string | null
           state?: string | null
           tax_id?: string | null
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3265,9 +3301,25 @@ export type Database = {
           postal_code?: string | null
           state?: string | null
           tax_id?: string | null
+          team_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoice_clients_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_clients_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_line_items: {
         Row: {

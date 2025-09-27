@@ -14,11 +14,12 @@ export interface CreateInvoiceData {
   payment_terms?: string;
   tax_rate?: number;
   transaction_reference?: string; // Link to inventory transaction
+  team_id?: string; // Team that created the invoice
 }
 
 export const invoiceService = {
   async createInvoice(data: CreateInvoiceData): Promise<CreatedInvoice> {
-    const { client, lineItems, notes, footer_text, payment_terms, tax_rate = 0, transaction_reference } = data;
+    const { client, lineItems, notes, footer_text, payment_terms, tax_rate = 0, transaction_reference, team_id } = data;
 
     // Calculate totals
     const subtotal = lineItems.reduce((sum, item) => sum + item.total_price, 0);
@@ -38,6 +39,7 @@ export const invoiceService = {
           organization_id: client.organization_id,
           client_id: client.id,
           created_by: client.created_by, // This will be set by RLS
+          team_id,
           invoice_number,
           status: 'draft' as const,
           issue_date,
@@ -75,8 +77,8 @@ export const invoiceService = {
       return {
         ...invoice,
         client,
-        line_items: lineItemsData
-      } as CreatedInvoice;
+        line_items: lineItemsData as any // Line items will be properly typed when queried from database
+      } as any;
 
     } catch (error) {
       console.error('Error creating invoice:', error);
@@ -84,17 +86,22 @@ export const invoiceService = {
     }
   },
 
-  async getInvoicesByOrganization(organizationId: string): Promise<CreatedInvoice[]> {
+  async getInvoicesByOrganization(organizationId: string, teamId?: string): Promise<CreatedInvoice[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('created_invoices')
         .select(`
           *,
           client:invoice_clients(*),
           line_items:invoice_line_items(*)
         `)
-        .eq('organization_id', organizationId)
-        .order('created_at', { ascending: false });
+        .eq('organization_id', organizationId);
+
+      if (teamId) {
+        query = query.eq('team_id', teamId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as CreatedInvoice[];
@@ -104,10 +111,10 @@ export const invoiceService = {
     }
   },
 
-  async getSalesInvoices(organizationId: string): Promise<CreatedInvoice[]> {
+  async getSalesInvoices(organizationId: string, teamId?: string): Promise<CreatedInvoice[]> {
     try {
       // Get invoices that were created from inventory transactions (sales)
-      const { data, error } = await supabase
+      let query = supabase
         .from('created_invoices')
         .select(`
           *,
@@ -116,8 +123,13 @@ export const invoiceService = {
         `)
         .eq('organization_id', organizationId)
         .not('notes', 'is', null)
-        .ilike('notes', '%sale%')
-        .order('created_at', { ascending: false });
+        .ilike('notes', '%sale%');
+
+      if (teamId) {
+        query = query.eq('team_id', teamId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as CreatedInvoice[];

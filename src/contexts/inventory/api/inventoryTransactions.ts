@@ -2,14 +2,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { InventoryTransaction } from '../types';
 
 export const inventoryTransactionsApi = {
-  async getAll(): Promise<InventoryTransaction[]> {
-    const { data, error } = await supabase
+  async getAll(teamId?: string): Promise<InventoryTransaction[]> {
+    let query = supabase
       .from('inventory_transactions')
       .select(`
         *,
         inventory_items(name)
-      `)
-      .order('transaction_date', { ascending: false });
+      `);
+
+    if (teamId) {
+      query = query.eq('team_id', teamId);
+    }
+
+    const { data, error } = await query.order('transaction_date', { ascending: false });
 
     if (error) throw error;
     return (data || []) as InventoryTransaction[];
@@ -37,15 +42,20 @@ export const inventoryTransactionsApi = {
     return (data || []) as InventoryTransaction[];
   },
 
-  async getByType(transactionType: InventoryTransaction['transaction_type']): Promise<InventoryTransaction[]> {
-    const { data, error } = await supabase
+  async getByType(transactionType: InventoryTransaction['transaction_type'], teamId?: string): Promise<InventoryTransaction[]> {
+    let query = supabase
       .from('inventory_transactions')
       .select(`
         *,
         inventory_items(name)
       `)
-      .eq('transaction_type', transactionType)
-      .order('transaction_date', { ascending: false });
+      .eq('transaction_type', transactionType);
+
+    if (teamId) {
+      query = query.eq('team_id', teamId);
+    }
+
+    const { data, error } = await query.order('transaction_date', { ascending: false });
 
     if (error) throw error;
     return (data || []) as InventoryTransaction[];
