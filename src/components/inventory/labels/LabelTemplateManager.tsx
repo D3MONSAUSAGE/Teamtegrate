@@ -32,16 +32,19 @@ export const LabelTemplateManager: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('LabelTemplateManager: Loading templates...');
     loadTemplates();
   }, []);
 
   const loadTemplates = async () => {
     try {
+      console.log('LabelTemplateManager: Starting template load...');
       setLoading(true);
       const data = await labelTemplatesApi.getAll();
+      console.log('LabelTemplateManager: Templates loaded:', data?.length || 0);
       setTemplates(data);
     } catch (error) {
-      console.error('Error loading templates:', error);
+      console.error('LabelTemplateManager: Error loading templates:', error);
       toast.error('Failed to load label templates');
     } finally {
       setLoading(false);

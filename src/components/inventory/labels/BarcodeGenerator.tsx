@@ -18,6 +18,7 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({
   initialValue = '',
   onGenerate
 }) => {
+  console.log('BarcodeGenerator: Component rendered');
   const [value, setValue] = useState(initialValue);
   const [format, setFormat] = useState<BarcodeFormat>('CODE128');
   const [width, setWidth] = useState(2);
