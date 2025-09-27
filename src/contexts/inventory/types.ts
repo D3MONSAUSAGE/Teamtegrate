@@ -108,6 +108,12 @@ export interface InventoryCount {
   voided_by?: string;
   voided_at?: string;
   void_reason?: string;
+  // Approval workflow fields
+  approval_status: 'pending_approval' | 'approved' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  approval_notes?: string;
+  warehouse_updated: boolean;
 }
 
 export interface InventoryCountItem {

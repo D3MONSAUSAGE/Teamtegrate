@@ -298,7 +298,9 @@ export const useInventoryOperations = ({
       completion_percentage: 0,
       variance_count: 0,
       total_items_count: 0,
-      is_voided: false
+      is_voided: false,
+      approval_status: 'pending_approval' as const,
+      warehouse_updated: false
     };
     
     const result = await handleAsyncOperation(

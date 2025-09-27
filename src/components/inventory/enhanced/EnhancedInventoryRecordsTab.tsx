@@ -30,17 +30,19 @@ import { SalesInvoicesTab } from '../reports/SalesInvoicesTab';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
   BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays,
-  CalendarIcon
+  CalendarIcon, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { InventoryCount } from '@/contexts/inventory/types';
+import { InventoryCount, InventoryCountItem } from '@/contexts/inventory/types';
 import { formatCurrency, formatPercentage } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
 import { getTZDayRangeUTC, formatInTZ } from '@/lib/dates/tzRange';
 import { useTZ } from '@/lib/dates/useTZ';
 import { buildDailyViewData } from '@/services/dailyViewSelector';
+import { CountApprovalDialog } from '@/components/inventory/approval/CountApprovalDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
@@ -78,6 +80,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   const [voidDialogOpen, setVoidDialogOpen] = useState(false);
   const [countToVoid, setCountToVoid] = useState<InventoryCount | null>(null);
   const [voidReason, setVoidReason] = useState('');
+  
+  // Approval dialog states
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [selectedCountForApproval, setSelectedCountForApproval] = useState<InventoryCount | null>(null);
+  const [countItems, setCountItems] = useState<InventoryCountItem[]>([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   
   // Daily view states
   const [viewMode, setViewMode] = useState<'all' | 'daily'>('all');
@@ -251,6 +259,52 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       setVoidReason('');
     } catch (error) {
       console.error('Failed to void count:', error);
+    }
+  };
+
+  const handleApprovalRequest = async (count: InventoryCount) => {
+    setSelectedCountForApproval(count);
+    setDetailsLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('inventory_count_items')
+        .select(`
+          *,
+          inventory_items(*)
+        `)
+        .eq('count_id', count.id)
+        .order('counted_at', { ascending: false, nullsFirst: false });
+
+      if (error) throw error;
+      
+      setCountItems(data || []);
+      setApprovalDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching count details:', error);
+      setCountItems([]);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleApprovalComplete = () => {
+    // Refresh inventory data to reflect changes
+    window.location.reload();
+  };
+
+  const getApprovalBadge = (count: InventoryCount) => {
+    if (count.status !== 'completed') return null;
+    
+    switch (count.approval_status) {
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100"><ThumbsUp className="w-3 h-3 mr-1" />Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100"><ThumbsDown className="w-3 h-3 mr-1" />Rejected</Badge>;
+      case 'pending_approval':
+        return <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100"><Clock className="w-3 h-3 mr-1" />Pending Approval</Badge>;
+      default:
+        return null;
     }
   };
 
@@ -583,12 +637,14 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                                      </Badge>
                                    )}
 
-                                   {count.is_voided && (
-                                     <Badge variant="outline" className="gap-1 text-muted-foreground">
-                                       <Ban className="h-3 w-3" />
-                                       No Financial Impact
-                                     </Badge>
-                                   )}
+                                    {count.is_voided && (
+                                      <Badge variant="outline" className="gap-1 text-muted-foreground">
+                                        <Ban className="h-3 w-3" />
+                                        No Financial Impact
+                                      </Badge>
+                                    )}
+
+                                    {getApprovalBadge(count)}
                                  </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -650,15 +706,28 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                               </div>
 
                                <div className="flex gap-2 ml-4">
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm"
-                                   onClick={() => handleViewDetails(count)}
-                                   className="gap-1"
-                                 >
-                                   <Eye className="h-3 w-3" />
-                                   Enhanced Details
-                                 </Button>
+                                  {count.status === 'completed' && count.approval_status === 'pending_approval' && hasRoleAccess('manager') && (
+                                    <Button 
+                                      variant="default" 
+                                      size="sm"
+                                      onClick={() => handleApprovalRequest(count)}
+                                      className="gap-1 bg-amber-600 hover:bg-amber-700"
+                                      disabled={detailsLoading}
+                                    >
+                                      <ThumbsUp className="h-3 w-3" />
+                                      Review & Approve
+                                    </Button>
+                                  )}
+                                  
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleViewDetails(count)}
+                                    className="gap-1"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    Enhanced Details
+                                  </Button>
                                  
                                  {previousCount && (
                                    <Button 
@@ -986,6 +1055,17 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Approval Dialog */}
+      {selectedCountForApproval && (
+        <CountApprovalDialog
+          isOpen={approvalDialogOpen}
+          onClose={() => setApprovalDialogOpen(false)}
+          count={selectedCountForApproval}
+          countItems={countItems}
+          onApprovalComplete={handleApprovalComplete}
+        />
+      )}
     </div>
   );
 };

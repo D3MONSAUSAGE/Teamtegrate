@@ -2631,6 +2631,10 @@ export type Database = {
       }
       inventory_counts: {
         Row: {
+          approval_notes: string | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           assigned_to: string | null
           completion_percentage: number | null
           conducted_by: string
@@ -2650,8 +2654,13 @@ export type Database = {
           void_reason: string | null
           voided_at: string | null
           voided_by: string | null
+          warehouse_updated: boolean | null
         }
         Insert: {
+          approval_notes?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_to?: string | null
           completion_percentage?: number | null
           conducted_by: string
@@ -2671,8 +2680,13 @@ export type Database = {
           void_reason?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_updated?: boolean | null
         }
         Update: {
+          approval_notes?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_to?: string | null
           completion_percentage?: number | null
           conducted_by?: string
@@ -2692,8 +2706,23 @@ export type Database = {
           void_reason?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_updated?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_counts_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_counts_team_id_fkey"
             columns: ["team_id"]
@@ -9340,6 +9369,70 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_stock_adjustments: {
+        Row: {
+          adjustment_amount: number
+          adjustment_reason: string | null
+          count_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          item_id: string
+          new_quantity: number
+          organization_id: string
+          previous_quantity: number
+          warehouse_id: string | null
+        }
+        Insert: {
+          adjustment_amount: number
+          adjustment_reason?: string | null
+          count_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          item_id: string
+          new_quantity: number
+          organization_id: string
+          previous_quantity: number
+          warehouse_id?: string | null
+        }
+        Update: {
+          adjustment_amount?: number
+          adjustment_reason?: string | null
+          count_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          new_quantity?: number
+          organization_id?: string
+          previous_quantity?: number
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_stock_adjustments_count_id_fkey"
+            columns: ["count_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_adjustments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_adjustments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
