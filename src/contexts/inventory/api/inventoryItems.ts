@@ -70,6 +70,7 @@ export const inventoryItemsApi = {
       ...item,
       barcode: item.barcode?.trim() || null,
       team_id: item.team_id || null, // Ensure team_id is properly handled
+      image_url: item.image_url || null, // Ensure image_url is properly handled
       created_by: (await supabase.auth.getUser()).data.user?.id
     };
 
@@ -114,7 +115,8 @@ export const inventoryItemsApi = {
   async update(id: string, updates: Partial<Omit<InventoryItem, 'category' | 'base_unit' | 'calculated_unit_price'>>): Promise<InventoryItem> {
     const normalizedUpdates = {
       ...updates,
-      ...(updates.barcode !== undefined && { barcode: updates.barcode?.trim() || null })
+      ...(updates.barcode !== undefined && { barcode: updates.barcode?.trim() || null }),
+      ...(updates.image_url !== undefined && { image_url: updates.image_url || null })
     };
     
     const { data, error } = await supabase

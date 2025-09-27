@@ -2745,6 +2745,7 @@ export type Database = {
           description: string | null
           expected_cost: number | null
           id: string
+          image_url: string | null
           is_active: boolean
           is_template: boolean
           location: string | null
@@ -2779,6 +2780,7 @@ export type Database = {
           description?: string | null
           expected_cost?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           is_template?: boolean
           location?: string | null
@@ -2813,6 +2815,7 @@ export type Database = {
           description?: string | null
           expected_cost?: number | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           is_template?: boolean
           location?: string | null

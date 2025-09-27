@@ -11,7 +11,10 @@ import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { toast } from 'sonner';
 import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';
+import { VendorDialog } from './dialogs/VendorDialog';
+import { ImageUpload } from './ImageUpload';
 import { useInventory } from '@/contexts/inventory';
+import { vendorsApi } from '@/contexts/inventory/api';
 
 interface CreateItemDialogProps {
   open: boolean;
@@ -30,7 +33,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
   units,
   prefilledBarcode
 }) => {
-  const { vendors } = useInventory();
+  const { vendors, refreshVendors } = useInventory();
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -45,14 +48,29 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
     sale_price: 0,
     team_id: null as string | null,
     vendor_id: null as string | null,
+    image_url: null as string | null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
 
   React.useEffect(() => {
     if (prefilledBarcode) {
       setFormData(prev => ({ ...prev, barcode: prefilledBarcode }));
     }
   }, [prefilledBarcode]);
+
+  const handleCreateVendor = async (vendorData: any) => {
+    try {
+      const newVendor = await vendorsApi.create(vendorData);
+      await refreshVendors();
+      setFormData(prev => ({ ...prev, vendor_id: newVendor.id }));
+      toast.success(`Vendor "${newVendor.name}" created and selected`);
+    } catch (error) {
+      console.error('Failed to create vendor:', error);
+      toast.error('Failed to create vendor');
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +115,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
           sale_price: 0,
           team_id: null,
           vendor_id: null,
+          image_url: null,
         });
     } catch (error) {
       console.error('❌ CreateItemDialog error:', error);
@@ -229,6 +248,12 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
             />
           </div>
 
+          <ImageUpload
+            value={formData.image_url || undefined}
+            onChange={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl }))}
+            disabled={isSubmitting}
+          />
+
           <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
@@ -252,6 +277,7 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
               vendors={vendors}
               value={formData.vendor_id || undefined}
               onValueChange={(vendorId) => setFormData(prev => ({ ...prev, vendor_id: vendorId || null }))}
+              onAddVendor={() => setIsVendorDialogOpen(true)}
               disabled={isSubmitting}
             />
           </div>
@@ -266,6 +292,12 @@ export const CreateItemDialog: React.FC<CreateItemDialogProps> = ({
           </div>
         </form>
       </DialogContent>
+
+      <VendorDialog
+        open={isVendorDialogOpen}
+        onOpenChange={setIsVendorDialogOpen}
+        onSave={handleCreateVendor}
+      />
     </Dialog>
   );
 };

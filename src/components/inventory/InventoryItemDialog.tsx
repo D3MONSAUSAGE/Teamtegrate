@@ -19,9 +19,12 @@ import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { BarcodeInput } from './BarcodeInput';
 import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';
+import { VendorDialog } from './dialogs/VendorDialog';
+import { ImageUpload } from './ImageUpload';
 import { IngredientsPanel } from './IngredientsPanel';
 import { NutritionalInfoForm } from './NutritionalInfoForm';
 import { LabelPrintDialog } from './labels/LabelPrintDialog';
+import { vendorsApi } from '@/contexts/inventory/api';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -40,6 +43,7 @@ const inventoryItemSchema = z.object({
   barcode: z.string().optional(),
   location: z.string().optional(),
   team_id: z.string().nullable().optional(),
+  image_url: z.string().nullable().optional(),
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
@@ -55,11 +59,12 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   onOpenChange,
   itemId
 }) => {
-  const { createItem, updateItem, getItemById, loading, categories, units, vendors } = useInventory();
+  const { createItem, updateItem, getItemById, loading, categories, units, vendors, refreshVendors } = useInventory();
   
   const [calculatedUnitPrice, setCalculatedUnitPrice] = useState<number | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
+  const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLabelDialog, setShowLabelDialog] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
@@ -79,6 +84,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       location: '',
       team_id: null,
       vendor_id: null,
+      image_url: null,
     },
   });
 
@@ -92,6 +98,19 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       setCalculatedUnitPrice(null);
     }
   }, [watchedValues]);
+
+  const handleCreateVendor = async (vendorData: any) => {
+    try {
+      const newVendor = await vendorsApi.create(vendorData);
+      await refreshVendors();
+      form.setValue('vendor_id', newVendor.id);
+      toast.success(`Vendor "${newVendor.name}" created and selected`);
+    } catch (error) {
+      console.error('Failed to create vendor:', error);
+      toast.error('Failed to create vendor');
+      throw error;
+    }
+  };
 
   useEffect(() => {
     if (itemId && open) {
@@ -126,6 +145,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           location: item.location || '',
           team_id: item.team_id || null,
           vendor_id: item.vendor_id || null,
+          image_url: item.image_url || null,
         });
       }
     } catch (error) {
@@ -192,6 +212,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         sort_order: 0,
         team_id: values.team_id || null,
         vendor_id: values.vendor_id || null,
+        image_url: values.image_url || null,
       };
 
       console.log('📦 Item data being sent:', itemData);
@@ -458,9 +479,26 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                           vendors={vendors}
                           value={field.value || undefined}
                           onValueChange={(value) => field.onChange(value || null)}
+                          onAddVendor={() => setIsVendorDialogOpen(true)}
                           disabled={isSubmitting || loading}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Image Upload */}
+                <FormField
+                  control={form.control}
+                  name="image_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <ImageUpload
+                        value={field.value || undefined}
+                        onChange={(imageUrl) => field.onChange(imageUrl)}
+                        disabled={isSubmitting || loading}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -589,6 +627,12 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         <InventoryUnitDialog
           open={isUnitDialogOpen}
           onOpenChange={setIsUnitDialogOpen}
+        />
+        
+        <VendorDialog
+          open={isVendorDialogOpen}
+          onOpenChange={setIsVendorDialogOpen}
+          onSave={handleCreateVendor}
         />
 
         {currentItem && (
