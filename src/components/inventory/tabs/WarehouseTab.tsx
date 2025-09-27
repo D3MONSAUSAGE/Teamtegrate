@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
+import { WarehouseOverviewDashboard } from '../warehouse/WarehouseOverviewDashboard';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
 import { TransferToTeamDrawer } from '../warehouse/TransferToTeamDrawer';
@@ -25,9 +26,11 @@ export const WarehouseTab: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState('stock');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [showOverview, setShowOverview] = useState(false);
 
-  // For admins, don't auto-load anything until team is selected
+  // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
+  const shouldShowOverview = (isAdmin || isSuperAdmin) && selectedTeamId === null;
 
   const loadWarehouse = useCallback(async (retryCount = 0) => {
     if (!shouldLoadWarehouse) {
@@ -132,20 +135,11 @@ export const WarehouseTab: React.FC = () => {
     setRefreshKey(prev => prev + 1);
   }, []);
 
-  // Empty state when admin hasn't selected a team
-  const EmptyTeamState = () => (
-    <Card>
-      <CardContent className="py-12">
-        <div className="text-center">
-          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Please Select a Team</h3>
-          <p className="text-muted-foreground">
-            Choose a team from the dropdown above to view and manage their warehouse.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const handleSelectWarehouse = (warehouseId: string) => {
+    // Find the team for this warehouse and set it as selected
+    // For now, we'll just show the detailed view
+    setShowOverview(false);
+  };
 
   const tabs = [
     { id: 'stock', label: 'Warehouse Stock' },
@@ -174,13 +168,16 @@ export const WarehouseTab: React.FC = () => {
       <div className="space-y-4">
         {/* Team Selector for Admins/Superadmins - Always visible */}
         {(isAdmin || isSuperAdmin) && (
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
             <UnifiedTeamSelector
               selectedTeamId={selectedTeamId}
-              onTeamChange={setSelectedTeamId}
+              onTeamChange={(teamId) => {
+                setSelectedTeamId(teamId);
+                setShowOverview(teamId === null);
+              }}
               variant="simple"
               placeholder="Select team warehouse..."
-              showAllOption={false}
+              showAllOption={true}
             />
           </div>
         )}
@@ -238,8 +235,8 @@ export const WarehouseTab: React.FC = () => {
             <div className="text-sm text-muted-foreground">{error}</div>
           </div>
         </div>
-      ) : (isAdmin || isSuperAdmin) && !selectedTeamId ? (
-        <EmptyTeamState />
+      ) : shouldShowOverview || showOverview ? (
+        <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
       ) : !warehouse ? (
         <NotConfigured onConfigured={loadWarehouse} selectedTeamId={selectedTeamId} />
       ) : (

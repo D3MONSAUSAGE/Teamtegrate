@@ -98,6 +98,25 @@ export type RecentTransfer = {
   unit_price: number;
 };
 
+export type WarehouseOverview = {
+  warehouse_id: string;
+  warehouse_name: string;
+  team_name: string;
+  total_items: number;
+  total_inventory_value: number;
+  low_stock_count: number;
+  created_at: string;
+  address?: string;
+};
+
+export type DailyMetrics = {
+  receipts_count: number;
+  receipts_value: number;
+  transfers_count: number;
+  transfers_value: number;
+  date: string;
+};
+
 export const warehouseApi = {
   // Get the primary warehouse for the organization
   async getPrimaryWarehouse(): Promise<Warehouse | null> {
@@ -439,6 +458,68 @@ export const warehouseApi = {
     );
     
     await Promise.all(promises);
+  },
+
+  // Get warehouse overview for admin dashboard
+  async getWarehouseOverview(): Promise<WarehouseOverview[]> {
+    try {
+      // Calculate manually since warehouse_overview view doesn't exist
+      const warehouses = await this.listWarehouses();
+      const overview: WarehouseOverview[] = [];
+      
+      for (const warehouse of warehouses) {
+        const items = await this.listWarehouseItems(warehouse.id);
+        const totalValue = items.reduce((sum, item) => sum + (item.on_hand * item.wac_unit_cost), 0);
+        const lowStockCount = items.filter(item => 
+          item.reorder_min && item.on_hand <= item.reorder_min
+        ).length;
+        
+        overview.push({
+          warehouse_id: warehouse.id,
+          warehouse_name: warehouse.name,
+          team_name: warehouse.team?.name || 'Main Warehouse',
+          total_items: items.length,
+          total_inventory_value: totalValue,
+          low_stock_count: lowStockCount,
+          created_at: warehouse.created_at,
+          address: warehouse.address
+        });
+      }
+      
+      return overview;
+    } catch (error) {
+      console.error('Error getting warehouse overview:', error);
+      return [];
+    }
+  },
+
+  // Get daily metrics for warehouse dashboard
+  async getDailyMetrics(date = new Date().toISOString().split('T')[0]): Promise<DailyMetrics> {
+    const { data: receipts, error: receiptsError } = await supabase
+      .from('warehouse_receipts')
+      .select('id, subtotal')
+      .eq('status', 'posted')
+      .gte('received_at', `${date}T00:00:00`)
+      .lt('received_at', `${date}T23:59:59`);
+
+    const { data: transfers, error: transfersError } = await supabase
+      .from('warehouse_transfers')
+      .select('id, charge_subtotal')
+      .eq('status', 'sent')
+      .gte('sent_at', `${date}T00:00:00`)
+      .lt('sent_at', `${date}T23:59:59`);
+
+    if (receiptsError || transfersError) {
+      console.error('Error fetching daily metrics:', receiptsError || transfersError);
+    }
+
+    return {
+      receipts_count: receipts?.length || 0,
+      receipts_value: receipts?.reduce((sum, r) => sum + (r.subtotal || 0), 0) || 0,
+      transfers_count: transfers?.length || 0,
+      transfers_value: transfers?.reduce((sum, t) => sum + (t.charge_subtotal || 0), 0) || 0,
+      date
+    };
   },
 
   // Search inventory items for warehouse receiving
