@@ -49,8 +49,8 @@ export const WarehouseTab: React.FC = () => {
       return;
     }
 
-    // Prevent parallel loading attempts
-    if (loading && !teamSwitching && retryCount === 0) {
+    // Prevent parallel loading attempts (but allow retries)
+    if (loading && retryCount === 0) {
       return;
     }
 
@@ -95,7 +95,7 @@ export const WarehouseTab: React.FC = () => {
         setWarehouse(data);
       } else {
         // No warehouse exists - but if we just created one, retry a few times
-        if (retryCount < 3 && !isRetrying && !teamSwitching) {
+        if (retryCount < 3 && !isRetrying) {
           console.log(`No warehouse found - retrying (${retryCount + 1}/3)...`);
           setIsRetrying(true);
           // Use exponential backoff: 1s, 2s, 4s
@@ -124,7 +124,7 @@ export const WarehouseTab: React.FC = () => {
         setWarehouse(null);
       } else {
         // General error - retry if we haven't exhausted retries
-        if (retryCount < 3 && !isRetrying && !teamSwitching) {
+        if (retryCount < 3 && !isRetrying) {
           console.log(`Error loading warehouse - retrying (${retryCount + 1}/3)...`);
           setIsRetrying(true);
           // Use exponential backoff: 1s, 2s, 4s
@@ -145,7 +145,7 @@ export const WarehouseTab: React.FC = () => {
       setTeamSwitching(false);
       setIsRetrying(false);
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse, user?.id]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, user?.id]);
 
   // Immediate state clearing when team changes (SECURITY FIX)
   useEffect(() => {
@@ -155,14 +155,14 @@ export const WarehouseTab: React.FC = () => {
       setError(null);
       loadWarehouse(); // Load warehouse for the new team
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, loadWarehouse]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin]);
 
   // Initial load for non-admin users
   useEffect(() => {
     if (!isAdmin && !isSuperAdmin) {
       loadWarehouse();
     }
-  }, [isAdmin, isSuperAdmin, loadWarehouse]);
+  }, [isAdmin, isSuperAdmin]);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
