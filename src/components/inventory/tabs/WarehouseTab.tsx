@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
-import { WarehouseOverviewDashboard } from '../warehouse/WarehouseOverviewDashboard';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
 import { TransferToTeamDrawer } from '../warehouse/TransferToTeamDrawer';
@@ -15,6 +14,13 @@ import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
 import { toast } from 'sonner';
+
+// Lazy load the dashboard component to avoid circular dependencies
+const WarehouseOverviewDashboard = React.lazy(() => 
+  import('../warehouse/WarehouseOverviewDashboard').then(module => ({
+    default: module.WarehouseOverviewDashboard
+  }))
+);
 
 export const WarehouseTab: React.FC = () => {
   const { user } = useAuth();
@@ -236,7 +242,9 @@ export const WarehouseTab: React.FC = () => {
           </div>
         </div>
       ) : shouldShowOverview || showOverview ? (
-        <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
+        <React.Suspense fallback={<div className="flex items-center justify-center py-12">Loading dashboard...</div>}>
+          <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
+        </React.Suspense>
       ) : !warehouse ? (
         <NotConfigured onConfigured={loadWarehouse} selectedTeamId={selectedTeamId} />
       ) : (
