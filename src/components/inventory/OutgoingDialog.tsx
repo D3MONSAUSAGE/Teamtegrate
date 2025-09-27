@@ -878,7 +878,7 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
       <ScannerOverlay
         open={showScanner}
         onClose={() => setShowScanner(false)}
-        onScan={handleBarcodeScanned}
+        onBarcode={handleBarcodeScanned}
       />
     </Dialog>
   );
