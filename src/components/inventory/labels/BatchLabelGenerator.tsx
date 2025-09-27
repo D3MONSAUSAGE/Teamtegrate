@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useInventory } from '@/contexts/inventory';
+import { useEnhancedInventoryManagement } from '@/hooks/useEnhancedInventoryManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { LabelTemplate, labelTemplatesApi } from '@/contexts/inventory/api/labelTemplates';
 import { generatedLabelsApi } from '@/contexts/inventory/api/generatedLabels';
@@ -20,7 +20,7 @@ import { Download, Printer, Search, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const BatchLabelGenerator: React.FC = () => {
-  const { items, categories } = useInventory();
+  const { items, categories } = useEnhancedInventoryManagement();
   const { user } = useAuth();
   const [templates, setTemplates] = useState<LabelTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
