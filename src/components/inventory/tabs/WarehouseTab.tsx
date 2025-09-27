@@ -33,6 +33,7 @@ export const WarehouseTab: React.FC = () => {
   const [activeTab, setActiveTab] = useState('stock');
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showOverview, setShowOverview] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -44,12 +45,21 @@ export const WarehouseTab: React.FC = () => {
       setWarehouse(null);
       setError(null);
       setTeamSwitching(false);
+      setIsRetrying(false);
+      return;
+    }
+
+    // Prevent parallel loading attempts
+    if (loading && !teamSwitching && retryCount === 0) {
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
+      if (retryCount > 0) {
+        setIsRetrying(true);
+      }
       // SECURITY: Immediately clear warehouse data to prevent cross-team data leakage
       setWarehouse(null);
       
@@ -85,9 +95,15 @@ export const WarehouseTab: React.FC = () => {
         setWarehouse(data);
       } else {
         // No warehouse exists - but if we just created one, retry a few times
-        if (retryCount < 3) {
+        if (retryCount < 3 && !isRetrying) {
           console.log(`No warehouse found - retrying (${retryCount + 1}/3)...`);
-          setTimeout(() => loadWarehouse(retryCount + 1), 1000);
+          setIsRetrying(true);
+          // Use exponential backoff: 1s, 2s, 4s
+          const delay = Math.pow(2, retryCount) * 1000;
+          setTimeout(() => {
+            setIsRetrying(false);
+            loadWarehouse(retryCount + 1);
+          }, delay);
           return;
         }
         // After retries, show setup screen
@@ -108,9 +124,15 @@ export const WarehouseTab: React.FC = () => {
         setWarehouse(null);
       } else {
         // General error - retry if we haven't exhausted retries
-        if (retryCount < 3) {
+        if (retryCount < 3 && !isRetrying) {
           console.log(`Error loading warehouse - retrying (${retryCount + 1}/3)...`);
-          setTimeout(() => loadWarehouse(retryCount + 1), 1000);
+          setIsRetrying(true);
+          // Use exponential backoff: 1s, 2s, 4s
+          const delay = Math.pow(2, retryCount) * 1000;
+          setTimeout(() => {
+            setIsRetrying(false);
+            loadWarehouse(retryCount + 1);
+          }, delay);
           return;
         }
         // After retries, show setup screen
@@ -121,8 +143,9 @@ export const WarehouseTab: React.FC = () => {
     } finally {
       setLoading(false);
       setTeamSwitching(false);
+      setIsRetrying(false);
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse, user?.id]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, shouldLoadWarehouse, user?.id, loading, teamSwitching, isRetrying]);
 
   // Immediate state clearing when team changes (SECURITY FIX)
   useEffect(() => {
@@ -233,7 +256,12 @@ export const WarehouseTab: React.FC = () => {
       {loading || teamSwitching ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-muted-foreground">
-            {teamSwitching ? 'Switching teams...' : 'Loading warehouse...'}
+            {teamSwitching 
+              ? 'Switching teams...' 
+              : isRetrying 
+                ? 'Retrying connection...' 
+                : 'Loading warehouse...'
+            }
           </div>
         </div>
       ) : error ? (
