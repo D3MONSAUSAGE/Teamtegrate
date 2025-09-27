@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { LeafyGreen, Save } from 'lucide-react';
-import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
-import { toast } from 'sonner';
+import { LeafyGreen } from 'lucide-react';
 
 interface IngredientsData {
   ingredients: string;
@@ -24,55 +22,11 @@ interface IngredientsPanelProps {
 
 export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, itemName, data, onChange }) => {
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [allergenInput, setAllergenInput] = useState('');
 
   const commonAllergens = [
     'Milk', 'Eggs', 'Fish', 'Shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soybeans'
   ];
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      
-      // Get existing nutritional info to preserve other data
-      const existingInfo = await nutritionalInfoApi.getByItemId(itemId);
-      
-      const nutritionalData = {
-        item_id: itemId,
-        // Preserve existing nutritional values
-        serving_size: existingInfo?.serving_size || null,
-        servings_per_container: existingInfo?.servings_per_container || null,
-        calories: existingInfo?.calories || null,
-        total_fat: existingInfo?.total_fat || null,
-        saturated_fat: existingInfo?.saturated_fat || null,
-        trans_fat: existingInfo?.trans_fat || null,
-        cholesterol: existingInfo?.cholesterol || null,
-        sodium: existingInfo?.sodium || null,
-        total_carbohydrates: existingInfo?.total_carbohydrates || null,
-        dietary_fiber: existingInfo?.dietary_fiber || null,
-        total_sugars: existingInfo?.total_sugars || null,
-        added_sugars: existingInfo?.added_sugars || null,
-        protein: existingInfo?.protein || null,
-        vitamin_d: existingInfo?.vitamin_d || null,
-        calcium: existingInfo?.calcium || null,
-        iron: existingInfo?.iron || null,
-        potassium: existingInfo?.potassium || null,
-        // Update ingredients and allergens
-        ingredients: data.ingredients || null,
-        allergens: data.allergens.length > 0 ? data.allergens : null,
-        additional_nutrients: existingInfo?.additional_nutrients || {}
-      };
-
-      await nutritionalInfoApi.upsert(nutritionalData);
-      toast.success('Ingredients information saved successfully');
-    } catch (error) {
-      console.error('Error saving ingredients info:', error);
-      toast.error('Failed to save ingredients information');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const addAllergen = (allergen: string) => {
     if (allergen && !data.allergens.includes(allergen)) {
@@ -192,11 +146,8 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Ingredients'}
-          </Button>
+        <div className="text-sm text-muted-foreground text-center">
+          Changes will be saved when you save the item
         </div>
       </CardContent>
     </Card>

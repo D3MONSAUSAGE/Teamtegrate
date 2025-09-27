@@ -725,33 +725,21 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           </TabsContent>
 
           <TabsContent value="ingredients" className="mt-6">
-            {itemId && currentItem ? (
-              <IngredientsPanel
-                itemId={itemId}
-                itemName={currentItem.name}
-                data={ingredientsData}
-                onChange={setIngredientsData}
-              />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Please save the item first to add ingredients information.
-              </div>
-            )}
+            <IngredientsPanel
+              itemId={itemId || 'new-item'}
+              itemName={form.watch('name') || 'New Item'}
+              data={ingredientsData}
+              onChange={setIngredientsData}
+            />
           </TabsContent>
 
           <TabsContent value="nutrition" className="mt-6">
-            {itemId && currentItem ? (
-              <NutritionalInfoForm
-                itemId={itemId}
-                itemName={currentItem.name}
-                data={nutritionalData}
-                onChange={setNutritionalData}
-              />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Please save the item first to add nutritional information.
-              </div>
-            )}
+            <NutritionalInfoForm
+              itemId={itemId || 'new-item'}
+              itemName={form.watch('name') || 'New Item'}
+              data={nutritionalData}
+              onChange={setNutritionalData}
+            />
           </TabsContent>
         </Tabs>
 

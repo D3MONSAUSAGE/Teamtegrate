@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Apple, Save, AlertCircle } from 'lucide-react';
-import { nutritionalInfoApi, NutritionalInfo } from '@/contexts/inventory/api/nutritionalInfo';
-import { toast } from 'sonner';
+import { Apple } from 'lucide-react';
 
 interface NutritionalData {
   serving_size: string;
@@ -40,49 +35,6 @@ interface NutritionalInfoFormProps {
 
 export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId, itemName, data, onChange }) => {
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      
-      // Get existing ingredients info to preserve
-      const existingInfo = await nutritionalInfoApi.getByItemId(itemId);
-      
-      const nutritionalData = {
-        item_id: itemId,
-        serving_size: data.serving_size || null,
-        servings_per_container: data.servings_per_container || null,
-        calories: data.calories || null,
-        total_fat: data.total_fat || null,
-        saturated_fat: data.saturated_fat || null,
-        trans_fat: data.trans_fat || null,
-        cholesterol: data.cholesterol || null,
-        sodium: data.sodium || null,
-        total_carbohydrates: data.total_carbohydrates || null,
-        dietary_fiber: data.dietary_fiber || null,
-        total_sugars: data.total_sugars || null,
-        added_sugars: data.added_sugars || null,
-        protein: data.protein || null,
-        vitamin_d: data.vitamin_d || null,
-        calcium: data.calcium || null,
-        iron: data.iron || null,
-        potassium: data.potassium || null,
-        // Preserve ingredients and allergens from existing data (managed by ingredients tab)
-        ingredients: existingInfo?.ingredients || null,
-        allergens: existingInfo?.allergens || null,
-        additional_nutrients: data.additional_nutrients
-      };
-
-      await nutritionalInfoApi.upsert(nutritionalData);
-      toast.success('Nutritional information saved successfully');
-    } catch (error) {
-      console.error('Error saving nutritional info:', error);
-      toast.error('Failed to save nutritional information');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const updateField = (field: string, value: string | number) => {
     onChange({
@@ -300,12 +252,8 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
           </div>
         </div>
 
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Nutritional Info'}
-          </Button>
+        <div className="text-sm text-muted-foreground text-center">
+          Changes will be saved when you save the item
         </div>
       </CardContent>
     </Card>

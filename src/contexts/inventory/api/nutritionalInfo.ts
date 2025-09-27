@@ -44,14 +44,7 @@ export const nutritionalInfoApi = {
   async create(info: Partial<NutritionalInfo> & { item_id: string }): Promise<NutritionalInfo> {
     const { data, error } = await supabase
       .from('inventory_nutritional_info')
-      .insert([{
-        ...info,
-        // Ensure required fields are present
-        item_id: info.item_id,
-        // Let the trigger handle organization_id and created_by if not provided
-        organization_id: info.organization_id || '',
-        created_by: info.created_by || ''
-      }])
+      .insert([info as any])
       .select()
       .single();
 
@@ -83,14 +76,7 @@ export const nutritionalInfoApi = {
   async upsert(info: Partial<NutritionalInfo> & { item_id: string }): Promise<NutritionalInfo> {
     const { data, error } = await supabase
       .from('inventory_nutritional_info')
-      .upsert([{
-        ...info,
-        // Ensure required fields are present
-        item_id: info.item_id,
-        // Let the trigger handle organization_id and created_by if not provided
-        organization_id: info.organization_id || '',
-        created_by: info.created_by || ''
-      }], {
+      .upsert([info as any], {
         onConflict: 'item_id'
       })
       .select()
