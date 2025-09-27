@@ -22,8 +22,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useScanGun } from '@/hooks/useScanGun';
 import { ScannerOverlay } from '../ScannerOverlay';
-import { ShipmentSelector } from '../receiving/ShipmentSelector';
-import { shipmentsApi, Shipment } from '@/contexts/inventory/api/shipments';
 import { inventoryLotsApi } from '@/contexts/inventory/api/inventoryLots';
 
 interface ReceiveLine {
@@ -57,14 +55,12 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
+  // Basic receiving state
   const [receivedDate, setReceivedDate] = useState(new Date().toISOString().split('T')[0]);
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [lineItems, setLineItems] = useState<ReceiveLine[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  
-  // Shipment state
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   
   // Item search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,10 +210,10 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     }, 0);
   };
 
-  const generateShipmentLotNumber = (shipment: Shipment) => {
-    const date = new Date(shipment.received_date).toISOString().split('T')[0].replace(/-/g, '');
-    const shipmentCode = shipment.shipment_number.replace('SHIP-', '').replace(/-/g, '');
-    return `${shipmentCode}-${date}`;
+  const generateLotNumber = () => {
+    const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `LOT-${date}-${random}`;
   };
 
   const handleSubmit = async () => {
@@ -232,21 +228,16 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       return;
     }
 
-    if (!selectedShipment) {
-      toast.error('Please select a shipment for lot tracking');
-      return;
-    }
-
     try {
       setSubmitting(true);
 
       // Step 1: Create receipt
-      const receipt = await warehouseApi.createReceipt(warehouseId, reference || selectedShipment.reference_number);
+      const receipt = await warehouseApi.createReceipt(warehouseId, reference);
 
-      // Step 2: Generate shared lot number for the shipment
-      const sharedLotNumber = generateShipmentLotNumber(selectedShipment);
+      // Step 2: Generate lot number for this receipt
+      const sharedLotNumber = generateLotNumber();
 
-      // Step 3: Create lot records for each item in the shipment
+      // Step 3: Create lot records for each item
       for (const line of validLines) {
         await inventoryLotsApi.create({
           organization_id: '', // Will be set by RLS
@@ -257,11 +248,11 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
           quantity_received: line.qty,
           quantity_remaining: line.qty,
           cost_per_unit: line.unit_cost || null,
-          supplier_info: selectedShipment.supplier_info,
-          notes: `Shipment: ${selectedShipment.shipment_number}${notes ? ` | ${notes}` : ''}`,
+          supplier_info: null,
+          notes: `Receipt: ${receipt.id}${notes ? ` | ${notes}` : ''}`,
           is_active: true,
           created_by: '', // Will be set by auth
-          shipment_id: selectedShipment.id
+          shipment_id: null
         });
       }
 
@@ -314,7 +305,6 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     setShowResults(false);
     setScanMode(false);
     setShowScanner(false);
-    setSelectedShipment(null);
   };
 
   const formatCurrency = (amount: number) => {
@@ -346,38 +336,6 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
             </DrawerHeader>
 
             <div className="p-4 space-y-6">
-              {/* Shipment Selection */}
-              <Card className="border-primary/20 bg-primary/5">
-                <CardContent className="p-4">
-                  <ShipmentSelector 
-                    selectedShipmentId={selectedShipment?.id}
-                    onShipmentSelect={(shipment) => {
-                      setSelectedShipment(shipment);
-                      if (shipment) {
-                        setReceivedDate(shipment.received_date);
-                        setReference(shipment.reference_number || '');
-                        setNotes(shipment.notes || '');
-                      }
-                    }}
-                  />
-                  {selectedShipment && (
-                    <div className="mt-3 p-3 bg-background rounded-md border">
-                      <div className="text-sm font-medium text-primary">
-                        {selectedShipment.shipment_number}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Lot Number: {generateShipmentLotNumber(selectedShipment)}
-                      </div>
-                      {selectedShipment.supplier_info?.name && (
-                        <div className="text-xs text-muted-foreground">
-                          Supplier: {selectedShipment.supplier_info.name}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
               {/* Header Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -395,7 +353,6 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                     type="date"
                     value={receivedDate}
                     onChange={(e) => setReceivedDate(e.target.value)}
-                    disabled={!!selectedShipment}
                   />
                 </div>
                 <div className="space-y-2">
@@ -655,7 +612,7 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                 <Button 
                   onClick={handleSubmit} 
                   className="flex-1"
-                  disabled={lineItems.length === 0 || submitting || !selectedShipment}
+                  disabled={lineItems.length === 0 || submitting}
                 >
                   {submitting ? 'Posting Receipt...' : `Post Receipt (${lineItems.length} items)`}
                 </Button>
