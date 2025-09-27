@@ -24,8 +24,10 @@ import { toast } from 'sonner';
 import { DEFAULT_CATEGORIES, DEFAULT_UNITS, shouldSeedDefaults } from '@/utils/inventorySeeds';
 
 export const InventoryManagementTab: React.FC = () => {
+  console.log('InventoryManagementTab: Component rendering');
   const { hasRoleAccess } = useAuth();
-  const { 
+  console.log('InventoryManagementTab: About to call useInventory');
+  const {
     items, 
     loading, 
     itemsLoading,
