@@ -6,6 +6,7 @@ import { OutgoingSheet } from '../OutgoingSheet';
 import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { useInventory } from '@/contexts/inventory';
 import { InvoiceClient } from '@/types/invoices';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface OutgoingTabProps {
@@ -13,7 +14,8 @@ interface OutgoingTabProps {
 }
 
 export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
-  const { items: inventoryItems, getItemById, createTransaction } = useInventory();
+  const { items: inventoryItems, getItemById, createTransaction, refreshTransactions } = useInventory();
+  const { user } = useAuth();
   const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOutgoingSheetOpen, setIsOutgoingSheetOpen] = useState(false);
@@ -41,27 +43,41 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
   // Handle item withdrawal
   const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
     try {
+      console.log('🔄 Creating transactions for withdrawal:', { lineItems, reason, user: user?.id });
+      
+      if (!user?.id || !user?.organizationId) {
+        throw new Error('User authentication required for transactions');
+      }
+      
       // Process each line item
       for (const lineItem of lineItems) {
-        // Create outbound transaction
-        await createTransaction({
-          organization_id: '', // Will be set by the API
+        const transactionData = {
+          organization_id: user.organizationId,
           item_id: lineItem.item.id,
-          transaction_type: 'out',
+          transaction_type: 'out' as const,
           quantity: -lineItem.quantity, // Negative for outbound
           unit_cost: lineItem.unitPrice,
           reference_number: `${reason.toUpperCase()}-${Date.now()}`,
           notes: `${reason}: ${notes || ''}${customerInfo ? ` | Customer: ${customerInfo.name}` : ''}`.trim(),
-          user_id: '', // Will be set by the API
+          user_id: user.id,
           transaction_date: new Date().toISOString()
-        });
+        };
+        
+        console.log('🔄 Creating transaction:', transactionData);
+        const result = await createTransaction(transactionData);
+        console.log('✅ Transaction created:', result);
       }
       
       // Reload warehouse items to reflect changes
       await loadWarehouseItems();
-      toast.success(`Successfully withdrew ${lineItems.length} item${lineItems.length !== 1 ? 's' : ''}`);
+      
+      // Refresh transaction data for reports
+      await refreshTransactions();
+      
+      toast.success(`Successfully withdrew ${lineItems.length} item${lineItems.length !== 1 ? 's' : ''} and logged transactions`);
     } catch (error) {
-      console.error('Failed to withdraw items:', error);
+      console.error('❌ Failed to withdraw items:', error);
+      toast.error(`Failed to create transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error; // Re-throw to let OutgoingSheet handle the error toast
     }
   };
