@@ -18,7 +18,7 @@ export const BatchLabelGenerator: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [labelsPerItem, setLabelsPerItem] = useState(1);
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
 
@@ -36,7 +36,7 @@ export const BatchLabelGenerator: React.FC = () => {
       );
     }
 
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== 'all') {
       filtered = filtered.filter(item => item.category_id === selectedCategory);
     }
 
@@ -148,7 +148,7 @@ export const BatchLabelGenerator: React.FC = () => {
               <SelectValue placeholder="All categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All categories</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}

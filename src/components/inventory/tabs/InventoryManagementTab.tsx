@@ -134,7 +134,7 @@ export const InventoryManagementTab: React.FC = () => {
   // Get unique categories from items for filtering
   const itemCategories = useMemo(() => {
     const uniqueCategories = Array.from(new Set(
-      items.map(item => item.category?.name).filter(Boolean)
+      items.map(item => item.category?.name).filter(name => name && name.trim() !== '')
     ));
     return uniqueCategories;
   }, [items]);
