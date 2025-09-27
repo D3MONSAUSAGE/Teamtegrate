@@ -9,6 +9,8 @@ import { ReportsControls } from '../reports/ReportsControls';
 import { InventoryMetricsCards } from '../reports/InventoryMetricsCards';
 import { TeamValueChart } from '../reports/TeamValueChart';
 import { DailyMovementChart } from '../reports/DailyMovementChart';
+import { SalesMetricsCards } from '../reports/SalesMetricsCards';
+import { TeamSalesChart } from '../reports/TeamSalesChart';
 
 // Import services and types
 import { 
@@ -18,6 +20,11 @@ import {
   WeeklyMovement,
   MonthlyTeamPerformance 
 } from '@/services/inventoryReportsService';
+import { 
+  salesReportsService,
+  SalesMetrics,
+  TeamSalesData
+} from '@/services/salesReportsService';
 
 interface Team {
   id: string;
@@ -37,6 +44,10 @@ export const ReportsTab: React.FC = () => {
   const [dailyMovements, setDailyMovements] = useState<DailyMovement[]>([]);
   const [weeklyMovements, setWeeklyMovements] = useState<WeeklyMovement[]>([]);
   const [monthlyPerformance, setMonthlyPerformance] = useState<MonthlyTeamPerformance[]>([]);
+  
+  // Sales data state
+  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics | null>(null);
+  const [teamSalesData, setTeamSalesData] = useState<TeamSalesData[]>([]);
 
   // Load teams on mount
   useEffect(() => {
@@ -65,6 +76,9 @@ export const ReportsTab: React.FC = () => {
       // Always load current inventory value
       const valueData = await inventoryReportsService.getRealTimeInventoryValue(selectedTeam);
       setInventoryValue(valueData);
+
+      // Load sales data
+      await loadSalesData();
 
       // Load data based on time range
       switch (timeRange) {
@@ -120,6 +134,40 @@ export const ReportsTab: React.FC = () => {
     }
   };
 
+  const loadSalesData = async () => {
+    try {
+      let startDate: string;
+      let endDate: string;
+
+      // Calculate date range based on time range selection
+      switch (timeRange) {
+        case 'daily':
+          startDate = format(selectedDate, 'yyyy-MM-dd');
+          endDate = format(selectedDate, 'yyyy-MM-dd');
+          break;
+        case 'weekly':
+          startDate = format(subDays(selectedDate, 7), 'yyyy-MM-dd');
+          endDate = format(selectedDate, 'yyyy-MM-dd');
+          break;
+        case 'monthly':
+          startDate = format(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1), 'yyyy-MM-dd');
+          endDate = format(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0), 'yyyy-MM-dd');
+          break;
+      }
+
+      // Load sales metrics and team data
+      const [metrics, teamData] = await Promise.all([
+        salesReportsService.getSalesMetrics(startDate, endDate, selectedTeam),
+        selectedTeam ? [] : salesReportsService.getTeamSalesData(startDate, endDate)
+      ]);
+
+      setSalesMetrics(metrics);
+      setTeamSalesData(teamData);
+    } catch (error) {
+      console.error('Error loading sales data:', error);
+    }
+  };
+
   const handleExport = () => {
     // TODO: Implement export functionality
     toast.info('Export functionality coming soon');
@@ -148,8 +196,20 @@ export const ReportsTab: React.FC = () => {
       {/* Metrics Overview */}
       <InventoryMetricsCards 
         summaryData={inventoryValue}
+        salesMetrics={salesMetrics || undefined}
         isLoading={isLoading}
       />
+
+      {/* Sales Metrics - Show when we have sales data */}
+      {salesMetrics && salesMetrics.totalSalesTransactions > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Sales Performance</h3>
+          <SalesMetricsCards 
+            salesMetrics={salesMetrics}
+            isLoading={isLoading}
+          />
+        </div>
+      )}
 
       {/* Main Reports Tabs */}
       <Tabs value={timeRange} onValueChange={(value) => setTimeRange(value as 'daily' | 'weekly' | 'monthly')}>
@@ -177,25 +237,48 @@ export const ReportsTab: React.FC = () => {
               isLoading={isLoading}
             />
           </div>
+          
+          {/* Team Sales Performance - Show when not filtering by specific team */}
+          {!selectedTeam && teamSalesData.length > 0 && (
+            <TeamSalesChart 
+              data={teamSalesData}
+              isLoading={isLoading}
+              showProfit={true}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="weekly" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TeamValueChart data={inventoryValue} chartType="pie" isLoading={isLoading} />
-            {/* TODO: Add weekly-specific charts */}
-            <div className="h-80 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
-              Weekly Movement Trends - Coming Soon
-            </div>
+            {teamSalesData.length > 0 ? (
+              <TeamSalesChart 
+                data={teamSalesData}
+                chartType="pie"
+                isLoading={isLoading}
+              />
+            ) : (
+              <div className="h-80 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                Weekly Movement Trends - Coming Soon
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="monthly" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TeamValueChart data={inventoryValue} isLoading={isLoading} />
-            {/* TODO: Add monthly performance charts */}
-            <div className="h-80 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
-              Monthly Team Performance - Coming Soon
-            </div>
+            {teamSalesData.length > 0 ? (
+              <TeamSalesChart 
+                data={teamSalesData}
+                isLoading={isLoading}
+                showProfit={true}
+              />
+            ) : (
+              <div className="h-80 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                Monthly Team Performance - Coming Soon
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

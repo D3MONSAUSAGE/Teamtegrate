@@ -6,11 +6,20 @@ import { InventoryValueSummary } from '@/services/inventoryReportsService';
 
 interface InventoryMetricsCardsProps {
   summaryData: InventoryValueSummary[];
+  salesMetrics?: SalesMetrics;
   isLoading?: boolean;
+}
+
+interface SalesMetrics {
+  totalSalesRevenue: number;
+  totalSalesTransactions: number;
+  totalProfit: number;
+  profitMargin: number;
 }
 
 export const InventoryMetricsCards: React.FC<InventoryMetricsCardsProps> = ({
   summaryData,
+  salesMetrics,
   isLoading = false
 }) => {
   const totalValue = summaryData.reduce((sum, team) => sum + Number(team.total_value), 0);
@@ -19,7 +28,7 @@ export const InventoryMetricsCards: React.FC<InventoryMetricsCardsProps> = ({
   const totalOverstock = summaryData.reduce((sum, team) => sum + Number(team.overstock_count), 0);
   const activeTeams = summaryData.length;
 
-  const metrics = [
+  const baseMetrics = [
     {
       title: "Total Inventory Value",
       value: formatCurrency(totalValue),
@@ -50,10 +59,30 @@ export const InventoryMetricsCards: React.FC<InventoryMetricsCardsProps> = ({
     }
   ];
 
+  const salesMetricsCards = salesMetrics ? [
+    {
+      title: "Sales Revenue",
+      value: formatCurrency(salesMetrics.totalSalesRevenue),
+      icon: TrendingUp,
+      color: "bg-green-500/10 text-green-600",
+      description: `${salesMetrics.totalSalesTransactions} transactions`
+    },
+    {
+      title: "Net Profit",
+      value: formatCurrency(salesMetrics.totalProfit),
+      icon: DollarSign,
+      color: salesMetrics.totalProfit >= 0 ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600",
+      description: `${salesMetrics.profitMargin.toFixed(1)}% margin`
+    }
+  ] : [];
+
+  const metrics = [...baseMetrics, ...salesMetricsCards];
+
   if (isLoading) {
+    const loadingCount = salesMetrics ? 6 : 4;
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+        {Array.from({ length: loadingCount }, (_, i) => i + 1).map((i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -72,7 +101,7 @@ export const InventoryMetricsCards: React.FC<InventoryMetricsCardsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
       {metrics.map((metric) => {
         const Icon = metric.icon;
         return (
