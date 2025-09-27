@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { InventoryNavMenu } from './InventoryNavMenu';
 import { TrainingNavMenu } from './TrainingNavMenu';
+import { FinanceNavMenu } from './FinanceNavMenu';
 
 interface NavItemProps {
   name: string;
@@ -70,7 +71,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
       { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
       { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-      { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
+      // Finance is handled by FinanceNavMenu component
       // Inventory is handled by InventoryNavMenu component
       { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
       { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
@@ -163,6 +164,9 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
           </Link>
         );
       })}
+      
+      {/* Finance Navigation Menu */}
+      <FinanceNavMenu onNavigation={onNavigation} isCollapsed={isCollapsed} />
       
       {/* Inventory Navigation Menu */}
       <InventoryNavMenu onNavigation={onNavigation} isCollapsed={isCollapsed} />

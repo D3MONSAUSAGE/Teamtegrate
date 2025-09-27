@@ -33,6 +33,14 @@ import TaskReportsPage from "@/pages/TaskReportsPage";
 import FinancePage from "@/pages/FinancePage";
 import MeetingsPage from "@/pages/MeetingsPage";
 import TrainingPage from "@/pages/TrainingPage";
+
+// Finance Pages
+import FinanceDashboardPage from "@/pages/finance/FinanceDashboardPage";
+import InvoiceManagementPage from "@/pages/finance/InvoiceManagementPage";
+import InvoiceCreationPage from "@/pages/finance/InvoiceCreationPage";
+import ReportsPage from "@/pages/finance/ReportsPage";
+import ClientsPage from "@/pages/finance/ClientsPage";
+import PaymentSettingsPage from "@/pages/finance/PaymentSettingsPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import EnhancedRequestsPage from "@/pages/EnhancedRequestsPage";
 import ChecklistsPage from "@/pages/ChecklistsPage";
@@ -121,10 +129,19 @@ function App() {
                    <Route path="organization/request-types" element={<RoleProtectedRoute requiredRole="admin"><RequestTypesPage /></RoleProtectedRoute>} />
                    <Route path="employee-actions" element={<RoleProtectedRoute requiredRole="manager"><EmployeeActionsPage /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
-                  <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
-                  <Route path="reports/tasks" element={<RoleProtectedRoute requiredRole="manager"><TaskReportsPage /></RoleProtectedRoute>} />
-                   <Route path="finance" element={<FinancePage />} />
-                    <Route path="inventory" element={<InventoryPage />} />
+                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
+                   <Route path="reports/tasks" element={<RoleProtectedRoute requiredRole="manager"><TaskReportsPage /></RoleProtectedRoute>} />
+                    
+                    {/* Finance Routes - Keep original + add new nested routes */}
+                    <Route path="finance" element={<FinancePage />} />
+                    <Route path="finance/dashboard" element={<FinanceDashboardPage />} />
+                    <Route path="finance/invoices" element={<InvoiceManagementPage />} />
+                    <Route path="finance/create-invoice" element={<RoleProtectedRoute requiredRole="manager"><InvoiceCreationPage /></RoleProtectedRoute>} />
+                    <Route path="finance/clients" element={<RoleProtectedRoute requiredRole="manager"><ClientsPage /></RoleProtectedRoute>} />
+                    <Route path="finance/reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
+                    <Route path="finance/settings" element={<RoleProtectedRoute requiredRole="admin"><PaymentSettingsPage /></RoleProtectedRoute>} />
+                     
+                     <Route path="inventory" element={<InventoryPage />} />
                     
                     {/* New inventory routes - additive only */}
                     <Route path="inventory/overview" element={<InventoryDashboardPage />} />
