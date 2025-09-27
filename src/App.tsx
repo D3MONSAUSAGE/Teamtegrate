@@ -50,6 +50,15 @@ import TermsPage from "@/pages/TermsPage";
 import CookiePolicyPage from "@/pages/CookiePolicyPage";
 import SecurityPage from "@/pages/SecurityPage";
 import InventoryPage from "@/pages/InventoryPage";
+import InventoryDashboardPage from "@/pages/inventory/InventoryDashboardPage";
+import InventoryCountPage from "@/pages/inventory/InventoryCountPage";
+import InventoryRecordsPage from "@/pages/inventory/InventoryRecordsPage";
+import InventoryWarehousePage from "@/pages/inventory/InventoryWarehousePage";
+import InventoryManagementPage from "@/pages/inventory/InventoryManagementPage";
+import WarehouseStockPage from "@/pages/inventory/warehouse/WarehouseStockPage";
+import WarehouseProcessingPage from "@/pages/inventory/warehouse/WarehouseProcessingPage";
+import WarehouseOutgoingPage from "@/pages/inventory/warehouse/WarehouseOutgoingPage";
+import WarehouseReportsPage from "@/pages/inventory/warehouse/WarehouseReportsPage";
 
 const queryClient = new QueryClient();
 
@@ -103,7 +112,18 @@ function App() {
                   <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
                   <Route path="reports/tasks" element={<RoleProtectedRoute requiredRole="manager"><TaskReportsPage /></RoleProtectedRoute>} />
                    <Route path="finance" element={<FinancePage />} />
-                   <Route path="inventory" element={<InventoryPage />} />
+                    <Route path="inventory" element={<InventoryPage />} />
+                    
+                    {/* New inventory routes - additive only */}
+                    <Route path="inventory/overview" element={<InventoryDashboardPage />} />
+                    <Route path="inventory/count" element={<InventoryCountPage />} />
+                    <Route path="inventory/records" element={<InventoryRecordsPage />} />
+                    <Route path="inventory/warehouse" element={<InventoryWarehousePage />} />
+                    <Route path="inventory/warehouse/stock" element={<WarehouseStockPage />} />
+                    <Route path="inventory/warehouse/processing" element={<WarehouseProcessingPage />} />
+                    <Route path="inventory/warehouse/outgoing" element={<WarehouseOutgoingPage />} />
+                    <Route path="inventory/warehouse/reports" element={<WarehouseReportsPage />} />
+                    <Route path="inventory/management" element={<InventoryManagementPage />} />
                     <Route path="meetings" element={<MeetingsPage />} />
                     <Route path="training" element={<TrainingPage />} />
                     <Route path="checklists" element={<ChecklistsPage />} />

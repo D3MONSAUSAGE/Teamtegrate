@@ -26,6 +26,7 @@ import {
   ClipboardList,
   Package,
 } from 'lucide-react';
+import { InventoryNavMenu } from './InventoryNavMenu';
 
 interface NavItemProps {
   name: string;
@@ -70,7 +71,7 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
       { name: 'Documents', href: '/dashboard/documents', icon: FileText },
       { name: 'Finance', href: '/dashboard/finance', icon: DollarSign },
-      { name: 'Inventory', href: '/dashboard/inventory', icon: Package },
+      // Inventory is handled by InventoryNavMenu component
       { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
       { name: 'Time Clock', href: '/dashboard/time-tracking', icon: Clock },
       { name: 'Profile', href: '/dashboard/profile', icon: User },
@@ -162,6 +163,9 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
           </Link>
         );
       })}
+      
+      {/* Inventory Navigation Menu */}
+      <InventoryNavMenu onNavigation={onNavigation} isCollapsed={isCollapsed} />
     </div>
   );
 });
