@@ -69,13 +69,29 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
   // Handle invoice creation for sales
   const handleCreateInvoice = async (client: InvoiceClient, lineItems: any[], notes?: string) => {
     try {
-      // TODO: Implement full invoice creation using existing InvoiceBuilder
-      // For now, just show success message - full integration requires connecting to invoice APIs
-      console.log('Creating invoice for client:', client.name);
-      console.log('Line items:', lineItems);
-      console.log('Notes:', notes);
+      const { invoiceService } = await import('@/services/invoiceService');
       
-      toast.success(`Invoice created for ${client.name} with ${lineItems.length} items`);
+      // Transform line items to match invoice service format
+      const formattedLineItems = lineItems.map(item => ({
+        description: item.item.name,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        total_price: item.quantity * item.unitPrice
+      }));
+
+      // Create the invoice
+      const createdInvoice = await invoiceService.createInvoice({
+        client,
+        lineItems: formattedLineItems,
+        notes: `Sale: ${notes || ''}`.trim(),
+        payment_terms: 'Net 30',
+        tax_rate: 0 // Can be made configurable later
+      });
+
+      console.log('Created invoice:', createdInvoice);
+      toast.success(`Invoice ${createdInvoice.invoice_number} created for ${client.name}`);
+      
+      return createdInvoice;
     } catch (error) {
       console.error('Error creating invoice:', error);
       toast.error('Failed to create invoice');

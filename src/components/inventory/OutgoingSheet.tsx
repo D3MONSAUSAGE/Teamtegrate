@@ -13,7 +13,7 @@ import { Search, Package, Trash2, Plus, Minus, DollarSign, AlertTriangle, Zap, F
 import { InventoryItem } from '@/contexts/inventory/types';
 import { useScanGun } from '@/hooks/useScanGun';
 import { ClientSelector } from '@/components/finance/invoices/ClientSelector';
-import { InvoiceClient } from '@/types/invoices';
+import { InvoiceClient, CreatedInvoice } from '@/types/invoices';
 import { useInvoiceClients } from '@/hooks/useInvoiceClients';
 import { CustomerManagementSheet } from './CustomerManagementSheet';
 import { toast } from 'sonner';
@@ -44,7 +44,7 @@ interface OutgoingSheetProps {
   onItemsWithdrawn: (items: LineItem[], reason: string, customerInfo?: any, notes?: string) => Promise<void>;
   availableItems: InventoryItem[];
   onScanItem: (barcode: string) => Promise<InventoryItem | null>;
-  onCreateInvoice?: (client: InvoiceClient, lineItems: LineItem[], notes?: string) => Promise<void>;
+  onCreateInvoice?: (client: InvoiceClient, lineItems: LineItem[], notes?: string) => Promise<CreatedInvoice | void>;
 }
 
 export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
@@ -219,8 +219,12 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
 
       // Create invoice if requested and it's a sale
       if (createInvoiceOption && currentReason?.id === 'sale' && selectedClient && onCreateInvoice) {
-        await onCreateInvoice(selectedClient, lineItems, notes.trim() || undefined);
-        toast.success('Items withdrawn and invoice created successfully');
+        const createdInvoice = await onCreateInvoice(selectedClient, lineItems, notes.trim() || undefined);
+        if (createdInvoice) {
+          toast.success(`Items withdrawn and invoice ${createdInvoice.invoice_number} created successfully`);
+        } else {
+          toast.success('Items withdrawn and invoice created successfully');
+        }
       } else {
         toast.success('Items withdrawn successfully');
       }

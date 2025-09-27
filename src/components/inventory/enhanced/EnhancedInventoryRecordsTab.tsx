@@ -26,6 +26,7 @@ import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
 import { EnhancedDailyAnalysis } from '../daily/EnhancedDailyAnalysis';
 import { TimezoneIndicator } from '../TimezoneIndicator';
 import { WithdrawalReportsTab } from '../reports/WithdrawalReportsTab';
+import { SalesInvoicesTab } from '../reports/SalesInvoicesTab';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
   BarChart3, Users, Clock, ArrowUpRight, ArrowDownRight, Eye, GitCompare, Ban, CalendarDays,
@@ -350,6 +351,12 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               onClick={() => setActiveTab('transactions')}
             >
               Transaction Reports
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'sales-invoices'} 
+              onClick={() => setActiveTab('sales-invoices')}
+            >
+              Sales Invoices
             </ScrollableTabsTrigger>
           </ScrollableTabsList>
         </ScrollableTabs>
@@ -907,6 +914,10 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             </div>
           )}
           </div>
+        )}
+
+        {activeTab === 'sales-invoices' && (
+          <SalesInvoicesTab />
         )}
 
         {activeTab === 'transactions' && (
