@@ -72,9 +72,9 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
       // Optional basic fields - more lenient availability  
       category: !!(item?.category?.name || item?.category_id),
       vendor: !!(item?.vendor?.name || item?.vendor_id),
-      location: !!(item?.location || item?.storage_location),
+      location: !!(item?.location),
       currentStock: item !== undefined, // Always show if item exists
-      unit: !!(item?.base_unit?.name || item?.unit),
+      unit: !!(item?.base_unit?.name),
       
       // Lot fields - available if lot exists or can be generated
       lotNumber: !!(lot?.lot_number || item), // Can generate lot number
