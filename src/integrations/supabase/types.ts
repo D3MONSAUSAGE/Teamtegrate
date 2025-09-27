@@ -7474,6 +7474,7 @@ export type Database = {
           shipment_number: string
           supplier_info: Json | null
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
           created_at?: string
@@ -7486,6 +7487,7 @@ export type Database = {
           shipment_number: string
           supplier_info?: Json | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
           created_at?: string
@@ -7498,8 +7500,24 @@ export type Database = {
           shipment_number?: string
           supplier_info?: Json | null
           updated_at?: string
+          vendor_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shipments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_performance_analytics"
+            referencedColumns: ["vendor_id"]
+          },
+          {
+            foreignKeyName: "shipments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_assignment_audit: {
         Row: {

@@ -5,7 +5,12 @@ export interface Shipment {
   organization_id: string;
   shipment_number: string;
   received_date: string;
-  supplier_info: any;
+  vendor_id?: string;
+  supplier_info?: {
+    name?: string;
+    contact?: string;
+    address?: string;
+  };
   reference_number?: string;
   notes?: string;
   created_by: string;
@@ -21,7 +26,7 @@ export const shipmentsApi = {
       .order('received_date', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Shipment[];
   },
 
   async getById(id: string): Promise<Shipment> {
@@ -32,7 +37,7 @@ export const shipmentsApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Shipment;
   },
 
   async create(shipment: Omit<Shipment, 'id' | 'created_at' | 'updated_at' | 'shipment_number'>): Promise<Shipment> {
@@ -62,7 +67,7 @@ export const shipmentsApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Shipment;
   },
 
   async update(id: string, updates: Partial<Shipment>): Promise<Shipment> {
@@ -74,7 +79,7 @@ export const shipmentsApi = {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Shipment;
   },
 
   async delete(id: string): Promise<void> {
@@ -94,7 +99,7 @@ export const shipmentsApi = {
       .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Shipment[];
   },
 
   async getShipmentsByDate(date: string): Promise<Shipment[]> {
@@ -105,6 +110,6 @@ export const shipmentsApi = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as Shipment[];
   }
 };

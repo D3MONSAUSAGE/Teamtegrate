@@ -7,6 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Package, Truck } from 'lucide-react';
 import { shipmentsApi, Shipment } from '@/contexts/inventory/api/shipments';
+import { vendorsApi } from '@/contexts/inventory/api/vendors';
+import { Vendor } from '@/contexts/inventory/types';
+import { VendorSelector } from '@/components/inventory/VendorSelector';
+import { VendorDialog } from '@/components/inventory/dialogs/VendorDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -23,17 +27,29 @@ export const ShipmentSelector: React.FC<ShipmentSelectorProps> = ({
 }) => {
   const { user } = useAuth();
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [vendorDialogOpen, setVendorDialogOpen] = useState(false);
   const [newShipment, setNewShipment] = useState({
-    supplier_name: '',
+    vendor_id: '',
     reference_number: '',
     notes: '',
   });
 
   useEffect(() => {
     loadRecentShipments();
+    loadVendors();
   }, []);
+
+  const loadVendors = async () => {
+    try {
+      const data = await vendorsApi.getAll();
+      setVendors(data);
+    } catch (error) {
+      console.error('Failed to load vendors:', error);
+    }
+  };
 
   const loadRecentShipments = async () => {
     try {
@@ -45,14 +61,16 @@ export const ShipmentSelector: React.FC<ShipmentSelectorProps> = ({
   };
 
   const createNewShipment = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !newShipment.vendor_id) return;
 
     setLoading(true);
     try {
+      const selectedVendor = vendors.find(v => v.id === newShipment.vendor_id);
       const shipment = await shipmentsApi.create({
         organization_id: '', // Will be set by RLS
         received_date: new Date().toISOString().split('T')[0],
-        supplier_info: { name: newShipment.supplier_name },
+        vendor_id: newShipment.vendor_id,
+        supplier_info: selectedVendor ? { name: selectedVendor.name } : undefined,
         reference_number: newShipment.reference_number,
         notes: newShipment.notes,
         created_by: user.id,
@@ -61,13 +79,26 @@ export const ShipmentSelector: React.FC<ShipmentSelectorProps> = ({
       setShipments(prev => [shipment, ...prev]);
       onShipmentSelect(shipment);
       setDialogOpen(false);
-      setNewShipment({ supplier_name: '', reference_number: '', notes: '' });
+      setNewShipment({ vendor_id: '', reference_number: '', notes: '' });
       toast.success('Shipment created successfully');
     } catch (error) {
       console.error('Failed to create shipment:', error);
       toast.error('Failed to create shipment');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVendorSave = async (vendorData: Omit<Vendor, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'created_by'>) => {
+    try {
+      const newVendor = await vendorsApi.create(vendorData);
+      setVendors(prev => [...prev, newVendor]);
+      setNewShipment(prev => ({ ...prev, vendor_id: newVendor.id }));
+      setVendorDialogOpen(false);
+      toast.success('Vendor created successfully');
+    } catch (error) {
+      console.error('Failed to create vendor:', error);
+      toast.error('Failed to create vendor');
     }
   };
 
@@ -120,12 +151,13 @@ export const ShipmentSelector: React.FC<ShipmentSelectorProps> = ({
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="supplier">Supplier Name</Label>
-                <Input
-                  id="supplier"
-                  value={newShipment.supplier_name}
-                  onChange={(e) => setNewShipment(prev => ({ ...prev, supplier_name: e.target.value }))}
-                  placeholder="Enter supplier name"
+                <Label>Vendor</Label>
+                <VendorSelector
+                  vendors={vendors}
+                  value={newShipment.vendor_id}
+                  onValueChange={(value) => setNewShipment(prev => ({ ...prev, vendor_id: value || '' }))}
+                  onAddVendor={() => setVendorDialogOpen(true)}
+                  placeholder="Select vendor..."
                 />
               </div>
               <div>
@@ -157,17 +189,23 @@ export const ShipmentSelector: React.FC<ShipmentSelectorProps> = ({
                 </Button>
                 <Button 
                   onClick={createNewShipment}
-                  disabled={loading || !newShipment.supplier_name}
+                  disabled={loading || !newShipment.vendor_id}
                 >
                   {loading ? 'Creating...' : 'Create Shipment'}
                 </Button>
               </div>
             </div>
           </DialogContent>
-        </Dialog>
-      </div>
+          </Dialog>
+        </div>
 
-      {selectedShipmentId && (
+        <VendorDialog
+          open={vendorDialogOpen}
+          onOpenChange={setVendorDialogOpen}
+          onSave={handleVendorSave}
+        />
+
+        {selectedShipmentId && (
         <Button 
           variant="ghost" 
           size="sm" 

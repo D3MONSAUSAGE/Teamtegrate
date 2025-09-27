@@ -157,20 +157,24 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
             <CardContent>
               <ShipmentSelector 
                 selectedShipmentId={selectedShipment?.id}
-                onShipmentSelect={(shipment) => {
-                  setSelectedShipment(shipment);
-                  if (shipment) {
-                    // Auto-generate lot number when shipment is selected
-                    const date = new Date(shipment.received_date).toISOString().split('T')[0].replace(/-/g, '');
-                    const shipmentCode = shipment.shipment_number.replace('SHIP-', '').replace(/-/g, '');
-                    const lotNumber = `${shipmentCode}-${date}`;
-                    setFormData(prev => ({ 
-                      ...prev, 
-                      lot_number: lotNumber,
-                      supplier_info: shipment.supplier_info || prev.supplier_info
-                    }));
-                  }
-                }}
+                 onShipmentSelect={(shipment) => {
+                   setSelectedShipment(shipment);
+                   if (shipment) {
+                     // Auto-generate lot number when shipment is selected
+                     const date = new Date(shipment.received_date).toISOString().split('T')[0].replace(/-/g, '');
+                     const shipmentCode = shipment.shipment_number.replace('SHIP-', '').replace(/-/g, '');
+                     const lotNumber = `${shipmentCode}-${date}`;
+                     setFormData(prev => ({ 
+                       ...prev, 
+                       lot_number: lotNumber,
+                       supplier_info: {
+                         name: shipment.supplier_info?.name || '',
+                         contact: shipment.supplier_info?.contact || '',
+                         po_number: shipment.reference_number || ''
+                       }
+                     }));
+                   }
+                 }}
               />
               {selectedShipment && (
                 <div className="mt-3 p-3 bg-background rounded-md border">
