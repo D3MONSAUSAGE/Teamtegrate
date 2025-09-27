@@ -2,17 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
+import { OutgoingSheet } from '../OutgoingSheet';
 
 import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
 import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, Minus } from 'lucide-react';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
+import { useInventory } from '@/contexts/inventory';
+import { InvoiceClient } from '@/types/invoices';
 import { toast } from 'sonner';
 
 // Lazy load the dashboard component to avoid circular dependencies
@@ -25,6 +29,7 @@ const WarehouseOverviewDashboard = React.lazy(() =>
 export const WarehouseTab: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, isSuperAdmin, isManager, availableTeams } = useTeamAccess();
+  const { items: inventoryItems, getItemById, createTransaction, refreshTransactions } = useInventory();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
   const [teamSwitching, setTeamSwitching] = useState(false);
@@ -34,6 +39,7 @@ export const WarehouseTab: React.FC = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showOverview, setShowOverview] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isOutgoingSheetOpen, setIsOutgoingSheetOpen] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -186,6 +192,71 @@ export const WarehouseTab: React.FC = () => {
     setRefreshKey(prev => prev + 1);
   }, []);
 
+  // Handle items withdrawn from warehouse
+  const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
+    try {
+      for (const lineItem of lineItems) {
+        const inventoryItem = await getItemById(lineItem.item.id);
+        if (!inventoryItem) {
+          throw new Error(`Item ${lineItem.item.name} not found in inventory`);
+        }
+
+        await createTransaction({
+          item_id: inventoryItem.id,
+          organization_id: inventoryItem.organization_id,
+          transaction_type: 'out',
+          quantity: -lineItem.quantity,
+          unit_cost: lineItem.unitPrice,
+          reference_number: `WH-${Date.now()}`,
+          notes: notes || `${reason.charAt(0).toUpperCase() + reason.slice(1)} - ${lineItem.item.name}`,
+          user_id: user?.id || '',
+          transaction_date: new Date().toISOString()
+        });
+      }
+
+      // Refresh both warehouse and transaction data
+      handleRefresh();
+      await refreshTransactions();
+      
+      toast.success(`Successfully withdrew ${lineItems.length} item${lineItems.length !== 1 ? 's' : ''} and logged transactions`);
+    } catch (error) {
+      console.error('❌ Failed to withdraw items:', error);
+      toast.error(`Failed to create transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  };
+
+  // Handle barcode scanning
+  const handleScanItem = async (barcode: string) => {
+    try {
+      const item = inventoryItems.find(item => item.barcode === barcode || item.sku === barcode);
+      return item || null;
+    } catch (error) {
+      console.error('Error scanning item:', error);
+      return null;
+    }
+  };
+
+  // Handle invoice creation for sales
+  const handleCreateInvoice = async (client: InvoiceClient, lineItems: any[], notes?: string) => {
+    try {
+      const { invoiceService } = await import('@/services/invoiceService');
+      return await invoiceService.createInvoice({
+        client,
+        lineItems: lineItems.map(item => ({
+          description: item.item.name,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total_price: item.totalCost
+        })),
+        notes
+      });
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      toast.error('Failed to create invoice');
+    }
+  };
+
   const handleSelectWarehouse = (teamId: string | null) => {
     // Set the selected team and hide the overview to show warehouse details
     if (teamId) {
@@ -265,6 +336,10 @@ export const WarehouseTab: React.FC = () => {
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
               />
+              <Button onClick={() => setIsOutgoingSheetOpen(true)} variant="outline">
+                <Minus className="h-4 w-4 mr-2" />
+                Withdraw
+              </Button>
             </div>
           )}
         </div>
@@ -313,6 +388,18 @@ export const WarehouseTab: React.FC = () => {
             {renderTabContent()}
           </div>
         </ScrollableTabs>
+      )}
+      
+      {/* Outgoing Sheet */}
+      {warehouse && (
+        <OutgoingSheet
+          open={isOutgoingSheetOpen}
+          onClose={() => setIsOutgoingSheetOpen(false)}
+          onItemsWithdrawn={handleItemsWithdrawn}
+          availableItems={inventoryItems}
+          onScanItem={handleScanItem}
+          onCreateInvoice={handleCreateInvoice}
+        />
       )}
     </div>
   );
