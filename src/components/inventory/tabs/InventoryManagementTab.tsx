@@ -401,6 +401,10 @@ export const InventoryManagementTab: React.FC = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="labels" className="mt-6">
+          <LabelsAndBarcodesTab />
+        </TabsContent>
+
         <TabsContent value="categories" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">

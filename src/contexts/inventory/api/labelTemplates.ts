@@ -36,36 +36,17 @@ export interface LabelField {
 
 export const labelTemplatesApi = {
   async getAll(): Promise<LabelTemplate[]> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to access label templates');
-    }
-
-    console.log('LabelTemplatesAPI: Making query with authenticated user:', user.id);
-    
     const { data, error } = await supabase
       .from('label_templates')
       .select('*')
       .eq('is_active', true)
       .order('name', { ascending: true });
 
-    if (error) {
-      console.error('LabelTemplatesAPI: Query error:', error);
-      throw error;
-    }
-    
-    console.log('LabelTemplatesAPI: Query successful, templates found:', data?.length || 0);
+    if (error) throw error;
     return (data || []) as LabelTemplate[];
   },
 
   async getByCategory(category: string): Promise<LabelTemplate[]> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to access label templates');
-    }
-
     const { data, error } = await supabase
       .from('label_templates')
       .select('*')
@@ -78,12 +59,6 @@ export const labelTemplatesApi = {
   },
 
   async getById(id: string): Promise<LabelTemplate | null> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to access label templates');
-    }
-
     const { data, error } = await supabase
       .from('label_templates')
       .select('*')
@@ -95,12 +70,6 @@ export const labelTemplatesApi = {
   },
 
   async create(template: Omit<LabelTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<LabelTemplate> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to create label templates');
-    }
-
     const { data, error } = await supabase
       .from('label_templates')
       .insert([template as any])
@@ -112,12 +81,6 @@ export const labelTemplatesApi = {
   },
 
   async update(id: string, updates: Partial<LabelTemplate>): Promise<LabelTemplate> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to update label templates');
-    }
-
     const { data, error } = await supabase
       .from('label_templates')
       .update(updates as any)
@@ -130,12 +93,6 @@ export const labelTemplatesApi = {
   },
 
   async delete(id: string): Promise<void> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to delete label templates');
-    }
-
     const { error } = await supabase
       .from('label_templates')
       .update({ is_active: false })
@@ -145,12 +102,6 @@ export const labelTemplatesApi = {
   },
 
   async getDefaults(): Promise<LabelTemplate[]> {
-    // Verify authentication before making the query
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Authentication required to access label templates');
-    }
-
     const { data, error } = await supabase
       .from('label_templates')
       .select('*')
