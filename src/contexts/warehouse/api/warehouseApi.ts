@@ -524,7 +524,7 @@ export const warehouseApi = {
     };
   },
 
-  // Search inventory items for warehouse receiving
+  // Search inventory items for warehouse receiving (organization-wide)
   async searchInventoryItems(query: string, limit = 20): Promise<any[]> {
     if (!query.trim()) return [];
 
@@ -599,5 +599,59 @@ export const warehouseApi = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  // Search warehouse items (warehouse-specific stock only)
+  async searchWarehouseItems(warehouseId: string, query: string, limit = 20): Promise<any[]> {
+    if (!query.trim() || !warehouseId) return [];
+
+    const searchTerm = query.trim();
+    
+    let baseQuery = supabase
+      .from('warehouse_items')
+      .select(`
+        warehouse_id,
+        item_id,
+        on_hand,
+        wac_unit_cost,
+        reorder_min,
+        reorder_max,
+        item:inventory_items(
+          id,
+          name,
+          sku,
+          barcode,
+          unit_cost,
+          category:inventory_categories(name),
+          base_unit:inventory_units(name, abbreviation)
+        )
+      `)
+      .eq('warehouse_id', warehouseId)
+      .gt('on_hand', 0) // Only items with stock available
+      .limit(limit);
+
+    // Search by name, SKU, or barcode through joined inventory_items
+    if (/^\d{6,}$/.test(searchTerm)) {
+      // If it looks like a barcode (numbers only, 6+ digits), prioritize barcode search
+      baseQuery = baseQuery.or(`item.barcode.eq.${searchTerm},item.name.ilike.%${searchTerm}%,item.sku.ilike.%${searchTerm}%`);
+    } else {
+      baseQuery = baseQuery.or(`item.name.ilike.%${searchTerm}%,item.sku.ilike.%${searchTerm}%,item.barcode.ilike.%${searchTerm}%`);
+    }
+
+    const { data, error } = await baseQuery.order('item.name');
+
+    if (error) throw error;
+    
+    // Transform to match expected InventoryItem interface for search results
+    return (data || []).map(warehouseItem => ({
+      id: warehouseItem.item_id,
+      name: warehouseItem.item?.name || '',
+      sku: warehouseItem.item?.sku,
+      barcode: warehouseItem.item?.barcode,
+      unit_cost: warehouseItem.wac_unit_cost || warehouseItem.item?.unit_cost || 0,
+      on_hand: warehouseItem.on_hand, // Include warehouse stock level
+      category: warehouseItem.item?.category,
+      base_unit: warehouseItem.item?.base_unit
+    }));
   }
 };

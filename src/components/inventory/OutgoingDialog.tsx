@@ -44,6 +44,7 @@ interface InventoryItem {
   sku?: string;
   barcode?: string;
   unit_cost?: number;
+  on_hand?: number; // Warehouse stock level
 }
 
 interface WithdrawalLine {
@@ -141,11 +142,12 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
   };
 
   const performSearch = async () => {
-    if (!debouncedSearchQuery.trim()) return;
+    if (!debouncedSearchQuery.trim() || !warehouseId) return;
     
     try {
       setSearchLoading(true);
-      const results = await warehouseApi.searchInventoryItems(debouncedSearchQuery);
+      // Use warehouse-specific search to only show items physically present in this warehouse
+      const results = await warehouseApi.searchWarehouseItems(warehouseId, debouncedSearchQuery);
       setSearchResults(results);
       setShowResults(true);
     } catch (error) {
@@ -158,12 +160,17 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
 
   // Handle barcode scan (from hardware scanner or camera)
   const handleBarcodeScanned = async (barcode: string) => {
+    if (!warehouseId) {
+      toast.error('Warehouse not selected');
+      return;
+    }
+
     try {
-      // Search for item by barcode
-      const results = await warehouseApi.searchInventoryItems(barcode);
+      // Search for item by barcode in current warehouse only
+      const results = await warehouseApi.searchWarehouseItems(warehouseId, barcode);
       
       if (results.length === 0) {
-        toast.error(`No item found with barcode: ${barcode}`);
+        toast.error(`No item found with barcode: ${barcode} in this warehouse`);
         return;
       }
       
@@ -171,8 +178,8 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
       const item = results[0];
       handleItemSelect(item);
       
-      // Show success feedback
-      toast.success(`Scanned: ${item.name}`);
+      // Show success feedback with stock info
+      toast.success(`Scanned: ${item.name} (Stock: ${item.on_hand})`);
       
       // Haptic feedback on mobile
       if (navigator.vibrate) {
@@ -540,13 +547,16 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
                             className="p-3 hover:bg-muted rounded-lg cursor-pointer flex items-center justify-between transition-colors"
                             onClick={() => handleItemSelect(item)}
                           >
-                            <div className="flex-1">
-                              <div className="font-medium">{item.name}</div>
-                              <div className="text-sm text-muted-foreground flex gap-4">
-                                {item.sku && <span>SKU: {item.sku}</span>}
-                                {item.barcode && <span>Barcode: {item.barcode}</span>}
-                              </div>
-                            </div>
+                             <div className="flex-1">
+                               <div className="font-medium">{item.name}</div>
+                               <div className="text-sm text-muted-foreground flex gap-4">
+                                 {item.sku && <span>SKU: {item.sku}</span>}
+                                 {item.barcode && <span>Barcode: {item.barcode}</span>}
+                                 {item.on_hand !== undefined && (
+                                   <span className="text-primary font-medium">Stock: {item.on_hand}</span>
+                                 )}
+                               </div>
+                             </div>
                             <Plus className="h-4 w-4 text-primary" />
                           </div>
                         ))}
