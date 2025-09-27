@@ -46,6 +46,7 @@ export const WarehouseTab: React.FC = () => {
       setError(null);
       setTeamSwitching(false);
       setIsRetrying(false);
+      setShowOverview(true); // Show overview when no team is selected
       return;
     }
 
@@ -57,6 +58,7 @@ export const WarehouseTab: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setShowOverview(false); // Hide overview when loading specific warehouse
       if (retryCount > 0) {
         setIsRetrying(true);
       }
@@ -145,24 +147,40 @@ export const WarehouseTab: React.FC = () => {
       setTeamSwitching(false);
       setIsRetrying(false);
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, user?.id]);
+  }, [shouldLoadWarehouse, selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, user?.id]);
 
-  // Immediate state clearing when team changes (SECURITY FIX)
+  // Handle team changes for all users
   useEffect(() => {
-    if ((isAdmin || isSuperAdmin) && selectedTeamId !== null) {
-      setTeamSwitching(true);
-      setWarehouse(null); // Immediately clear to prevent cross-team data leakage
-      setError(null);
-      loadWarehouse(); // Load warehouse for the new team
+    if (isAdmin || isSuperAdmin) {
+      if (selectedTeamId !== null) {
+        // Team selected - load warehouse
+        setTeamSwitching(true);
+        setWarehouse(null); // Immediately clear to prevent cross-team data leakage
+        setError(null);
+        setShowOverview(false);
+        loadWarehouse();
+      } else {
+        // No team selected - show overview
+        setTeamSwitching(false);
+        setWarehouse(null);
+        setError(null);
+        setShowOverview(true);
+        setLoading(false);
+      }
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, loadWarehouse]);
 
-  // Initial load for non-admin users
+  // Initial load for non-admin users and admin overview
   useEffect(() => {
     if (!isAdmin && !isSuperAdmin) {
+      // Non-admin users always load their warehouse
       loadWarehouse();
+    } else {
+      // Admin users show overview initially
+      setShowOverview(true);
+      setLoading(false);
     }
-  }, [isAdmin, isSuperAdmin]);
+  }, [isAdmin, isSuperAdmin, loadWarehouse]);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
