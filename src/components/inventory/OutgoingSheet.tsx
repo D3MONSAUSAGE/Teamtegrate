@@ -9,12 +9,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Search, Package, Trash2, Plus, Minus, DollarSign, AlertTriangle, Zap, FileText, Printer } from 'lucide-react';
+import { Search, Package, Trash2, Plus, Minus, DollarSign, AlertTriangle, Zap, FileText, Printer, Building } from 'lucide-react';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { useScanGun } from '@/hooks/useScanGun';
 import { ClientSelector } from '@/components/finance/invoices/ClientSelector';
 import { InvoiceClient } from '@/types/invoices';
 import { useInvoiceClients } from '@/hooks/useInvoiceClients';
+import { CustomerManagementSheet } from './CustomerManagementSheet';
 import { toast } from 'sonner';
 
 // Withdrawal reason types
@@ -64,6 +65,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   const [scannerConnected, setScannerConnected] = useState(false);
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
   const [createInvoiceOption, setCreateInvoiceOption] = useState(false);
+  const [showCustomerManagement, setShowCustomerManagement] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Get current withdrawal reason configuration
@@ -240,6 +242,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
     setWithdrawalReason('');
     setSelectedClient(null);
     setCreateInvoiceOption(false);
+    setShowCustomerManagement(false);
     setNotes('');
     setSearchTerm('');
     setScanMode(false);
@@ -254,6 +257,17 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
 
   return (
     <>
+      {/* Customer Management Sheet */}
+      <CustomerManagementSheet
+        open={showCustomerManagement}
+        onClose={() => setShowCustomerManagement(false)}
+        onSelectCustomerForSale={(client) => {
+          setSelectedClient(client);
+          setShowCustomerManagement(false);
+          toast.success(`Selected customer: ${client.name}`);
+        }}
+      />
+      
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader className="pb-4">
@@ -499,11 +513,48 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
             {/* Customer Information for Sales */}
             {currentReason?.requiresCustomer && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <ClientSelector
-                    selectedClient={selectedClient}
-                    onClientSelect={setSelectedClient}
-                  />
+                {/* Enhanced Customer Selection Section */}
+                <div className="p-4 border-2 border-primary/20 bg-primary/5 rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-primary">Customer Required for Sale</h3>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCustomerManagement(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Building className="h-3 w-3" />
+                      Manage Customers
+                    </Button>
+                  </div>
+                  
+                  {!selectedClient && (
+                    <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm text-amber-800">
+                        Please select a customer to enable the withdrawal button
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <ClientSelector
+                      selectedClient={selectedClient}
+                      onClientSelect={setSelectedClient}
+                    />
+                  </div>
+                  
+                  {selectedClient && (
+                    <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-md">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-sm text-green-800 font-medium">
+                        Customer selected: {selectedClient.name}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Invoice Creation Option */}
