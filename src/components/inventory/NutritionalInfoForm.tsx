@@ -10,109 +10,68 @@ import { Apple, Save, AlertCircle } from 'lucide-react';
 import { nutritionalInfoApi, NutritionalInfo } from '@/contexts/inventory/api/nutritionalInfo';
 import { toast } from 'sonner';
 
+interface NutritionalData {
+  serving_size: string;
+  servings_per_container: number;
+  calories: number;
+  total_fat: number;
+  saturated_fat: number;
+  trans_fat: number;
+  cholesterol: number;
+  sodium: number;
+  total_carbohydrates: number;
+  dietary_fiber: number;
+  total_sugars: number;
+  added_sugars: number;
+  protein: number;
+  vitamin_d: number;
+  calcium: number;
+  iron: number;
+  potassium: number;
+  additional_nutrients: any;
+}
+
 interface NutritionalInfoFormProps {
   itemId: string;
   itemName: string;
+  data: NutritionalData;
+  onChange: (data: NutritionalData) => void;
 }
 
-export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId, itemName }) => {
-  const [loading, setLoading] = useState(true);
+export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId, itemName, data, onChange }) => {
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    serving_size: '',
-    servings_per_container: 0,
-    calories: 0,
-    total_fat: 0,
-    saturated_fat: 0,
-    trans_fat: 0,
-    cholesterol: 0,
-    sodium: 0,
-    total_carbohydrates: 0,
-    dietary_fiber: 0,
-    total_sugars: 0,
-    added_sugars: 0,
-    protein: 0,
-    vitamin_d: 0,
-    calcium: 0,
-    iron: 0,
-    potassium: 0,
-    ingredients: '',
-    allergens: [] as string[],
-    additional_nutrients: {}
-  });
-
-  const [allergenInput, setAllergenInput] = useState('');
-
-  const commonAllergens = [
-    'Milk', 'Eggs', 'Fish', 'Shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soybeans'
-  ];
-
-  useEffect(() => {
-    loadNutritionalInfo();
-  }, [itemId]);
-
-  const loadNutritionalInfo = async () => {
-    try {
-      setLoading(true);
-      const info = await nutritionalInfoApi.getByItemId(itemId);
-      if (info) {
-        setFormData({
-          serving_size: info.serving_size || '',
-          servings_per_container: info.servings_per_container || 0,
-          calories: info.calories || 0,
-          total_fat: info.total_fat || 0,
-          saturated_fat: info.saturated_fat || 0,
-          trans_fat: info.trans_fat || 0,
-          cholesterol: info.cholesterol || 0,
-          sodium: info.sodium || 0,
-          total_carbohydrates: info.total_carbohydrates || 0,
-          dietary_fiber: info.dietary_fiber || 0,
-          total_sugars: info.total_sugars || 0,
-          added_sugars: info.added_sugars || 0,
-          protein: info.protein || 0,
-          vitamin_d: info.vitamin_d || 0,
-          calcium: info.calcium || 0,
-          iron: info.iron || 0,
-          potassium: info.potassium || 0,
-          ingredients: info.ingredients || '',
-          allergens: info.allergens || [],
-          additional_nutrients: info.additional_nutrients || {}
-        });
-      }
-    } catch (error) {
-      console.error('Error loading nutritional info:', error);
-      toast.error('Failed to load nutritional information');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSave = async () => {
     try {
       setSaving(true);
       
+      // Get existing ingredients info to preserve
+      const existingInfo = await nutritionalInfoApi.getByItemId(itemId);
+      
       const nutritionalData = {
         item_id: itemId,
-        serving_size: formData.serving_size || null,
-        servings_per_container: formData.servings_per_container || null,
-        calories: formData.calories || null,
-        total_fat: formData.total_fat || null,
-        saturated_fat: formData.saturated_fat || null,
-        trans_fat: formData.trans_fat || null,
-        cholesterol: formData.cholesterol || null,
-        sodium: formData.sodium || null,
-        total_carbohydrates: formData.total_carbohydrates || null,
-        dietary_fiber: formData.dietary_fiber || null,
-        total_sugars: formData.total_sugars || null,
-        added_sugars: formData.added_sugars || null,
-        protein: formData.protein || null,
-        vitamin_d: formData.vitamin_d || null,
-        calcium: formData.calcium || null,
-        iron: formData.iron || null,
-        potassium: formData.potassium || null,
-        ingredients: formData.ingredients || null,
-        allergens: formData.allergens.length > 0 ? formData.allergens : null,
-        additional_nutrients: formData.additional_nutrients
+        serving_size: data.serving_size || null,
+        servings_per_container: data.servings_per_container || null,
+        calories: data.calories || null,
+        total_fat: data.total_fat || null,
+        saturated_fat: data.saturated_fat || null,
+        trans_fat: data.trans_fat || null,
+        cholesterol: data.cholesterol || null,
+        sodium: data.sodium || null,
+        total_carbohydrates: data.total_carbohydrates || null,
+        dietary_fiber: data.dietary_fiber || null,
+        total_sugars: data.total_sugars || null,
+        added_sugars: data.added_sugars || null,
+        protein: data.protein || null,
+        vitamin_d: data.vitamin_d || null,
+        calcium: data.calcium || null,
+        iron: data.iron || null,
+        potassium: data.potassium || null,
+        // Preserve ingredients and allergens from existing data (managed by ingredients tab)
+        ingredients: existingInfo?.ingredients || null,
+        allergens: existingInfo?.allergens || null,
+        additional_nutrients: data.additional_nutrients
       };
 
       await nutritionalInfoApi.upsert(nutritionalData);
@@ -125,28 +84,11 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
     }
   };
 
-  const addAllergen = (allergen: string) => {
-    if (allergen && !formData.allergens.includes(allergen)) {
-      setFormData(prev => ({
-        ...prev,
-        allergens: [...prev.allergens, allergen]
-      }));
-    }
-    setAllergenInput('');
-  };
-
-  const removeAllergen = (allergen: string) => {
-    setFormData(prev => ({
-      ...prev,
-      allergens: prev.allergens.filter(a => a !== allergen)
-    }));
-  };
-
   const updateField = (field: string, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
+    onChange({
+      ...data,
       [field]: value
-    }));
+    });
   };
 
   if (loading) {
@@ -176,7 +118,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
               <Label htmlFor="serving-size">Serving Size</Label>
               <Input
                 id="serving-size"
-                value={formData.serving_size}
+                value={data.serving_size}
                 onChange={(e) => updateField('serving_size', e.target.value)}
                 placeholder="e.g., 1 cup (240ml)"
               />
@@ -188,7 +130,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.servings_per_container}
+                value={data.servings_per_container}
                 onChange={(e) => updateField('servings_per_container', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -208,7 +150,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 id="calories"
                 type="number"
                 min="0"
-                value={formData.calories}
+                value={data.calories}
                 onChange={(e) => updateField('calories', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -219,7 +161,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.total_fat}
+                value={data.total_fat}
                 onChange={(e) => updateField('total_fat', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -230,7 +172,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.saturated_fat}
+                value={data.saturated_fat}
                 onChange={(e) => updateField('saturated_fat', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -243,7 +185,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 id="cholesterol"
                 type="number"
                 min="0"
-                value={formData.cholesterol}
+                value={data.cholesterol}
                 onChange={(e) => updateField('cholesterol', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -253,7 +195,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 id="sodium"
                 type="number"
                 min="0"
-                value={formData.sodium}
+                value={data.sodium}
                 onChange={(e) => updateField('sodium', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -264,7 +206,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.total_carbohydrates}
+                value={data.total_carbohydrates}
                 onChange={(e) => updateField('total_carbohydrates', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -278,7 +220,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.dietary_fiber}
+                value={data.dietary_fiber}
                 onChange={(e) => updateField('dietary_fiber', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -289,7 +231,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.total_sugars}
+                value={data.total_sugars}
                 onChange={(e) => updateField('total_sugars', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -300,7 +242,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.protein}
+                value={data.protein}
                 onChange={(e) => updateField('protein', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -320,7 +262,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.vitamin_d}
+                value={data.vitamin_d}
                 onChange={(e) => updateField('vitamin_d', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -330,7 +272,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 id="calcium"
                 type="number"
                 min="0"
-                value={formData.calcium}
+                value={data.calcium}
                 onChange={(e) => updateField('calcium', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -341,7 +283,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.iron}
+                value={data.iron}
                 onChange={(e) => updateField('iron', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -351,77 +293,13 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
                 id="potassium"
                 type="number"
                 min="0"
-                value={formData.potassium}
+                value={data.potassium}
                 onChange={(e) => updateField('potassium', parseFloat(e.target.value) || 0)}
               />
             </div>
           </div>
         </div>
 
-        <Separator />
-
-        {/* Ingredients */}
-        <div className="space-y-4">
-          <h3 className="font-medium text-sm">Ingredients</h3>
-          <div className="space-y-2">
-            <Label htmlFor="ingredients">Ingredients List</Label>
-            <Textarea
-              id="ingredients"
-              value={formData.ingredients}
-              onChange={(e) => updateField('ingredients', e.target.value)}
-              placeholder="List ingredients in descending order by weight"
-              rows={3}
-            />
-          </div>
-        </div>
-
-        {/* Allergens */}
-        <div className="space-y-4">
-          <h3 className="font-medium text-sm">Allergens</h3>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {commonAllergens.map((allergen) => (
-                <Button
-                  key={allergen}
-                  type="button"
-                  variant={formData.allergens.includes(allergen) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => formData.allergens.includes(allergen) ? removeAllergen(allergen) : addAllergen(allergen)}
-                >
-                  {allergen}
-                </Button>
-              ))}
-            </div>
-            
-            <div className="flex gap-2">
-              <Input
-                value={allergenInput}
-                onChange={(e) => setAllergenInput(e.target.value)}
-                placeholder="Add custom allergen"
-                onKeyPress={(e) => e.key === 'Enter' && addAllergen(allergenInput)}
-              />
-              <Button type="button" variant="outline" onClick={() => addAllergen(allergenInput)}>
-                Add
-              </Button>
-            </div>
-
-            {formData.allergens.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.allergens.map((allergen) => (
-                  <Badge key={allergen} variant="secondary" className="flex items-center gap-1">
-                    {allergen}
-                    <button 
-                      onClick={() => removeAllergen(allergen)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={saving}>

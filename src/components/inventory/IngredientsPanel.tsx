@@ -10,46 +10,26 @@ import { LeafyGreen, Save } from 'lucide-react';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { toast } from 'sonner';
 
+interface IngredientsData {
+  ingredients: string;
+  allergens: string[];
+}
+
 interface IngredientsPanelProps {
   itemId: string;
   itemName: string;
+  data: IngredientsData;
+  onChange: (data: IngredientsData) => void;
 }
 
-export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, itemName }) => {
-  const [loading, setLoading] = useState(true);
+export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, itemName, data, onChange }) => {
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    ingredients: '',
-    allergens: [] as string[]
-  });
-
   const [allergenInput, setAllergenInput] = useState('');
 
   const commonAllergens = [
     'Milk', 'Eggs', 'Fish', 'Shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soybeans'
   ];
-
-  useEffect(() => {
-    loadIngredientsData();
-  }, [itemId]);
-
-  const loadIngredientsData = async () => {
-    try {
-      setLoading(true);
-      const info = await nutritionalInfoApi.getByItemId(itemId);
-      if (info) {
-        setFormData({
-          ingredients: info.ingredients || '',
-          allergens: info.allergens || []
-        });
-      }
-    } catch (error) {
-      console.error('Error loading ingredients data:', error);
-      toast.error('Failed to load ingredients information');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSave = async () => {
     try {
@@ -79,8 +59,8 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
         iron: existingInfo?.iron || null,
         potassium: existingInfo?.potassium || null,
         // Update ingredients and allergens
-        ingredients: formData.ingredients || null,
-        allergens: formData.allergens.length > 0 ? formData.allergens : null,
+        ingredients: data.ingredients || null,
+        allergens: data.allergens.length > 0 ? data.allergens : null,
         additional_nutrients: existingInfo?.additional_nutrients || {}
       };
 
@@ -95,27 +75,27 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
   };
 
   const addAllergen = (allergen: string) => {
-    if (allergen && !formData.allergens.includes(allergen)) {
-      setFormData(prev => ({
-        ...prev,
-        allergens: [...prev.allergens, allergen]
-      }));
+    if (allergen && !data.allergens.includes(allergen)) {
+      onChange({
+        ...data,
+        allergens: [...data.allergens, allergen]
+      });
     }
     setAllergenInput('');
   };
 
   const removeAllergen = (allergen: string) => {
-    setFormData(prev => ({
-      ...prev,
-      allergens: prev.allergens.filter(a => a !== allergen)
-    }));
+    onChange({
+      ...data,
+      allergens: data.allergens.filter(a => a !== allergen)
+    });
   };
 
   const updateField = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
+    onChange({
+      ...data,
       [field]: value
-    }));
+    });
   };
 
   if (loading) {
@@ -144,7 +124,7 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
             <Label htmlFor="ingredients">Ingredients List</Label>
             <Textarea
               id="ingredients"
-              value={formData.ingredients}
+              value={data.ingredients}
               onChange={(e) => updateField('ingredients', e.target.value)}
               placeholder="List ingredients in descending order by weight (e.g., Water, Sugar, Wheat Flour, Salt...)"
               rows={4}
@@ -170,9 +150,9 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
                 <Button
                   key={allergen}
                   type="button"
-                  variant={formData.allergens.includes(allergen) ? "default" : "outline"}
+                  variant={data.allergens.includes(allergen) ? "default" : "outline"}
                   size="sm"
-                  onClick={() => formData.allergens.includes(allergen) ? removeAllergen(allergen) : addAllergen(allergen)}
+                  onClick={() => data.allergens.includes(allergen) ? removeAllergen(allergen) : addAllergen(allergen)}
                 >
                   {allergen}
                 </Button>
@@ -191,11 +171,11 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
               </Button>
             </div>
 
-            {formData.allergens.length > 0 && (
+            {data.allergens.length > 0 && (
               <div className="space-y-2">
                 <Label>Selected Allergens</Label>
                 <div className="flex flex-wrap gap-2">
-                  {formData.allergens.map((allergen) => (
+                  {data.allergens.map((allergen) => (
                     <Badge key={allergen} variant="secondary" className="flex items-center gap-1">
                       {allergen}
                       <button 

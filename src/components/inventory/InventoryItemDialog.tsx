@@ -25,6 +25,7 @@ import { IngredientsPanel } from './IngredientsPanel';
 import { NutritionalInfoForm } from './NutritionalInfoForm';
 import { LabelPrintDialog } from './labels/LabelPrintDialog';
 import { vendorsApi } from '@/contexts/inventory/api';
+import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -68,6 +69,33 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLabelDialog, setShowLabelDialog] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
+  
+  // Shared state for ingredients and nutritional info
+  const [ingredientsData, setIngredientsData] = useState({
+    ingredients: '',
+    allergens: [] as string[]
+  });
+  
+  const [nutritionalData, setNutritionalData] = useState({
+    serving_size: '',
+    servings_per_container: 0,
+    calories: 0,
+    total_fat: 0,
+    saturated_fat: 0,
+    trans_fat: 0,
+    cholesterol: 0,
+    sodium: 0,
+    total_carbohydrates: 0,
+    dietary_fiber: 0,
+    total_sugars: 0,
+    added_sugars: 0,
+    protein: 0,
+    vitamin_d: 0,
+    calcium: 0,
+    iron: 0,
+    potassium: 0,
+    additional_nutrients: {}
+  });
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -119,6 +147,28 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       form.reset();
       setCalculatedUnitPrice(null);
       setCurrentItem(null);
+      // Reset shared state for new items
+      setIngredientsData({ ingredients: '', allergens: [] });
+      setNutritionalData({
+        serving_size: '',
+        servings_per_container: 0,
+        calories: 0,
+        total_fat: 0,
+        saturated_fat: 0,
+        trans_fat: 0,
+        cholesterol: 0,
+        sodium: 0,
+        total_carbohydrates: 0,
+        dietary_fiber: 0,
+        total_sugars: 0,
+        added_sugars: 0,
+        protein: 0,
+        vitamin_d: 0,
+        calcium: 0,
+        iron: 0,
+        potassium: 0,
+        additional_nutrients: {}
+      });
     }
     
     // Reset submitting state when dialog opens/closes
@@ -147,6 +197,39 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           vendor_id: item.vendor_id || null,
           image_url: item.image_url || null,
         });
+        
+        // Load nutritional info for shared state
+        try {
+          const nutritionalInfo = await nutritionalInfoApi.getByItemId(itemId!);
+          if (nutritionalInfo) {
+            setIngredientsData({
+              ingredients: nutritionalInfo.ingredients || '',
+              allergens: nutritionalInfo.allergens || []
+            });
+            setNutritionalData({
+              serving_size: nutritionalInfo.serving_size || '',
+              servings_per_container: nutritionalInfo.servings_per_container || 0,
+              calories: nutritionalInfo.calories || 0,
+              total_fat: nutritionalInfo.total_fat || 0,
+              saturated_fat: nutritionalInfo.saturated_fat || 0,
+              trans_fat: nutritionalInfo.trans_fat || 0,
+              cholesterol: nutritionalInfo.cholesterol || 0,
+              sodium: nutritionalInfo.sodium || 0,
+              total_carbohydrates: nutritionalInfo.total_carbohydrates || 0,
+              dietary_fiber: nutritionalInfo.dietary_fiber || 0,
+              total_sugars: nutritionalInfo.total_sugars || 0,
+              added_sugars: nutritionalInfo.added_sugars || 0,
+              protein: nutritionalInfo.protein || 0,
+              vitamin_d: nutritionalInfo.vitamin_d || 0,
+              calcium: nutritionalInfo.calcium || 0,
+              iron: nutritionalInfo.iron || 0,
+              potassium: nutritionalInfo.potassium || 0,
+              additional_nutrients: nutritionalInfo.additional_nutrients || {}
+            });
+          }
+        } catch (nutritionalError) {
+          console.log('No nutritional info found for item, using defaults');
+        }
       }
     } catch (error) {
       console.error('Error loading item:', error);
@@ -605,6 +688,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               <IngredientsPanel
                 itemId={itemId}
                 itemName={currentItem.name}
+                data={ingredientsData}
+                onChange={setIngredientsData}
               />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -618,6 +703,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               <NutritionalInfoForm
                 itemId={itemId}
                 itemName={currentItem.name}
+                data={nutritionalData}
+                onChange={setNutritionalData}
               />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
