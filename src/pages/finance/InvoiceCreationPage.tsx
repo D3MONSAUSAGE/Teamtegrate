@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, FileText } from 'lucide-react';
 import { FinanceBreadcrumb } from '@/components/finance/navigation/FinanceBreadcrumb';
+import { InvoiceBuilder } from '@/components/finance/invoices/InvoiceBuilder';
 
 export default function InvoiceCreationPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -68,26 +69,7 @@ export default function InvoiceCreationPage() {
           </Card>
         </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoice Builder</CardTitle>
-            <CardDescription>
-              Invoice creation form will be implemented here
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Invoice Builder Coming Soon</h3>
-              <p className="text-muted-foreground mb-4">
-                The invoice creation form will be implemented in the next phase
-              </p>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                Back to Templates
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <InvoiceBuilder onBack={() => setShowCreateForm(false)} />
       )}
     </div>
   );
