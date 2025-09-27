@@ -95,7 +95,7 @@ export const WarehouseTab: React.FC = () => {
         setWarehouse(data);
       } else {
         // No warehouse exists - but if we just created one, retry a few times
-        if (retryCount < 3 && !isRetrying) {
+        if (retryCount < 3 && !isRetrying && !teamSwitching) {
           console.log(`No warehouse found - retrying (${retryCount + 1}/3)...`);
           setIsRetrying(true);
           // Use exponential backoff: 1s, 2s, 4s
@@ -124,7 +124,7 @@ export const WarehouseTab: React.FC = () => {
         setWarehouse(null);
       } else {
         // General error - retry if we haven't exhausted retries
-        if (retryCount < 3 && !isRetrying) {
+        if (retryCount < 3 && !isRetrying && !teamSwitching) {
           console.log(`Error loading warehouse - retrying (${retryCount + 1}/3)...`);
           setIsRetrying(true);
           // Use exponential backoff: 1s, 2s, 4s
@@ -153,12 +153,16 @@ export const WarehouseTab: React.FC = () => {
       setTeamSwitching(true);
       setWarehouse(null); // Immediately clear to prevent cross-team data leakage
       setError(null);
+      loadWarehouse(); // Load warehouse for the new team
     }
-  }, [selectedTeamId, isAdmin, isSuperAdmin]);
+  }, [selectedTeamId, isAdmin, isSuperAdmin, loadWarehouse]);
 
+  // Initial load for non-admin users
   useEffect(() => {
-    loadWarehouse();
-  }, [loadWarehouse]);
+    if (!isAdmin && !isSuperAdmin) {
+      loadWarehouse();
+    }
+  }, [isAdmin, isSuperAdmin, loadWarehouse]);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
