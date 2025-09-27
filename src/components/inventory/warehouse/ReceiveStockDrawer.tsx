@@ -52,6 +52,7 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
   warehouseId, 
   onReceiptPosted 
 }) => {
+  // Force rebuild - removed shipment selector dependencies
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
