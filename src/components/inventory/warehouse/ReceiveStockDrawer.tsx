@@ -22,6 +22,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useScanGun } from '@/hooks/useScanGun';
 import { ScannerOverlay } from '../ScannerOverlay';
+import { ShipmentSelector } from '../receiving/ShipmentSelector';
+import { shipmentsApi, Shipment } from '@/contexts/inventory/api/shipments';
+import { inventoryLotsApi } from '@/contexts/inventory/api/inventoryLots';
 
 interface ReceiveLine {
   id: string;
@@ -59,6 +62,9 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
   const [notes, setNotes] = useState('');
   const [lineItems, setLineItems] = useState<ReceiveLine[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Shipment state
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   
   // Item search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -208,6 +214,12 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     }, 0);
   };
 
+  const generateShipmentLotNumber = (shipment: Shipment) => {
+    const date = new Date(shipment.received_date).toISOString().split('T')[0].replace(/-/g, '');
+    const shipmentCode = shipment.shipment_number.replace('SHIP-', '').replace(/-/g, '');
+    return `${shipmentCode}-${date}`;
+  };
+
   const handleSubmit = async () => {
     if (!warehouseId) {
       toast.error('No warehouse selected');
@@ -220,18 +232,46 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       return;
     }
 
+    if (!selectedShipment) {
+      toast.error('Please select a shipment for lot tracking');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
       // Step 1: Create receipt
-      const receipt = await warehouseApi.createReceipt(warehouseId, reference || undefined);
+      const receipt = await warehouseApi.createReceipt(warehouseId, reference || selectedShipment.reference_number);
 
-      // Step 2: Add lines to receipt (include all lines with qty > 0, regardless of unit_cost)
+      // Step 2: Generate shared lot number for the shipment
+      const sharedLotNumber = generateShipmentLotNumber(selectedShipment);
+
+      // Step 3: Create lot records for each item in the shipment
+      for (const line of validLines) {
+        await inventoryLotsApi.create({
+          organization_id: '', // Will be set by RLS
+          item_id: line.item_id,
+          lot_number: sharedLotNumber,
+          manufacturing_date: null,
+          expiration_date: null,
+          quantity_received: line.qty,
+          quantity_remaining: line.qty,
+          cost_per_unit: line.unit_cost || null,
+          supplier_info: selectedShipment.supplier_info,
+          notes: `Shipment: ${selectedShipment.shipment_number}${notes ? ` | ${notes}` : ''}`,
+          is_active: true,
+          created_by: '', // Will be set by auth
+          shipment_id: selectedShipment.id
+        });
+      }
+
+      // Step 4: Add lines to receipt (include all lines with qty > 0, regardless of unit_cost)
       console.log('📋 Adding receipt lines:', validLines.map(l => ({
         item_id: l.item_id,
         qty: l.qty,
         unit_cost: l.unit_cost || 0,
-        name: l.name
+        name: l.name,
+        lot_number: sharedLotNumber
       })));
       
       for (const line of validLines) {
@@ -242,10 +282,10 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
         });
       }
 
-      // Step 3: Post the receipt (this updates warehouse_items.on_hand)
+      // Step 5: Post the receipt (this updates warehouse_items.on_hand)
       await warehouseApi.postReceipt(receipt.id);
 
-      toast.success(`Receipt ${receipt.id.slice(0, 8)} posted successfully!`);
+      toast.success(`Receipt ${receipt.id.slice(0, 8)} posted successfully with lot ${sharedLotNumber}!`);
       
       // Reset form
       resetForm();
@@ -274,6 +314,7 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
     setShowResults(false);
     setScanMode(false);
     setShowScanner(false);
+    setSelectedShipment(null);
   };
 
   const formatCurrency = (amount: number) => {
@@ -305,6 +346,38 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
             </DrawerHeader>
 
             <div className="p-4 space-y-6">
+              {/* Shipment Selection */}
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="p-4">
+                  <ShipmentSelector 
+                    selectedShipmentId={selectedShipment?.id}
+                    onShipmentSelect={(shipment) => {
+                      setSelectedShipment(shipment);
+                      if (shipment) {
+                        setReceivedDate(shipment.received_date);
+                        setReference(shipment.reference_number || '');
+                        setNotes(shipment.notes || '');
+                      }
+                    }}
+                  />
+                  {selectedShipment && (
+                    <div className="mt-3 p-3 bg-background rounded-md border">
+                      <div className="text-sm font-medium text-primary">
+                        {selectedShipment.shipment_number}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Lot Number: {generateShipmentLotNumber(selectedShipment)}
+                      </div>
+                      {selectedShipment.supplier_info?.name && (
+                        <div className="text-xs text-muted-foreground">
+                          Supplier: {selectedShipment.supplier_info.name}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Header Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -322,10 +395,11 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                     type="date"
                     value={receivedDate}
                     onChange={(e) => setReceivedDate(e.target.value)}
+                    disabled={!!selectedShipment}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reference">Reference (optional)</Label>
+                  <Label htmlFor="reference">Reference</Label>
                   <Input
                     id="reference"
                     placeholder="PO number, invoice, etc."
@@ -334,7 +408,7 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Label htmlFor="notes">Additional Notes</Label>
                   <Textarea
                     id="notes"
                     placeholder="Additional notes..."
@@ -581,9 +655,9 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
                 <Button 
                   onClick={handleSubmit} 
                   className="flex-1"
-                  disabled={lineItems.length === 0 || submitting}
+                  disabled={lineItems.length === 0 || submitting || !selectedShipment}
                 >
-                  {submitting ? 'Posting Receipt...' : 'Receive Items'}
+                  {submitting ? 'Posting Receipt...' : `Post Receipt (${lineItems.length} items)`}
                 </Button>
                 <Button 
                   variant="outline" 

@@ -10,3 +10,4 @@ export * from './inventoryLots';
 export * from './nutritionalInfo';
 export * from './labelTemplates';
 export * from './generatedLabels';
+export * from './shipments';

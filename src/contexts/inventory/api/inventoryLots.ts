@@ -16,6 +16,7 @@ export interface InventoryLot {
   created_by: string;
   created_at: string;
   updated_at: string;
+  shipment_id?: string;
   // Joined data
   inventory_item?: {
     name: string;

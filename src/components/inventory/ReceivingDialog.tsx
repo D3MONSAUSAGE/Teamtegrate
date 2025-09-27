@@ -12,6 +12,8 @@ import { inventoryItemsApi } from '@/contexts/inventory/api/inventoryItems';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { toast } from 'sonner';
 import { useInventory } from '@/contexts/inventory';
+import { ShipmentSelector } from './receiving/ShipmentSelector';
+import { shipmentsApi, Shipment } from '@/contexts/inventory/api/shipments';
 
 interface ReceivingDialogProps {
   open: boolean;
@@ -27,6 +29,7 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
   const { items, refreshItems } = useInventory();
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [formData, setFormData] = useState({
     item_id: selectedItemId || '',
     lot_number: '',
@@ -68,6 +71,7 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
         notes: ''
       });
       setSelectedItem(null);
+      setSelectedShipment(null);
     }
   }, [open]);
 
@@ -78,8 +82,17 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
   };
 
   const generateLotNumber = () => {
-    const lotNumber = BarcodeGenerator.generateLotNumber('LOT');
-    setFormData(prev => ({ ...prev, lot_number: lotNumber }));
+    if (selectedShipment) {
+      // Generate shipment-based lot number
+      const date = new Date(selectedShipment.received_date).toISOString().split('T')[0].replace(/-/g, '');
+      const shipmentCode = selectedShipment.shipment_number.replace('SHIP-', '').replace(/-/g, '');
+      const lotNumber = `${shipmentCode}-${date}`;
+      setFormData(prev => ({ ...prev, lot_number: lotNumber }));
+    } else {
+      // Fallback to generic lot number
+      const lotNumber = BarcodeGenerator.generateLotNumber('LOT');
+      setFormData(prev => ({ ...prev, lot_number: lotNumber }));
+    }
   };
 
   const handleReceiveStock = async () => {
@@ -101,10 +114,11 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
         quantity_received: formData.quantity_received,
         quantity_remaining: formData.quantity_received,
         cost_per_unit: formData.cost_per_unit || null,
-        supplier_info: formData.supplier_info,
+        supplier_info: selectedShipment?.supplier_info || formData.supplier_info,
         notes: formData.notes || null,
         is_active: true,
-        created_by: '' // Will be set by auth
+        created_by: '', // Will be set by auth
+        shipment_id: selectedShipment?.id || null
       });
 
       // Update item stock
@@ -135,6 +149,47 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Shipment Selection */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="text-lg">Shipment Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ShipmentSelector 
+                selectedShipmentId={selectedShipment?.id}
+                onShipmentSelect={(shipment) => {
+                  setSelectedShipment(shipment);
+                  if (shipment) {
+                    // Auto-generate lot number when shipment is selected
+                    const date = new Date(shipment.received_date).toISOString().split('T')[0].replace(/-/g, '');
+                    const shipmentCode = shipment.shipment_number.replace('SHIP-', '').replace(/-/g, '');
+                    const lotNumber = `${shipmentCode}-${date}`;
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      lot_number: lotNumber,
+                      supplier_info: shipment.supplier_info || prev.supplier_info
+                    }));
+                  }
+                }}
+              />
+              {selectedShipment && (
+                <div className="mt-3 p-3 bg-background rounded-md border">
+                  <div className="text-sm font-medium text-primary">
+                    {selectedShipment.shipment_number}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Received: {new Date(selectedShipment.received_date).toLocaleDateString()}
+                  </div>
+                  {selectedShipment.supplier_info?.name && (
+                    <div className="text-xs text-muted-foreground">
+                      Supplier: {selectedShipment.supplier_info.name}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Item Selection */}
           <Card>
             <CardHeader>
