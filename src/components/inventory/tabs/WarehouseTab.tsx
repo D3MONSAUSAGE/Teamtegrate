@@ -157,9 +157,11 @@ export const WarehouseTab: React.FC = () => {
 
   // Handle team changes for all users
   useEffect(() => {
+    console.log('Team change useEffect triggered:', { selectedTeamId, isAdmin, isSuperAdmin });
     if (isAdmin || isSuperAdmin) {
       if (selectedTeamId !== null) {
         // Team selected - load warehouse
+        console.log('Loading warehouse for selected team:', selectedTeamId);
         setTeamSwitching(true);
         setWarehouse(null); // Immediately clear to prevent cross-team data leakage
         setError(null);
@@ -167,6 +169,7 @@ export const WarehouseTab: React.FC = () => {
         loadWarehouse();
       } else {
         // No team selected - show overview
+        console.log('No team selected - showing overview');
         setTeamSwitching(false);
         setWarehouse(null);
         setError(null);
@@ -258,11 +261,15 @@ export const WarehouseTab: React.FC = () => {
   };
 
   const handleSelectWarehouse = (teamId: string | null) => {
-    // Set the selected team and hide the overview to show warehouse details
+    console.log('handleSelectWarehouse called with teamId:', teamId);
     if (teamId) {
       setSelectedTeamId(teamId);
+      setShowOverview(false);
+      setLoading(true);
+      setError(null);
+      // Force immediate warehouse load for selected team
+      setTimeout(() => loadWarehouse(), 0);
     }
-    setShowOverview(false);
   };
 
   const tabs = [
@@ -296,8 +303,15 @@ export const WarehouseTab: React.FC = () => {
             <UnifiedTeamSelector
               selectedTeamId={selectedTeamId}
               onTeamChange={(teamId) => {
+                console.log('Team selector changed to:', teamId);
                 setSelectedTeamId(teamId);
-                setShowOverview(teamId === null);
+                if (teamId === null) {
+                  setShowOverview(true);
+                  setWarehouse(null);
+                  setLoading(false);
+                } else {
+                  handleSelectWarehouse(teamId);
+                }
               }}
               variant="simple"
               placeholder="Select team warehouse..."
