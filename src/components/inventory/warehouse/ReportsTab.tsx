@@ -31,10 +31,14 @@ interface Team {
   name: string;
 }
 
-export const ReportsTab: React.FC = () => {
+interface ReportsTabProps {
+  defaultTeamId?: string;
+}
+
+export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId }) => {
   // State management
   const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<string>();
+  const [selectedTeam, setSelectedTeam] = useState<string | undefined>(defaultTeamId);
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(false);

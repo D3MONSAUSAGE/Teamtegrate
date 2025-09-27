@@ -288,7 +288,7 @@ export const WarehouseTab: React.FC = () => {
       case 'outgoing':
         return <OutgoingTab warehouseId={warehouse.id} />;
       case 'reports':
-        return <ReportsTab />;
+        return <ReportsTab defaultTeamId={warehouse?.team_id} />;
       default:
         return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} />;
     }
