@@ -59,7 +59,6 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
       const existingInfo = await nutritionalInfoApi.getByItemId(itemId);
       
       const nutritionalData = {
-        organization_id: '', // Will be set by RLS
         item_id: itemId,
         // Preserve existing nutritional values
         serving_size: existingInfo?.serving_size || null,
@@ -82,8 +81,7 @@ export const IngredientsPanel: React.FC<IngredientsPanelProps> = ({ itemId, item
         // Update ingredients and allergens
         ingredients: formData.ingredients || null,
         allergens: formData.allergens.length > 0 ? formData.allergens : null,
-        additional_nutrients: existingInfo?.additional_nutrients || {},
-        created_by: '' // Will be set by auth
+        additional_nutrients: existingInfo?.additional_nutrients || {}
       };
 
       await nutritionalInfoApi.upsert(nutritionalData);

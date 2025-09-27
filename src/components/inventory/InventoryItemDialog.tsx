@@ -288,8 +288,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic">Basic Information</TabsTrigger>
-            <TabsTrigger value="ingredients" disabled={!itemId}>Ingredients</TabsTrigger>
-            <TabsTrigger value="nutrition" disabled={!itemId}>Nutritional Info</TabsTrigger>
+            <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutritional Info</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic" className="mt-6">
@@ -601,20 +601,28 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           </TabsContent>
 
           <TabsContent value="ingredients" className="mt-6">
-            {itemId && currentItem && (
+            {itemId && currentItem ? (
               <IngredientsPanel
                 itemId={itemId}
                 itemName={currentItem.name}
               />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Please save the item first to add ingredients information.
+              </div>
             )}
           </TabsContent>
 
           <TabsContent value="nutrition" className="mt-6">
-            {itemId && currentItem && (
+            {itemId && currentItem ? (
               <NutritionalInfoForm
                 itemId={itemId}
                 itemName={currentItem.name}
               />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Please save the item first to add nutritional information.
+              </div>
             )}
           </TabsContent>
         </Tabs>

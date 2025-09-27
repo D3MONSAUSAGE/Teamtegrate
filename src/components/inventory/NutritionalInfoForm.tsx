@@ -92,7 +92,6 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
       setSaving(true);
       
       const nutritionalData = {
-        organization_id: '', // Will be set by RLS
         item_id: itemId,
         serving_size: formData.serving_size || null,
         servings_per_container: formData.servings_per_container || null,
@@ -113,8 +112,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
         potassium: formData.potassium || null,
         ingredients: formData.ingredients || null,
         allergens: formData.allergens.length > 0 ? formData.allergens : null,
-        additional_nutrients: formData.additional_nutrients,
-        created_by: '' // Will be set by auth
+        additional_nutrients: formData.additional_nutrients
       };
 
       await nutritionalInfoApi.upsert(nutritionalData);
