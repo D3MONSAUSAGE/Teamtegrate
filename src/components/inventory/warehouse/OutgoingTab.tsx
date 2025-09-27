@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TruckIcon, ShoppingCart, Plus, Package, BarChart3 } from 'lucide-react';
 import { OutgoingDialog } from '../OutgoingDialog';
-import { useInventory } from '@/contexts/inventory';
+import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 
-export const OutgoingTab: React.FC = () => {
-  const { items } = useInventory();
+interface OutgoingTabProps {
+  warehouseId: string;
+}
+
+export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
+  const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isOutgoingDialogOpen, setIsOutgoingDialogOpen] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   
-  // Get items with stock > 0
-  const itemsWithStock = items.filter(item => (item.current_stock || 0) > 0);
-  const totalStockValue = itemsWithStock.reduce((sum, item) => {
-    return sum + ((item.current_stock || 0) * (item.unit_cost || 0));
+  useEffect(() => {
+    loadWarehouseItems();
+  }, [warehouseId]);
+
+  const loadWarehouseItems = async () => {
+    try {
+      setLoading(true);
+      const items = await warehouseApi.listWarehouseItems(warehouseId);
+      // Only show items with stock > 0
+      const itemsWithStock = items.filter(item => item.on_hand > 0);
+      setWarehouseItems(itemsWithStock);
+    } catch (error) {
+      console.error('Error loading warehouse items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalStockValue = warehouseItems.reduce((sum, item) => {
+    return sum + (item.on_hand * item.wac_unit_cost);
   }, 0);
 
   return (
@@ -25,7 +47,7 @@ export const OutgoingTab: React.FC = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{itemsWithStock.length}</div>
+            <div className="text-2xl font-bold">{warehouseItems.length}</div>
             <p className="text-xs text-muted-foreground">
               Available for sale
             </p>
@@ -39,7 +61,7 @@ export const OutgoingTab: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {itemsWithStock.reduce((sum, item) => sum + (item.current_stock || 0), 0)}
+              {warehouseItems.reduce((sum, item) => sum + item.on_hand, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Total units available
@@ -78,37 +100,39 @@ export const OutgoingTab: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {itemsWithStock.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : warehouseItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Stock Available</h3>
               <p className="text-muted-foreground text-center max-w-md">
-                There are currently no items in stock. Receive inventory first to enable outgoing operations.
+                There are currently no items in warehouse stock. Receive inventory first to enable outgoing operations.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  {itemsWithStock.length} items available for withdrawal or sale
+                  {warehouseItems.length} items available for withdrawal or sale
                 </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {itemsWithStock.slice(0, 6).map(item => (
-                  <Card key={item.id} className="hover:shadow-md transition-shadow">
+                {warehouseItems.slice(0, 6).map(warehouseItem => (
+                  <Card key={warehouseItem.item_id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm truncate">{item.name}</h4>
+                        <h4 className="font-medium text-sm truncate">{warehouseItem.item?.name}</h4>
                         <Package className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
                       </div>
                       
                       <div className="space-y-1 text-xs text-muted-foreground">
-                        <p>Stock: {item.current_stock || 0}</p>
-                        {item.sku && <p>SKU: {item.sku}</p>}
-                        {item.unit_cost && (
-                          <p>Value: ${((item.current_stock || 0) * item.unit_cost).toFixed(2)}</p>
-                        )}
+                        <p>Stock: {warehouseItem.on_hand}</p>
+                        {warehouseItem.item?.sku && <p>SKU: {warehouseItem.item.sku}</p>}
+                        <p>Value: ${(warehouseItem.on_hand * warehouseItem.wac_unit_cost).toFixed(2)}</p>
                       </div>
                       
                       <Button 
@@ -116,7 +140,7 @@ export const OutgoingTab: React.FC = () => {
                         variant="outline" 
                         className="w-full mt-3"
                         onClick={() => {
-                          // TODO: Add selectedItemId to OutgoingDialog
+                          setSelectedItemId(warehouseItem.item_id);
                           setIsOutgoingDialogOpen(true);
                         }}
                       >
@@ -127,10 +151,10 @@ export const OutgoingTab: React.FC = () => {
                 ))}
               </div>
               
-              {itemsWithStock.length > 6 && (
+              {warehouseItems.length > 6 && (
                 <div className="text-center">
                   <Button variant="outline" size="sm">
-                    View All Items ({itemsWithStock.length})
+                    View All Items ({warehouseItems.length})
                   </Button>
                 </div>
               )}
@@ -142,7 +166,12 @@ export const OutgoingTab: React.FC = () => {
       {/* Dialogs */}
       <OutgoingDialog
         open={isOutgoingDialogOpen}
-        onOpenChange={setIsOutgoingDialogOpen}
+        onOpenChange={(open) => {
+          setIsOutgoingDialogOpen(open);
+          if (!open) setSelectedItemId(null);
+        }}
+        selectedItemId={selectedItemId}
+        warehouseId={warehouseId}
       />
     </div>
   );

@@ -262,7 +262,7 @@ export const InventoryManagementTab: React.FC = () => {
       <div className="text-center py-8">
         <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
         <p className="text-muted-foreground">
-          You don't have permission to manage inventory items.
+          You don't have permission to manage the product catalog.
         </p>
       </div>
     );
@@ -274,7 +274,7 @@ export const InventoryManagementTab: React.FC = () => {
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Items
+            Product Catalog
           </TabsTrigger>
           <TabsTrigger value="labels" className="flex items-center gap-2">
             <QrCode className="h-4 w-4" />
@@ -305,7 +305,7 @@ export const InventoryManagementTab: React.FC = () => {
                 <div className="relative">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search items..."
+                    placeholder="Search product catalog..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-8"
@@ -363,7 +363,7 @@ export const InventoryManagementTab: React.FC = () => {
             ) : filteredAndSortedItems.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No items found</h3>
+                <h3 className="text-lg font-medium mb-2">No products found</h3>
                 <p className="text-muted-foreground mb-4">
                   {searchTerm || selectedCategory !== 'all' 
                     ? 'Try adjusting your search or filters.'
@@ -435,7 +435,7 @@ export const InventoryManagementTab: React.FC = () => {
                   <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No item types yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create item types to organize your inventory items
+                    Create product types to organize your product catalog
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddCategory}>
@@ -510,7 +510,7 @@ export const InventoryManagementTab: React.FC = () => {
                   <Ruler className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No units yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create units for your inventory items (Box of bottles, Case of cans, etc.)
+                    Create units for your products (Box of bottles, Case of cans, etc.)
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddUnit}>

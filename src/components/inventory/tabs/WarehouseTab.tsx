@@ -161,7 +161,7 @@ export const WarehouseTab: React.FC = () => {
       case 'processing':
         return <ProcessingTab />;
       case 'outgoing':
-        return <OutgoingTab />;
+        return <OutgoingTab warehouseId={warehouse.id} />;
       case 'reports':
         return <ReportsTab />;
       default:

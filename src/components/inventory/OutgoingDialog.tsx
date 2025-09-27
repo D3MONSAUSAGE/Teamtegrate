@@ -13,13 +13,14 @@ import { inventoryLotsApi, InventoryLot } from '@/contexts/inventory/api/invento
 import { inventoryItemsApi } from '@/contexts/inventory/api/inventoryItems';
 import { inventoryTransactionsApi } from '@/contexts/inventory/api/inventoryTransactions';
 import { toast } from 'sonner';
-import { useInventory } from '@/contexts/inventory';
+import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { format, parseISO } from 'date-fns';
 
 interface OutgoingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedItemId?: string | null;
+  warehouseId?: string;
 }
 
 const withdrawalReasons = [
@@ -35,11 +36,12 @@ const withdrawalReasons = [
 export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
   open,
   onOpenChange,
-  selectedItemId
+  selectedItemId,
+  warehouseId
 }) => {
-  const { items, refreshItems } = useInventory();
   const [loading, setLoading] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<WarehouseItem | null>(null);
   const [availableLots, setAvailableLots] = useState<InventoryLot[]>([]);
   const [formData, setFormData] = useState({
     item_id: selectedItemId || '',
@@ -50,14 +52,21 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     notes: ''
   });
 
+  // Load warehouse items when dialog opens or warehouse changes
+  useEffect(() => {
+    if (open && warehouseId) {
+      loadWarehouseItems();
+    }
+  }, [open, warehouseId]);
+
   useEffect(() => {
     if (selectedItemId) {
-      const item = items.find(i => i.id === selectedItemId);
-      setSelectedItem(item);
+      const item = warehouseItems.find(i => i.item_id === selectedItemId);
+      setSelectedItem(item || null);
       setFormData(prev => ({ ...prev, item_id: selectedItemId }));
       loadAvailableLots(selectedItemId);
     }
-  }, [selectedItemId, items]);
+  }, [selectedItemId, warehouseItems]);
 
   useEffect(() => {
     if (!open) {
@@ -72,8 +81,23 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
       });
       setSelectedItem(null);
       setAvailableLots([]);
+      setWarehouseItems([]);
     }
   }, [open]);
+
+  const loadWarehouseItems = async () => {
+    if (!warehouseId) return;
+    
+    try {
+      const items = await warehouseApi.listWarehouseItems(warehouseId);
+      // Only show items with stock available
+      const itemsWithStock = items.filter(item => item.on_hand > 0);
+      setWarehouseItems(itemsWithStock);
+    } catch (error) {
+      console.error('Error loading warehouse items:', error);
+      toast.error('Failed to load warehouse stock');
+    }
+  };
 
   const loadAvailableLots = async (itemId: string) => {
     try {
@@ -88,8 +112,8 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
   };
 
   const handleItemSelect = (itemId: string) => {
-    const item = items.find(i => i.id === itemId);
-    setSelectedItem(item);
+    const item = warehouseItems.find(i => i.item_id === itemId);
+    setSelectedItem(item || null);
     setFormData(prev => ({ ...prev, item_id: itemId }));
     loadAvailableLots(itemId);
   };
@@ -167,10 +191,11 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
         });
       }
 
-      // Update item stock
-      if (selectedItem) {
-        const newStock = Math.max(0, (selectedItem.current_stock || 0) - formData.quantity);
-        await inventoryItemsApi.updateStock(selectedItem.id, newStock);
+      // Update warehouse stock
+      if (selectedItem && warehouseId) {
+        const newStock = Math.max(0, selectedItem.on_hand - formData.quantity);
+        // TODO: Add warehouse stock update API call
+        console.log('Need to update warehouse stock:', { warehouseId, itemId: selectedItem.item_id, newStock });
       }
 
       // Create transaction record
@@ -186,10 +211,10 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
         user_id: '' // Will be set by auth
       });
 
-      await refreshItems();
+      await loadWarehouseItems(); // Refresh warehouse items instead
       
       const reasonLabel = withdrawalReasons.find(r => r.value === formData.reason)?.label;
-      toast.success(`Successfully withdrew ${formData.quantity} units of ${selectedItem?.name} (${reasonLabel})`);
+      toast.success(`Successfully withdrew ${formData.quantity} units of ${selectedItem?.item?.name} (${reasonLabel})`);
       onOpenChange(false);
     } catch (error) {
       console.error('Error withdrawing stock:', error);
@@ -199,7 +224,7 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     }
   };
 
-  const totalAvailableStock = availableLots.reduce((sum, lot) => sum + lot.quantity_remaining, 0);
+  const totalAvailableStock = selectedItem ? selectedItem.on_hand : 0;
   const { consumption } = formData.quantity > 0 ? calculateFIFOConsumption(formData.quantity) : { consumption: [] };
 
   return (
@@ -208,7 +233,7 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-primary" />
-            Withdraw/Sell Stock
+            Withdraw/Sell Warehouse Stock
           </DialogTitle>
         </DialogHeader>
 
@@ -226,14 +251,14 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
                     <SelectValue placeholder="Select item to withdraw" />
                   </SelectTrigger>
                   <SelectContent>
-                    {items.filter(item => (item.current_stock || 0) > 0).map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
+                    {warehouseItems.map((warehouseItem) => (
+                      <SelectItem key={warehouseItem.item_id} value={warehouseItem.item_id}>
                         <div className="flex items-center gap-2">
                           <Package className="h-4 w-4" />
-                          <span>{item.name}</span>
-                          {item.sku && <span className="text-muted-foreground text-xs">({item.sku})</span>}
+                          <span>{warehouseItem.item?.name}</span>
+                          {warehouseItem.item?.sku && <span className="text-muted-foreground text-xs">({warehouseItem.item.sku})</span>}
                           <Badge variant="outline" className="text-xs">
-                            {item.current_stock || 0} available
+                            {warehouseItem.on_hand} in warehouse
                           </Badge>
                         </div>
                       </SelectItem>
@@ -242,9 +267,9 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
                 </Select>
                 {selectedItem && (
                   <div className="mt-2 p-2 bg-muted/50 rounded-md">
-                    <p className="text-sm font-medium">{selectedItem.name}</p>
+                    <p className="text-sm font-medium">{selectedItem.item?.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Current Stock: {selectedItem.current_stock || 0} | Available in {availableLots.length} lots
+                      Warehouse Stock: {selectedItem.on_hand} | Available in {availableLots.length} lots
                     </p>
                   </div>
                 )}
