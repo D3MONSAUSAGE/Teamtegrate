@@ -101,6 +101,7 @@ export type RecentTransfer = {
 export type WarehouseOverview = {
   warehouse_id: string;
   warehouse_name: string;
+  team_id: string | null;
   team_name: string;
   total_items: number;
   total_inventory_value: number;
@@ -477,6 +478,7 @@ export const warehouseApi = {
         overview.push({
           warehouse_id: warehouse.id,
           warehouse_name: warehouse.name,
+          team_id: warehouse.team_id,
           team_name: warehouse.team?.name || 'Main Warehouse',
           total_items: items.length,
           total_inventory_value: totalValue,

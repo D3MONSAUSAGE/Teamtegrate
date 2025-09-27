@@ -141,9 +141,11 @@ export const WarehouseTab: React.FC = () => {
     setRefreshKey(prev => prev + 1);
   }, []);
 
-  const handleSelectWarehouse = (warehouseId: string) => {
-    // Find the team for this warehouse and set it as selected
-    // For now, we'll just show the detailed view
+  const handleSelectWarehouse = (teamId: string | null) => {
+    // Set the selected team and hide the overview to show warehouse details
+    if (teamId) {
+      setSelectedTeamId(teamId);
+    }
     setShowOverview(false);
   };
 

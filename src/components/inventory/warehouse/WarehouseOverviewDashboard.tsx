@@ -15,7 +15,7 @@ import { warehouseApi, type WarehouseOverview, type DailyMetrics } from '@/conte
 import { toast } from 'sonner';
 
 interface WarehouseOverviewDashboardProps {
-  onSelectWarehouse?: (teamId: string) => void;
+  onSelectWarehouse?: (teamId: string | null) => void;
 }
 
 export const WarehouseOverviewDashboard: React.FC<WarehouseOverviewDashboardProps> = ({
@@ -222,7 +222,7 @@ export const WarehouseOverviewDashboard: React.FC<WarehouseOverviewDashboardProp
                   variant="outline" 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => onSelectWarehouse?.(warehouse.warehouse_id)}
+                  onClick={() => onSelectWarehouse?.(warehouse.team_id)}
                 >
                   View Details
                 </Button>
