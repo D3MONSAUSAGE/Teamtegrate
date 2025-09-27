@@ -341,8 +341,14 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
         const warehouseItem = warehouseItems.find(wi => wi.item_id === line.item_id);
         if (warehouseItem && warehouseId) {
           const newStock = Math.max(0, warehouseItem.on_hand - line.qty);
-          // TODO: Add warehouse stock update API call
-          console.log('Need to update warehouse stock:', { warehouseId, itemId: line.item_id, newStock });
+          
+          try {
+            await warehouseApi.updateWarehouseStock(warehouseId, line.item_id, newStock);
+          } catch (stockError) {
+            console.error('Failed to update warehouse stock:', stockError);
+            toast.error(`Failed to update warehouse stock for ${line.name}`);
+            throw stockError; // Stop processing if stock update fails
+          }
         }
 
         // Create transaction record with batch number
@@ -354,7 +360,7 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
           unit_cost: line.unit_price || undefined,
           transaction_date: new Date().toISOString(),
           reference_number: outgoingBatchNumber, // Store batch number in reference
-          notes: `${line.reason}${line.notes ? ` - ${line.notes}` : ''} | Batch: ${outgoingBatchNumber} | Consumed lots: ${consumption.map(c => c.lotNumber).join(', ')}`,
+          notes: `${line.reason}${line.notes ? ` - ${line.notes}` : ''} | Batch: ${outgoingBatchNumber} | Consumed lots: ${consumption.map(c => c.lotNumber).join(', ')} | Warehouse: ${warehouseId}`,
           user_id: '' // Will be set by auth
         });
       }

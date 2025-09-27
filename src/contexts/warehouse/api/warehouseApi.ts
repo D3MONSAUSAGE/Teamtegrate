@@ -419,6 +419,28 @@ export const warehouseApi = {
     }
   },
 
+  // Update warehouse stock levels
+  async updateWarehouseStock(warehouseId: string, itemId: string, newStock: number): Promise<void> {
+    const { error } = await supabase
+      .from('warehouse_items')
+      .update({ 
+        on_hand: newStock 
+      })
+      .eq('warehouse_id', warehouseId)
+      .eq('item_id', itemId);
+
+    if (error) throw error;
+  },
+
+  // Bulk update warehouse stock (for multiple items at once)
+  async bulkUpdateWarehouseStock(updates: Array<{ warehouseId: string; itemId: string; newStock: number }>): Promise<void> {
+    const promises = updates.map(update => 
+      this.updateWarehouseStock(update.warehouseId, update.itemId, update.newStock)
+    );
+    
+    await Promise.all(promises);
+  },
+
   // Search inventory items for warehouse receiving
   async searchInventoryItems(query: string, limit = 20): Promise<any[]> {
     if (!query.trim()) return [];

@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ItemDetailsModal } from '../ItemDetailsModal';
 import { InventoryItem } from '@/contexts/inventory/types';
+import { StockStatusBadge } from '../StockStatusBadge';
+import { getStockStatusSummary } from '@/utils/stockStatus';
 
 interface WarehouseStockProps {
   warehouseId?: string;
@@ -112,7 +114,14 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
         totalItems: 0,
         totalSKUs: 0,
         totalBarcodes: 0,
-        totalStockValue: 0
+        totalStockValue: 0,
+        stockStatus: {
+          underStock: 0,
+          overStock: 0,
+          normalStock: 0,
+          noThresholds: 0,
+          total: 0
+        }
       };
     }
 
@@ -123,11 +132,23 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
       return sum + (Number(item.on_hand) * Number(item.wac_unit_cost));
     }, 0);
 
+    // Calculate stock status summary
+    const stockStatusItems = items.map(item => ({
+      actualQuantity: item.on_hand,
+      minimumThreshold: item.reorder_min,
+      maximumThreshold: item.reorder_max,
+      templateMinimum: null,
+      templateMaximum: null
+    }));
+
+    const stockStatus = getStockStatusSummary(stockStatusItems);
+
     return {
       totalItems,
       totalSKUs,
       totalBarcodes,
-      totalStockValue
+      totalStockValue,
+      stockStatus
     };
   }, [items]);
 
@@ -232,6 +253,67 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
               </Card>
             </div>
 
+            {/* Stock Status Summary */}
+            {summaryStats.stockStatus.total > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-destructive/10">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Under Stock</p>
+                        <p className="text-2xl font-bold text-destructive">{summaryStats.stockStatus.underStock}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-orange-500/5 to-orange-500/10 border-orange-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-orange-500/10">
+                        <Package className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Over Stock</p>
+                        <p className="text-2xl font-bold text-orange-600">{summaryStats.stockStatus.overStock}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-500/5 to-green-500/10 border-green-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-green-500/10">
+                        <Package className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Normal Stock</p>
+                        <p className="text-2xl font-bold text-green-600">{summaryStats.stockStatus.normalStock}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-muted/5 to-muted/10 border-muted/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-muted/10">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">No Thresholds</p>
+                        <p className="text-2xl font-bold">{summaryStats.stockStatus.noThresholds}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             <div className="overflow-x-auto">
               <Table>
               <TableHeader>
@@ -243,6 +325,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
                   <TableHead className="text-right">Price</TableHead>
                   <TableHead className="text-right">Reorder Min</TableHead>
                   <TableHead className="text-right">Reorder Max</TableHead>
+                  <TableHead className="text-center">Stock Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -286,6 +369,14 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
                     </TableCell>
                     <TableCell className="text-right">
                       {item.reorder_max ? formatQuantity(item.reorder_max) : '-'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <StockStatusBadge
+                        actualQuantity={item.on_hand}
+                        minimumThreshold={item.reorder_min}
+                        maximumThreshold={item.reorder_max}
+                        size="sm"
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
