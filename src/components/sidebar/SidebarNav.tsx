@@ -27,6 +27,7 @@ import {
   Package,
 } from 'lucide-react';
 import { InventoryNavMenu } from './InventoryNavMenu';
+import { TrainingNavMenu } from './TrainingNavMenu';
 
 interface NavItemProps {
   name: string;
@@ -166,6 +167,9 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
       
       {/* Inventory Navigation Menu */}
       <InventoryNavMenu onNavigation={onNavigation} isCollapsed={isCollapsed} />
+      
+      {/* Training Navigation Menu */}
+      <TrainingNavMenu />
     </div>
   );
 });

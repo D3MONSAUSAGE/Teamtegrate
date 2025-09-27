@@ -60,6 +60,18 @@ import WarehouseProcessingPage from "@/pages/inventory/warehouse/WarehouseProces
 import WarehouseOutgoingPage from "@/pages/inventory/warehouse/WarehouseOutgoingPage";
 import WarehouseReportsPage from "@/pages/inventory/warehouse/WarehouseReportsPage";
 
+// Training Pages
+import { TrainingDashboardPage } from "@/pages/training/TrainingDashboardPage";
+import { MyTrainingPage } from "@/pages/training/MyTrainingPage";
+import { VideoLibraryPage } from "@/pages/training/VideoLibraryPage";
+import { TrainingAnalyticsPage } from "@/pages/training/TrainingAnalyticsPage";
+import { TrainingContentPage } from "@/pages/training/management/TrainingContentPage";
+import { TrainingAssignmentsPage } from "@/pages/training/management/TrainingAssignmentsPage";
+import { VideoLibraryAdminPage } from "@/pages/training/management/VideoLibraryAdminPage";
+import { EmployeeRecordsPage } from "@/pages/training/management/EmployeeRecordsPage";
+import { CertificatesPage } from "@/pages/training/management/CertificatesPage";
+import { RetrainingPage } from "@/pages/training/management/RetrainingPage";
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -124,9 +136,22 @@ function App() {
                     <Route path="inventory/warehouse/outgoing" element={<WarehouseOutgoingPage />} />
                     <Route path="inventory/warehouse/reports" element={<WarehouseReportsPage />} />
                     <Route path="inventory/management" element={<InventoryManagementPage />} />
-                    <Route path="meetings" element={<MeetingsPage />} />
-                    <Route path="training" element={<TrainingPage />} />
-                    <Route path="checklists" element={<ChecklistsPage />} />
+                     <Route path="meetings" element={<MeetingsPage />} />
+                     
+                     {/* Training Routes - Keep original + add new nested routes */}
+                     <Route path="training" element={<TrainingPage />} />
+                     <Route path="training/dashboard" element={<TrainingDashboardPage />} />
+                     <Route path="training/my-training" element={<MyTrainingPage />} />
+                     <Route path="training/video-library" element={<VideoLibraryPage />} />
+                     <Route path="training/analytics" element={<TrainingAnalyticsPage />} />
+                     <Route path="training/management/content" element={<TrainingContentPage />} />
+                     <Route path="training/management/assignments" element={<TrainingAssignmentsPage />} />
+                     <Route path="training/management/video-library" element={<VideoLibraryAdminPage />} />
+                     <Route path="training/management/employee-records" element={<EmployeeRecordsPage />} />
+                     <Route path="training/management/certificates" element={<CertificatesPage />} />
+                     <Route path="training/management/retraining" element={<RetrainingPage />} />
+                     
+                     <Route path="checklists" element={<ChecklistsPage />} />
                 </Route>
                 
                 {/* Fallback for unmatched routes */}

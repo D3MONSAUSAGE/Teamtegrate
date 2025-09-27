@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Loader2, GraduationCap, Settings, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import MyTrainingTab from '@/components/training/MyTrainingTab';
 import TrainingManagementTab from '@/components/training/TrainingManagementTab';
 import { VideoLibrary } from '@/components/training/video-library/VideoLibrary';
@@ -31,6 +32,15 @@ import TrainingErrorBoundary from '@/components/training/TrainingErrorBoundary';
 
 const TrainingPage = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect to training dashboard if directly accessing /dashboard/training
+  useEffect(() => {
+    if (location.pathname === '/dashboard/training') {
+      navigate('/dashboard/training/dashboard', { replace: true });
+    }
+  }, [location.pathname, navigate]);
   const [isQuizCreatorOpen, setIsQuizCreatorOpen] = useState(false);
   const [isCourseCreatorOpen, setIsCourseCreatorOpen] = useState(false);
   const [isCourseEditorOpen, setIsCourseEditorOpen] = useState(false);
