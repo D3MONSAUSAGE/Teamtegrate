@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
-import { TransferToTeamDrawer } from '../warehouse/TransferToTeamDrawer';
+
 import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
 import { ReportsTab } from '../warehouse/ReportsTab';
@@ -233,7 +233,7 @@ export const WarehouseTab: React.FC = () => {
             </h2>
             <p className="text-muted-foreground">
               {warehouse ? (
-                <>Manage {warehouse.name} stock levels{warehouse.team?.name && ` (${warehouse.team.name})`}, receive inventory, and transfer to teams</>
+                <>Manage {warehouse.name} stock levels{warehouse.team?.name && ` (${warehouse.team.name})`}, receive inventory, and manage outgoing inventory including sales and transfers</>
               ) : (isAdmin || isSuperAdmin) && !selectedTeamId ? (
                 <>Select a team to view and manage their warehouse</>
               ) : (
@@ -246,10 +246,6 @@ export const WarehouseTab: React.FC = () => {
               <ReceiveStockDrawer 
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
-              />
-              <TransferToTeamDrawer 
-                warehouseId={warehouse.id}
-                onTransferSent={handleRefresh}
               />
             </div>
           )}

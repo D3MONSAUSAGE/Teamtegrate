@@ -193,10 +193,10 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
               <TruckIcon className="h-5 w-5" />
               Outgoing & Sales
             </CardTitle>
-            <Button onClick={() => setIsOutgoingSheetOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Withdraw/Sell Stock
-            </Button>
+             <Button onClick={() => setIsOutgoingSheetOpen(true)}>
+               <Plus className="h-4 w-4 mr-2" />
+               Withdraw/Transfer/Sell Stock
+             </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -235,17 +235,17 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
                         <p>Value: ${(warehouseItem.on_hand * warehouseItem.wac_unit_cost).toFixed(2)}</p>
                       </div>
                       
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="w-full mt-3"
-                        onClick={() => {
-                          setSelectedItemId(warehouseItem.item_id);
-                          setIsOutgoingSheetOpen(true);
-                        }}
-                      >
-                        Withdraw/Sell
-                      </Button>
+                       <Button 
+                         size="sm" 
+                         variant="outline" 
+                         className="w-full mt-3"
+                         onClick={() => {
+                           setSelectedItemId(warehouseItem.item_id);
+                           setIsOutgoingSheetOpen(true);
+                         }}
+                       >
+                         Withdraw/Transfer/Sell
+                       </Button>
                     </CardContent>
                   </Card>
                 ))}
