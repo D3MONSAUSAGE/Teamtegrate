@@ -369,6 +369,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
           availableItems={warehouseInventoryItems} // Use warehouse-specific items only
           onScanItem={handleScanItem}
           onCreateInvoice={handleCreateInvoice}
+          warehouseId={warehouseId} // Pass warehouse ID for validation
         />
       )}
       

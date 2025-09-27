@@ -45,6 +45,7 @@ interface OutgoingSheetProps {
   availableItems: InventoryItem[];
   onScanItem: (barcode: string) => Promise<InventoryItem | null>;
   onCreateInvoice?: (client: InvoiceClient, lineItems: LineItem[], notes?: string) => Promise<CreatedInvoice | void>;
+  warehouseId?: string; // Add warehouse ID for validation
 }
 
 export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
@@ -53,7 +54,8 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   onItemsWithdrawn, 
   availableItems,
   onScanItem,
-  onCreateInvoice
+  onCreateInvoice,
+  warehouseId
 }) => {
   // Debug logging for available items
   console.log('🔍 [OutgoingSheet] Component received availableItems:', availableItems);
@@ -187,28 +189,42 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
     setLineItems(prev => prev.filter(lineItem => lineItem.id !== lineItemId));
   };
 
-  // Filter available items for search
-  const filteredItems = availableItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (item.barcode && item.barcode.includes(searchTerm))
-  ).slice(0, 10);
+  // Filter available items for search with strict warehouse validation
+  const filteredItems = availableItems
+    .filter(item => {
+      // First check if item matches search criteria
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.barcode && item.barcode.includes(searchTerm));
+      
+      // Then ensure item has valid stock and belongs to the correct warehouse
+      const hasValidStock = item.current_stock && item.current_stock > 0;
+      
+      // If warehouse ID is provided, ensure item belongs to that warehouse (team_id match)
+      const belongsToWarehouse = !warehouseId || item.team_id === warehouseId;
+      
+      return matchesSearch && hasValidStock && belongsToWarehouse;
+    })
+    .slice(0, 10);
 
-  // Debug logging for search results
+  // Debug logging for search results with warehouse validation
   if (searchTerm) {
     console.log('🔍 [OutgoingSheet] Search term:', searchTerm);
+    console.log('🔍 [OutgoingSheet] Warehouse ID for validation:', warehouseId);
+    console.log('🔍 [OutgoingSheet] Available items before filtering:', availableItems.length);
+    console.log('🔍 [OutgoingSheet] Available items team_ids:', availableItems.map(item => `${item.name} (team_id: ${item.team_id}, stock: ${item.current_stock})`));
     console.log('🔍 [OutgoingSheet] Filtered items from search:', filteredItems);
     console.log('🔍 [OutgoingSheet] Filtered items count:', filteredItems.length);
-    console.log('🔍 [OutgoingSheet] Filtered items names:', filteredItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
+    console.log('🔍 [OutgoingSheet] Filtered items names:', filteredItems.map(item => `${item.name} (stock: ${item.current_stock}, team_id: ${item.team_id}, id: ${item.id})`));
     
-    // Runtime validation - ensure all filtered items are actually in availableItems
-    const validatedItems = filteredItems.filter(filteredItem => 
-      availableItems.some(availableItem => availableItem.id === filteredItem.id)
+    // Runtime validation - ensure all filtered items belong to the correct warehouse
+    const warehouseValidatedItems = filteredItems.filter(filteredItem => 
+      !warehouseId || filteredItem.team_id === warehouseId
     );
-    if (validatedItems.length !== filteredItems.length) {
-      console.error('🔍 [OutgoingSheet] ERROR: Some filtered items are not in availableItems!');
-      console.error('🔍 [OutgoingSheet] Available items IDs:', availableItems.map(item => item.id));
-      console.error('🔍 [OutgoingSheet] Filtered items IDs:', filteredItems.map(item => item.id));
+    if (warehouseValidatedItems.length !== filteredItems.length) {
+      console.error('🔍 [OutgoingSheet] ERROR: Some filtered items do not belong to warehouse!');
+      console.error('🔍 [OutgoingSheet] Expected warehouse ID:', warehouseId);
+      console.error('🔍 [OutgoingSheet] Invalid items:', filteredItems.filter(item => item.team_id !== warehouseId));
     }
   }
 
