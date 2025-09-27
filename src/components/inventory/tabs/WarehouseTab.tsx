@@ -46,7 +46,9 @@ export const WarehouseTab: React.FC = () => {
   const shouldShowOverview = (isAdmin || isSuperAdmin) && selectedTeamId === null;
 
   const loadWarehouse = useCallback(async (retryCount = 0) => {
+    console.log('loadWarehouse called:', { shouldLoadWarehouse, selectedTeamId, retryCount });
     if (!shouldLoadWarehouse) {
+      console.log('Should not load warehouse - showing overview');
       setLoading(false);
       setWarehouse(null);
       setError(null);
@@ -99,8 +101,9 @@ export const WarehouseTab: React.FC = () => {
           return;
         }
         
-        console.log('Warehouse loaded:', data);
+        console.log('Warehouse loaded successfully:', data);
         setWarehouse(data);
+        setShowOverview(false); // Ensure overview is hidden when warehouse loads
       } else {
         // No warehouse exists - but if we just created one, retry a few times
         if (retryCount < 3 && !isRetrying) {
@@ -375,7 +378,26 @@ export const WarehouseTab: React.FC = () => {
             <div className="text-sm text-muted-foreground">{error}</div>
           </div>
         </div>
-      ) : showOverview || (shouldShowOverview && !warehouse) ? (
+      ) : warehouse ? (
+        // Show warehouse tabs when warehouse is loaded
+        <ScrollableTabs>
+          <ScrollableTabsList>
+            {tabs.map((tab) => (
+              <ScrollableTabsTrigger
+                key={tab.id}
+                isActive={activeTab === tab.id}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </ScrollableTabsTrigger>
+            ))}
+          </ScrollableTabsList>
+          
+          <div className="mt-4">
+            {renderTabContent()}
+          </div>
+        </ScrollableTabs>
+      ) : showOverview || shouldShowOverview ? (
         <React.Suspense fallback={<div className="flex items-center justify-center py-12">Loading dashboard...</div>}>
           <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
         </React.Suspense>
