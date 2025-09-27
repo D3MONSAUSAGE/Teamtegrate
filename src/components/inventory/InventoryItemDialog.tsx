@@ -19,7 +19,7 @@ import { validateSKUUniqueness } from '@/utils/skuGenerator';
 import { BarcodeInput } from './BarcodeInput';
 import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';
-import { LotTrackingPanel } from './LotTrackingPanel';
+import { IngredientsPanel } from './IngredientsPanel';
 import { NutritionalInfoForm } from './NutritionalInfoForm';
 import { LabelPrintDialog } from './labels/LabelPrintDialog';
 
@@ -267,7 +267,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic">Basic Information</TabsTrigger>
-            <TabsTrigger value="lots" disabled={!itemId}>Lot Tracking</TabsTrigger>
+            <TabsTrigger value="ingredients" disabled={!itemId}>Ingredients</TabsTrigger>
             <TabsTrigger value="nutrition" disabled={!itemId}>Nutritional Info</TabsTrigger>
           </TabsList>
 
@@ -562,9 +562,9 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
             </Form>
           </TabsContent>
 
-          <TabsContent value="lots" className="mt-6">
+          <TabsContent value="ingredients" className="mt-6">
             {itemId && currentItem && (
-              <LotTrackingPanel
+              <IngredientsPanel
                 itemId={itemId}
                 itemName={currentItem.name}
               />

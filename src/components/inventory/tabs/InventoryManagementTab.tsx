@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { InventoryItemDialog } from '../InventoryItemDialog';
+import { ReceivingDialog } from '../ReceivingDialog';
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
@@ -13,7 +14,7 @@ import { VendorDialog } from '../dialogs/VendorDialog';
 import { ItemCard } from '../ItemCard';
 import { ItemTableRow } from '../ItemTableRow';
 import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
-import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2, Building2, Mail, Phone, Globe, QrCode } from 'lucide-react';
+import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2, Building2, Mail, Phone, Globe, QrCode, TruckIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -49,6 +50,7 @@ export const InventoryManagementTab: React.FC = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isReceivingDialogOpen, setIsReceivingDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
@@ -340,10 +342,16 @@ export const InventoryManagementTab: React.FC = () => {
 
 
                 {hasRoleAccess('admin') && (
-                  <Button onClick={handleAddItem}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddItem}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Item
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsReceivingDialogOpen(true)}>
+                      <TruckIcon className="h-4 w-4 mr-2" />
+                      Receive Stock
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -673,6 +681,11 @@ export const InventoryManagementTab: React.FC = () => {
         onOpenChange={setIsVendorDialogOpen}
         vendor={selectedVendor}
         onSave={handleSaveVendor}
+      />
+
+      <ReceivingDialog
+        open={isReceivingDialogOpen}
+        onOpenChange={setIsReceivingDialogOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
