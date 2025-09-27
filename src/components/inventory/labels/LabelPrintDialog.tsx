@@ -177,112 +177,191 @@ export const LabelPrintDialog: React.FC<LabelPrintDialogProps> = ({
 
   const generateFieldsFromContentConfig = () => {
     const fields: any[] = [];
-    let yOffset = 30;
+    
+    // 4x6 thermal label optimization (288x432 points)
+    const THERMAL_WIDTH = 288;
+    const THERMAL_HEIGHT = 432;
+    const MARGIN = 15;
+    const usableWidth = THERMAL_WIDTH - (MARGIN * 2);
+    
+    let yOffset = MARGIN + 10;
 
+    // Product name - prominent at top
     if (contentConfig.name) {
       fields.push({
         type: 'text',
         field: 'name',
-        x: 20,
+        x: MARGIN,
         y: yOffset,
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
-        width: 250
+        width: usableWidth
       });
-      yOffset += 25;
+      yOffset += 20;
     }
 
+    // SKU - smaller below name
     if (contentConfig.sku) {
       fields.push({
         type: 'text',
         field: 'sku',
-        x: 20,
+        x: MARGIN,
         y: yOffset,
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: 'normal'
       });
-      yOffset += 20;
+      yOffset += 16;
     }
 
+    // Barcode - thermal optimized size
     if (contentConfig.barcode) {
       fields.push({
         type: 'barcode',
         field: 'sku',
-        x: 20,
+        x: MARGIN,
         y: yOffset,
         format: 'CODE128',
-        width: 150,
-        height: 30
+        width: 180,
+        height: 25
       });
-      yOffset += 40;
+      yOffset += 35;
     }
 
+    // QR Code - compact size, positioned on right if barcode exists
     if (contentConfig.qrCode) {
+      const qrX = contentConfig.barcode ? THERMAL_WIDTH - MARGIN - 35 : MARGIN;
+      const qrY = contentConfig.barcode ? yOffset - 35 : yOffset;
       fields.push({
         type: 'qr',
         field: 'item_data',
-        x: 200,
-        y: yOffset - 40,
-        size: 40
+        x: qrX,
+        y: qrY,
+        size: 35
       });
+      if (!contentConfig.barcode) yOffset += 40;
     }
 
-    if (contentConfig.lotNumber && lot) {
+    // Category and Vendor - side by side if both present
+    let categoryVendorY = yOffset;
+    if (contentConfig.category) {
+      fields.push({
+        type: 'text',
+        field: 'category',
+        x: MARGIN,
+        y: categoryVendorY,
+        fontSize: 8,
+        fontWeight: 'normal'
+      });
+    }
+    if (contentConfig.vendor) {
+      fields.push({
+        type: 'text',
+        field: 'vendor',
+        x: contentConfig.category ? MARGIN + 80 : MARGIN,
+        y: categoryVendorY,
+        fontSize: 8,
+        fontWeight: 'normal'
+      });
+    }
+    if (contentConfig.category || contentConfig.vendor) yOffset += 14;
+
+    // Lot info - compact format
+    if (contentConfig.lotNumber) {
       fields.push({
         type: 'text',
         field: 'lot_number',
-        x: 20,
+        x: MARGIN,
         y: yOffset,
         fontSize: 9,
         fontWeight: 'bold'
       });
-      yOffset += 20;
-    }
-
-    if (contentConfig.expirationDate && lot) {
+      
+      // Expiration date on same line if present
+      if (contentConfig.expirationDate) {
+        fields.push({
+          type: 'text',
+          field: 'expiration_date',
+          x: MARGIN + 100,
+          y: yOffset,
+          fontSize: 9,
+          fontWeight: 'bold'
+        });
+      }
+      yOffset += 16;
+    } else if (contentConfig.expirationDate) {
       fields.push({
         type: 'text',
         field: 'expiration_date',
-        x: 120,
-        y: yOffset - 20,
-        fontSize: 9
+        x: MARGIN,
+        y: yOffset,
+        fontSize: 9,
+        fontWeight: 'bold'
       });
+      yOffset += 16;
     }
 
-    if (contentConfig.nutritionalFacts && nutritionalInfo) {
+    // Nutritional facts - compact thermal format
+    if (contentConfig.nutritionalFacts) {
       fields.push({
         type: 'nutritional_facts',
         field: 'nutritional_info',
-        x: 20,
-        y: yOffset,
-        fontSize: 8,
-        width: 120,
-        height: 200
-      });
-      yOffset += 210;
-    }
-
-    if (contentConfig.ingredients && nutritionalInfo?.ingredients) {
-      fields.push({
-        type: 'text',
-        field: 'ingredients',
-        x: 20,
+        x: MARGIN,
         y: yOffset,
         fontSize: 7,
-        width: 250,
-        wordWrap: true
+        width: usableWidth,
+        height: 120,
+        compact: true
       });
-      yOffset += 40;
+      yOffset += 130;
     }
 
-    if (contentConfig.allergens && nutritionalInfo?.allergens) {
+    // Ingredients - word wrapped
+    if (contentConfig.ingredients) {
+      fields.push({
+        type: 'ingredients_list',
+        field: 'ingredients',
+        x: MARGIN,
+        y: yOffset,
+        fontSize: 6,
+        width: usableWidth,
+        maxLines: 4
+      });
+      yOffset += 30;
+    }
+
+    // Allergens - prominent warning
+    if (contentConfig.allergens) {
+      fields.push({
+        type: 'allergen_warning',
+        field: 'allergens',
+        x: MARGIN,
+        y: yOffset,
+        fontSize: 7,
+        fontWeight: 'bold',
+        width: usableWidth
+      });
+      yOffset += 16;
+    }
+
+    // Additional fields for thermal optimization
+    if (contentConfig.location) {
       fields.push({
         type: 'text',
-        field: 'allergens',
-        x: 20,
+        field: 'location',
+        x: MARGIN,
         y: yOffset,
-        fontSize: 8,
-        fontWeight: 'bold'
+        fontSize: 7
+      });
+      yOffset += 12;
+    }
+
+    if (contentConfig.currentStock) {
+      fields.push({
+        type: 'text',
+        field: 'current_stock',
+        x: MARGIN,
+        y: yOffset,
+        fontSize: 7
       });
     }
 

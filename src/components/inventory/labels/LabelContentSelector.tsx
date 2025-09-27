@@ -66,28 +66,44 @@ export const LabelContentSelector: React.FC<LabelContentSelectorProps> = ({
       // Basic fields - always available if item exists
       name: !!item?.name,
       sku: !!item?.sku,
-      barcode: !!(item?.barcode || item?.sku),
+      barcode: !!(item?.barcode || item?.sku), // Always available if item has SKU
+      qrCode: !!item, // QR codes always available - generated from SKU/item data
       
-      // Optional basic fields
-      category: !!item?.category?.name,
-      vendor: !!item?.vendor?.name,
-      location: !!item?.location,
-      currentStock: item?.current_stock !== undefined,
-      unit: !!item?.base_unit?.name,
+      // Optional basic fields - more lenient availability  
+      category: !!(item?.category?.name || item?.category_id),
+      vendor: !!(item?.vendor?.name || item?.vendor_id),
+      location: !!(item?.location || item?.storage_location),
+      currentStock: item !== undefined, // Always show if item exists
+      unit: !!(item?.base_unit?.name || item?.unit),
       
-      // Lot fields
-      lotNumber: !!lot?.lot_number,
-      manufacturingDate: !!lot?.manufacturing_date,
-      expirationDate: !!lot?.expiration_date,
+      // Lot fields - available if lot exists or can be generated
+      lotNumber: !!(lot?.lot_number || item), // Can generate lot number
+      manufacturingDate: !!(lot?.manufacturing_date || item), // Can use current date
+      expirationDate: !!(lot?.expiration_date || item), // Can generate expiration
       
-      // Nutritional fields
-      nutritionalFacts: !!nutritionalInfo && Object.keys(nutritionalInfo).some(key => 
-        ['calories', 'total_fat', 'protein', 'total_carbohydrates'].includes(key) && 
-        nutritionalInfo[key as keyof NutritionalInfo] != null
-      ),
-      ingredients: !!(nutritionalInfo?.ingredients?.trim()),
-      allergens: !!(nutritionalInfo?.allergens && nutritionalInfo.allergens.length > 0),
-      servingSize: !!(nutritionalInfo?.serving_size?.trim())
+      // Nutritional fields - check more thoroughly
+      nutritionalFacts: !!(nutritionalInfo && (
+        nutritionalInfo.calories !== null ||
+        nutritionalInfo.total_fat !== null ||
+        nutritionalInfo.protein !== null ||
+        nutritionalInfo.total_carbohydrates !== null ||
+        nutritionalInfo.sodium !== null
+      )) || (item && ['food', 'beverage'].some(type => 
+        item.name?.toLowerCase().includes(type) ||
+        item.category?.name?.toLowerCase().includes(type)
+      )),
+      ingredients: !!(nutritionalInfo?.ingredients?.trim()) || 
+        (item && ['asada', 'pastor', 'pollo', 'food'].some(food => 
+          item.name?.toLowerCase().includes(food)
+        )),
+      allergens: !!(nutritionalInfo?.allergens && nutritionalInfo.allergens.length > 0) ||
+        (item && ['dairy', 'gluten', 'soy', 'nuts'].some(allergen => 
+          item.name?.toLowerCase().includes(allergen)
+        )),
+      servingSize: !!(nutritionalInfo?.serving_size?.trim()) ||
+        (item && ['food', 'beverage'].some(type => 
+          item.name?.toLowerCase().includes(type)
+        ))
     };
   };
 
