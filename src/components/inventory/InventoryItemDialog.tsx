@@ -25,6 +25,15 @@ import { IngredientsPanel } from './IngredientsPanel';
 import { NutritionalInfoForm } from './NutritionalInfoForm';
 import { vendorsApi } from '@/contexts/inventory/api';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
+import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
+import { 
+  buildNutritionPayload, 
+  hasNutritionOrIngredients, 
+  sanitizeFilename, 
+  nutritionalSchema, 
+  ingredientsSchema 
+} from '@/utils/nutritionalValidation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -61,6 +70,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   itemId
 }) => {
   const { createItem, updateItem, getItemById, loading, categories, units, vendors, refreshVendors } = useInventory();
+  const { user } = useAuth();
   
   const [calculatedUnitPrice, setCalculatedUnitPrice] = useState<number | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -68,6 +78,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
+  const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
   
   // Shared state for ingredients and nutritional info
   const [ingredientsData, setIngredientsData] = useState({
@@ -324,53 +335,47 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           hasNutritionalValues: Object.values(nutritionalData).some(val => val !== '' && val !== 0)
         });
         
+        // Validate nutritional data
+        try {
+          nutritionalSchema.parse(nutritionalData);
+          ingredientsSchema.parse(ingredientsData);
+        } catch (validationError: any) {
+          console.error('[NUTRI_SAVE] Validation error:', validationError);
+          toast.error('Invalid nutritional data: ' + validationError.errors?.[0]?.message || 'Please check your inputs');
+          return;
+        }
+
         // Check if we have any nutritional data to save
-        const hasDataToSave = 
-          ingredientsData.ingredients || 
-          ingredientsData.allergens.length > 0 || 
-          nutritionalData.serving_size ||
-          Object.entries(nutritionalData).some(([key, val]) => {
-            // Only count meaningful nutritional values - allow 0 as valid data
-            if (key === 'additional_nutrients') return Object.keys(val as any).length > 0;
-            if (key === 'serving_size') return false; // Already checked above
-            return val !== '' && val !== null && val !== undefined;
-          });
+        const hasDataToSave = hasNutritionOrIngredients(nutritionalData, ingredientsData);
           
         console.log('💾 Has data to save:', hasDataToSave);
         
         if (hasDataToSave) {
           try {
             console.log('💊 Saving nutritional info for item:', savedItemId);
-            const nutritionalPayload = {
-              item_id: savedItemId,
-              ingredients: ingredientsData.ingredients || null,
-              allergens: ingredientsData.allergens.length > 0 ? ingredientsData.allergens : null,
-              serving_size: nutritionalData.serving_size || null,
-              servings_per_container: nutritionalData.servings_per_container || null,
-              calories: nutritionalData.calories || null,
-              total_fat: nutritionalData.total_fat || null,
-              saturated_fat: nutritionalData.saturated_fat || null,
-              trans_fat: nutritionalData.trans_fat || null,
-              cholesterol: nutritionalData.cholesterol || null,
-              sodium: nutritionalData.sodium || null,
-              total_carbohydrates: nutritionalData.total_carbohydrates || null,
-              dietary_fiber: nutritionalData.dietary_fiber || null,
-              total_sugars: nutritionalData.total_sugars || null,
-              added_sugars: nutritionalData.added_sugars || null,
-              protein: nutritionalData.protein || null,
-              vitamin_d: nutritionalData.vitamin_d || null,
-              calcium: nutritionalData.calcium || null,
-              iron: nutritionalData.iron || null,
-              potassium: nutritionalData.potassium || null,
-              additional_nutrients: Object.keys(nutritionalData.additional_nutrients).length > 0 ? nutritionalData.additional_nutrients : null
-            };
+            const nutritionalPayload = buildNutritionPayload(
+              { ...nutritionalData, ingredients: ingredientsData.ingredients, allergens: ingredientsData.allergens }, 
+              savedItemId,
+              user
+            );
             
             console.log('💊 Nutritional payload:', nutritionalPayload);
             const nutritionalResult = await nutritionalInfoApi.upsert(nutritionalPayload);
             console.log('✅ Nutritional info saved successfully:', nutritionalResult);
-          } catch (nutritionalError) {
+          } catch (nutritionalError: any) {
             console.error('❌ Error saving nutritional info:', nutritionalError);
-            toast.error('Item saved but failed to save nutritional information');
+            
+            let errorMessage = 'Failed to save nutritional information';
+            if (nutritionalError?.message?.includes('permission')) {
+              errorMessage = 'Permission denied when saving nutrition data. Please check your access rights.';
+            } else if (nutritionalError?.message?.includes('organization_id')) {
+              errorMessage = 'Organization context missing. Please refresh and try again.';
+            } else if (nutritionalError?.message) {
+              errorMessage = `Nutrition save failed: ${nutritionalError.message}`;
+            }
+            
+            toast.error(errorMessage);
+            throw nutritionalError; // Don't continue if nutrition fails
           }
         } else {
           console.log('⏭️ No nutritional data to save, skipping...');
@@ -413,6 +418,99 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const generateSimpleLabel = async () => {
+    if (isGeneratingLabel || isSubmitting) {
+      console.log('[LABEL_GEN] Blocked - operation in progress');
+      return;
+    }
+
+    setIsGeneratingLabel(true);
+    
+    try {
+      console.log('[LABEL_GEN] Start', { 
+        itemId: itemId || 'new', 
+        name: form.watch('name'),
+        hasNutrition: hasNutritionOrIngredients(nutritionalData, ingredientsData)
+      });
+
+      const itemName = form.watch('name') || 'Untitled Item';
+      const itemSKU = form.watch('sku') || 'N/A';
+      const itemBarcode = form.watch('barcode') || form.watch('sku') || itemId || 'NO-CODE';
+
+      const labelContent = [
+        { type: 'text' as const, value: itemName, x: 20, y: 30, options: { fontSize: 16, fontWeight: 'bold' } },
+        { type: 'text' as const, value: `SKU: ${itemSKU}`, x: 20, y: 50, options: { fontSize: 10 } },
+        { type: 'barcode' as const, value: itemBarcode, x: 20, y: 70, options: { 
+          format: 'CODE128', 
+          width: 100, 
+          height: 30,
+          symbology: 'code128',
+          quiet: 10 
+        } },
+      ];
+
+      // Add nutritional facts if available
+      if (hasNutritionOrIngredients(nutritionalData, ingredientsData)) {
+        if (nutritionalData.serving_size || nutritionalData.calories || Object.values(nutritionalData).some(v => v !== '' && v !== 0 && v !== null && v !== undefined)) {
+          const nutritionData = {
+            servingSize: nutritionalData.serving_size,
+            calories: nutritionalData.calories,
+            totalFat: nutritionalData.total_fat,
+            sodium: nutritionalData.sodium,
+            totalCarbs: nutritionalData.total_carbohydrates,
+            protein: nutritionalData.protein
+          };
+          
+          labelContent.push({
+            type: 'nutritional_facts' as any,
+            value: JSON.stringify(nutritionData),
+            x: 20,
+            y: 120,
+            options: { fontSize: 8 } as any
+          });
+        }
+
+        // Add ingredients if available
+        const ingredients = ingredientsData.ingredients?.trim();
+        if (ingredients) {
+          labelContent.push({
+            type: 'ingredients_list' as any,
+            value: ingredients,
+            x: 20,
+            y: 200,
+            options: { fontSize: 7 } as any
+          });
+        }
+
+        // Add allergen warning if available
+        const allergens = ingredientsData.allergens?.length ? ingredientsData.allergens.join(', ') : '';
+        if (allergens) {
+          labelContent.push({
+            type: 'allergen_warning' as any,
+            value: allergens,
+            x: 20,
+            y: 260,
+            options: { fontSize: 7 } as any
+          });
+        }
+      }
+
+      // Generate PDF using existing BarcodeGenerator
+      const pdf = BarcodeGenerator.createLabelPDF(labelContent, { width: 4, height: 6 });
+      const filename = sanitizeFilename(itemName);
+      pdf.save(`label-${filename}.pdf`);
+      
+      console.log('[LABEL_GEN] Done - PDF generated successfully');
+      toast.success('Label generated successfully!');
+      
+    } catch (error: any) {
+      console.error('[LABEL_GEN] Error:', error);
+      toast.error('Failed to generate label: ' + (error?.message || 'Unknown error'));
+    } finally {
+      setIsGeneratingLabel(false);
     }
   };
 
@@ -777,7 +875,25 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting || loading}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={generateSimpleLabel}
+                    disabled={
+                      isGeneratingLabel || 
+                      isSubmitting || 
+                      loading || 
+                      !hasNutritionOrIngredients(nutritionalData, ingredientsData)
+                    }
+                    title={
+                      !hasNutritionOrIngredients(nutritionalData, ingredientsData) 
+                        ? "Add nutritional info or ingredients to generate a label" 
+                        : "Generate a PDF label with current data"
+                    }
+                  >
+                    {isGeneratingLabel ? 'Generating...' : 'Generate Label'}
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting || loading || isGeneratingLabel}>
                     {isSubmitting || loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
                   </Button>
                 </div>

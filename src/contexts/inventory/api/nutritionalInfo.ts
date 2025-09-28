@@ -31,13 +31,20 @@ export interface NutritionalInfo {
 
 export const nutritionalInfoApi = {
   async getByItemId(itemId: string): Promise<NutritionalInfo | null> {
+    console.log('[NUTRI_LOAD] Loading for item:', itemId);
+    
     const { data, error } = await supabase
       .from('inventory_nutritional_info')
       .select('*')
       .eq('item_id', itemId)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error && error.code !== 'PGRST116') {
+      console.error('[NUTRI_LOAD] Error:', error);
+      throw error;
+    }
+    
+    console.log('[NUTRI_LOAD] Result:', { found: !!data, keys: data ? Object.keys(data) : [] });
     return data || null;
   },
 
@@ -74,15 +81,22 @@ export const nutritionalInfoApi = {
   },
 
   async upsert(info: Partial<NutritionalInfo> & { item_id: string }): Promise<NutritionalInfo> {
+    console.log('[NUTRI_SAVE] Starting upsert:', { itemId: info.item_id, hasData: Object.keys(info).length });
+    
     const { data, error } = await supabase
       .from('inventory_nutritional_info')
       .upsert([info as any], {
         onConflict: 'item_id'
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[NUTRI_SAVE] Error:', error);
+      throw error;
+    }
+    
+    console.log('[NUTRI_SAVE] Success:', { saved: !!data });
     return data;
   }
 };
