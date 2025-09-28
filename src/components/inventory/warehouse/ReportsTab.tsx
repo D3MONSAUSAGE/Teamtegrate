@@ -16,7 +16,7 @@ import { TeamSalesChart } from '../reports/TeamSalesChart';
 import { 
   inventoryReportsService, 
   InventoryValueSummary, 
-  TransactionRecord,
+  DailyMovement,
   WeeklyMovement,
   MonthlyTeamPerformance 
 } from '@/services/inventoryReportsService';
@@ -46,7 +46,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouse
 
   // Data state
   const [inventoryValue, setInventoryValue] = useState<InventoryValueSummary[]>([]);
-  const [dailyMovements, setDailyMovements] = useState<TransactionRecord[]>([]);
+  const [dailyMovements, setDailyMovements] = useState<DailyMovement[]>([]);
   const [weeklyMovements, setWeeklyMovements] = useState<WeeklyMovement[]>([]);
   const [monthlyPerformance, setMonthlyPerformance] = useState<MonthlyTeamPerformance[]>([]);
   

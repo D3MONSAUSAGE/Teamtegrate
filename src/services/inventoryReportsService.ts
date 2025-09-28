@@ -147,7 +147,7 @@ export const inventoryReportsService = {
     }
   },
 
-  async getDailyMovements(date?: string, teamId?: string, warehouseId?: string): Promise<TransactionRecord[]> {
+  async getDailyMovements(date?: string, teamId?: string, warehouseId?: string): Promise<DailyMovement[]> {
     console.log('🏭 Fetching daily movements:', { date, teamId, warehouseId });
     
     try {
@@ -181,7 +181,7 @@ export const inventoryReportsService = {
   },
 
   // New warehouse-specific reporting functions
-  async getWarehouseDailyMovements(warehouseId?: string, date?: string): Promise<TransactionRecord[]> {
+  async getWarehouseDailyMovements(warehouseId?: string, date?: string): Promise<DailyMovement[]> {
     console.log('🏢 Fetching warehouse daily movements:', { warehouseId, date });
     
     try {

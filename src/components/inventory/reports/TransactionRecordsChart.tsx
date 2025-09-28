@@ -2,11 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { TransactionRecord } from '@/services/inventoryReportsService';
+import { DailyMovement } from '@/services/inventoryReportsService';
 import { format } from 'date-fns';
 
 interface TransactionRecordsChartProps {
-  data: TransactionRecord[];
+  data: DailyMovement[];
   selectedDate: string;
   isLoading?: boolean;
 }
@@ -29,8 +29,8 @@ export const TransactionRecordsChart: React.FC<TransactionRecordsChartProps> = (
         };
       }
       
-      acc[type].transactions += 1;
-      acc[type].quantity += transaction.quantity;
+      acc[type].transactions += transaction.transaction_count;
+      acc[type].quantity += transaction.total_quantity;
       acc[type].value += transaction.total_value;
       
       return acc;
@@ -40,7 +40,7 @@ export const TransactionRecordsChart: React.FC<TransactionRecordsChartProps> = (
   }, [data]);
 
   const totalValue = data.reduce((sum, item) => sum + Number(item.total_value), 0);
-  const totalTransactions = data.length;
+  const totalTransactions = data.reduce((sum, item) => sum + item.transaction_count, 0);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -119,27 +119,25 @@ export const TransactionRecordsChart: React.FC<TransactionRecordsChartProps> = (
           </ResponsiveContainer>
         )}
         
-        {/* Transaction Details */}
+        {/* Transaction Summary */}
         {data.length > 0 && (
           <div className="mt-4 space-y-2">
-            <h4 className="font-semibold text-sm">Recent Transactions</h4>
+            <h4 className="font-semibold text-sm">Transaction Summary</h4>
             <div className="space-y-2 max-h-40 overflow-y-auto">
-              {data.slice(0, 5).map((transaction) => (
-                <div key={transaction.id} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded">
+              {data.map((movement, index) => (
+                <div key={movement.transaction_type} className="flex justify-between items-center text-sm p-2 bg-muted/30 rounded">
                   <div>
-                    <span className="font-medium">{transaction.item_name}</span>
+                    <span className="font-medium">{movement.transaction_type.replace('_', ' ').toUpperCase()}</span>
                     <span className="ml-2 text-muted-foreground">
-                      {transaction.transaction_type === 'in' ? '+' : '-'}{transaction.quantity}
+                      {formatNumber(movement.total_quantity)} items
                     </span>
                   </div>
-                  <span className="font-medium">{formatCurrency(transaction.total_value)}</span>
+                  <div className="text-right">
+                    <div className="font-medium">{formatCurrency(movement.total_value)}</div>
+                    <div className="text-xs text-muted-foreground">{movement.transaction_count} transactions</div>
+                  </div>
                 </div>
               ))}
-              {data.length > 5 && (
-                <div className="text-center text-xs text-muted-foreground">
-                  ... and {data.length - 5} more transactions
-                </div>
-              )}
             </div>
           </div>
         )}
