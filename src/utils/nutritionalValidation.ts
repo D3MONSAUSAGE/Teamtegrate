@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateUUID } from './uuidValidation';
 
 // Shared validation helpers to prevent zero-killer bugs
 export const keepZeroOrNull = <T>(value: T): number | null => {
@@ -56,10 +57,17 @@ export const ingredientsSchema = z.object({
 export const buildNutritionPayload = (form: any, itemId: string, user: { organization_id?: string; id?: string } | null) => {
   const ingredientsArr = toArray(form.allergens);
 
+  console.log('buildNutritionPayload - user data:', { 
+    user_org_id: user?.organization_id, 
+    user_id: user?.id,
+    validated_org_id: validateUUID(user?.organization_id),
+    validated_user_id: validateUUID(user?.id)
+  });
+
   return {
     item_id: itemId,
-    organization_id: user?.organization_id ?? null,
-    created_by: user?.id ?? null,
+    organization_id: validateUUID(user?.organization_id),
+    created_by: validateUUID(user?.id),
     serving_size: form.serving_size?.trim() || null,
     servings_per_container: keepZeroOrNull(form.servings_per_container),
     calories: keepZeroOrNull(form.calories),
