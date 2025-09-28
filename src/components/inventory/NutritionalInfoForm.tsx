@@ -56,7 +56,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
     if (!fieldType) return;
 
     // Check if field already exists
-    const exists = data.nutritional_fields.some(f => f.name === fieldType.name);
+    const exists = (data.nutritional_fields || []).some(f => f.name === fieldType.name);
     if (exists) return;
 
     const newField: NutritionalField = {
@@ -67,7 +67,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
 
     onChange({
       ...data,
-      nutritional_fields: [...data.nutritional_fields, newField]
+      nutritional_fields: [...(data.nutritional_fields || []), newField]
     });
 
     setSelectedFieldType('');
@@ -76,14 +76,14 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
   const removeNutritionalField = (fieldName: string) => {
     onChange({
       ...data,
-      nutritional_fields: data.nutritional_fields.filter(f => f.name !== fieldName)
+      nutritional_fields: (data.nutritional_fields || []).filter(f => f.name !== fieldName)
     });
   };
 
   const updateNutritionalField = (fieldName: string, value: string) => {
     onChange({
       ...data,
-      nutritional_fields: data.nutritional_fields.map(f => 
+      nutritional_fields: (data.nutritional_fields || []).map(f => 
         f.name === fieldName ? { ...f, value } : f
       )
     });
@@ -107,7 +107,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
   }
 
   const getAvailableFields = () => {
-    const existingFieldNames = data.nutritional_fields.map(f => f.name);
+    const existingFieldNames = (data.nutritional_fields || []).map(f => f.name);
     return availableFields.filter(f => !existingFieldNames.includes(f.name));
   };
 
@@ -168,7 +168,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
             </div>
           </div>
 
-          {data.nutritional_fields.length === 0 ? (
+          {(data.nutritional_fields || []).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Apple className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No nutritional fields added yet</p>
@@ -176,7 +176,7 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
             </div>
           ) : (
             <div className="space-y-3">
-              {data.nutritional_fields.map((field) => (
+              {(data.nutritional_fields || []).map((field) => (
                 <div key={field.name} className="flex items-center gap-3 p-3 border rounded-lg">
                   <div className="flex-1">
                     <Label className="text-sm font-medium">{field.name}</Label>
