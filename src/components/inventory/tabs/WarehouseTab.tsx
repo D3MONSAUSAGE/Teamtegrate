@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { SimpleCheckout } from '../warehouse/SimpleCheckout';
+import { ReceiveStockDialog } from '../warehouse/ReceiveStockDialog';
 import { WarehouseSettingsTab } from '../warehouse/WarehouseSettingsTab';
 
 import { ProcessingTab } from '../warehouse/ProcessingTab';
@@ -41,6 +42,7 @@ export const WarehouseTab: React.FC = () => {
   const [showOverview, setShowOverview] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isReceiveOpen, setIsReceiveOpen] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -364,6 +366,10 @@ export const WarehouseTab: React.FC = () => {
           </div>
           {warehouse && (
             <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => {/* TODO: Open receive stock dialog */}} className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Receive Stock
+              </Button>
               <Button onClick={() => setIsCheckoutOpen(true)} className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
                 Start Checkout
@@ -420,6 +426,16 @@ export const WarehouseTab: React.FC = () => {
             open={isCheckoutOpen}
             onOpenChange={setIsCheckoutOpen}
             onRefresh={() => {
+              handleRefresh();
+            }}
+          />
+
+          {/* Receive Stock Dialog */}
+          <ReceiveStockDialog
+            open={isReceiveOpen}
+            onOpenChange={setIsReceiveOpen}
+            warehouseId={warehouse.id}
+            onSuccess={() => {
               handleRefresh();
             }}
           />
