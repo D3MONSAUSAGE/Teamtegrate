@@ -354,118 +354,212 @@ export const CleanLabelSystem: React.FC = () => {
             </Card>
           )}
 
-          {/* Step 3: Add Nutritional Info (if needed) */}
+          {/* Step 3: Nutritional Info Status */}
           {selectedItem && currentTemplate && (currentTemplate.includes.nutrition || currentTemplate.includes.ingredients || currentTemplate.includes.allergens) && (
             <Card>
               <CardHeader>
                 <CardTitle>Step 3: Nutritional Information</CardTitle>
-                <CardDescription>Add basic nutritional data for food labels</CardDescription>
+                {nutritionalInfo ? (
+                  <CardDescription className="text-green-600 font-medium flex items-center gap-2">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    Using existing nutritional data from product profile
+                  </CardDescription>
+                ) : (
+                  <CardDescription>
+                    No nutritional data found - you can add it below or generate label without it
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
-                {currentTemplate.includes.nutrition && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Serving Size</Label>
-                      <Input
-                        value={nutritionForm.serving_size}
-                        onChange={(e) => setNutritionForm(prev => ({ ...prev, serving_size: e.target.value }))}
-                        placeholder="1 cup"
-                      />
+                
+                {nutritionalInfo ? (
+                  <div className="space-y-4">
+                    {/* Show existing data summary */}
+                    <div className="p-4 bg-muted/30 rounded-lg border space-y-3">
+                      <h4 className="font-medium text-sm text-foreground">Current Data:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        {nutritionalInfo.serving_size && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Serving Size:</span> 
+                            <span className="font-medium">{nutritionalInfo.serving_size}</span>
+                          </div>
+                        )}
+                        {nutritionalInfo.calories && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Calories:</span> 
+                            <span className="font-medium">{nutritionalInfo.calories}</span>
+                          </div>
+                        )}
+                        {nutritionalInfo.total_fat && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Total Fat:</span> 
+                            <span className="font-medium">{nutritionalInfo.total_fat}g</span>
+                          </div>
+                        )}
+                        {nutritionalInfo.protein && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Protein:</span> 
+                            <span className="font-medium">{nutritionalInfo.protein}g</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {nutritionalInfo.ingredients && (
+                        <div className="pt-2 border-t">
+                          <span className="text-muted-foreground text-sm">Ingredients: </span>
+                          <span className="text-sm">{nutritionalInfo.ingredients.slice(0, 120)}{nutritionalInfo.ingredients.length > 120 ? '...' : ''}</span>
+                        </div>
+                      )}
+                      
+                      {nutritionalInfo.allergens?.length && (
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-muted-foreground text-sm">Allergens:</span>
+                          {nutritionalInfo.allergens.map(allergen => (
+                            <Badge key={allergen} variant="secondary" className="text-xs">
+                              {allergen}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <Label>Calories</Label>
-                      <Input
-                        type="number"
-                        value={nutritionForm.calories}
-                        onChange={(e) => setNutritionForm(prev => ({ ...prev, calories: e.target.value }))}
-                        placeholder="250"
-                      />
+                    
+                    <Separator />
+                    
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setNutritionalInfo(null);
+                          // Clear form to show input fields
+                          setNutritionForm({
+                            serving_size: '',
+                            calories: '',
+                            total_fat: '',
+                            sodium: '',
+                            total_carbohydrates: '',
+                            protein: '',
+                            ingredients: '',
+                            allergens: []
+                          });
+                        }}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        Edit Nutrition Data
+                      </Button>
+                      <Button 
+                        onClick={generateLabel} 
+                        disabled={isGenerating}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Generate Label Now
+                      </Button>
                     </div>
-                    <div>
-                      <Label>Total Fat (g)</Label>
-                      <Input
-                        type="number"
-                        value={nutritionForm.total_fat}
-                        onChange={(e) => setNutritionForm(prev => ({ ...prev, total_fat: e.target.value }))}
-                        placeholder="10"
-                      />
-                    </div>
-                    <div>
-                      <Label>Sodium (mg)</Label>
-                      <Input
-                        type="number"
-                        value={nutritionForm.sodium}
-                        onChange={(e) => setNutritionForm(prev => ({ ...prev, sodium: e.target.value }))}
-                        placeholder="300"
-                      />
-                    </div>
-                    <div>
-                      <Label>Total Carbs (g)</Label>
-                      <Input
-                        type="number"
-                        value={nutritionForm.total_carbohydrates}
-                        onChange={(e) => setNutritionForm(prev => ({ ...prev, total_carbohydrates: e.target.value }))}
-                        placeholder="30"
-                      />
-                    </div>
-                    <div>
-                      <Label>Protein (g)</Label>
-                      <Input
-                        type="number"
-                        value={nutritionForm.protein}
-                        onChange={(e) => setNutritionForm(prev => ({ ...prev, protein: e.target.value }))}
-                        placeholder="8"
-                      />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Show input form only when no data exists or user chooses to edit */}
+                    {currentTemplate.includes.nutrition && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Serving Size</Label>
+                          <Input
+                            value={nutritionForm.serving_size}
+                            onChange={(e) => setNutritionForm(prev => ({ ...prev, serving_size: e.target.value }))}
+                            placeholder="1 cup"
+                          />
+                        </div>
+                        <div>
+                          <Label>Calories</Label>
+                          <Input
+                            type="number"
+                            value={nutritionForm.calories}
+                            onChange={(e) => setNutritionForm(prev => ({ ...prev, calories: e.target.value }))}
+                            placeholder="250"
+                          />
+                        </div>
+                        <div>
+                          <Label>Total Fat (g)</Label>
+                          <Input
+                            type="number"
+                            value={nutritionForm.total_fat}
+                            onChange={(e) => setNutritionForm(prev => ({ ...prev, total_fat: e.target.value }))}
+                            placeholder="10"
+                          />
+                        </div>
+                        <div>
+                          <Label>Sodium (mg)</Label>
+                          <Input
+                            type="number"
+                            value={nutritionForm.sodium}
+                            onChange={(e) => setNutritionForm(prev => ({ ...prev, sodium: e.target.value }))}
+                            placeholder="300"
+                          />
+                        </div>
+                        <div>
+                          <Label>Total Carbs (g)</Label>
+                          <Input
+                            type="number"
+                            value={nutritionForm.total_carbohydrates}
+                            onChange={(e) => setNutritionForm(prev => ({ ...prev, total_carbohydrates: e.target.value }))}
+                            placeholder="30"
+                          />
+                        </div>
+                        <div>
+                          <Label>Protein (g)</Label>
+                          <Input
+                            type="number"
+                            value={nutritionForm.protein}
+                            onChange={(e) => setNutritionForm(prev => ({ ...prev, protein: e.target.value }))}
+                            placeholder="8"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {currentTemplate.includes.ingredients && (
+                      <div>
+                        <Label>Ingredients</Label>
+                        <Textarea
+                          value={nutritionForm.ingredients}
+                          onChange={(e) => setNutritionForm(prev => ({ ...prev, ingredients: e.target.value }))}
+                          placeholder="Water, wheat flour, salt..."
+                          rows={3}
+                        />
+                      </div>
+                    )}
+
+                    {currentTemplate.includes.allergens && (
+                      <div>
+                        <Label>Allergens (comma-separated)</Label>
+                        <Input
+                          value={nutritionForm.allergens.join(', ')}
+                          onChange={(e) => setNutritionForm(prev => ({ 
+                            ...prev, 
+                            allergens: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
+                          }))}
+                          placeholder="Milk, Eggs, Wheat"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <Button onClick={saveNutritionalInfo} className="flex-1">
+                        Save Nutritional Info
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={generateLabel} 
+                        disabled={isGenerating}
+                        className="flex-1"
+                      >
+                        Skip & Generate Label
+                      </Button>
                     </div>
                   </div>
                 )}
-
-                {currentTemplate.includes.ingredients && (
-                  <div>
-                    <Label>Ingredients</Label>
-                    <Textarea
-                      value={nutritionForm.ingredients}
-                      onChange={(e) => setNutritionForm(prev => ({ ...prev, ingredients: e.target.value }))}
-                      placeholder="Water, wheat flour, salt..."
-                      rows={3}
-                    />
-                  </div>
-                )}
-
-                {currentTemplate.includes.allergens && (
-                  <div>
-                    <Label>Allergens (comma-separated)</Label>
-                    <Input
-                      value={nutritionForm.allergens.join(', ')}
-                      onChange={(e) => setNutritionForm(prev => ({ 
-                        ...prev, 
-                        allergens: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
-                      }))}
-                      placeholder="Milk, Eggs, Wheat"
-                    />
-                  </div>
-                )}
-
-                <Button onClick={saveNutritionalInfo} className="w-full">
-                  Save Nutritional Info
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Generate Button */}
-          {selectedItem && (
-            <Card>
-              <CardContent className="pt-6">
-                <Button 
-                  onClick={generateLabel} 
-                  disabled={isGenerating}
-                  className="w-full"
-                  size="lg"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  {isGenerating ? 'Generating...' : 'Generate Label'}
-                </Button>
               </CardContent>
             </Card>
           )}
