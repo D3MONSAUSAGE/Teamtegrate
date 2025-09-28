@@ -1,102 +1,56 @@
 import { z } from 'zod';
-import { validateUUID } from './uuidValidation';
 
-// Shared validation helpers to prevent zero-killer bugs
+// Simple helpers for basic data conversion
 export const keepZeroOrNull = <T>(value: T): number | null => {
-  // Handle the case where value is 0 or '0' (which should be preserved)
-  if (value === 0 || value === '0') return Number(value);
-  
-  // Handle empty/null/undefined
-  if (value === '' || value === null || value === undefined) return null;
-  
-  // Convert to number and validate
+  if (value === null || value === undefined || value === '') return null;
   const num = Number(value);
-  return Number.isFinite(num) ? num : null;
+  return isNaN(num) || !isFinite(num) ? null : num;
 };
 
 export const toArray = (raw?: string | string[]): string[] => {
-  if (Array.isArray(raw)) return raw.map(x => x.trim()).filter(Boolean);
-  if (typeof raw === 'string') {
-    return raw
-      .split(/[,\n]/g)
-      .map(x => x.trim())
-      .filter(Boolean);
-  }
-  return [];
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(item => item && item.trim().length > 0);
+  return raw.split(',').map(item => item.trim()).filter(item => item.length > 0);
 };
 
 export const toText = (arr: string[]): string => arr.join(', ');
 
-// Nutritional data validation schema with realistic bounds
+// Simple validation schemas - no complex nested structures
 export const nutritionalSchema = z.object({
-  serving_size: z.string().max(50).optional(),
-  servings_per_container: z.coerce.number().min(0).max(1000).optional().nullable(),
-  calories: z.coerce.number().min(0).max(2000).optional().nullable(),
-  total_fat: z.coerce.number().min(0).max(200).optional().nullable(),
-  saturated_fat: z.coerce.number().min(0).max(100).optional().nullable(),
-  trans_fat: z.coerce.number().min(0).max(50).optional().nullable(),
-  cholesterol: z.coerce.number().min(0).max(1000).optional().nullable(),
-  sodium: z.coerce.number().min(0).max(5000).optional().nullable(),
-  total_carbohydrates: z.coerce.number().min(0).max(300).optional().nullable(),
-  dietary_fiber: z.coerce.number().min(0).max(100).optional().nullable(),
-  total_sugars: z.coerce.number().min(0).max(200).optional().nullable(),
-  added_sugars: z.coerce.number().min(0).max(200).optional().nullable(),
-  protein: z.coerce.number().min(0).max(150).optional().nullable(),
-  vitamin_d: z.coerce.number().min(0).max(100).optional().nullable(),
-  calcium: z.coerce.number().min(0).max(2000).optional().nullable(),
-  iron: z.coerce.number().min(0).max(100).optional().nullable(),
-  potassium: z.coerce.number().min(0).max(5000).optional().nullable(),
-}).partial();
-
-export const ingredientsSchema = z.object({
-  ingredients: z.string().max(2000).optional(),
-  allergens: z.array(z.string()).max(20).optional(),
+  serving_size: z.string().optional(),
+  servings_per_container: z.number().min(0).max(100).optional(),
+  calories: z.number().min(0).max(5000).optional(),
+  total_fat: z.number().min(0).max(500).optional(),
+  saturated_fat: z.number().min(0).max(500).optional(),
+  sodium: z.number().min(0).max(10000).optional(),
+  total_carbohydrates: z.number().min(0).max(500).optional(),
+  protein: z.number().min(0).max(500).optional(),
 });
 
-// Build nutritional payload with proper organization and user context
-export const buildNutritionPayload = (form: any, itemId: string, user: { organization_id?: string; id?: string } | null) => {
-  const ingredientsArr = toArray(form.allergens);
+export const ingredientsSchema = z.object({
+  ingredients: z.string().optional(),
+  allergens: z.array(z.string()).optional(),
+});
 
-  console.log('buildNutritionPayload - user data:', { 
-    user_org_id: user?.organization_id, 
-    user_id: user?.id,
-    validated_org_id: validateUUID(user?.organization_id),
-    validated_user_id: validateUUID(user?.id)
-  });
+// Simple payload builder - no complex transformations
+export const buildNutritionPayload = (form: any, itemId: string, user: { organization_id?: string; id?: string } | null) => {
+  if (!user?.organization_id || !user?.id) {
+    throw new Error('User organization or ID not found');
+  }
 
   return {
     item_id: itemId,
-    organization_id: validateUUID(user?.organization_id),
-    created_by: validateUUID(user?.id),
-    serving_size: form.serving_size?.trim() || null,
-    servings_per_container: keepZeroOrNull(form.servings_per_container),
-    calories: keepZeroOrNull(form.calories),
-    total_fat: keepZeroOrNull(form.total_fat),
-    saturated_fat: keepZeroOrNull(form.saturated_fat),
-    trans_fat: keepZeroOrNull(form.trans_fat),
-    cholesterol: keepZeroOrNull(form.cholesterol),
-    sodium: keepZeroOrNull(form.sodium),
-    total_carbohydrates: keepZeroOrNull(form.total_carbohydrates),
-    dietary_fiber: keepZeroOrNull(form.dietary_fiber),
-    total_sugars: keepZeroOrNull(form.total_sugars),
-    added_sugars: keepZeroOrNull(form.added_sugars),
-    protein: keepZeroOrNull(form.protein),
-    vitamin_d: keepZeroOrNull(form.vitamin_d),
-    calcium: keepZeroOrNull(form.calcium),
-    iron: keepZeroOrNull(form.iron),
-    potassium: keepZeroOrNull(form.potassium),
-    ingredients: form.ingredients?.trim() || null,
-    allergens: ingredientsArr.length ? ingredientsArr : null,
-    additional_nutrients: Object.keys(form.additional_nutrients || {}).length > 0 ? form.additional_nutrients : null,
-    updated_at: new Date().toISOString()
+    organization_id: user.organization_id,
+    created_by: user.id,
+    ...form
   };
 };
 
-// Helper to check if we have nutrition or ingredients data
+// Simplified data checker - handles simple flat structure only
 export const hasNutritionOrIngredients = (nutritionalData: any, ingredientsData: any): boolean => {
-  console.log('🔍 hasNutritionOrIngredients checking data:', { 
-    nutritionalData: nutritionalData ? Object.keys(nutritionalData) : 'null',
-    ingredientsData: ingredientsData ? Object.keys(ingredientsData) : 'null' 
+  console.log('🔍 Simple nutrition check:', { 
+    hasNutrition: !!nutritionalData,
+    hasIngredients: !!ingredientsData 
   });
 
   // Check ingredients
@@ -105,42 +59,22 @@ export const hasNutritionOrIngredients = (nutritionalData: any, ingredientsData:
   
   if (!nutritionalData) return false;
   
-  // Check nutrition - including serving size as meaningful data
-  if (nutritionalData?.serving_size?.trim()) return true;
+  // Check basic nutritional fields
+  const hasServingSize = nutritionalData?.serving_size?.trim();
+  const hasCalories = nutritionalData?.calories !== null && nutritionalData?.calories !== undefined && nutritionalData?.calories !== '';
+  const hasFat = nutritionalData?.total_fat !== null && nutritionalData?.total_fat !== undefined && nutritionalData?.total_fat !== '';
+  const hasProtein = nutritionalData?.protein !== null && nutritionalData?.protein !== undefined && nutritionalData?.protein !== '';
   
-  // Detect if this is additive structure (has nutritional_fields array)
-  if (nutritionalData?.nutritional_fields && Array.isArray(nutritionalData.nutritional_fields)) {
-    console.log('🔍 Detected additive structure, checking nutritional_fields:', nutritionalData.nutritional_fields);
-    
-    // Check if any field has a meaningful value
-    const hasFieldData = nutritionalData.nutritional_fields.some((field: any) => {
-      const value = field?.value;
-      return value !== null && value !== undefined && value !== '' && value !== 0;
-    });
-    
-    return hasFieldData;
-  }
-  
-  // Handle flat structure - Check other nutritional values (allowing 0 as valid)
-  console.log('🔍 Checking flat structure');
-  const nutritionalFields = [
-    'servings_per_container', 'calories', 'total_fat', 'saturated_fat', 
-    'trans_fat', 'cholesterol', 'sodium', 'total_carbohydrates', 
-    'dietary_fiber', 'total_sugars', 'added_sugars', 'protein', 
-    'vitamin_d', 'calcium', 'iron', 'potassium'
-  ];
-  
-  return nutritionalFields.some(field => {
-    const val = nutritionalData?.[field];
-    return val !== null && val !== undefined && val !== '';
-  });
+  return !!(hasServingSize || hasCalories || hasFat || hasProtein);
 };
 
-// Sanitize filename for PDF downloads
+// Simple filename sanitizer
 export const sanitizeFilename = (filename: string = 'label'): string => {
   return filename
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/[^a-z0-9\-_. ]/gi, '-')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\-_]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
     .toLowerCase();
 };

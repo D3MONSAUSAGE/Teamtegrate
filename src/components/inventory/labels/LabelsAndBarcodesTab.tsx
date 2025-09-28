@@ -1,6 +1,6 @@
 import React from 'react';
-import { ProfessionalLabelDesigner } from './ProfessionalLabelDesigner';
+import { CleanLabelSystem } from './CleanLabelSystem';
 
 export const LabelsAndBarcodesTab: React.FC = () => {
-  return <ProfessionalLabelDesigner />;
+  return <CleanLabelSystem />;
 };
