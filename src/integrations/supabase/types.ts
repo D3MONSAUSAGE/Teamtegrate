@@ -10759,14 +10759,7 @@ export type Database = {
         Returns: string
       }
       get_daily_movements: {
-        Args:
-          | {
-              p_date?: string
-              p_organization_id: string
-              p_team_id?: string
-              p_warehouse_id?: string
-            }
-          | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
+        Args: { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
         Returns: {
           po_numbers: string[]
           total_quantity: number
@@ -10889,9 +10882,7 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args:
-          | { p_organization_id: string; p_team_id?: string }
-          | { p_team_id?: string }
+        Args: { p_team_id?: string }
         Returns: {
           item_count: number
           low_stock_items: number
@@ -10975,13 +10966,7 @@ export type Database = {
         }[]
       }
       get_warehouse_daily_movements: {
-        Args:
-          | {
-              p_date?: string
-              p_organization_id: string
-              p_warehouse_id?: string
-            }
-          | { p_date?: string; p_warehouse_id?: string }
+        Args: { p_date?: string; p_warehouse_id?: string }
         Returns: {
           po_numbers: string[]
           total_quantity: number
@@ -11166,6 +11151,10 @@ export type Database = {
       sync_user_profile_across_tables: {
         Args: { user_id_param: string }
         Returns: undefined
+      }
+      test_inventory_schema: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       transfer_superadmin_role: {
         Args: {
