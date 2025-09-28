@@ -320,9 +320,20 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       resetForm();
       setOpen(false);
       
-      // Trigger refresh of warehouse stock
+      // Trigger immediate refresh of warehouse stock (multiple strategies for reliability)
       if (onReceiptPosted) {
+        // Call the callback immediately
         onReceiptPosted();
+        
+        // Also call it again after a short delay to catch any database propagation delays
+        setTimeout(() => {
+          onReceiptPosted();
+        }, 100);
+        
+        // And once more for any slow real-time updates
+        setTimeout(() => {
+          onReceiptPosted();
+        }, 500);
       }
     } catch (error) {
       console.error('[WAREHOUSE_RECEIPT] ❌ Error posting receipt:', error);

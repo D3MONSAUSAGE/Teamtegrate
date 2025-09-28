@@ -199,7 +199,13 @@ export const WarehouseTab: React.FC = () => {
   }, [isAdmin, isSuperAdmin, loadWarehouse]);
 
   const handleRefresh = useCallback(() => {
+    console.log('🔄 Refreshing warehouse data...');
     setRefreshKey(prev => prev + 1);
+    
+    // Trigger additional refresh after a short delay to catch database propagation
+    setTimeout(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 100);
   }, []);
 
   // Handle items withdrawn from warehouse

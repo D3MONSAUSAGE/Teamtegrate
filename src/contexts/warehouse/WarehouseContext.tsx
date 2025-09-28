@@ -16,6 +16,7 @@ interface WarehouseContextValue {
   loadWarehouse: (warehouseId: string) => Promise<void>;
   refreshWarehouseItems: () => Promise<void>;
   updateItemStock: (itemId: string, quantityChange: number) => Promise<boolean>;
+  forceRefresh: () => Promise<void>; // Force immediate refresh, bypassing optimizations
   
   // Error state
   error: string | null;
@@ -38,8 +39,8 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
   const [itemsLoading, setItemsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Enable real-time updates for warehouse items
-  useWarehouseRealtime();
+  // Enable real-time updates for warehouse items with specific warehouse ID
+  useWarehouseRealtime({ warehouseId });
 
   // Load warehouse by ID
   const loadWarehouse = useCallback(async (id: string) => {
@@ -86,6 +87,27 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
       console.error('❌ [WarehouseContext] Error refreshing items:', err);
       setError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      setItemsLoading(false);
+    }
+  }, [warehouseId]);
+
+  // Force immediate refresh without debouncing
+  const forceRefresh = useCallback(async () => {
+    if (!warehouseId) return;
+    
+    try {
+      console.log('🔄 [WarehouseContext] Force refreshing warehouse items');
+      setItemsLoading(true);
+      
+      const items = await warehouseApi.listWarehouseItems(warehouseId);
+      setWarehouseItems(items);
+      
+      console.log('✅ [WarehouseContext] Force refresh completed:', items.length);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh warehouse items';
+      console.error('❌ [WarehouseContext] Error in force refresh:', err);
+      setError(errorMessage);
     } finally {
       setItemsLoading(false);
     }
@@ -139,8 +161,8 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
 
       console.log('✅ [WarehouseContext] Stock updated successfully');
       
-      // Refresh to ensure data consistency (in background)
-      setTimeout(() => refreshWarehouseItems(), 100);
+      // Force immediate refresh to ensure data consistency
+      setTimeout(() => forceRefresh(), 50);
       
       return true;
     } catch (err) {
@@ -162,7 +184,7 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
       toast.error(errorMessage);
       return false;
     }
-  }, [warehouseId, warehouseItems, refreshWarehouseItems]);
+  }, [warehouseId, warehouseItems, forceRefresh]);
 
   // Auto-load warehouse when warehouseId changes
   useEffect(() => {
@@ -182,6 +204,7 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
     loadWarehouse,
     refreshWarehouseItems,
     updateItemStock,
+    forceRefresh,
     error
   };
 
