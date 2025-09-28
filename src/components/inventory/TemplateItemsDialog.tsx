@@ -30,18 +30,12 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [inStockQuantity, setInStockQuantity] = useState<number>(0);
-  const [minimumQuantity, setMinimumQuantity] = useState<number | undefined>(undefined);
-  const [maximumQuantity, setMaximumQuantity] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{
     inStock: number;
-    minimum: number | undefined;
-    maximum: number | undefined;
   }>({
-    inStock: 0,
-    minimum: undefined,
-    maximum: undefined
+    inStock: 0
   });
 
   // Get template items for this specific template from global state
@@ -70,30 +64,15 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleAddItem = async () => {
     if (!selectedItem) return;
     
-    // Validate quantities before adding
-    const validatedMin = minimumQuantity && minimumQuantity >= 0 ? minimumQuantity : undefined;
-    const validatedMax = maximumQuantity && maximumQuantity >= 0 ? maximumQuantity : undefined;
     const validatedInStock = Math.max(0, inStockQuantity || 0);
-    
-    // Check min <= max constraint
-    if (validatedMin !== undefined && validatedMax !== undefined && validatedMin > validatedMax) {
-      toast({
-        title: "Invalid Quantities",
-        description: "Minimum quantity cannot be greater than maximum quantity",
-        variant: "destructive",
-      });
-      return;
-    }
     
     setIsLoading(true);
     try {
-      await addItemToTemplate(templateId, selectedItem.id, validatedInStock, validatedMin, validatedMax);
+      await addItemToTemplate(templateId, selectedItem.id, validatedInStock);
       // Force refresh of template items to ensure UI updates
       await refreshTemplateItems();
       setSelectedItem(null);
       setInStockQuantity(0);
-      setMinimumQuantity(undefined);
-      setMaximumQuantity(undefined);
       toast({
         title: "Success",
         description: "Item added to template",
@@ -157,18 +136,14 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleEditItem = (templateItem: InventoryTemplateItem) => {
     setEditingItem(templateItem.id);
     setEditValues({
-      inStock: templateItem.in_stock_quantity,
-      minimum: templateItem.minimum_quantity ?? undefined,
-      maximum: templateItem.maximum_quantity ?? undefined
+      inStock: templateItem.in_stock_quantity
     });
   };
 
   const handleCancelEdit = () => {
     setEditingItem(null);
     setEditValues({
-      inStock: 0,
-      minimum: undefined,
-      maximum: undefined
+      inStock: 0
     });
   };
 
@@ -179,27 +154,12 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     const templateItem = currentTemplateItems.find(ti => ti.id === editingItem);
     if (!templateItem) return;
     
-    // Validate quantities before saving
-    const validatedMin = editValues.minimum && editValues.minimum >= 0 ? editValues.minimum : null;
-    const validatedMax = editValues.maximum && editValues.maximum >= 0 ? editValues.maximum : null;
     const validatedInStock = Math.max(0, editValues.inStock || 0);
-    
-    // Check min <= max constraint
-    if (validatedMin !== null && validatedMax !== null && validatedMin > validatedMax) {
-      toast({
-        title: "Invalid Quantities",
-        description: "Minimum quantity cannot be greater than maximum quantity",
-        variant: "destructive",
-      });
-      return;
-    }
     
     setIsLoading(true);
     try {
       await updateTemplateItem(templateId, templateItem.item_id, {
-        in_stock_quantity: validatedInStock,
-        minimum_quantity: validatedMin,
-        maximum_quantity: validatedMax
+        in_stock_quantity: validatedInStock
       });
       await refreshTemplateItems();
       handleCancelEdit();
@@ -320,7 +280,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                     <ArrowRight className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
-                   <div className="grid grid-cols-3 gap-3">
+                   <div className="grid grid-cols-1 gap-3">
                       <div>
                         <Label htmlFor="in-stock-qty" className="text-sm font-medium">
                           In-Stock Quantity
@@ -336,40 +296,10 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                           className="mt-1"
                         />
                       </div>
-                     <div>
-                       <Label htmlFor="min-qty" className="text-sm font-medium">
-                         Min Quantity (Optional)
-                         <span className="text-xs text-muted-foreground block">Reorder threshold</span>
-                       </Label>
-                       <Input
-                         id="min-qty"
-                         type="number"
-                         min="0"
-                         value={minimumQuantity || ''}
-                         onChange={(e) => setMinimumQuantity(e.target.value ? Number(e.target.value) : undefined)}
-                         placeholder="Optional"
-                         className="mt-1"
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="max-qty" className="text-sm font-medium">
-                         Max Quantity (Optional)
-                         <span className="text-xs text-muted-foreground block">Maximum stock level</span>
-                       </Label>
-                       <Input
-                         id="max-qty"
-                         type="number"
-                         min="0"
-                         value={maximumQuantity || ''}
-                         onChange={(e) => setMaximumQuantity(e.target.value ? Number(e.target.value) : undefined)}
-                         placeholder="Optional"
-                         className="mt-1"
-                       />
-                     </div>
-                   </div>
-                   <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded mt-2">
-                     <strong>Tip:</strong> For new stores, you can set in-stock to 0 and define min/max quantities for future inventory planning.
-                   </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded mt-2">
+                      <strong>Note:</strong> Min/Max thresholds are managed through Warehouse Settings
+                    </div>
                   <div className="mt-3">
                     <Button
                       onClick={handleAddItem}
@@ -425,9 +355,9 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                           <div className="space-y-3">
                             <div className="font-medium text-lg">{itemDetails.name}</div>
                             
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 gap-2">
                               <div>
-                                <Label className="text-xs">In-Stock</Label>
+                                <Label className="text-xs">In-Stock Quantity</Label>
                                 <Input
                                   type="number"
                                   min="0"
@@ -439,34 +369,9 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                                   className="h-8 text-xs"
                                 />
                               </div>
-                              <div>
-                                <Label className="text-xs">Min</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={editValues.minimum || ''}
-                                  onChange={(e) => setEditValues(prev => ({
-                                    ...prev,
-                                    minimum: e.target.value ? Number(e.target.value) : undefined
-                                  }))}
-                                  placeholder="Optional"
-                                  className="h-8 text-xs"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs">Max</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={editValues.maximum || ''}
-                                  onChange={(e) => setEditValues(prev => ({
-                                    ...prev,
-                                    maximum: e.target.value ? Number(e.target.value) : undefined
-                                  }))}
-                                  placeholder="Optional"
-                                  className="h-8 text-xs"
-                                />
-                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                              <strong>Note:</strong> Min/Max thresholds are managed through Warehouse Settings
                             </div>
                             
                             <div className="flex gap-2">
@@ -494,28 +399,16 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                         ) : (
                           // View Mode
                           <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="font-medium text-lg">{itemDetails.name}</div>
-                              <div className="text-sm text-muted-foreground mt-1">
-                                <span className="font-medium">In-Stock:</span> {templateItem.in_stock_quantity} • 
-                                <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
-                              </div>
-                              {(templateItem.minimum_quantity != null || templateItem.maximum_quantity != null) && (
-                                <div className="text-xs text-muted-foreground mt-1 flex gap-3">
-                                  <span>
-                                    <span className="font-medium">Min:</span> {templateItem.minimum_quantity ?? 'Not set'}
-                                  </span>
-                                  <span>
-                                    <span className="font-medium">Max:</span> {templateItem.maximum_quantity ?? 'Not set'}
-                                  </span>
-                                </div>
-                              )}
-                              {templateItem.minimum_quantity == null && templateItem.maximum_quantity == null && (
-                                <div className="text-xs text-orange-600 mt-1">
-                                  Min/Max quantities not set
-                                </div>
-                              )}
-                            </div>
+                             <div className="flex-1">
+                               <div className="font-medium text-lg">{itemDetails.name}</div>
+                               <div className="text-sm text-muted-foreground mt-1">
+                                 <span className="font-medium">In-Stock:</span> {templateItem.in_stock_quantity} • 
+                                 <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
+                               </div>
+                               <div className="text-xs text-muted-foreground mt-1">
+                                 Thresholds managed via Warehouse Settings
+                               </div>
+                             </div>
                             <div className="flex gap-1">
                               <Button
                                 variant="ghost"

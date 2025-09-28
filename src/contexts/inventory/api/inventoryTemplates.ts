@@ -87,8 +87,6 @@ export const inventoryTemplatesApi = {
     templateId: string, 
     itemId: string, 
     inStockQuantity: number = 0,
-    minimumQuantity?: number,
-    maximumQuantity?: number,
     sortOrder: number = 0
   ): Promise<InventoryTemplateItem> {
     const { data, error } = await supabase
@@ -97,8 +95,6 @@ export const inventoryTemplatesApi = {
         template_id: templateId,
         item_id: itemId,
         in_stock_quantity: inStockQuantity,
-        minimum_quantity: minimumQuantity,
-        maximum_quantity: maximumQuantity,
         sort_order: sortOrder
       }])
       .select()
@@ -123,8 +119,6 @@ export const inventoryTemplatesApi = {
     itemId: string, 
     updates: {
       in_stock_quantity?: number;
-      minimum_quantity?: number;
-      maximum_quantity?: number;
       sort_order?: number;
     }
   ): Promise<InventoryTemplateItem> {

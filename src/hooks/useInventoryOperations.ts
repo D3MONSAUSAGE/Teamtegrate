@@ -584,9 +584,9 @@ export const useInventoryOperations = ({
     );
   }, [handleAsyncOperation]);
 
-  const addItemToTemplate = useCallback(async (templateId: string, itemId: string, inStockQuantity: number = 0, minimumQuantity?: number, maximumQuantity?: number, sortOrder: number = 0): Promise<InventoryTemplateItem | null> => {
+  const addItemToTemplate = useCallback(async (templateId: string, itemId: string, inStockQuantity: number = 0, sortOrder: number = 0): Promise<InventoryTemplateItem | null> => {
     const result = await handleAsyncOperation(
-      () => inventoryTemplatesApi.addItemToTemplate(templateId, itemId, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder),
+      () => inventoryTemplatesApi.addItemToTemplate(templateId, itemId, inStockQuantity, sortOrder),
       'Add Item to Template',
       'Item added to template successfully'
     );
@@ -613,9 +613,7 @@ export const useInventoryOperations = ({
     templateId: string, 
     itemId: string, 
     updates: {
-      expected_quantity?: number;
-      minimum_quantity?: number;
-      maximum_quantity?: number;
+      in_stock_quantity?: number;
       sort_order?: number;
     }
   ): Promise<InventoryTemplateItem | null> => {

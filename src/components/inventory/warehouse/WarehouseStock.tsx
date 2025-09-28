@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Search, AlertTriangle, Hash, Barcode, DollarSign, Package2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { StockStatusBadge } from '../StockStatusBadge';
 import { getStockStatusSummary } from '@/utils/stockStatus';
 import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 import { type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
+import { WarehouseSettingsApi } from '@/contexts/warehouse/api/warehouseSettingsApi';
 
 interface WarehouseStockProps {
   warehouseId?: string;
@@ -29,6 +30,50 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
   const [search, setSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [thresholds, setThresholds] = useState<Map<string, { min: number | null; max: number | null }>>(new Map());
+  
+  // Warehouse settings API instance
+  const settingsApi = useMemo(() => new WarehouseSettingsApi(), []);
+
+  // Load warehouse settings for current day
+  useEffect(() => {
+    if (!warehouseId) return;
+    
+    const loadThresholds = async () => {
+      try {
+        // Get today's day of week (0 = Sunday, 1 = Monday, etc.)
+        const today = new Date().getDay();
+        const settings = await settingsApi.getWarehouseSettings(warehouseId);
+        
+        // Create threshold map with priority: Daily Settings → Warehouse Defaults
+        const thresholdMap = new Map<string, { min: number | null; max: number | null }>();
+        
+        // First, set warehouse defaults from warehouse_items
+        warehouseItems.forEach(item => {
+          thresholdMap.set(item.item_id, {
+            min: item.reorder_min || null,
+            max: item.reorder_max || null
+          });
+        });
+        
+        // Then override with daily settings for today
+        settings
+          .filter(setting => setting.day_of_week === today)
+          .forEach(setting => {
+            thresholdMap.set(setting.item_id, {
+              min: setting.reorder_min || null,
+              max: setting.reorder_max || null
+            });
+          });
+        
+        setThresholds(thresholdMap);
+      } catch (error) {
+        console.error('Failed to load warehouse thresholds:', error);
+      }
+    };
+
+    loadThresholds();
+  }, [warehouseId, warehouseItems, settingsApi]);
 
   // Filter items based on search
   const items = useMemo(() => {
@@ -107,13 +152,16 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
       return sum + (Number(item.on_hand) * Number(item.item?.unit_cost || 0));
     }, 0);
 
-    const stockStatusItems = items.map(item => ({
-      actualQuantity: item.on_hand,
-      minimumThreshold: item.reorder_min,
-      maximumThreshold: item.reorder_max,
-      templateMinimum: null,
-      templateMaximum: null
-    }));
+    const stockStatusItems = items.map(item => {
+      const itemThresholds = thresholds.get(item.item_id);
+      return {
+        actualQuantity: item.on_hand,
+        minimumThreshold: itemThresholds?.min || null,
+        maximumThreshold: itemThresholds?.max || null,
+        templateMinimum: null,
+        templateMaximum: null
+      };
+    });
 
     const stockStatus = getStockStatusSummary(stockStatusItems);
 
@@ -278,18 +326,31 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
                         {formatCurrency(item.item?.unit_cost || 0)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.reorder_min ? formatNumber(item.reorder_min) : '-'}
+                        {(() => {
+                          const itemThresholds = thresholds.get(item.item_id);
+                          const min = itemThresholds?.min;
+                          return min ? formatNumber(min) : '-';
+                        })()}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.reorder_max ? formatNumber(item.reorder_max) : '-'}
+                        {(() => {
+                          const itemThresholds = thresholds.get(item.item_id);
+                          const max = itemThresholds?.max;
+                          return max ? formatNumber(max) : '-';
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
-                        <StockStatusBadge
-                          actualQuantity={item.on_hand}
-                          minimumThreshold={item.reorder_min}
-                          maximumThreshold={item.reorder_max}
-                          size="sm"
-                        />
+                        {(() => {
+                          const itemThresholds = thresholds.get(item.item_id);
+                          return (
+                            <StockStatusBadge
+                              actualQuantity={item.on_hand}
+                              minimumThreshold={itemThresholds?.min || null}
+                              maximumThreshold={itemThresholds?.max || null}
+                              size="sm"
+                            />
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -46,8 +46,6 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
   const [editingItems, setEditingItems] = useState<Record<string, boolean>>({});
   const [itemUpdates, setItemUpdates] = useState<Record<string, {
     in_stock_quantity: number;
-    minimum_quantity?: number;
-    maximum_quantity?: number;
   }>>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -103,8 +101,6 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
         ...prev,
         [itemId]: {
           in_stock_quantity: templateItem.in_stock_quantity || 0,
-          minimum_quantity: templateItem.minimum_quantity || undefined,
-          maximum_quantity: templateItem.maximum_quantity || undefined,
         }
       }));
     }
@@ -140,13 +136,15 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
   };
 
   const handleItemUpdate = (itemId: string, field: string, value: number | undefined) => {
-    setItemUpdates(prev => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        [field]: value
-      }
-    }));
+    if (field === 'in_stock_quantity') {
+      setItemUpdates(prev => ({
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          [field]: value || 0
+        }
+      }));
+    }
   };
 
   return (
@@ -247,9 +245,9 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
 
                             {isEditing ? (
                               <div className="space-y-3">
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 gap-2">
                                   <div>
-                                     <Label className="text-xs">In-Stock</Label>
+                                     <Label className="text-xs">In-Stock Quantity</Label>
                                      <Input
                                        type="number"
                                        min="0"
@@ -262,36 +260,9 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
                                        className="h-8"
                                      />
                                   </div>
-                                  <div>
-                                    <Label className="text-xs">Min</Label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={updates?.minimum_quantity || ''}
-                                      onChange={(e) => handleItemUpdate(
-                                        templateItem.item_id, 
-                                        'minimum_quantity', 
-                                        e.target.value ? Number(e.target.value) : undefined
-                                      )}
-                                      placeholder="Optional"
-                                      className="h-8"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">Max</Label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={updates?.maximum_quantity || ''}
-                                      onChange={(e) => handleItemUpdate(
-                                        templateItem.item_id, 
-                                        'maximum_quantity', 
-                                        e.target.value ? Number(e.target.value) : undefined
-                                      )}
-                                      placeholder="Optional"
-                                      className="h-8"
-                                    />
-                                  </div>
+                                </div>
+                                <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                                  <strong>Note:</strong> Min/Max thresholds are now managed through Warehouse Settings
                                 </div>
 
                                 <div className="flex gap-2">
@@ -314,12 +285,11 @@ export const TemplateEditDialog: React.FC<TemplateEditDialogProps> = ({
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-between">
+                               <div className="flex items-center justify-between">
                                  <div className="text-sm space-y-1">
                                    <div>In-Stock: <span className="font-medium">{templateItem.in_stock_quantity || 0}</span></div>
                                    <div className="text-xs text-muted-foreground">
-                                     Min: {templateItem.minimum_quantity ?? 'Not set'} • 
-                                     Max: {templateItem.maximum_quantity ?? 'Not set'}
+                                     Thresholds managed via Warehouse Settings
                                    </div>
                                  </div>
                                 <Button

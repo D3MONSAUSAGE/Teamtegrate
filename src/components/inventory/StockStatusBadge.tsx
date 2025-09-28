@@ -16,8 +16,8 @@ export const StockStatusBadge: React.FC<StockStatusBadgeProps> = ({
   actualQuantity,
   minimumThreshold,
   maximumThreshold,
-  templateMinimum,
-  templateMaximum,
+  templateMinimum = null,
+  templateMaximum = null,
   size = 'default'
 }) => {
   const stockInfo = getStockStatus(actualQuantity, minimumThreshold, maximumThreshold, templateMinimum, templateMaximum);
