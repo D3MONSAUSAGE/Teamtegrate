@@ -33,9 +33,10 @@ interface Team {
 
 interface ReportsTabProps {
   defaultTeamId?: string;
+  warehouseId?: string;
 }
 
-export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId }) => {
+export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouseId }) => {
   // State management
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | undefined>(defaultTeamId);
@@ -77,8 +78,11 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId }) => {
     setIsLoading(true);
     
     try {
-      // Always load current inventory value
-      const valueData = await inventoryReportsService.getRealTimeInventoryValue(selectedTeam);
+      // Always load current inventory value (use warehouse-specific if available)
+      const valueData = warehouseId 
+        ? await inventoryReportsService.getWarehouseInventoryValue(warehouseId)
+        : await inventoryReportsService.getRealTimeInventoryValue(selectedTeam);
+      
       setInventoryValue(valueData);
 
       // Load sales data
@@ -107,7 +111,12 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId }) => {
   const loadDailyData = async () => {
     try {
       const dateString = format(selectedDate, 'yyyy-MM-dd');
-      const movements = await inventoryReportsService.getDailyMovements(dateString, selectedTeam);
+      
+      // Use warehouse-specific function if we have a warehouseId
+      const movements = warehouseId 
+        ? await inventoryReportsService.getWarehouseDailyMovements(warehouseId, dateString)
+        : await inventoryReportsService.getDailyMovements(dateString, selectedTeam);
+      
       setDailyMovements(movements);
     } catch (error) {
       console.error('Error loading daily data:', error);

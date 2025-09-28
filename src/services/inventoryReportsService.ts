@@ -106,10 +106,31 @@ export const inventoryReportsService = {
     return Array.from(teamSummaries.values());
   },
 
-  async getDailyMovements(date?: string, teamId?: string): Promise<DailyMovement[]> {
+  async getDailyMovements(date?: string, teamId?: string, warehouseId?: string): Promise<DailyMovement[]> {
     const { data, error } = await supabase.rpc('get_daily_movements', {
       p_date: date || new Date().toISOString().split('T')[0],
-      p_team_id: teamId || null
+      p_team_id: teamId || null,
+      p_warehouse_id: warehouseId || null
+    });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  // New warehouse-specific reporting functions
+  async getWarehouseDailyMovements(warehouseId?: string, date?: string): Promise<DailyMovement[]> {
+    const { data, error } = await supabase.rpc('get_warehouse_daily_movements', {
+      p_warehouse_id: warehouseId || null,
+      p_date: date || new Date().toISOString().split('T')[0]
+    });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getWarehouseInventoryValue(warehouseId?: string): Promise<any[]> {
+    const { data, error } = await supabase.rpc('get_warehouse_inventory_value', {
+      p_warehouse_id: warehouseId || null
     });
     
     if (error) throw error;
