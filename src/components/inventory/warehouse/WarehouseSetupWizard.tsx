@@ -67,22 +67,18 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
     try {
       setLoading(true);
       
-      // Create a receipt for the initial inventory
-      const receipt = await warehouseApi.createReceipt(createdWarehouse.id, 'Initial Setup');
+      // Add all selected items directly to warehouse using new receive_stock function
+      const items = selectedItems.map(item => ({
+        item_id: item.itemId,
+        quantity: item.qty,
+        unit_cost: item.unitCost,
+        notes: 'Initial Setup'
+      }));
       
-      // Add all selected items to the receipt
-      for (const item of selectedItems) {
-        await warehouseApi.addReceiptLine(receipt.id, {
-          itemId: item.itemId,
-          qty: item.qty,
-          unitCost: item.unitCost
-        });
-      }
+      // Receive stock using new function
+      const result = await warehouseApi.receiveStock(createdWarehouse.id, items);
       
-      // Post the receipt to update warehouse stock
-      const postResult = await warehouseApi.postReceipt(receipt.id);
-      
-      toast.success(`Added ${selectedItems.length} items to warehouse inventory! Processed ${postResult.processed_lines} inventory items.`);
+      toast.success(`Added ${selectedItems.length} items to warehouse inventory!`);
       setCurrentStep('complete');
     } catch (error: any) {
       console.error('Error setting up inventory:', error);

@@ -186,183 +186,77 @@ export const warehouseApi = {
     return data || [];
   },
 
-  // Create a new receipt
-  async createReceipt(warehouseId: string, vendorName?: string): Promise<WarehouseReceipt> {
-    // Get current user's organization
-    const { data: authUser } = await supabase.auth.getUser();
-    if (!authUser.user) throw new Error('User not authenticated');
+  // Receive stock - simplified approach that updates warehouse items directly
+  async receiveStock(warehouseId: string, items: Array<{
+    item_id: string;
+    quantity: number;
+    unit_cost: number;
+    notes?: string;
+  }>): Promise<{ success: boolean; message?: string }> {
+    try {
+      // For each item, update or insert warehouse_items and create inventory transaction
+      for (const item of items) {
+        // First, upsert warehouse_items
+        const { error: warehouseError } = await supabase
+          .from('warehouse_items')
+          .upsert({
+            warehouse_id: warehouseId,
+            item_id: item.item_id,
+            on_hand: item.quantity,
+            available: item.quantity,
+            allocated: 0
+          }, {
+            onConflict: 'warehouse_id,item_id'
+          });
 
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('organization_id')
-      .eq('id', authUser.user.id)
-      .single();
+        if (warehouseError) {
+          throw new Error(`Failed to update warehouse stock: ${warehouseError.message}`);
+        }
 
-    if (userError || !userData?.organization_id) {
-      throw new Error('Could not determine your organization.');
-    }
+        // Create inventory transaction with required fields
+        const { data: authUser } = await supabase.auth.getUser();
+        if (!authUser.user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('warehouse_receipts')
-      .insert([{
-        warehouse_id: warehouseId,
-        vendor_name: vendorName,
-        status: 'draft',
-        organization_id: userData.organization_id,
-        created_by: authUser.user.id
-      }])
-      .select()
-      .single();
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('organization_id')
+          .eq('id', authUser.user.id)
+          .single();
 
-    if (error) throw error;
-    return data as WarehouseReceipt;
-  },
+        if (userError || !userData?.organization_id) {
+          throw new Error('Could not determine your organization.');
+        }
 
-  // Add a line to a receipt
-  async addReceiptLine(receiptId: string, line: {
-    itemId: string;
-    qty: number;
-    unitCost: number;
-  }): Promise<WarehouseReceiptLine> {
-    const { data, error } = await supabase
-      .from('warehouse_receipt_lines')
-      .insert({
-        receipt_id: receiptId,
-        item_id: line.itemId,
-        qty: line.qty,
-        unit_cost: line.unitCost
-      })
-      .select()
-      .single();
+        const { error: transactionError } = await supabase
+          .from('inventory_transactions')
+          .insert({
+            organization_id: userData.organization_id,
+            item_id: item.item_id,
+            warehouse_id: warehouseId,
+            transaction_type: 'in',
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_cost: item.quantity * item.unit_cost,
+            transaction_date: new Date().toISOString().split('T')[0],
+            notes: item.notes || 'Stock received',
+            reference_number: `RCV-${Date.now()}`,
+            user_id: authUser.user.id,
+            created_by: authUser.user.id
+          });
 
-    if (error) throw error;
-    return data;
-  },
-
-  // Validate receipt before posting
-  async validateReceipt(receiptId: string): Promise<{ valid: boolean; errors: string[] }> {
-    const { data, error } = await supabase.rpc('validate_warehouse_receipt', {
-      receipt_id_param: receiptId
-    });
-
-    if (error) {
-      throw new Error(`Failed to validate receipt: ${error.message}`);
-    }
-
-    // Type assertion for RPC response
-    const validationResult = data as { valid: boolean; errors: string[] } | null;
-    return {
-      valid: validationResult?.valid || false,
-      errors: validationResult?.errors || []
-    };
-  },
-
-  // Post a receipt (finalize it) with validation
-  async postReceipt(receiptId: string): Promise<{ success: boolean; message?: string; processed_lines?: number }> {
-    // First validate the receipt
-    const validation = await this.validateReceipt(receiptId);
-    
-    if (!validation.valid) {
-      throw new Error(`Cannot post receipt: ${validation.errors.join(', ')}`);
-    }
-
-    // Process the receipt posting
-    const { data, error } = await supabase.rpc('process_warehouse_receipt_posting', {
-      receipt_id_param: receiptId
-    });
-
-    if (error) {
-      throw new Error(`Failed to post receipt: ${error.message}`);
-    }
-
-    // Type assertion for RPC response
-    const postingResult = data as { success: boolean; error?: string; processed_lines?: number; total_lines?: number } | null;
-    
-    if (!postingResult?.success) {
-      throw new Error(`Failed to post receipt: ${postingResult?.error || 'Unknown error'}`);
-    }
-
-    return {
-      success: true,
-      message: `Receipt posted successfully. Processed ${postingResult.processed_lines} items.`,
-      processed_lines: postingResult.processed_lines
-    };
-  },
-
-  // Get receipts for a warehouse with enhanced details
-  async getReceipts(warehouseId?: string): Promise<any[]> {
-    let query = supabase
-      .from('warehouse_receipts')
-      .select(`
-        *,
-        warehouse:warehouses(name, organization_id),
-        creator:users!warehouse_receipts_created_by_fkey(name),
-        poster:users!warehouse_receipts_posted_by_fkey(name)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (warehouseId) {
-      query = query.eq('warehouse_id', warehouseId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data || [];
-  },
-
-  // Get receipt lines with enhanced item details
-  async getReceiptLines(receiptId: string): Promise<any[]> {
-    const { data, error } = await supabase
-      .from('warehouse_receipt_lines')
-      .select(`
-        *,
-        item:inventory_items(
-          id,
-          name, 
-          sku, 
-          barcode, 
-          description,
-          unit_id,
-          category_id,
-          current_quantity:quantity
-        )
-      `)
-      .eq('receipt_id', receiptId)
-      .order('id');
-
-    if (error) throw error;
-    return data || [];
-  },
-
-  // Get complete receipt details (receipt + lines)
-  async getReceiptDetails(receiptId: string): Promise<{ receipt: any; lines: any[] } | null> {
-    // Get receipt details
-    const { data: receipt, error: receiptError } = await supabase
-      .from('warehouse_receipts')
-      .select(`
-        *,
-        warehouse:warehouses(name, organization_id),
-        creator:users!warehouse_receipts_created_by_fkey(name),
-        poster:users!warehouse_receipts_posted_by_fkey(name)
-      `)
-      .eq('id', receiptId)
-      .single();
-
-    if (receiptError) {
-      if (receiptError.code === 'PGRST116') {
-        return null; // Not found
+        if (transactionError) {
+          throw new Error(`Failed to create transaction: ${transactionError.message}`);
+        }
       }
-      throw receiptError;
+
+      return { 
+        success: true, 
+        message: `Successfully received ${items.length} items` 
+      };
+    } catch (error) {
+      console.error('Error receiving stock:', error);
+      throw error;
     }
-
-    // Get receipt lines
-    const lines = await this.getReceiptLines(receiptId);
-
-    return {
-      receipt,
-      lines
-    };
   },
 
   // Create a new transfer

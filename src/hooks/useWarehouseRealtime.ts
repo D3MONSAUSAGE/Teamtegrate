@@ -50,51 +50,6 @@ export const useWarehouseRealtime = (options?: UseWarehouseRealtimeOptions) => {
           });
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'warehouse_receipts',
-        },
-        (payload) => {
-          console.log('🧾 Warehouse receipts real-time update received:', payload);
-          
-          // Invalidate receipt-related queries
-          queryClient.invalidateQueries({ 
-            queryKey: ['warehouse-receipts'] 
-          });
-          
-          // If a receipt was posted, also invalidate items
-          if (payload.new && 'status' in payload.new && payload.new.status === 'posted') {
-            console.log('📦 Receipt posted, invalidating warehouse items');
-            if (warehouseId) {
-              queryClient.invalidateQueries({ 
-                queryKey: ['warehouse-items', warehouseId] 
-              });
-            }
-            queryClient.invalidateQueries({ 
-              queryKey: ['warehouse-items'] 
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'warehouse_receipt_lines',
-        },
-        (payload) => {
-          console.log('📋 Warehouse receipt lines real-time update received:', payload);
-          
-          // Invalidate receipt lines queries
-          queryClient.invalidateQueries({ 
-            queryKey: ['warehouse-receipt-lines'] 
-          });
-        }
-      )
       .subscribe();
 
     return () => {

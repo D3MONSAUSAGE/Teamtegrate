@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
-import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
 import { SimpleCheckout } from '../warehouse/SimpleCheckout';
 import { WarehouseSettingsTab } from '../warehouse/WarehouseSettingsTab';
 
@@ -365,10 +364,6 @@ export const WarehouseTab: React.FC = () => {
           </div>
           {warehouse && (
             <div className="flex flex-col sm:flex-row gap-2">
-              <ReceiveStockDrawer 
-                warehouseId={warehouse.id}
-                onReceiptPosted={handleRefresh}
-              />
               <Button onClick={() => setIsCheckoutOpen(true)} className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
                 Start Checkout
