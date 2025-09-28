@@ -3304,45 +3304,63 @@ export type Database = {
       inventory_transactions: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           item_id: string
           notes: string | null
           organization_id: string
+          po_number: string | null
           quantity: number
+          receipt_line_id: string | null
           reference_number: string | null
           team_id: string | null
+          total_cost: number | null
           transaction_date: string
           transaction_type: string
           unit_cost: number | null
           user_id: string
+          vendor_name: string | null
+          warehouse_id: string | null
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           item_id: string
           notes?: string | null
           organization_id: string
+          po_number?: string | null
           quantity: number
+          receipt_line_id?: string | null
           reference_number?: string | null
           team_id?: string | null
+          total_cost?: number | null
           transaction_date?: string
           transaction_type: string
           unit_cost?: number | null
           user_id: string
+          vendor_name?: string | null
+          warehouse_id?: string | null
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           item_id?: string
           notes?: string | null
           organization_id?: string
+          po_number?: string | null
           quantity?: number
+          receipt_line_id?: string | null
           reference_number?: string | null
           team_id?: string | null
+          total_cost?: number | null
           transaction_date?: string
           transaction_type?: string
           unit_cost?: number | null
           user_id?: string
+          vendor_name?: string | null
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -3350,6 +3368,13 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_receipt_line_id_fkey"
+            columns: ["receipt_line_id"]
+            isOneToOne: true
+            referencedRelation: "warehouse_receipt_lines"
             referencedColumns: ["id"]
           },
           {
@@ -3379,6 +3404,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "weekly_inventory_movements"
             referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -10630,6 +10662,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      create_inventory_transaction_from_receipt_line: {
+        Args: { receipt_line_id: string }
+        Returns: undefined
+      }
       create_user_admin: {
         Args: {
           email: string
@@ -10723,7 +10759,9 @@ export type Database = {
         Returns: string
       }
       get_daily_movements: {
-        Args: { p_date?: string; p_team_id?: string }
+        Args:
+          | { p_date?: string; p_team_id?: string }
+          | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
         Returns: {
           po_numbers: string[]
           total_quantity: number
@@ -10930,6 +10968,27 @@ export type Database = {
           role: string
           team_id: string
           team_name: string
+        }[]
+      }
+      get_warehouse_daily_movements: {
+        Args: { p_date?: string; p_warehouse_id?: string }
+        Returns: {
+          po_numbers: string[]
+          total_quantity: number
+          total_value: number
+          transaction_count: number
+          transaction_type: string
+        }[]
+      }
+      get_warehouse_inventory_value: {
+        Args: { p_warehouse_id?: string }
+        Returns: {
+          low_stock_count: number
+          overstock_count: number
+          total_items: number
+          total_value: number
+          warehouse_id: string
+          warehouse_name: string
         }[]
       }
       is_admin_or_superadmin: {
