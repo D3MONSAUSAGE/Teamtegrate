@@ -5,23 +5,30 @@ import { InventoryProvider } from '@/contexts/inventory';
 import { InventoryBreadcrumb } from '@/components/inventory/navigation/InventoryBreadcrumb';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { toast } from 'sonner';
 
 const WarehouseOutgoingPage: React.FC = () => {
   const { user } = useAuth();
+  const { availableTeams } = useTeamAccess();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadWarehouse();
-  }, []);
+  }, [availableTeams]);
 
   const loadWarehouse = async () => {
     try {
       setLoading(true);
-      // Try to get primary warehouse first
-      const primaryWarehouse = await warehouseApi.getPrimaryWarehouse();
-      setWarehouse(primaryWarehouse);
+      
+      // Use team-based warehouse logic - get user's first available team's warehouse
+      if (availableTeams.length > 0) {
+        const teamWarehouse = await warehouseApi.getWarehouseByTeam(availableTeams[0].id);
+        setWarehouse(teamWarehouse);
+      } else {
+        setWarehouse(null);
+      }
     } catch (error) {
       console.error('Error loading warehouse:', error);
       toast.error('Failed to load warehouse information');
@@ -47,8 +54,13 @@ const WarehouseOutgoingPage: React.FC = () => {
       <InventoryProvider>
         <div className="container mx-auto p-6">
           <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2">No Warehouse Found</h2>
-            <p className="text-muted-foreground">Please set up a warehouse first to manage outgoing inventory.</p>
+            <h2 className="text-xl font-semibold mb-2">No Team Warehouse Found</h2>
+            <p className="text-muted-foreground">
+              {availableTeams.length === 0 
+                ? "You need to be assigned to a team to manage outgoing inventory."
+                : "No warehouse is set up for your team. Please contact an administrator."
+              }
+            </p>
           </div>
         </div>
       </InventoryProvider>

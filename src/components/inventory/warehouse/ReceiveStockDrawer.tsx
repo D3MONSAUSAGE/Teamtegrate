@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Search, Truck, X, Package, Plus, Scan, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useScanGun } from '@/hooks/useScanGun';
@@ -96,8 +97,18 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
   const loadWarehouse = async () => {
     if (!warehouseId) return;
     try {
-      const warehouseData = await warehouseApi.getPrimaryWarehouse();
-      setWarehouse(warehouseData);
+      // Get warehouse by ID - we already have the correct warehouseId from props
+      const { data, error } = await supabase
+        .from('warehouses')
+        .select(`
+          *,
+          team:teams(id, name)
+        `)
+        .eq('id', warehouseId)
+        .single();
+      
+      if (error) throw error;
+      setWarehouse(data);
     } catch (error) {
       console.error('Error loading warehouse:', error);
       toast.error('Failed to load warehouse details');

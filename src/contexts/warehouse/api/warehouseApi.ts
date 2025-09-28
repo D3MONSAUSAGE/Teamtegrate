@@ -119,28 +119,6 @@ export type DailyMetrics = {
 };
 
 export const warehouseApi = {
-  // Get the primary warehouse for the organization
-  async getPrimaryWarehouse(): Promise<Warehouse | null> {
-    const { data, error } = await supabase
-      .from('warehouses')
-      .select(`
-        *,
-        team:teams(id, name)
-      `)
-      .eq('is_primary', true)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned
-        return null;
-      }
-      throw error;
-    }
-
-    return data;
-  },
-
   // Get warehouse by team ID
   async getWarehouseByTeam(teamId: string): Promise<Warehouse | null> {
     const { data, error } = await supabase
@@ -427,9 +405,11 @@ export const warehouseApi = {
   // Ensure a primary warehouse exists (idempotent setup method)
   async ensurePrimaryWarehouse(name = 'Main Warehouse', teamId?: string): Promise<Warehouse> {
     try {
-      // First try to get existing primary warehouse
-      const existing = await this.getPrimaryWarehouse();
-      if (existing) return existing;
+      // First try to get existing warehouse by team if teamId is provided
+      if (teamId) {
+        const existing = await this.getWarehouseByTeam(teamId);
+        if (existing) return existing;
+      }
 
       // If none exists, create one
       return await this.createDefaultWarehouse(name, teamId);
