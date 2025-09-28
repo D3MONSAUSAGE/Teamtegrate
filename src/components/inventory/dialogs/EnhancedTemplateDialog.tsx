@@ -31,8 +31,6 @@ export interface TemplateFormData {
   selectedItems: Array<{
     item: InventoryItem;
     inStockQuantity: number;
-    minimumQuantity?: number;
-    maximumQuantity?: number;
     sortOrder: number;
   }>;
   
@@ -150,21 +148,11 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
         created_by: user.id
       });
 
-      // Add items with proper validation
-      const itemPromises = formData.selectedItems.map(async ({ item, inStockQuantity, minimumQuantity, maximumQuantity, sortOrder }) => {
+      // Add items to template
+      const itemPromises = formData.selectedItems.map(async ({ item, inStockQuantity, sortOrder }) => {
         try {
-          // Validate quantities to prevent database constraint violations
-          const validatedMin = minimumQuantity && minimumQuantity >= 0 ? minimumQuantity : undefined;
-          const validatedMax = maximumQuantity && maximumQuantity >= 0 ? maximumQuantity : undefined;
           const validatedInStock = Math.max(0, inStockQuantity || 0);
-          
-          // Ensure min <= max if both are provided
-          if (validatedMin !== undefined && validatedMax !== undefined && validatedMin > validatedMax) {
-            console.warn(`Invalid quantities for ${item.name}: min(${validatedMin}) > max(${validatedMax})`);
-            return; // Skip this item
-          }
-          
-          await addItemToTemplate(template.id, item.id, validatedInStock, validatedMin, validatedMax, sortOrder);
+          await addItemToTemplate(template.id, item.id, validatedInStock, sortOrder);
         } catch (error) {
           console.error(`Failed to add item ${item.name} to template:`, error);
           throw error;

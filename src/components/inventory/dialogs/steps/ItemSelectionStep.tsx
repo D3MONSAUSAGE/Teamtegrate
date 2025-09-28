@@ -41,8 +41,6 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
     const newSelectedItem = {
       item,
       inStockQuantity: 0,
-      minimumQuantity: undefined,
-      maximumQuantity: undefined,
       sortOrder: formData.selectedItems.length
     };
 
@@ -57,32 +55,13 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
     });
   };
 
-  const updateItemQuantity = (itemId: string, field: 'inStockQuantity' | 'minimumQuantity' | 'maximumQuantity', value: number | undefined) => {
+  const updateItemQuantity = (itemId: string, field: 'inStockQuantity', value: number | undefined) => {
     updateFormData({
       selectedItems: formData.selectedItems.map(selected => {
         if (selected.item.id !== itemId) return selected;
         
         const updatedSelected = { ...selected };
-        
-        if (field === 'inStockQuantity') {
-          updatedSelected[field] = Math.max(0, value || 0);
-        } else {
-          updatedSelected[field] = value && value >= 0 ? value : undefined;
-        }
-        
-        // Validate min <= max constraint
-        if (updatedSelected.minimumQuantity !== undefined && 
-            updatedSelected.maximumQuantity !== undefined && 
-            updatedSelected.minimumQuantity > updatedSelected.maximumQuantity) {
-          // If setting min above max, adjust max
-          if (field === 'minimumQuantity') {
-            updatedSelected.maximumQuantity = updatedSelected.minimumQuantity;
-          }
-          // If setting max below min, adjust min
-          if (field === 'maximumQuantity') {
-            updatedSelected.minimumQuantity = updatedSelected.maximumQuantity;
-          }
-        }
+        updatedSelected[field] = Math.max(0, value || 0);
         
         return updatedSelected;
       })
@@ -96,8 +75,6 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
       .map((item, index) => ({
         item,
         inStockQuantity: 0,
-        minimumQuantity: undefined,
-        maximumQuantity: undefined,
         sortOrder: formData.selectedItems.length + index
       }));
 
@@ -151,21 +128,7 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="flex flex-col items-center">
-                      <Label htmlFor={`min-${selected.item.id}`} className="text-xs mb-1">
-                        Min:
-                      </Label>
-                      <Input
-                        id={`min-${selected.item.id}`}
-                        type="number"
-                        min="0"
-                        value={selected.minimumQuantity || ''}
-                        onChange={(e) => updateItemQuantity(selected.item.id, 'minimumQuantity', e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="w-20 text-center"
-                        placeholder="0"
-                      />
-                    </div>
+                  <div className="flex justify-center">
                     <div className="flex flex-col items-center">
                       <Label htmlFor={`instock-${selected.item.id}`} className="text-xs mb-1">
                         In Stock:
@@ -176,20 +139,6 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                         min="0"
                         value={selected.inStockQuantity || ''}
                         onChange={(e) => updateItemQuantity(selected.item.id, 'inStockQuantity', parseInt(e.target.value) || 0)}
-                        className="w-20 text-center"
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <Label htmlFor={`max-${selected.item.id}`} className="text-xs mb-1">
-                        Max:
-                      </Label>
-                      <Input
-                        id={`max-${selected.item.id}`}
-                        type="number"
-                        min="0"
-                        value={selected.maximumQuantity || ''}
-                        onChange={(e) => updateItemQuantity(selected.item.id, 'maximumQuantity', e.target.value ? parseInt(e.target.value) : undefined)}
                         className="w-20 text-center"
                         placeholder="0"
                       />
@@ -318,13 +267,12 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
               <Package className="h-4 w-4 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">Template Quantity Guidelines</h4>
+              <h4 className="font-medium text-sm">Template Stock Guidelines</h4>
               <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                <li>• <strong>In Stock:</strong> Current expected stock level (can be 0 for new stores)</li>
-                <li>• <strong>Minimum:</strong> Reorder threshold - when to replenish stock</li>
-                <li>• <strong>Maximum:</strong> Maximum stock level to maintain</li>
-                <li>• For new stores: Set in-stock to 0 and define min/max for future ordering</li>
-                <li>• Min/max quantities help with inventory planning and reorder alerts</li>
+                <li>• <strong>In Stock:</strong> Expected initial stock level for new locations</li>
+                <li>• For new stores: Set in-stock to 0, for existing stores match current levels</li>
+                <li>• Min/max thresholds are controlled through warehouse settings</li>
+                <li>• This template defines the baseline inventory structure</li>
               </ul>
             </div>
           </div>
