@@ -85,6 +85,33 @@ export interface InventoryTransaction {
   user_id: string;
   transaction_date: string;
   created_at: string;
+  // Additional database fields from migrations
+  created_by?: string;
+  po_number?: string;
+  vendor_name?: string;
+  warehouse_id?: string;
+  team_id?: string;
+  receipt_line_id?: string;
+  total_cost?: number;
+  // Enhanced fields from JOINs
+  inventory_items?: {
+    name: string;
+    sku?: string;
+    barcode?: string;
+    description?: string;
+  };
+  teams?: {
+    id: string;
+    name: string;
+  };
+  warehouses?: {
+    id: string;
+    name: string;
+    location?: string;
+  };
+  // We'll fetch user details separately if needed
+  processor_name?: string;
+  processor_email?: string;
 }
 
 export interface InventoryCount {

@@ -10,7 +10,7 @@ import { StandardTeamSelector } from '@/components/teams';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Search, Package, DollarSign, TrendingDown, Trash2, 
-  ArrowRightLeft, AlertTriangle, ShoppingCart, FileText
+  ArrowRightLeft, AlertTriangle, ShoppingCart, FileText, Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/utils/formatters';
@@ -429,36 +429,88 @@ export const WithdrawalReportsTab: React.FC = () => {
                                      transaction.notes?.toLowerCase().includes('transfer') ? 'transfer' : 'other';
 
                     return (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/25 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {format(new Date(transaction.transaction_date), 'MMM d, yyyy h:mm a')}
-                              {item.sku && ` • SKU: ${item.sku}`}
+                      <div key={transaction.id} className="border rounded-lg hover:bg-muted/25 transition-colors">
+                        <div className="flex items-center justify-between p-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="flex-1">
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {format(new Date(transaction.transaction_date), 'MMM d, yyyy h:mm a')}
+                                {item.sku && ` • SKU: ${item.sku}`}
+                              </div>
+                              
+                              {/* Enhanced transaction details */}
+                              <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                                {transaction.processor_name && (
+                                  <div className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    <span>Processed by: {transaction.processor_name}</span>
+                                  </div>
+                                )}
+                                {transaction.warehouses?.name && (
+                                  <div className="flex items-center gap-1">
+                                    <Package className="h-3 w-3" />
+                                    <span>Warehouse: {transaction.warehouses.name}</span>
+                                    {transaction.warehouses.location && (
+                                      <span className="text-muted-foreground">({transaction.warehouses.location})</span>
+                                    )}
+                                  </div>
+                                )}
+                                {transaction.teams?.name && (
+                                  <div className="flex items-center gap-1">
+                                    <Users className="h-3 w-3" />
+                                    <span>Team: {transaction.teams.name}</span>
+                                  </div>
+                                )}
+                                {transaction.po_number && (
+                                  <div className="flex items-center gap-1">
+                                    <ShoppingCart className="h-3 w-3" />
+                                    <span>PO: {transaction.po_number}</span>
+                                  </div>
+                                )}
+                                {transaction.vendor_name && (
+                                  <div className="flex items-center gap-1">
+                                    <ShoppingCart className="h-3 w-3" />
+                                    <span>Vendor: {transaction.vendor_name}</span>
+                                  </div>
+                                )}
+                                {transaction.reference_number && (
+                                  <div className="flex items-center gap-1">
+                                    <FileText className="h-3 w-3" />
+                                    <span>Ref: {transaction.reference_number}</span>
+                                  </div>
+                                )}
+                                {transaction.total_cost && (
+                                  <div className="flex items-center gap-1">
+                                    <DollarSign className="h-3 w-3" />
+                                    <span>Total: {formatCurrency(transaction.total_cost)}</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {transaction.notes && (
+                                <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded max-w-md">
+                                  <strong>Notes:</strong> {transaction.notes}
+                                </div>
+                              )}
                             </div>
-                            {transaction.notes && (
-                              <div className="text-xs text-muted-foreground mt-1 max-w-md">
-                                {transaction.notes}
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-2 mb-1">
+                              {getTransactionBadge(reasonKey)}
+                              <div className="text-destructive font-medium">
+                                -{Math.abs(transaction.quantity)}
+                              </div>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Cost: {formatCurrency(Math.abs(transaction.quantity) * (transaction.unit_cost || 0))}
+                            </div>
+                            {reasonKey === 'sale' && item.sale_price && (
+                              <div className="text-xs text-green-600">
+                                Revenue: {formatCurrency(Math.abs(transaction.quantity) * item.sale_price)}
                               </div>
                             )}
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-2 mb-1">
-                            {getTransactionBadge(reasonKey)}
-                            <div className="text-destructive font-medium">
-                              -{Math.abs(transaction.quantity)}
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Cost: {formatCurrency(Math.abs(transaction.quantity) * (transaction.unit_cost || 0))}
-                          </div>
-                          {reasonKey === 'sale' && item.sale_price && (
-                            <div className="text-xs text-green-600">
-                              Revenue: {formatCurrency(Math.abs(transaction.quantity) * item.sale_price)}
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
