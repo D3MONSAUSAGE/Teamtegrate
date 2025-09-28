@@ -444,8 +444,7 @@ export const warehouseApi = {
     const { data, error } = await supabase
       .from('warehouse_items')
       .update({
-        on_hand: newStock,
-        updated_at: new Date().toISOString()
+        on_hand: newStock
       })
       .eq('warehouse_id', warehouseId)
       .eq('item_id', itemId)
