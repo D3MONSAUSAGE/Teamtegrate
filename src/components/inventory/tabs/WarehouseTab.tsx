@@ -18,6 +18,7 @@ import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouse
 import { useInventory } from '@/contexts/inventory';
 import { InvoiceClient } from '@/types/invoices';
 import { toast } from 'sonner';
+import { WarehouseProvider } from '@/contexts/warehouse/WarehouseContext';
 
 // Lazy load the dashboard component to avoid circular dependencies
 const WarehouseOverviewDashboard = React.lazy(() => 
@@ -282,15 +283,15 @@ export const WarehouseTab: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'stock':
-        return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} />;
+        return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} onRefresh={handleRefresh} />;
       case 'processing':
         return <ProcessingTab />;
       case 'outgoing':
-        return <OutgoingTab warehouseId={warehouse.id} />;
+        return <OutgoingTab warehouseId={warehouse.id} onRefresh={handleRefresh} />;
       case 'reports':
         return <ReportsTab defaultTeamId={warehouse?.team_id} />;
       default:
-        return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} />;
+        return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} onRefresh={handleRefresh} />;
     }
   };
 
@@ -379,24 +380,26 @@ export const WarehouseTab: React.FC = () => {
           </div>
         </div>
       ) : warehouse ? (
-        // Show warehouse tabs when warehouse is loaded
-        <ScrollableTabs>
-          <ScrollableTabsList>
-            {tabs.map((tab) => (
-              <ScrollableTabsTrigger
-                key={tab.id}
-                isActive={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </ScrollableTabsTrigger>
-            ))}
-          </ScrollableTabsList>
-          
-          <div className="mt-4">
-            {renderTabContent()}
-          </div>
-        </ScrollableTabs>
+        // Show warehouse tabs when warehouse is loaded - Wrap with WarehouseProvider
+        <WarehouseProvider warehouseId={warehouse.id}>
+          <ScrollableTabs>
+            <ScrollableTabsList>
+              {tabs.map((tab) => (
+                <ScrollableTabsTrigger
+                  key={tab.id}
+                  isActive={activeTab === tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </ScrollableTabsTrigger>
+              ))}
+            </ScrollableTabsList>
+            
+            <div className="mt-4">
+              {renderTabContent()}
+            </div>
+          </ScrollableTabs>
+        </WarehouseProvider>
       ) : (showOverview || shouldShowOverview) && selectedTeamId === null ? (
         <React.Suspense fallback={<div className="flex items-center justify-center py-12">Loading dashboard...</div>}>
           <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />

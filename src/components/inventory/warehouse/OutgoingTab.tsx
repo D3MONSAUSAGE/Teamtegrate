@@ -9,50 +9,30 @@ import { InventoryItem } from '@/contexts/inventory/types';
 import { InvoiceClient } from '@/types/invoices';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 
 interface OutgoingTabProps {
   warehouseId: string;
+  onRefresh?: () => void;
 }
 
-export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
+export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh }) => {
   const { items: inventoryItems, getItemById, createTransaction, refreshTransactions } = useInventory();
+  const { warehouseItems, itemsLoading, updateItemStock, refreshWarehouseItems } = useWarehouse();
   const { user } = useAuth();
-  const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isOutgoingSheetOpen, setIsOutgoingSheetOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   
-  useEffect(() => {
-    loadWarehouseItems();
-  }, [warehouseId]);
-
-  const loadWarehouseItems = async () => {
-    try {
-      setLoading(true);
-      console.log('🔍 [OutgoingTab] Loading warehouse items for warehouse:', warehouseId);
-      const items = await warehouseApi.listWarehouseItems(warehouseId);
-      console.log('🔍 [OutgoingTab] Raw warehouse items from API:', items);
-      
-      // Only show items with stock > 0
-      const itemsWithStock = items.filter(item => item.on_hand > 0);
-      console.log('🔍 [OutgoingTab] Warehouse items with stock:', itemsWithStock);
-      console.log('🔍 [OutgoingTab] Warehouse items count:', itemsWithStock.length);
-      console.log('🔍 [OutgoingTab] Warehouse items names:', itemsWithStock.map(item => `${item.item?.name} (stock: ${item.on_hand})`));
-      
-      setWarehouseItems(itemsWithStock);
-    } catch (error) {
-      console.error('Error loading warehouse items:', error);
-      toast.error('Failed to load warehouse items');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter to only show items with stock > 0
+  const itemsWithStock = useMemo(() => {
+    return warehouseItems.filter(item => item.on_hand > 0);
+  }, [warehouseItems]);
 
   // Transform warehouse items to inventory items for OutgoingSheet - MEMOIZED to prevent stale data
   const warehouseInventoryItems = useMemo(() => {
-    console.log('🔍 [OutgoingTab] Creating warehouseInventoryItems from warehouseItems:', warehouseItems.length);
+    console.log('🔍 [OutgoingTab] Creating warehouseInventoryItems from itemsWithStock:', itemsWithStock.length);
     
-    const transformedItems = warehouseItems.map((warehouseItem): InventoryItem => ({
+    const transformedItems = itemsWithStock.map((warehouseItem): InventoryItem => ({
       id: warehouseItem.item?.id || warehouseItem.item_id,
       organization_id: user?.organizationId || '',
       team_id: warehouseId,
@@ -113,7 +93,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
     console.log('🔍 [OutgoingTab] Transformed items names:', transformedItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
     
     return transformedItems;
-  }, [warehouseItems, warehouseId, user?.id, user?.organizationId]);
+  }, [itemsWithStock, warehouseId, user?.id, user?.organizationId]);
 
   // Handle item withdrawal
   const handleItemsWithdrawn = async (lineItems: any[], reason: string, customerInfo?: any, notes?: string) => {
@@ -126,7 +106,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       
       // Validate that all items have sufficient warehouse stock
       for (const lineItem of lineItems) {
-        const warehouseItem = warehouseItems.find(item => item.item_id === lineItem.item.id);
+        const warehouseItem = itemsWithStock.find(item => item.item_id === lineItem.item.id);
         if (!warehouseItem) {
           throw new Error(`Item ${lineItem.item.name} is not available in this warehouse`);
         }
@@ -135,8 +115,15 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
         }
       }
       
-      // Process each line item
+      // Process each line item - Update warehouse stock AND create transactions
       for (const lineItem of lineItems) {
+        // Update warehouse stock using context
+        const stockUpdateSuccess = await updateItemStock(lineItem.item.id, -lineItem.quantity);
+        if (!stockUpdateSuccess) {
+          throw new Error(`Failed to update warehouse stock for ${lineItem.item.name}`);
+        }
+
+        // Create transaction record
         const transactionData = {
           organization_id: user.organizationId,
           team_id: warehouseId, // Link transaction to team/warehouse
@@ -155,11 +142,13 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
         console.log('✅ Transaction created:', result);
       }
       
-      // Reload warehouse items to reflect changes
-      await loadWarehouseItems();
-      
       // Refresh transaction data for reports
       await refreshTransactions();
+      
+      // Trigger parent refresh to update other tabs
+      if (onRefresh) {
+        onRefresh();
+      }
       
       toast.success(`Successfully withdrew ${lineItems.length} item${lineItems.length !== 1 ? 's' : ''} and logged transactions`);
     } catch (error) {
@@ -226,7 +215,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
     }
   };
 
-  const totalStockValue = warehouseItems.reduce((sum, item) => {
+  const totalStockValue = itemsWithStock.reduce((sum, item) => {
     return sum + (item.on_hand * item.wac_unit_cost);
   }, 0);
 
@@ -240,7 +229,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{warehouseItems.length}</div>
+            <div className="text-2xl font-bold">{itemsWithStock.length}</div>
             <p className="text-xs text-muted-foreground">
               Available for sale
             </p>
@@ -254,7 +243,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {warehouseItems.reduce((sum, item) => sum + item.on_hand, 0)}
+              {itemsWithStock.reduce((sum, item) => sum + item.on_hand, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Total units available
@@ -293,11 +282,11 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {itemsLoading ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : warehouseItems.length === 0 ? (
+          ) : itemsWithStock.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Stock Available</h3>
@@ -309,12 +298,12 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  {warehouseItems.length} items available for withdrawal or sale
+                  {itemsWithStock.length} items available for withdrawal or sale
                 </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {warehouseItems.slice(0, 6).map(warehouseItem => (
+                {itemsWithStock.slice(0, 6).map(warehouseItem => (
                   <Card key={warehouseItem.item_id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
@@ -344,10 +333,10 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
                 ))}
               </div>
               
-              {warehouseItems.length > 6 && (
+              {itemsWithStock.length > 6 && (
                 <div className="text-center">
                   <Button variant="outline" size="sm">
-                    View All Items ({warehouseItems.length})
+                    View All Items ({itemsWithStock.length})
                   </Button>
                 </div>
               )}
@@ -357,7 +346,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       </Card>
 
       {/* Outgoing Sheet - Only render when warehouse items are loaded and available */}
-      {!loading && warehouseInventoryItems.length > 0 && (
+      {!itemsLoading && warehouseInventoryItems.length > 0 && (
         <OutgoingSheet
           key={`${warehouseId}-${isOutgoingSheetOpen}-${warehouseInventoryItems.length}`} // Force re-mount when warehouse changes
           open={isOutgoingSheetOpen}
@@ -374,7 +363,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       )}
       
       {/* Debug: Show current state */}
-      {loading && isOutgoingSheetOpen && (
+      {itemsLoading && isOutgoingSheetOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-card p-6 rounded-lg shadow-lg">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -384,7 +373,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId }) => {
       )}
       
       {/* Runtime validation error */}
-      {!loading && warehouseInventoryItems.length === 0 && isOutgoingSheetOpen && (
+      {!itemsLoading && warehouseInventoryItems.length === 0 && isOutgoingSheetOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-card p-6 rounded-lg shadow-lg border-destructive border">
             <p className="text-destructive font-medium mb-4">No warehouse items available</p>

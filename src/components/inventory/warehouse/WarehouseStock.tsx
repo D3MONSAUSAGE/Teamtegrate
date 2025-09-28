@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Package, Search, AlertTriangle, Hash, Barcode, DollarSign, Package2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { 
@@ -11,26 +10,37 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { warehouseApi, type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
-import { toast } from 'sonner';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { ItemDetailsModal } from '../ItemDetailsModal';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { StockStatusBadge } from '../StockStatusBadge';
 import { getStockStatusSummary } from '@/utils/stockStatus';
+import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
+import { type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 
 interface WarehouseStockProps {
   warehouseId?: string;
+  onRefresh?: () => void;
 }
 
-export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) => {
-  const [items, setItems] = useState<WarehouseItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onRefresh }) => {
+  // Use warehouse context for centralized state management
+  const { warehouseItems, itemsLoading } = useWarehouse();
   const [search, setSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const selectedItem = selectedItemId ? items.find(warehouseItem => warehouseItem.item_id === selectedItemId)?.item || null : null;
+  // Filter items based on search
+  const items = useMemo(() => {
+    if (!search.trim()) return warehouseItems;
+    
+    const searchLower = search.toLowerCase();
+    return warehouseItems.filter(item => 
+      item.item?.name?.toLowerCase().includes(searchLower) ||
+      item.item?.sku?.toLowerCase().includes(searchLower) ||
+      item.item?.barcode?.toLowerCase().includes(searchLower)
+    );
+  }, [warehouseItems, search]);
 
   // Convert warehouse item to inventory item format for modal
   const convertToInventoryItem = (warehouseItem: WarehouseItem) => {
@@ -38,7 +48,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
     
     return {
       ...warehouseItem.item,
-      organization_id: '', // Will be filled by context
+      organization_id: '',
       current_stock: warehouseItem.on_hand,
       created_by: '',
       created_at: new Date().toISOString(),
@@ -63,41 +73,6 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
   const modalItem = selectedItemId ? 
     convertToInventoryItem(items.find(warehouseItem => warehouseItem.item_id === selectedItemId)!) : 
     null;
-
-  useEffect(() => {
-    if (!warehouseId) {
-      setLoading(false);
-      return;
-    }
-    
-    loadWarehouseItems();
-  }, [warehouseId, search]);
-
-  const loadWarehouseItems = async () => {
-    if (!warehouseId) return;
-    
-    try {
-      setLoading(true);
-      const data = await warehouseApi.listWarehouseItems(warehouseId, search);
-      // Sort items by name on client-side since we can't order by joined fields in PostgREST
-      const sortedData = [...data].sort((a, b) => {
-        const nameA = a.item?.name || '';
-        const nameB = b.item?.name || '';
-        return nameA.localeCompare(nameB);
-      });
-      setItems(sortedData);
-    } catch (error) {
-      console.error('Error loading warehouse items:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to load warehouse stock: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatQuantity = (qty: number) => {
-    return formatNumber(qty);
-  };
 
   const handleItemClick = (itemId: string) => {
     const item = items.find(warehouseItem => warehouseItem.item_id === itemId);
@@ -132,7 +107,6 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
       return sum + (Number(item.on_hand) * Number(item.wac_unit_cost));
     }, 0);
 
-    // Calculate stock status summary
     const stockStatusItems = items.map(item => ({
       actualQuantity: item.on_hand,
       minimumThreshold: item.reorder_min,
@@ -153,7 +127,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
   }, [items]);
 
   if (!warehouseId) {
-    return null; // WarehouseTab now handles the not configured state
+    return null;
   }
 
   return (
@@ -178,7 +152,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {itemsLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="text-muted-foreground">Loading warehouse stock...</div>
           </div>
@@ -253,135 +227,74 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId }) =
               </Card>
             </div>
 
-            {/* Stock Status Summary */}
-            {summaryStats.stockStatus.total > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Card className="bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-destructive/10">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Under Stock</p>
-                        <p className="text-2xl font-bold text-destructive">{summaryStats.stockStatus.underStock}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-orange-500/5 to-orange-500/10 border-orange-500/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-orange-500/10">
-                        <Package className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Over Stock</p>
-                        <p className="text-2xl font-bold text-orange-600">{summaryStats.stockStatus.overStock}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-green-500/5 to-green-500/10 border-green-500/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-green-500/10">
-                        <Package className="h-5 w-5 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Normal Stock</p>
-                        <p className="text-2xl font-bold text-green-600">{summaryStats.stockStatus.normalStock}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-muted/5 to-muted/10 border-muted/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-muted/10">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">No Thresholds</p>
-                        <p className="text-2xl font-bold">{summaryStats.stockStatus.noThresholds}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
             <div className="overflow-x-auto">
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Barcode</TableHead>
-                  <TableHead className="text-right">In Stock</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Reorder Min</TableHead>
-                  <TableHead className="text-right">Reorder Max</TableHead>
-                  <TableHead className="text-center">Stock Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={`${item.warehouse_id}-${item.item_id}`} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(item.item_id)}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{item.item?.name}</div>
-                        {item.item?.category && (
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Barcode</TableHead>
+                    <TableHead className="text-right">In Stock</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Reorder Min</TableHead>
+                    <TableHead className="text-right">Reorder Max</TableHead>
+                    <TableHead className="text-center">Stock Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow key={`${item.warehouse_id}-${item.item_id}`} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(item.item_id)}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{item.item?.name}</div>
+                          {item.item?.category && (
+                            <div className="text-sm text-muted-foreground">
+                              {item.item.category.name}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-sm bg-muted px-1 py-0.5 rounded">
+                          {item.item?.sku || '-'}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-sm bg-muted px-1 py-0.5 rounded">
+                          {item.item?.barcode || '-'}
+                        </code>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="font-medium">
+                          {formatNumber(item.on_hand)}
+                        </div>
+                        {item.item?.base_unit && (
                           <div className="text-sm text-muted-foreground">
-                            {item.item.category.name}
+                            {item.item.base_unit.abbreviation}
                           </div>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-sm bg-muted px-1 py-0.5 rounded">
-                        {item.item?.sku || '-'}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-sm bg-muted px-1 py-0.5 rounded">
-                        {item.item?.barcode || '-'}
-                      </code>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="font-medium">
-                        {formatQuantity(item.on_hand)}
-                      </div>
-                      {item.item?.base_unit && (
-                        <div className="text-sm text-muted-foreground">
-                          {item.item.base_unit.abbreviation}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(item.wac_unit_cost)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.reorder_min ? formatQuantity(item.reorder_min) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.reorder_max ? formatQuantity(item.reorder_max) : '-'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <StockStatusBadge
-                        actualQuantity={item.on_hand}
-                        minimumThreshold={item.reorder_min}
-                        maximumThreshold={item.reorder_max}
-                        size="sm"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(item.wac_unit_cost)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.reorder_min ? formatNumber(item.reorder_min) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.reorder_max ? formatNumber(item.reorder_max) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <StockStatusBadge
+                          actualQuantity={item.on_hand}
+                          minimumThreshold={item.reorder_min}
+                          maximumThreshold={item.reorder_max}
+                          size="sm"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </>
         )}
