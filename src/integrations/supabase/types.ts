@@ -10609,7 +10609,7 @@ export type Database = {
       }
       post_warehouse_receipt: {
         Args:
-          | { p_receipt_data: Json; p_warehouse_id: string }
+          | { p_receipt_id: string; p_user: string }
           | { p_receipt_id: string; p_user: string }
         Returns: Json
       }
