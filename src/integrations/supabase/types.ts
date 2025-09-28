@@ -10639,6 +10639,16 @@ export type Database = {
         }
         Returns: Json
       }
+      create_warehouse_withdrawal: {
+        Args: {
+          p_item_id: string
+          p_quantity: number
+          p_reason?: string
+          p_reference?: string
+          p_warehouse_id: string
+        }
+        Returns: string
+      }
       debug_auth_status: {
         Args: Record<PropertyKey, never>
         Returns: Json

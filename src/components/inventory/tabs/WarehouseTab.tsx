@@ -12,6 +12,7 @@ import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/com
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, Minus, ShoppingCart, Plus, Play, Settings } from 'lucide-react';
+import { StockWithdrawalDrawer } from '../warehouse/StockWithdrawalDrawer';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -378,6 +379,10 @@ export const WarehouseTab: React.FC = () => {
               <ReceiveStockDrawer 
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
+              />
+              <StockWithdrawalDrawer
+                warehouseId={warehouse.id}
+                onWithdrawalSuccess={handleRefresh}
               />
               <Button onClick={() => setIsCheckoutOpen(true)} className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
