@@ -380,10 +380,6 @@ export const WarehouseTab: React.FC = () => {
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
               />
-              <StockWithdrawalDrawer
-                warehouseId={warehouse.id}
-                onWithdrawalSuccess={handleRefresh}
-              />
               <Button onClick={() => setIsCheckoutOpen(true)} className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
                 Start Checkout
@@ -413,8 +409,15 @@ export const WarehouseTab: React.FC = () => {
           </div>
         </div>
       ) : warehouse ? (
-        // Show warehouse tabs when warehouse is loaded - Wrap with WarehouseProvider
+        // Show warehouse content when warehouse is loaded - Single WarehouseProvider
         <WarehouseProvider warehouseId={warehouse.id}>
+          <div className="mb-4 flex justify-end">
+            <StockWithdrawalDrawer
+              warehouseId={warehouse.id}
+              onWithdrawalSuccess={handleRefresh}
+            />
+          </div>
+          
           <ScrollableTabs>
             <ScrollableTabsList>
               {tabs.map((tab) => (
@@ -433,7 +436,7 @@ export const WarehouseTab: React.FC = () => {
             </div>
           </ScrollableTabs>
           
-          {/* Simple Checkout - moved inside WarehouseProvider */}
+          {/* Simple Checkout - inside WarehouseProvider */}
           <SimpleCheckout
             warehouseId={warehouse.id}
             open={isCheckoutOpen}
