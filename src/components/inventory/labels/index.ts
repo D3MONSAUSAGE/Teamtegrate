@@ -1,10 +1,4 @@
-export { LabelPrintDialog } from './LabelPrintDialog';
-export { LabelTemplateManager } from './LabelTemplateManager';
-export { BatchLabelGenerator } from './BatchLabelGenerator';
-export { BarcodeGenerator } from './BarcodeGenerator';
-export { LabelContentSelector } from './LabelContentSelector';
-export { SaveTemplateDialog } from './SaveTemplateDialog';
-export { ReprintDialog } from './ReprintDialog';
+export { ProfessionalLabelDesigner } from './ProfessionalLabelDesigner';
+export { FoodLabelPreview } from './FoodLabelPreview';
 export { LabelsAndBarcodesTab } from './LabelsAndBarcodesTab';
-export { SimpleLabelGenerator } from './SimpleLabelGenerator';
-export type { LabelContentConfig } from './LabelContentSelector';
+export { BarcodeGenerator } from './BarcodeGenerator';

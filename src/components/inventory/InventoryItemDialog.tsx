@@ -23,7 +23,6 @@ import { VendorDialog } from './dialogs/VendorDialog';
 import { ImageUpload } from './ImageUpload';
 import { IngredientsPanel } from './IngredientsPanel';
 import { NutritionalInfoForm } from './NutritionalInfoForm';
-import { LabelPrintDialog } from './labels/LabelPrintDialog';
 import { vendorsApi } from '@/contexts/inventory/api';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 
@@ -68,7 +67,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showLabelDialog, setShowLabelDialog] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
   
   // Shared state for ingredients and nutritional info
@@ -399,17 +397,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               <Package className="h-5 w-5 text-primary" />
               {itemId ? 'Edit Item' : 'Add New Item'}
             </DialogTitle>
-            {currentItem && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLabelDialog(true)}
-                className="flex items-center gap-2"
-              >
-                <QrCode className="h-4 w-4" />
-                Generate Label
-              </Button>
-            )}
           </div>
         </DialogHeader>
 
@@ -804,14 +791,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           onOpenChange={setIsVendorDialogOpen}
           onSave={handleCreateVendor}
         />
-
-        {currentItem && (
-          <LabelPrintDialog
-            open={showLabelDialog}
-            onOpenChange={setShowLabelDialog}
-            item={currentItem}
-          />
-        )}
       </DialogContent>
     </Dialog>
   );

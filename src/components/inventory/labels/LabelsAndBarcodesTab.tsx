@@ -1,6 +1,6 @@
 import React from 'react';
-import { SimpleLabelGenerator } from './SimpleLabelGenerator';
+import { ProfessionalLabelDesigner } from './ProfessionalLabelDesigner';
 
 export const LabelsAndBarcodesTab: React.FC = () => {
-  return <SimpleLabelGenerator />;
+  return <ProfessionalLabelDesigner />;
 };

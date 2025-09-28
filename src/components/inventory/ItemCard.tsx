@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, QrCode } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { InventoryItem } from '@/contexts/inventory/types';
-import { LabelPrintDialog } from './labels/LabelPrintDialog';
 
 interface ItemCardProps {
   item: InventoryItem;
@@ -13,12 +12,6 @@ interface ItemCardProps {
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item, onClick }) => {
   const isLowStock = item.current_stock < (item.minimum_threshold || 0);
-  const [showLabelDialog, setShowLabelDialog] = useState(false);
-
-  const handleGenerateLabel = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowLabelDialog(true);
-  };
   
   return (
     <Card 
@@ -51,24 +44,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onClick }) => {
           </div>
         )}
         
-        <div className="mt-3 pt-2 border-t">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleGenerateLabel}
-            className="w-full text-xs"
-          >
-            <QrCode className="h-3 w-3 mr-1" />
-            Generate Label
-          </Button>
+        <div className="mt-3 pt-2 border-t text-center">
+          <p className="text-xs text-muted-foreground">Use Labels & Barcodes tab for label generation</p>
         </div>
       </CardContent>
-      
-      <LabelPrintDialog
-        open={showLabelDialog}
-        onOpenChange={setShowLabelDialog}
-        item={item}
-      />
     </Card>
   );
 };

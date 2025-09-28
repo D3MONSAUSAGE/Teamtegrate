@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { formatCurrency } from '@/utils/formatters';
-import { Trash2, MoreHorizontal, QrCode } from 'lucide-react';
-import { LabelPrintDialog } from './labels/LabelPrintDialog';
+import { Trash2, MoreHorizontal } from 'lucide-react';
 
 interface ItemTableRowProps {
   item: InventoryItem;
@@ -15,16 +14,9 @@ interface ItemTableRowProps {
 }
 
 export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDelete }) => {
-  const [showLabelDialog, setShowLabelDialog] = useState(false);
-
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.(item.id);
-  };
-
-  const handleGenerateLabel = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowLabelDialog(true);
   };
 
   return (
@@ -71,10 +63,6 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleGenerateLabel}>
-              <QrCode className="h-4 w-4 mr-2" />
-              Generate Label
-            </DropdownMenuItem>
             {onDelete && (
               <DropdownMenuItem 
                 onClick={handleDeleteClick}
@@ -87,12 +75,6 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
-      
-      <LabelPrintDialog
-        open={showLabelDialog}
-        onOpenChange={setShowLabelDialog}
-        item={item}
-      />
     </TableRow>
   );
 };
