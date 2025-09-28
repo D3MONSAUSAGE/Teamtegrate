@@ -414,6 +414,16 @@ export const WarehouseTab: React.FC = () => {
               {renderTabContent()}
             </div>
           </ScrollableTabs>
+          
+          {/* Simple Checkout - moved inside WarehouseProvider */}
+          <SimpleCheckout
+            warehouseId={warehouse.id}
+            open={isCheckoutOpen}
+            onOpenChange={setIsCheckoutOpen}
+            onRefresh={() => {
+              handleRefresh();
+            }}
+          />
         </WarehouseProvider>
       ) : (showOverview || shouldShowOverview) && selectedTeamId === null ? (
         <React.Suspense fallback={<div className="flex items-center justify-center py-12">Loading dashboard...</div>}>
@@ -441,17 +451,6 @@ export const WarehouseTab: React.FC = () => {
         </ScrollableTabs>
       )}
 
-      {/* Simple Checkout */}
-      {warehouse && (
-        <SimpleCheckout
-          warehouseId={warehouse.id}
-          open={isCheckoutOpen}
-          onOpenChange={setIsCheckoutOpen}
-          onRefresh={() => {
-            handleRefresh();
-          }}
-        />
-      )}
 
       {/* System Testing Panel */}
       <SystemTestingPanel
