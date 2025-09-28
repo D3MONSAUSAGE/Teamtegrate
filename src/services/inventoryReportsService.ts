@@ -120,15 +120,15 @@ export const inventoryReportsService = {
             team_id: itemTeamId,
             team_name: item.team_name || 'Unassigned',
             total_value: 0,
-            total_items: 0,
-            low_stock_count: 0,
-            overstock_count: 0
+            item_count: 0,
+            low_stock_items: 0,
+            overstock_items: 0
           });
         }
         
         const summary = teamSummaries.get(itemTeamId)!;
         summary.total_value += Number(item.total_value) || 0;
-        summary.total_items += 1;
+        summary.item_count += 1;
         
         // Note: Stock level checking would need reorder_point and max_stock_level from inventory items
         // For now, we'll skip these calculations
