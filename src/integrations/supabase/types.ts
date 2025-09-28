@@ -10759,10 +10759,7 @@ export type Database = {
         Returns: string
       }
       get_daily_movements: {
-        Args:
-          | { p_date?: string; p_team_id?: string }
-          | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
-          | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
+        Args: { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
         Returns: {
           po_numbers: string[]
           total_quantity: number
@@ -10885,16 +10882,14 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args: { p_team_id?: string } | { p_team_id?: string }
+        Args: { p_team_id?: string }
         Returns: {
-          current_stock: number
-          item_id: string
-          item_name: string
-          organization_id: string
+          item_count: number
+          low_stock_items: number
+          overstock_items: number
           team_id: string
+          team_name: string
           total_value: number
-          unit_cost: number
-          warehouse_id: string
         }[]
       }
       get_request_notification_recipients: {
@@ -10971,23 +10966,13 @@ export type Database = {
         }[]
       }
       get_warehouse_daily_movements: {
-        Args:
-          | { p_date?: string; p_warehouse_id?: string }
-          | { p_date?: string; p_warehouse_id?: string }
+        Args: { p_date?: string; p_warehouse_id?: string }
         Returns: {
-          created_by: string
-          id: string
-          item_id: string
-          item_name: string
-          notes: string
-          organization_id: string
-          quantity: number
-          team_id: string
+          po_numbers: string[]
+          total_quantity: number
           total_value: number
-          transaction_date: string
+          transaction_count: number
           transaction_type: string
-          unit_cost: number
-          warehouse_id: string
         }[]
       }
       get_warehouse_inventory_value: {
