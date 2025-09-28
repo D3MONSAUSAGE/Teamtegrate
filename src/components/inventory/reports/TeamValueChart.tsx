@@ -30,9 +30,9 @@ export const TeamValueChart: React.FC<TeamValueChartProps> = ({
     .map(team => ({
       name: team.team_name || 'Unknown Team',
       value: Number(team.total_value),
-      items: Number(team.total_items),
-      lowStock: Number(team.low_stock_count),
-      overstock: Number(team.overstock_count)
+      items: Number(team.item_count),
+      lowStock: Number(team.low_stock_items),
+      overstock: Number(team.overstock_items)
     }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 10); // Show top 10 teams

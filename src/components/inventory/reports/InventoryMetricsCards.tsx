@@ -23,9 +23,9 @@ export const InventoryMetricsCards: React.FC<InventoryMetricsCardsProps> = ({
   isLoading = false
 }) => {
   const totalValue = summaryData.reduce((sum, team) => sum + Number(team.total_value), 0);
-  const totalItems = summaryData.reduce((sum, team) => sum + Number(team.total_items), 0);
-  const totalLowStock = summaryData.reduce((sum, team) => sum + Number(team.low_stock_count), 0);
-  const totalOverstock = summaryData.reduce((sum, team) => sum + Number(team.overstock_count), 0);
+  const totalItems = summaryData.reduce((sum, team) => sum + Number(team.item_count), 0);
+  const totalLowStock = summaryData.reduce((sum, team) => sum + Number(team.low_stock_items), 0);
+  const totalOverstock = summaryData.reduce((sum, team) => sum + Number(team.overstock_items), 0);
   const activeTeams = summaryData.length;
 
   const baseMetrics = [
