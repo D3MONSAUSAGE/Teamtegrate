@@ -228,12 +228,22 @@ export const warehouseApi = {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error('User not authenticated');
 
+    console.log('[WAREHOUSE_API] Posting receipt:', {
+      receiptId,
+      userId: user.user.id
+    });
+
     const { error } = await supabase.rpc('post_warehouse_receipt', {
       p_receipt_id: receiptId,
       p_user: user.user.id
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[WAREHOUSE_API] Error posting receipt:', error);
+      throw new Error(`Failed to post receipt: ${error.message}`);
+    }
+
+    console.log('[WAREHOUSE_API] Receipt posted successfully');
   },
 
   // Create a new transfer

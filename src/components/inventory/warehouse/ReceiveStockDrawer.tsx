@@ -234,25 +234,47 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
       return;
     }
 
+    if (!user?.id || !user?.organizationId) {
+      toast.error('Authentication required. Please log in again.');
+      return;
+    }
+
     const validLines = lineItems.filter(item => item.qty > 0);
     if (validLines.length === 0) {
       toast.error('Please add at least one item with quantity > 0');
       return;
     }
 
+    console.log('[WAREHOUSE_RECEIPT] Starting receipt creation...', {
+      warehouseId,
+      userId: user.id,
+      organizationId: user.organizationId,
+      validLinesCount: validLines.length
+    });
+
     try {
       setSubmitting(true);
 
       // Step 1: Create receipt
+      console.log('[WAREHOUSE_RECEIPT] Creating receipt...');
       const receipt = await warehouseApi.createReceipt(warehouseId, reference);
+      console.log('[WAREHOUSE_RECEIPT] Receipt created:', receipt.id);
 
       // Step 2: Generate lot number for this receipt
       const sharedLotNumber = generateLotNumber();
+      console.log('[WAREHOUSE_RECEIPT] Generated lot number:', sharedLotNumber);
 
-      // Step 3: Create lot records for each item
+      // Step 3: Create lot records for each item with proper auth data
+      console.log('[WAREHOUSE_RECEIPT] Creating lot records...');
       for (const line of validLines) {
+        console.log('[WAREHOUSE_RECEIPT] Creating lot for item:', {
+          itemId: line.item_id,
+          qty: line.qty,
+          lotNumber: sharedLotNumber
+        });
+        
         await inventoryLotsApi.create({
-          organization_id: '', // Will be set by RLS
+          organization_id: user.organizationId, // Use actual organization ID
           item_id: line.item_id,
           lot_number: sharedLotNumber,
           manufacturing_date: null,
@@ -263,13 +285,14 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
           supplier_info: null,
           notes: `Receipt: ${receipt.id}${notes ? ` | ${notes}` : ''}`,
           is_active: true,
-          created_by: '', // Will be set by auth
+          created_by: user.id, // Use actual user ID
           shipment_id: null
         });
       }
+      console.log('[WAREHOUSE_RECEIPT] All lots created successfully');
 
       // Step 4: Add lines to receipt (include all lines with qty > 0, regardless of unit_cost)
-      console.log('📋 Adding receipt lines:', validLines.map(l => ({
+      console.log('[WAREHOUSE_RECEIPT] Adding receipt lines...', validLines.map(l => ({
         item_id: l.item_id,
         qty: l.qty,
         unit_cost: l.unit_cost || 0,
@@ -284,9 +307,12 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
           unitCost: line.unit_cost || 0 // Default to 0 if no unit cost
         });
       }
+      console.log('[WAREHOUSE_RECEIPT] All receipt lines added');
 
       // Step 5: Post the receipt (this updates warehouse_items.on_hand)
+      console.log('[WAREHOUSE_RECEIPT] Posting receipt...');
       await warehouseApi.postReceipt(receipt.id);
+      console.log('[WAREHOUSE_RECEIPT] Receipt posted successfully');
 
       toast.success(`Receipt ${receipt.id.slice(0, 8)} posted successfully with lot ${sharedLotNumber}!`);
       
@@ -299,8 +325,26 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
         onReceiptPosted();
       }
     } catch (error) {
-      console.error('❌ Error posting receipt:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('[WAREHOUSE_RECEIPT] ❌ Error posting receipt:', error);
+      
+      // Enhanced error reporting for debugging
+      let errorMessage = 'Unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('[WAREHOUSE_RECEIPT] Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+      } else if (typeof error === 'object' && error !== null) {
+        console.error('[WAREHOUSE_RECEIPT] Error object:', error);
+        if ('message' in error) {
+          errorMessage = String(error.message);
+        } else if ('details' in error) {
+          errorMessage = String(error.details);
+        }
+      }
+      
       toast.error(`Failed to post receipt: ${errorMessage}`);
     } finally {
       setSubmitting(false);
