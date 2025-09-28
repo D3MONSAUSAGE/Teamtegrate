@@ -170,8 +170,8 @@ export const inventoryReportsService = {
         team_name: teamId ? 'Selected Team' : 'All Teams',
         total_value: Number(result.total_value) || 0,
         item_count: Number(result.item_count) || 0,
-        low_stock_items: Number(result.low_stock_count) || 0,
-        overstock_items: Number(result.out_of_stock_count) || 0
+        low_stock_items: Number(result.low_stock_items) || 0,
+        overstock_items: Number(result.overstock_items) || 0
       }];
     }
 
@@ -199,9 +199,9 @@ export const inventoryReportsService = {
       team_id: item.team_id,
       team_name: item.team_name,
       total_value: Number(item.total_value) || 0,
-      item_count: Number(item.item_count) || 0,
-      low_stock_items: Number(item.low_stock_count) || 0,
-      overstock_items: Number(item.overstock_count) || 0
+      item_count: Number(item.total_items) || 0,
+      low_stock_items: Number(item.low_stock_items) || 0,
+      overstock_items: Number(item.out_of_stock_count) || 0
     }));
   },
 

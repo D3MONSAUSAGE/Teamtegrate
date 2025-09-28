@@ -10893,6 +10893,7 @@ export type Database = {
           p_warehouse_id?: string
         }
         Returns: {
+          item_count: number
           low_stock_items: number
           overstock_items: number
           total_value: number
