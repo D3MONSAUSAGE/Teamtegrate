@@ -46,6 +46,10 @@ interface InventoryItem {
   barcode?: string;
   unit_cost?: number;
   on_hand?: number; // Warehouse stock level
+  stock_status?: 'available' | 'unavailable'; // Stock status from hybrid search
+  is_in_warehouse?: boolean; // Whether item exists in warehouse
+  category?: { name: string; };
+  base_unit?: { name: string; abbreviation: string; };
 }
 
 interface WithdrawalLine {
@@ -148,8 +152,8 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     
     try {
       setSearchLoading(true);
-      // Use warehouse-specific search to only show items physically present in this warehouse
-      const results = await warehouseApi.searchWarehouseItems(warehouseId, debouncedSearchQuery);
+      // Use hybrid search to show all catalog items with their warehouse stock status
+      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId, debouncedSearchQuery);
       setSearchResults(results);
       setShowResults(true);
     } catch (error) {
@@ -175,16 +179,23 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     }
 
     try {
-      // Search for item by barcode in current warehouse only
-      const results = await warehouseApi.searchWarehouseItems(warehouseId, barcode);
+      // Search for item by barcode using hybrid search (shows stock status)
+      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId, barcode);
       
       if (results.length === 0) {
-        toast.error(`No item found with barcode: ${barcode} in this warehouse`);
+        toast.error(`No item found with barcode: ${barcode}`);
         return;
       }
       
       // Auto-select first result (barcode search is precise)
       const item = results[0];
+      
+      // Check if item has stock before allowing selection
+      if (item.on_hand <= 0) {
+        toast.error(`Item "${item.name}" found but not available in warehouse (Stock: ${item.on_hand})`);
+        return;
+      }
+      
       handleItemSelect(item);
       
       // Show success feedback with stock info
@@ -263,16 +274,23 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
         sku: warehouseItem.item?.sku,
         barcode: warehouseItem.item?.barcode,
         unit_cost: 0, // Default to 0 since search results don't include unit_cost
+        on_hand: warehouseItem.on_hand,
       };
     } else {
       itemData = item;
+    }
+    
+    // Prevent selection of items with no stock
+    if (itemData.on_hand <= 0) {
+      toast.error(`Cannot add "${itemData.name}" - no stock available in warehouse (Stock: ${itemData.on_hand || 0})`);
+      return;
     }
     
     // Check if item already exists in withdrawal lines
     const existingLine = lineItems.find(line => line.item_id === itemData.id);
     if (existingLine) {
       updateLineItem(existingLine.id, 'qty', existingLine.qty + 1);
-      toast.success(`Scanned: ${itemData.name} (Qty: ${existingLine.qty + 1})`);
+      toast.success(`Updated: ${itemData.name} (Qty: ${existingLine.qty + 1})`);
       return;
     }
 
@@ -294,6 +312,8 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);
+    
+    toast.success(`Added: ${itemData.name} (Stock: ${itemData.on_hand})`);
   };
 
   const removeLineItem = (id: string) => {
@@ -522,66 +542,133 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Search Input */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder={
-                        scanMode && scannerConnected 
-                          ? "Hardware scanner ready..." 
-                          : scanMode 
-                            ? "Scan with camera or search..." 
-                            : "Search by name, SKU, barcode..."
-                      }
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onFocus={() => {
-                        if (searchResults.length > 0) setShowResults(true);
-                      }}
-                      className="pl-10 h-12"
-                      disabled={scanMode && !searchQuery}
-                    />
-                    
-                    {/* Camera Scan Button */}
-                    {scanMode && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowScanner(true)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2"
-                      >
-                        <Scan className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                   {/* Search Input */}
+                   <div className="space-y-3">
+                     {/* Stock Filter */}
+                     <div className="flex items-center gap-2">
+                       <Label className="text-xs font-medium">Show:</Label>
+                       <div className="flex gap-1">
+                         <Badge 
+                           variant="outline" 
+                           className="cursor-pointer hover:bg-primary hover:text-primary-foreground text-xs"
+                           onClick={() => {/* Filter logic will be added */}}
+                         >
+                           All Items
+                         </Badge>
+                         <Badge 
+                           variant="outline" 
+                           className="cursor-pointer hover:bg-green-100 hover:text-green-800 text-xs"
+                           onClick={() => {/* Filter logic will be added */}}
+                         >
+                           Available Only
+                         </Badge>
+                         <Badge 
+                           variant="outline" 
+                           className="cursor-pointer hover:bg-gray-100 hover:text-gray-800 text-xs"
+                           onClick={() => {/* Filter logic will be added */}}
+                         >
+                           Out of Stock
+                         </Badge>
+                       </div>
+                     </div>
+                     
+                     <div className="relative">
+                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                       <Input
+                         placeholder={
+                           scanMode && scannerConnected 
+                             ? "Hardware scanner ready..." 
+                             : scanMode 
+                               ? "Scan with camera or search..." 
+                               : "Search by name, SKU, barcode..."
+                         }
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         onFocus={() => {
+                           if (searchResults.length > 0) setShowResults(true);
+                         }}
+                         className="pl-10 h-12"
+                         disabled={scanMode && !searchQuery}
+                       />
+                       
+                       {/* Camera Scan Button */}
+                       {scanMode && (
+                         <Button
+                           type="button"
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => setShowScanner(true)}
+                           className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2"
+                         >
+                           <Scan className="h-4 w-4" />
+                         </Button>
+                       )}
+                     </div>
+                   </div>
                   
-                  {/* Search Results */}
-                  {showResults && searchResults.length > 0 && (
-                    <Card className="border shadow-lg max-h-80 overflow-y-auto">
-                      <CardContent className="p-2">
-                        {searchResults.map((item) => (
-                          <div
-                            key={item.id}
-                            className="p-3 hover:bg-muted rounded-lg cursor-pointer flex items-center justify-between transition-colors"
-                            onClick={() => handleItemSelect(item)}
-                          >
-                             <div className="flex-1">
-                               <div className="font-medium">{item.name}</div>
-                               <div className="text-sm text-muted-foreground flex gap-4">
-                                 {item.sku && <span>SKU: {item.sku}</span>}
-                                 {item.barcode && <span>Barcode: {item.barcode}</span>}
-                                 {item.on_hand !== undefined && (
-                                   <span className="text-primary font-medium">Stock: {item.on_hand}</span>
+                   {/* Search Results */}
+                   {showResults && searchResults.length > 0 && (
+                     <Card className="border shadow-lg max-h-80 overflow-y-auto">
+                       <CardContent className="p-2">
+                         {searchResults.map((item) => {
+                           const isAvailable = item.on_hand > 0;
+                           const stockStatus = item.stock_status || (isAvailable ? 'available' : 'unavailable');
+                           
+                           return (
+                             <div
+                               key={item.id}
+                               className={`p-3 rounded-lg cursor-pointer flex items-center justify-between transition-colors ${
+                                 isAvailable 
+                                   ? 'hover:bg-muted' 
+                                   : 'bg-muted/30 cursor-not-allowed'
+                               }`}
+                               onClick={() => {
+                                 if (isAvailable) {
+                                   handleItemSelect(item);
+                                 } else {
+                                   toast.error(`"${item.name}" is not available in this warehouse`);
+                                 }
+                               }}
+                             >
+                               <div className="flex-1">
+                                 <div className={`font-medium ${!isAvailable ? 'text-muted-foreground' : ''}`}>
+                                   {item.name}
+                                 </div>
+                                 <div className="text-sm text-muted-foreground flex gap-4 items-center">
+                                   {item.sku && <span>SKU: {item.sku}</span>}
+                                   {item.barcode && <span>Barcode: {item.barcode}</span>}
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center gap-2">
+                                 {/* Stock Status Badge */}
+                                 <Badge 
+                                   variant={stockStatus === 'available' ? 'default' : 'secondary'}
+                                   className={`text-xs ${
+                                     stockStatus === 'available' 
+                                       ? 'bg-green-100 text-green-800 border-green-200' 
+                                       : 'bg-gray-100 text-gray-600 border-gray-200'
+                                   }`}
+                                 >
+                                   {stockStatus === 'available' 
+                                     ? `Stock: ${item.on_hand}` 
+                                     : 'Not Available'
+                                   }
+                                 </Badge>
+                                 
+                                 {/* Selection Icon */}
+                                 {isAvailable ? (
+                                   <Plus className="h-4 w-4 text-primary" />
+                                 ) : (
+                                   <X className="h-4 w-4 text-muted-foreground" />
                                  )}
                                </div>
                              </div>
-                            <Plus className="h-4 w-4 text-primary" />
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )}
+                           );
+                         })}
+                       </CardContent>
+                     </Card>
+                   )}
                   
                   {/* Loading indicator */}
                   {searchLoading && (

@@ -629,7 +629,7 @@ export const warehouseApi = {
     return data || [];
   },
 
-  // Search warehouse items (warehouse-specific stock only)
+  // Search warehouse items (warehouse-specific stock only) - LEGACY
   async searchWarehouseItems(warehouseId: string, query: string, limit = 20): Promise<any[]> {
     if (!query.trim() || !warehouseId) return [];
 
@@ -681,5 +681,114 @@ export const warehouseApi = {
       category: warehouseItem.item?.category,
       base_unit: warehouseItem.item?.base_unit
     }));
+  },
+
+  // Search ALL inventory items with warehouse stock status (HYBRID APPROACH)
+  async searchAllInventoryItemsWithStock(warehouseId: string, query: string, limit = 20): Promise<any[]> {
+    if (!query.trim() || !warehouseId) return [];
+
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError || !user.user) throw new Error('Not authenticated');
+
+    // Get user's organization for filtering
+    const { data: userData, error: userDataError } = await supabase
+      .from('users')
+      .select('organization_id, role')
+      .eq('id', user.user.id)
+      .single();
+
+    if (userDataError || !userData) throw new Error('Could not get user data');
+
+    const searchTerm = query.trim();
+
+    // First get all matching inventory items
+    let baseQuery = supabase
+      .from('inventory_items')
+      .select(`
+        id,
+        name,
+        sku,
+        barcode,
+        unit_cost,
+        team_id,
+        category:inventory_categories(name),
+        base_unit:inventory_units(name, abbreviation)
+      `)
+      .eq('is_active', true)
+      .eq('organization_id', userData.organization_id)
+      .limit(limit);
+
+    // Apply team-based filtering (same as searchInventoryItems)
+    if (userData.role === 'manager') {
+      const { data: managedTeams } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('manager_id', user.user.id)
+        .eq('organization_id', userData.organization_id);
+
+      const teamIds = managedTeams?.map(t => t.id) || [];
+      if (teamIds.length > 0) {
+        baseQuery = baseQuery.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
+      } else {
+        baseQuery = baseQuery.is('team_id', null);
+      }
+    } else if (userData.role !== 'admin' && userData.role !== 'superadmin') {
+      const { data: userTeams } = await supabase
+        .from('team_memberships')
+        .select('team_id')
+        .eq('user_id', user.user.id);
+
+      const teamIds = userTeams?.map(tm => tm.team_id) || [];
+      if (teamIds.length > 0) {
+        baseQuery = baseQuery.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
+      } else {
+        baseQuery = baseQuery.is('team_id', null);
+      }
+    }
+
+    // Search by name, SKU, or barcode
+    if (/^\d{6,}$/.test(searchTerm)) {
+      baseQuery = baseQuery.or(`barcode.eq.${searchTerm},name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
+    } else {
+      baseQuery = baseQuery.or(`name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%,barcode.ilike.%${searchTerm}%`);
+    }
+
+    const { data: inventoryItems, error: invError } = await baseQuery.order('name');
+    if (invError) throw invError;
+
+    if (!inventoryItems?.length) return [];
+
+    // Get warehouse stock for all these items
+    const itemIds = inventoryItems.map(item => item.id);
+    const { data: warehouseStockData, error: stockError } = await supabase
+      .from('warehouse_items')
+      .select('item_id, on_hand, wac_unit_cost')
+      .eq('warehouse_id', warehouseId)
+      .in('item_id', itemIds);
+
+    if (stockError) throw stockError;
+
+    // Create lookup map for warehouse stock
+    const stockMap = new Map(
+      (warehouseStockData || []).map(item => [item.item_id, item])
+    );
+
+    // Combine inventory items with warehouse stock status
+    return inventoryItems.map(item => {
+      const warehouseStock = stockMap.get(item.id);
+      return {
+        id: item.id,
+        name: item.name,
+        sku: item.sku,
+        barcode: item.barcode,
+        unit_cost: warehouseStock?.wac_unit_cost || item.unit_cost || 0,
+        on_hand: warehouseStock?.on_hand || 0, // Default to 0 if not in warehouse
+        category: item.category,
+        base_unit: item.base_unit,
+        // Add stock status flags
+        stock_status: warehouseStock?.on_hand > 0 ? 'available' : 'unavailable',
+        is_in_warehouse: !!warehouseStock
+      };
+    });
   }
 };
