@@ -10663,7 +10663,7 @@ export type Database = {
         Returns: Json
       }
       create_inventory_transaction_from_receipt_line: {
-        Args: { receipt_line_id: string }
+        Args: { p_receipt_line_id: string }
         Returns: undefined
       }
       create_user_admin: {
@@ -10999,17 +10999,6 @@ export type Database = {
           total_value: number
           transaction_count: number
           transaction_type: string
-        }[]
-      }
-      get_warehouse_inventory_value: {
-        Args: { p_warehouse_id?: string }
-        Returns: {
-          low_stock_count: number
-          overstock_count: number
-          total_items: number
-          total_value: number
-          warehouse_id: string
-          warehouse_name: string
         }[]
       }
       is_admin_or_superadmin: {
