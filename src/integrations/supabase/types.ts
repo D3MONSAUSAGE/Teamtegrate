@@ -10760,7 +10760,6 @@ export type Database = {
       }
       get_daily_movements: {
         Args:
-          | { p_date: string; p_organization_id: string }
           | { p_date?: string; p_team_id?: string }
           | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
           | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
@@ -10886,7 +10885,7 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args: { p_organization_id: string } | { p_team_id?: string }
+        Args: { p_team_id?: string } | { p_team_id?: string }
         Returns: {
           current_stock: number
           item_id: string
@@ -10973,7 +10972,7 @@ export type Database = {
       }
       get_warehouse_daily_movements: {
         Args:
-          | { p_date: string; p_organization_id: string }
+          | { p_date?: string; p_warehouse_id?: string }
           | { p_date?: string; p_warehouse_id?: string }
         Returns: {
           created_by: string

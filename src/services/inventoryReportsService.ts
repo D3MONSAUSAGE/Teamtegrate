@@ -4,9 +4,9 @@ export interface InventoryValueSummary {
   team_id: string;
   team_name: string;
   total_value: number;
-  total_items: number;
-  low_stock_count: number;
-  overstock_count: number;
+  item_count: number;
+  low_stock_items: number;
+  overstock_items: number;
 }
 
 export interface DailyMovement {
