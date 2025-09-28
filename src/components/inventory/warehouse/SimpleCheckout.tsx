@@ -41,7 +41,7 @@ interface InventoryItem {
   name: string;
   sku?: string;
   barcode?: string;
-  currentStock?: number;
+  on_hand?: number;
   unit_cost?: number;
 }
 
@@ -159,7 +159,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   }, [hardwareScannerConnected, open]);
 
   const handleItemSelect = (item: InventoryItem) => {
-    if (!item.currentStock || item.currentStock <= 0) {
+    if (!item.on_hand || item.on_hand <= 0) {
       toast.error(`${item.name} is out of stock`);
       return;
     }
@@ -167,8 +167,8 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     const existingItem = checkoutItems.find(cartItem => cartItem.id === item.id);
     
     if (existingItem) {
-      if (existingItem.quantity >= item.currentStock) {
-        toast.error(`Cannot add more. Max available: ${item.currentStock}`);
+      if (existingItem.quantity >= item.on_hand) {
+        toast.error(`Cannot add more. Max available: ${item.on_hand}`);
         return;
       }
       updateLineItem(existingItem.id, 'quantity', existingItem.quantity + 1);
@@ -498,7 +498,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                               key={item.id}
                               onClick={() => handleItemSelect(item)}
                               className={`flex items-center justify-between p-3 hover:bg-muted rounded-md cursor-pointer ${
-                                (item.currentStock || 0) <= 0 ? 'opacity-50' : ''
+                                (item.on_hand || 0) <= 0 ? 'opacity-50' : ''
                               }`}
                             >
                               <div className="flex-1">
@@ -509,8 +509,8 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge variant={(item.currentStock || 0) > 0 ? 'secondary' : 'destructive'}>
-                                  Stock: {item.currentStock || 0}
+                                <Badge variant={(item.on_hand || 0) > 0 ? 'secondary' : 'destructive'}>
+                                  Stock: {item.on_hand || 0}
                                 </Badge>
                                 {item.unit_cost && (
                                   <div className="text-sm font-medium">
@@ -591,7 +591,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                               <div className="text-sm text-muted-foreground flex gap-2">
                                 {item.sku && <span>SKU: {item.sku}</span>}
                                 {item.barcode && <span>| {item.barcode}</span>}
-                                <span>Available: {item.currentStock}</span>
+                                <span>Available: {item.on_hand}</span>
                               </div>
                             </div>
                             
@@ -602,7 +602,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                                 type="number"
                                 step="1"
                                 min="0"
-                                max={item.currentStock}
+                                max={item.on_hand}
                                 placeholder="0"
                                 value={item.quantity || ''}
                                 onChange={(e) => updateLineItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
