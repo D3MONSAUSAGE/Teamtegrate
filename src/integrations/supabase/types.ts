@@ -9310,6 +9310,48 @@ export type Database = {
           },
         ]
       }
+      warehouse_item_settings: {
+        Row: {
+          created_at: string
+          created_by: string
+          day_of_week: number
+          id: string
+          is_active: boolean
+          item_id: string
+          organization_id: string
+          reorder_max: number | null
+          reorder_min: number | null
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          day_of_week: number
+          id?: string
+          is_active?: boolean
+          item_id: string
+          organization_id: string
+          reorder_max?: number | null
+          reorder_min?: number | null
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          day_of_week?: number
+          id?: string
+          is_active?: boolean
+          item_id?: string
+          organization_id?: string
+          reorder_max?: number | null
+          reorder_min?: number | null
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
       warehouse_items: {
         Row: {
           item_id: string
@@ -10356,6 +10398,13 @@ export type Database = {
       get_instance_display_code: {
         Args: { instance_id: string }
         Returns: string
+      }
+      get_item_reorder_levels: {
+        Args: { p_date?: string; p_item_id: string; p_warehouse_id: string }
+        Returns: {
+          reorder_max: number
+          reorder_min: number
+        }[]
       }
       get_organization_stats: {
         Args: { org_id: string }
