@@ -32,6 +32,8 @@ interface SimpleCheckoutProps {
   warehouseId?: string;
   onClose?: () => void;
   onRefresh?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface InventoryItem {
@@ -51,10 +53,16 @@ interface CheckoutItem extends InventoryItem {
 export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ 
   warehouseId, 
   onClose, 
-  onRefresh 
+  onRefresh,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange
 }) => {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use controlled state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
   
   // Form data
   const [checkoutDate, setCheckoutDate] = useState(new Date().toISOString().split('T')[0]);
@@ -309,12 +317,15 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   return (
     <>
       <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <Button className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
-            Start Checkout
-          </Button>
-        </DrawerTrigger>
+        {/* Only show trigger if not controlled externally */}
+        {controlledOpen === undefined && (
+          <DrawerTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              Start Checkout
+            </Button>
+          </DrawerTrigger>
+        )}
         <DrawerContent>
           <div className="mx-auto w-full max-w-6xl">
             <DrawerHeader>

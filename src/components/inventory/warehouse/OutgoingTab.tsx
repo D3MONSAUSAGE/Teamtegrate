@@ -153,18 +153,15 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh
       </Card>
 
       {/* Simple Checkout */}
-      {isCheckoutOpen && (
-        <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-          <SimpleCheckout
-            warehouseId={warehouseId}
-            onClose={() => {
-              setIsCheckoutOpen(false);
-              refreshWarehouseItems(); // Refresh after checkout
-              if (onRefresh) onRefresh(); // Refresh parent
-            }}
-          />
-        </div>
-      )}
+      <SimpleCheckout
+        warehouseId={warehouseId}
+        open={isCheckoutOpen}
+        onOpenChange={setIsCheckoutOpen}
+        onRefresh={() => {
+          refreshWarehouseItems(); // Refresh after checkout
+          if (onRefresh) onRefresh(); // Refresh parent
+        }}
+      />
     </div>
   );
 };
