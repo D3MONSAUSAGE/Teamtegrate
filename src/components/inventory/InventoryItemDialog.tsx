@@ -384,8 +384,9 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           return;
         }
 
-        // Check if we have any nutritional data to save
-        const hasDataToSave = hasNutritionOrIngredients(nutritionalData, ingredientsData);
+        // Check if we have any nutritional data to save (convert to flat structure first for consistency)
+        const flatNutritionalForCheck = convertAdditiveToFlat(nutritionalData);
+        const hasDataToSave = hasNutritionOrIngredients(flatNutritionalForCheck, ingredientsData);
           
         console.log('💾 Has data to save:', hasDataToSave);
         

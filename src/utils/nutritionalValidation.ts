@@ -94,14 +94,35 @@ export const buildNutritionPayload = (form: any, itemId: string, user: { organiz
 
 // Helper to check if we have nutrition or ingredients data
 export const hasNutritionOrIngredients = (nutritionalData: any, ingredientsData: any): boolean => {
+  console.log('🔍 hasNutritionOrIngredients checking data:', { 
+    nutritionalData: nutritionalData ? Object.keys(nutritionalData) : 'null',
+    ingredientsData: ingredientsData ? Object.keys(ingredientsData) : 'null' 
+  });
+
   // Check ingredients
   if (ingredientsData?.ingredients?.trim()) return true;
   if (ingredientsData?.allergens?.length > 0) return true;
   
+  if (!nutritionalData) return false;
+  
   // Check nutrition - including serving size as meaningful data
   if (nutritionalData?.serving_size?.trim()) return true;
   
-  // Check other nutritional values (allowing 0 as valid)
+  // Detect if this is additive structure (has nutritional_fields array)
+  if (nutritionalData?.nutritional_fields && Array.isArray(nutritionalData.nutritional_fields)) {
+    console.log('🔍 Detected additive structure, checking nutritional_fields:', nutritionalData.nutritional_fields);
+    
+    // Check if any field has a meaningful value
+    const hasFieldData = nutritionalData.nutritional_fields.some((field: any) => {
+      const value = field?.value;
+      return value !== null && value !== undefined && value !== '' && value !== 0;
+    });
+    
+    return hasFieldData;
+  }
+  
+  // Handle flat structure - Check other nutritional values (allowing 0 as valid)
+  console.log('🔍 Checking flat structure');
   const nutritionalFields = [
     'servings_per_container', 'calories', 'total_fat', 'saturated_fat', 
     'trans_fat', 'cholesterol', 'sodium', 'total_carbohydrates', 
