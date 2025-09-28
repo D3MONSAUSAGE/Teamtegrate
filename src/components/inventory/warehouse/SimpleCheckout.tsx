@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ShoppingCart, Search, X, Package, Plus, Minus, Scan, Zap, Receipt, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
+import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
 import { useScanGun } from '@/hooks/useScanGun';
@@ -59,6 +60,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   onOpenChange: controlledOnOpenChange
 }) => {
   const { user } = useAuth();
+  const { updateItemStock } = useWarehouse();
   const [internalOpen, setInternalOpen] = useState(false);
   
   // Use controlled state if provided, otherwise use internal state
@@ -295,13 +297,12 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     try {
       setIsProcessing(true);
 
-      // Process inventory withdrawals
+      // Process inventory withdrawals using warehouse context for real-time updates
       for (const item of validItems) {
-        await warehouseApi.updateWarehouseStock(
-          warehouseId,
-          item.id,
-          -item.quantity
-        );
+        const success = await updateItemStock(item.id, -item.quantity);
+        if (!success) {
+          throw new Error(`Failed to withdraw ${item.name}`);
+        }
       }
 
       let invoice = null;
@@ -340,10 +341,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       resetForm();
       setOpen(false);
       
-      // Trigger refresh
-      if (onRefresh) {
-        onRefresh();
-      }
+      // Stock is already updated via warehouse context, no manual refresh needed
       if (onClose) {
         onClose();
       }

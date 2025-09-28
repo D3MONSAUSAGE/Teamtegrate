@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { warehouseApi, type Warehouse, type WarehouseItem } from './api/warehouseApi';
+import { useWarehouseRealtime } from '@/hooks/useWarehouseRealtime';
 import { toast } from 'sonner';
 
 interface WarehouseContextValue {
@@ -36,6 +37,9 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
   const [loading, setLoading] = useState(false);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Enable real-time updates for warehouse items
+  useWarehouseRealtime();
 
   // Load warehouse by ID
   const loadWarehouse = useCallback(async (id: string) => {
