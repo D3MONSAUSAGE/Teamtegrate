@@ -1,29 +1,22 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Apple } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Apple, Plus, X } from 'lucide-react';
+
+interface NutritionalField {
+  name: string;
+  value: string;
+  unit: string;
+}
 
 interface NutritionalData {
   serving_size: string;
-  servings_per_container: number;
-  calories: number;
-  total_fat: number;
-  saturated_fat: number;
-  trans_fat: number;
-  cholesterol: number;
-  sodium: number;
-  total_carbohydrates: number;
-  dietary_fiber: number;
-  total_sugars: number;
-  added_sugars: number;
-  protein: number;
-  vitamin_d: number;
-  calcium: number;
-  iron: number;
-  potassium: number;
-  additional_nutrients: any;
+  nutritional_fields: NutritionalField[];
 }
 
 interface NutritionalInfoFormProps {
@@ -35,11 +28,71 @@ interface NutritionalInfoFormProps {
 
 export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId, itemName, data, onChange }) => {
   const [loading, setLoading] = useState(false);
+  const [selectedFieldType, setSelectedFieldType] = useState('');
 
-  const updateField = (field: string, value: string | number) => {
+  const availableFields = [
+    { name: 'Calories', unit: 'kcal' },
+    { name: 'Total Fat', unit: 'g' },
+    { name: 'Saturated Fat', unit: 'g' },
+    { name: 'Trans Fat', unit: 'g' },
+    { name: 'Cholesterol', unit: 'mg' },
+    { name: 'Sodium', unit: 'mg' },
+    { name: 'Total Carbohydrates', unit: 'g' },
+    { name: 'Dietary Fiber', unit: 'g' },
+    { name: 'Total Sugars', unit: 'g' },
+    { name: 'Added Sugars', unit: 'g' },
+    { name: 'Protein', unit: 'g' },
+    { name: 'Vitamin D', unit: 'mcg' },
+    { name: 'Calcium', unit: 'mg' },
+    { name: 'Iron', unit: 'mg' },
+    { name: 'Potassium', unit: 'mg' },
+    { name: 'Servings per Container', unit: 'servings' }
+  ];
+
+  const addNutritionalField = () => {
+    if (!selectedFieldType) return;
+
+    const fieldType = availableFields.find(f => f.name === selectedFieldType);
+    if (!fieldType) return;
+
+    // Check if field already exists
+    const exists = data.nutritional_fields.some(f => f.name === fieldType.name);
+    if (exists) return;
+
+    const newField: NutritionalField = {
+      name: fieldType.name,
+      value: '',
+      unit: fieldType.unit
+    };
+
     onChange({
       ...data,
-      [field]: value
+      nutritional_fields: [...data.nutritional_fields, newField]
+    });
+
+    setSelectedFieldType('');
+  };
+
+  const removeNutritionalField = (fieldName: string) => {
+    onChange({
+      ...data,
+      nutritional_fields: data.nutritional_fields.filter(f => f.name !== fieldName)
+    });
+  };
+
+  const updateNutritionalField = (fieldName: string, value: string) => {
+    onChange({
+      ...data,
+      nutritional_fields: data.nutritional_fields.map(f => 
+        f.name === fieldName ? { ...f, value } : f
+      )
+    });
+  };
+
+  const updateServingSize = (value: string) => {
+    onChange({
+      ...data,
+      serving_size: value
     });
   };
 
@@ -53,6 +106,11 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
     );
   }
 
+  const getAvailableFields = () => {
+    const existingFieldNames = data.nutritional_fields.map(f => f.name);
+    return availableFields.filter(f => !existingFieldNames.includes(f.name));
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -62,194 +120,94 @@ export const NutritionalInfoForm: React.FC<NutritionalInfoFormProps> = ({ itemId
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Serving Information */}
+        {/* Serving Size - Always Visible */}
         <div className="space-y-4">
           <h3 className="font-medium text-sm">Serving Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="serving-size">Serving Size</Label>
-              <Input
-                id="serving-size"
-                value={data.serving_size}
-                onChange={(e) => updateField('serving_size', e.target.value)}
-                placeholder="e.g., 1 cup (240ml)"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="servings-per-container">Servings per Container</Label>
-              <Input
-                id="servings-per-container"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.servings_per_container}
-                onChange={(e) => updateField('servings_per_container', parseFloat(e.target.value) || 0)}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="serving-size">Serving Size</Label>
+            <Input
+              id="serving-size"
+              value={data.serving_size || ''}
+              onChange={(e) => updateServingSize(e.target.value)}
+              placeholder="e.g., 1 cup (240ml), 2 pieces, 100g"
+            />
+            <p className="text-xs text-muted-foreground">
+              Specify the standard serving size for this item
+            </p>
           </div>
         </div>
 
         <Separator />
 
-        {/* Nutrition Facts */}
+        {/* Add Nutritional Field */}
         <div className="space-y-4">
-          <h3 className="font-medium text-sm">Nutrition Facts (per serving)</h3>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="calories">Calories</Label>
-              <Input
-                id="calories"
-                type="number"
-                min="0"
-                value={data.calories}
-                onChange={(e) => updateField('calories', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="total-fat">Total Fat (g)</Label>
-              <Input
-                id="total-fat"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.total_fat}
-                onChange={(e) => updateField('total_fat', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="saturated-fat">Saturated Fat (g)</Label>
-              <Input
-                id="saturated-fat"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.saturated_fat}
-                onChange={(e) => updateField('saturated_fat', parseFloat(e.target.value) || 0)}
-              />
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-sm">Nutritional Facts</h3>
+            <div className="flex items-center gap-2">
+              <Select value={selectedFieldType} onValueChange={setSelectedFieldType}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Add nutritional field" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableFields().map(field => (
+                    <SelectItem key={field.name} value={field.name}>
+                      {field.name} ({field.unit})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                type="button" 
+                size="sm" 
+                onClick={addNutritionalField}
+                disabled={!selectedFieldType}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cholesterol">Cholesterol (mg)</Label>
-              <Input
-                id="cholesterol"
-                type="number"
-                min="0"
-                value={data.cholesterol}
-                onChange={(e) => updateField('cholesterol', parseFloat(e.target.value) || 0)}
-              />
+          {data.nutritional_fields.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Apple className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No nutritional fields added yet</p>
+              <p className="text-xs">Use the dropdown above to add nutritional information</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="sodium">Sodium (mg)</Label>
-              <Input
-                id="sodium"
-                type="number"
-                min="0"
-                value={data.sodium}
-                onChange={(e) => updateField('sodium', parseFloat(e.target.value) || 0)}
-              />
+          ) : (
+            <div className="space-y-3">
+              {data.nutritional_fields.map((field) => (
+                <div key={field.name} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <Label className="text-sm font-medium">{field.name}</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={field.value}
+                      onChange={(e) => updateNutritionalField(field.name, e.target.value)}
+                      placeholder="0"
+                      className="w-20"
+                    />
+                    <span className="text-sm text-muted-foreground min-w-[40px]">
+                      {field.unit}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeNutritionalField(field.name)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="total-carbs">Total Carbohydrates (g)</Label>
-              <Input
-                id="total-carbs"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.total_carbohydrates}
-                onChange={(e) => updateField('total_carbohydrates', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dietary-fiber">Dietary Fiber (g)</Label>
-              <Input
-                id="dietary-fiber"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.dietary_fiber}
-                onChange={(e) => updateField('dietary_fiber', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="total-sugars">Total Sugars (g)</Label>
-              <Input
-                id="total-sugars"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.total_sugars}
-                onChange={(e) => updateField('total_sugars', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="protein">Protein (g)</Label>
-              <Input
-                id="protein"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.protein}
-                onChange={(e) => updateField('protein', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Vitamins & Minerals */}
-        <div className="space-y-4">
-          <h3 className="font-medium text-sm">Vitamins & Minerals</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="vitamin-d">Vitamin D (mcg)</Label>
-              <Input
-                id="vitamin-d"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.vitamin_d}
-                onChange={(e) => updateField('vitamin_d', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="calcium">Calcium (mg)</Label>
-              <Input
-                id="calcium"
-                type="number"
-                min="0"
-                value={data.calcium}
-                onChange={(e) => updateField('calcium', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="iron">Iron (mg)</Label>
-              <Input
-                id="iron"
-                type="number"
-                min="0"
-                step="0.1"
-                value={data.iron}
-                onChange={(e) => updateField('iron', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="potassium">Potassium (mg)</Label>
-              <Input
-                id="potassium"
-                type="number"
-                min="0"
-                value={data.potassium}
-                onChange={(e) => updateField('potassium', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="text-sm text-muted-foreground text-center">

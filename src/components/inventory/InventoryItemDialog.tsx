@@ -88,24 +88,98 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   
   const [nutritionalData, setNutritionalData] = useState({
     serving_size: '',
-    servings_per_container: 0,
-    calories: 0,
-    total_fat: 0,
-    saturated_fat: 0,
-    trans_fat: 0,
-    cholesterol: 0,
-    sodium: 0,
-    total_carbohydrates: 0,
-    dietary_fiber: 0,
-    total_sugars: 0,
-    added_sugars: 0,
-    protein: 0,
-    vitamin_d: 0,
-    calcium: 0,
-    iron: 0,
-    potassium: 0,
-    additional_nutrients: {}
+    nutritional_fields: []
   });
+
+  // Convert flat nutritional data to additive structure
+  const convertFlatToAdditive = (flatData: any) => {
+    const fieldMappings = [
+      { name: 'Servings per Container', key: 'servings_per_container', unit: 'servings' },
+      { name: 'Calories', key: 'calories', unit: 'kcal' },
+      { name: 'Total Fat', key: 'total_fat', unit: 'g' },
+      { name: 'Saturated Fat', key: 'saturated_fat', unit: 'g' },
+      { name: 'Trans Fat', key: 'trans_fat', unit: 'g' },
+      { name: 'Cholesterol', key: 'cholesterol', unit: 'mg' },
+      { name: 'Sodium', key: 'sodium', unit: 'mg' },
+      { name: 'Total Carbohydrates', key: 'total_carbohydrates', unit: 'g' },
+      { name: 'Dietary Fiber', key: 'dietary_fiber', unit: 'g' },
+      { name: 'Total Sugars', key: 'total_sugars', unit: 'g' },
+      { name: 'Added Sugars', key: 'added_sugars', unit: 'g' },
+      { name: 'Protein', key: 'protein', unit: 'g' },
+      { name: 'Vitamin D', key: 'vitamin_d', unit: 'mcg' },
+      { name: 'Calcium', key: 'calcium', unit: 'mg' },
+      { name: 'Iron', key: 'iron', unit: 'mg' },
+      { name: 'Potassium', key: 'potassium', unit: 'mg' },
+    ];
+
+    const nutritional_fields = fieldMappings
+      .filter(field => flatData[field.key] !== null && flatData[field.key] !== undefined && flatData[field.key] !== '' && flatData[field.key] !== 0)
+      .map(field => ({
+        name: field.name,
+        value: String(flatData[field.key]),
+        unit: field.unit
+      }));
+
+    return {
+      serving_size: flatData.serving_size || '',
+      nutritional_fields
+    };
+  };
+
+  // Convert additive structure to flat structure for database
+  const convertAdditiveToFlat = (additiveData: any) => {
+    const flatData: any = {
+      serving_size: additiveData.serving_size || null,
+      servings_per_container: null,
+      calories: null,
+      total_fat: null,
+      saturated_fat: null,
+      trans_fat: null,
+      cholesterol: null,
+      sodium: null,
+      total_carbohydrates: null,
+      dietary_fiber: null,
+      total_sugars: null,
+      added_sugars: null,
+      protein: null,
+      vitamin_d: null,
+      calcium: null,
+      iron: null,
+      potassium: null,
+      additional_nutrients: null
+    };
+
+    const fieldMappings = {
+      'Servings per Container': 'servings_per_container',
+      'Calories': 'calories',
+      'Total Fat': 'total_fat',
+      'Saturated Fat': 'saturated_fat',
+      'Trans Fat': 'trans_fat',
+      'Cholesterol': 'cholesterol',
+      'Sodium': 'sodium',
+      'Total Carbohydrates': 'total_carbohydrates',
+      'Dietary Fiber': 'dietary_fiber',
+      'Total Sugars': 'total_sugars',
+      'Added Sugars': 'added_sugars',
+      'Protein': 'protein',
+      'Vitamin D': 'vitamin_d',
+      'Calcium': 'calcium',
+      'Iron': 'iron',
+      'Potassium': 'potassium'
+    };
+
+    additiveData.nutritional_fields?.forEach((field: any) => {
+      const dbKey = fieldMappings[field.name as keyof typeof fieldMappings];
+      if (dbKey && field.value && field.value !== '') {
+        const numValue = parseFloat(field.value);
+        if (!isNaN(numValue)) {
+          flatData[dbKey] = numValue;
+        }
+      }
+    });
+
+    return flatData;
+  };
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -162,23 +236,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       setIngredientsData({ ingredients: '', allergens: [] });
       setNutritionalData({
         serving_size: '',
-        servings_per_container: 0,
-        calories: 0,
-        total_fat: 0,
-        saturated_fat: 0,
-        trans_fat: 0,
-        cholesterol: 0,
-        sodium: 0,
-        total_carbohydrates: 0,
-        dietary_fiber: 0,
-        total_sugars: 0,
-        added_sugars: 0,
-        protein: 0,
-        vitamin_d: 0,
-        calcium: 0,
-        iron: 0,
-        potassium: 0,
-        additional_nutrients: {}
+        nutritional_fields: []
       });
     }
     
@@ -218,26 +276,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
               ingredients: nutritionalInfo.ingredients || '',
               allergens: nutritionalInfo.allergens || []
             });
-            setNutritionalData({
-              serving_size: nutritionalInfo.serving_size || '',
-              servings_per_container: nutritionalInfo.servings_per_container || 0,
-              calories: nutritionalInfo.calories || 0,
-              total_fat: nutritionalInfo.total_fat || 0,
-              saturated_fat: nutritionalInfo.saturated_fat || 0,
-              trans_fat: nutritionalInfo.trans_fat || 0,
-              cholesterol: nutritionalInfo.cholesterol || 0,
-              sodium: nutritionalInfo.sodium || 0,
-              total_carbohydrates: nutritionalInfo.total_carbohydrates || 0,
-              dietary_fiber: nutritionalInfo.dietary_fiber || 0,
-              total_sugars: nutritionalInfo.total_sugars || 0,
-              added_sugars: nutritionalInfo.added_sugars || 0,
-              protein: nutritionalInfo.protein || 0,
-              vitamin_d: nutritionalInfo.vitamin_d || 0,
-              calcium: nutritionalInfo.calcium || 0,
-              iron: nutritionalInfo.iron || 0,
-              potassium: nutritionalInfo.potassium || 0,
-              additional_nutrients: nutritionalInfo.additional_nutrients || {}
-            });
+            setNutritionalData(convertFlatToAdditive(nutritionalInfo));
           }
         } catch (nutritionalError) {
           console.log('No nutritional info found for item, using defaults');
@@ -332,7 +371,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           nutritionalData,
           hasIngredients: !!ingredientsData.ingredients,
           hasAllergens: ingredientsData.allergens.length > 0,
-          hasNutritionalValues: Object.values(nutritionalData).some(val => val !== '' && val !== 0)
+          hasNutritionalValues: nutritionalData.serving_size !== '' || nutritionalData.nutritional_fields.length > 0
         });
         
         // Validate nutritional data
@@ -353,8 +392,9 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         if (hasDataToSave) {
           try {
             console.log('💊 Saving nutritional info for item:', savedItemId);
+            const flatNutritionalData = convertAdditiveToFlat(nutritionalData);
             const nutritionalPayload = buildNutritionPayload(
-              { ...nutritionalData, ingredients: ingredientsData.ingredients, allergens: ingredientsData.allergens }, 
+              { ...flatNutritionalData, ingredients: ingredientsData.ingredients, allergens: ingredientsData.allergens }, 
               savedItemId,
               user
             );
@@ -453,15 +493,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       ];
 
       // Add nutritional facts if available
-      if (hasNutritionOrIngredients(nutritionalData, ingredientsData)) {
-        if (nutritionalData.serving_size || nutritionalData.calories || Object.values(nutritionalData).some(v => v !== '' && v !== 0 && v !== null && v !== undefined)) {
+      const flatNutritionalForLabel = convertAdditiveToFlat(nutritionalData);
+      if (hasNutritionOrIngredients(flatNutritionalForLabel, ingredientsData)) {
+        if (nutritionalData.serving_size || nutritionalData.nutritional_fields.length > 0) {
           const nutritionData = {
             servingSize: nutritionalData.serving_size,
-            calories: nutritionalData.calories,
-            totalFat: nutritionalData.total_fat,
-            sodium: nutritionalData.sodium,
-            totalCarbs: nutritionalData.total_carbohydrates,
-            protein: nutritionalData.protein
+            calories: flatNutritionalForLabel.calories,
+            totalFat: flatNutritionalForLabel.total_fat,
+            sodium: flatNutritionalForLabel.sodium,
+            totalCarbs: flatNutritionalForLabel.total_carbohydrates,
+            protein: flatNutritionalForLabel.protein
           };
           
           labelContent.push({
