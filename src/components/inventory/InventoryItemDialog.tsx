@@ -315,37 +315,63 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       
       // Save ingredients and nutritional info using the result item ID
       const savedItemId = itemId || result?.id;
-      if (savedItemId && (ingredientsData.ingredients || ingredientsData.allergens.length > 0 || 
-          Object.values(nutritionalData).some(val => val !== '' && val !== 0))) {
-        try {
-          console.log('💊 Saving nutritional info for item:', savedItemId);
-          await nutritionalInfoApi.upsert({
-            item_id: savedItemId,
-            ingredients: ingredientsData.ingredients || null,
-            allergens: ingredientsData.allergens.length > 0 ? ingredientsData.allergens : null,
-            serving_size: nutritionalData.serving_size || null,
-            servings_per_container: nutritionalData.servings_per_container > 0 ? nutritionalData.servings_per_container : null,
-            calories: nutritionalData.calories > 0 ? nutritionalData.calories : null,
-            total_fat: nutritionalData.total_fat > 0 ? nutritionalData.total_fat : null,
-            saturated_fat: nutritionalData.saturated_fat > 0 ? nutritionalData.saturated_fat : null,
-            trans_fat: nutritionalData.trans_fat > 0 ? nutritionalData.trans_fat : null,
-            cholesterol: nutritionalData.cholesterol > 0 ? nutritionalData.cholesterol : null,
-            sodium: nutritionalData.sodium > 0 ? nutritionalData.sodium : null,
-            total_carbohydrates: nutritionalData.total_carbohydrates > 0 ? nutritionalData.total_carbohydrates : null,
-            dietary_fiber: nutritionalData.dietary_fiber > 0 ? nutritionalData.dietary_fiber : null,
-            total_sugars: nutritionalData.total_sugars > 0 ? nutritionalData.total_sugars : null,
-            added_sugars: nutritionalData.added_sugars > 0 ? nutritionalData.added_sugars : null,
-            protein: nutritionalData.protein > 0 ? nutritionalData.protein : null,
-            vitamin_d: nutritionalData.vitamin_d > 0 ? nutritionalData.vitamin_d : null,
-            calcium: nutritionalData.calcium > 0 ? nutritionalData.calcium : null,
-            iron: nutritionalData.iron > 0 ? nutritionalData.iron : null,
-            potassium: nutritionalData.potassium > 0 ? nutritionalData.potassium : null,
-            additional_nutrients: Object.keys(nutritionalData.additional_nutrients).length > 0 ? nutritionalData.additional_nutrients : null
+      if (savedItemId) {
+        console.log('💾 Checking nutritional data to save:', {
+          ingredientsData,
+          nutritionalData,
+          hasIngredients: !!ingredientsData.ingredients,
+          hasAllergens: ingredientsData.allergens.length > 0,
+          hasNutritionalValues: Object.values(nutritionalData).some(val => val !== '' && val !== 0)
+        });
+        
+        // Check if we have any nutritional data to save
+        const hasDataToSave = 
+          ingredientsData.ingredients || 
+          ingredientsData.allergens.length > 0 || 
+          Object.entries(nutritionalData).some(([key, val]) => {
+            // Only count meaningful nutritional values
+            if (key === 'additional_nutrients') return Object.keys(val as any).length > 0;
+            return val !== '' && val !== 0 && val !== null && val !== undefined;
           });
-          console.log('✅ Nutritional info saved successfully');
-        } catch (nutritionalError) {
-          console.error('❌ Error saving nutritional info:', nutritionalError);
-          toast.error('Item saved but failed to save nutritional information');
+          
+        console.log('💾 Has data to save:', hasDataToSave);
+        
+        if (hasDataToSave) {
+          try {
+            console.log('💊 Saving nutritional info for item:', savedItemId);
+            const nutritionalPayload = {
+              item_id: savedItemId,
+              ingredients: ingredientsData.ingredients || null,
+              allergens: ingredientsData.allergens.length > 0 ? ingredientsData.allergens : null,
+              serving_size: nutritionalData.serving_size || null,
+              servings_per_container: nutritionalData.servings_per_container > 0 ? nutritionalData.servings_per_container : null,
+              calories: nutritionalData.calories > 0 ? nutritionalData.calories : null,
+              total_fat: nutritionalData.total_fat > 0 ? nutritionalData.total_fat : null,
+              saturated_fat: nutritionalData.saturated_fat > 0 ? nutritionalData.saturated_fat : null,
+              trans_fat: nutritionalData.trans_fat > 0 ? nutritionalData.trans_fat : null,
+              cholesterol: nutritionalData.cholesterol > 0 ? nutritionalData.cholesterol : null,
+              sodium: nutritionalData.sodium > 0 ? nutritionalData.sodium : null,
+              total_carbohydrates: nutritionalData.total_carbohydrates > 0 ? nutritionalData.total_carbohydrates : null,
+              dietary_fiber: nutritionalData.dietary_fiber > 0 ? nutritionalData.dietary_fiber : null,
+              total_sugars: nutritionalData.total_sugars > 0 ? nutritionalData.total_sugars : null,
+              added_sugars: nutritionalData.added_sugars > 0 ? nutritionalData.added_sugars : null,
+              protein: nutritionalData.protein > 0 ? nutritionalData.protein : null,
+              vitamin_d: nutritionalData.vitamin_d > 0 ? nutritionalData.vitamin_d : null,
+              calcium: nutritionalData.calcium > 0 ? nutritionalData.calcium : null,
+              iron: nutritionalData.iron > 0 ? nutritionalData.iron : null,
+              potassium: nutritionalData.potassium > 0 ? nutritionalData.potassium : null,
+              additional_nutrients: Object.keys(nutritionalData.additional_nutrients).length > 0 ? nutritionalData.additional_nutrients : null
+            };
+            
+            console.log('💊 Nutritional payload:', nutritionalPayload);
+            const nutritionalResult = await nutritionalInfoApi.upsert(nutritionalPayload);
+            console.log('✅ Nutritional info saved successfully:', nutritionalResult);
+          } catch (nutritionalError) {
+            console.error('❌ Error saving nutritional info:', nutritionalError);
+            toast.error('Item saved but failed to save nutritional information');
+          }
+        } else {
+          console.log('⏭️ No nutritional data to save, skipping...');
         }
       }
       

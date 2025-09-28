@@ -15,7 +15,6 @@ import { labelTemplatesApi, LabelTemplate } from '@/contexts/inventory/api/label
 import { InventoryItem } from '@/contexts/inventory/types';
 import { ImageUpload } from '@/components/inventory/ImageUpload';
 import { FoodLabelPreview } from './FoodLabelPreview';
-import { NutritionalDataForm } from './NutritionalDataForm';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { 
   Package, 
@@ -29,7 +28,8 @@ import {
   Settings,
   Star,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Apple
 } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -92,7 +92,18 @@ export const ProfessionalLabelDesigner: React.FC = () => {
   // Fetch nutritional info when item is selected
   useEffect(() => {
     if (selectedItem) {
-      nutritionalInfoApi.getByItemId(selectedItem.id).then(setNutritionalInfo);
+      console.log('🔄 Loading nutritional info for item:', selectedItem.id);
+      nutritionalInfoApi.getByItemId(selectedItem.id)
+        .then(data => {
+          console.log('📊 Nutritional info loaded:', data);
+          setNutritionalInfo(data);
+        })
+        .catch(error => {
+          console.error('❌ Failed to load nutritional info:', error);
+          setNutritionalInfo(null);
+        });
+    } else {
+      setNutritionalInfo(null);
     }
   }, [selectedItem]);
 
@@ -544,16 +555,66 @@ export const ProfessionalLabelDesigner: React.FC = () => {
               </Card>
             )}
 
-            {/* Step 3: Nutritional Data */}
+            {/* Step 3: Data Status & Edit Link */}
             {selectedItem && (
-              <NutritionalDataForm
-                selectedItem={selectedItem}
-                nutritionalInfo={nutritionalInfo}
-                onDataSaved={(data) => {
-                  setNutritionalInfo(data);
-                  toast.success('Nutritional data updated! Preview will refresh automatically.');
-                }}
-              />
+              <Card className="border-2 border-primary/20 bg-card/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Apple className="h-5 w-5 text-primary" />
+                    </div>
+                    Step 3: Product Data
+                  </CardTitle>
+                  <CardDescription>
+                    Manage nutritional information and ingredients for complete labels
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${nutritionalInfo && (nutritionalInfo.calories || nutritionalInfo.total_fat) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span className="text-sm">Nutritional Facts</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${nutritionalInfo?.ingredients ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span className="text-sm">Ingredients</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${nutritionalInfo?.allergens?.length ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span className="text-sm">Allergens</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <span className="text-sm">Basic Info</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-medium">
+                        {nutritionalInfo ? 'Data Available' : 'No Data Available'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {nutritionalInfo 
+                          ? 'Product data loaded from inventory system'
+                          : 'Add data in the Item Information dialog'
+                        }
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // This would ideally open the InventoryItemDialog, 
+                        // but for now just show a helpful message
+                        toast.info('Please use the Item Information dialog in the inventory management tab to add nutritional data.');
+                      }}
+                    >
+                      Edit Item Data
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Template Management */}
