@@ -585,13 +585,6 @@ export type Database = {
             foreignKeyName: "chat_rooms_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "chat_rooms_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -601,13 +594,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_rooms_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -1504,13 +1490,6 @@ export type Database = {
             foreignKeyName: "created_invoices_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "created_invoices_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -1520,13 +1499,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "created_invoices_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "fk_created_invoices_client"
@@ -1792,13 +1764,6 @@ export type Database = {
             foreignKeyName: "documents_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "documents_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -1808,13 +1773,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "documents_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -2224,13 +2182,6 @@ export type Database = {
             foreignKeyName: "employee_schedules_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "employee_schedules_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -2240,13 +2191,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedules_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "fk_employee_schedules_employee_id"
@@ -2306,13 +2250,6 @@ export type Database = {
             foreignKeyName: "events_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "events_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -2322,13 +2259,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "events_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "fk_events_organization"
@@ -2797,13 +2727,6 @@ export type Database = {
             foreignKeyName: "inventory_counts_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "inventory_counts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -2813,13 +2736,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_counts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "inventory_counts_template_id_fkey"
@@ -2969,13 +2885,6 @@ export type Database = {
             foreignKeyName: "inventory_items_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "inventory_items_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -2985,20 +2894,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_items_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "inventory_items_vendor_id_fkey"
-            columns: ["vendor_id"]
-            isOneToOne: false
-            referencedRelation: "vendor_performance_analytics"
-            referencedColumns: ["vendor_id"]
           },
           {
             foreignKeyName: "inventory_items_vendor_id_fkey"
@@ -3275,13 +3170,6 @@ export type Database = {
             foreignKeyName: "inventory_templates_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "inventory_templates_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -3291,13 +3179,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_templates_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -3371,20 +3252,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inventory_transactions_receipt_line_id_fkey"
-            columns: ["receipt_line_id"]
-            isOneToOne: true
-            referencedRelation: "warehouse_receipt_lines"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
             foreignKeyName: "inventory_transactions_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -3397,13 +3264,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "inventory_transactions_warehouse_id_fkey"
@@ -3510,13 +3370,6 @@ export type Database = {
             foreignKeyName: "invoice_clients_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "invoice_clients_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -3526,13 +3379,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoice_clients_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -3683,13 +3529,6 @@ export type Database = {
             foreignKeyName: "invoices_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "invoices_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -3699,13 +3538,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -5261,13 +5093,6 @@ export type Database = {
             foreignKeyName: "organization_invites_invited_team_id_fkey"
             columns: ["invited_team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "organization_invites_invited_team_id_fkey"
-            columns: ["invited_team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -5277,13 +5102,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_invites_invited_team_id_fkey"
-            columns: ["invited_team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "organization_invites_organization_id_fkey"
@@ -5757,13 +5575,6 @@ export type Database = {
             foreignKeyName: "petty_cash_transactions_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "petty_cash_transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -5773,13 +5584,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "petty_cash_transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -5929,13 +5733,6 @@ export type Database = {
             foreignKeyName: "project_teams_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "project_teams_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -5945,13 +5742,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_teams_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -7272,13 +7062,6 @@ export type Database = {
             foreignKeyName: "sales_channel_transactions_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "sales_channel_transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -7288,13 +7071,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_channel_transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -7349,13 +7125,6 @@ export type Database = {
             foreignKeyName: "sales_channels_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "sales_channels_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -7365,13 +7134,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_channels_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -7462,13 +7224,6 @@ export type Database = {
             foreignKeyName: "sales_data_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "sales_data_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -7478,13 +7233,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_data_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -7777,14 +7525,78 @@ export type Database = {
             foreignKeyName: "shipments_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
-            referencedRelation: "vendor_performance_analytics"
-            referencedColumns: ["vendor_id"]
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_receipts: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          notes: string | null
+          organization_id: string
+          quantity_received: number
+          receipt_number: string
+          received_at: string
+          received_by: string
+          unit_cost: number | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          organization_id: string
+          quantity_received: number
+          receipt_number: string
+          received_at?: string
+          received_by: string
+          unit_cost?: number | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          organization_id?: string
+          quantity_received?: number
+          receipt_number?: string
+          received_at?: string
+          received_by?: string
+          unit_cost?: number | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_receipts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "shipments_vendor_id_fkey"
-            columns: ["vendor_id"]
+            foreignKeyName: "stock_receipts_received_by_fkey"
+            columns: ["received_by"]
             isOneToOne: false
-            referencedRelation: "vendors"
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_receipts_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_receipts_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -7958,13 +7770,6 @@ export type Database = {
             foreignKeyName: "tasks_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "tasks_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -7974,13 +7779,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tasks_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -8026,13 +7824,6 @@ export type Database = {
             foreignKeyName: "team_inventory_assignments_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_inventory_assignments_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -8042,13 +7833,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_inventory_assignments_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "team_inventory_assignments_template_id_fkey"
@@ -8093,13 +7877,6 @@ export type Database = {
             foreignKeyName: "team_job_roles_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_job_roles_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -8109,13 +7886,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_job_roles_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "team_job_roles_user_id_fkey"
@@ -8201,13 +7971,6 @@ export type Database = {
             foreignKeyName: "team_memberships_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "team_memberships_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -8217,13 +7980,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_memberships_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "team_memberships_user_id_fkey"
@@ -8406,13 +8162,6 @@ export type Database = {
             foreignKeyName: "time_entries_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "time_entries_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -8422,13 +8171,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "time_entries_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -9006,13 +8748,6 @@ export type Database = {
             foreignKeyName: "transactions_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -9022,13 +8757,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -9748,139 +9476,6 @@ export type Database = {
           },
         ]
       }
-      warehouse_receipt_lines: {
-        Row: {
-          id: string
-          item_id: string
-          line_total: number | null
-          notes: string | null
-          posted_at: string | null
-          qty: number
-          quantity_expected: number | null
-          quantity_received: number | null
-          receipt_id: string
-          unit_cost: number
-        }
-        Insert: {
-          id?: string
-          item_id: string
-          line_total?: number | null
-          notes?: string | null
-          posted_at?: string | null
-          qty: number
-          quantity_expected?: number | null
-          quantity_received?: number | null
-          receipt_id: string
-          unit_cost: number
-        }
-        Update: {
-          id?: string
-          item_id?: string
-          line_total?: number | null
-          notes?: string | null
-          posted_at?: string | null
-          qty?: number
-          quantity_expected?: number | null
-          quantity_received?: number | null
-          receipt_id?: string
-          unit_cost?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_wrl_item"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_wrl_wr"
-            columns: ["receipt_id"]
-            isOneToOne: false
-            referencedRelation: "warehouse_receipts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      warehouse_receipts: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          notes: string | null
-          organization_id: string
-          posted_at: string | null
-          posted_by: string | null
-          receipt_number: string | null
-          received_at: string | null
-          status: string
-          subtotal: number | null
-          total_amount: number | null
-          updated_at: string
-          vendor_invoice: string | null
-          vendor_name: string | null
-          warehouse_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organization_id: string
-          posted_at?: string | null
-          posted_by?: string | null
-          receipt_number?: string | null
-          received_at?: string | null
-          status?: string
-          subtotal?: number | null
-          total_amount?: number | null
-          updated_at?: string
-          vendor_invoice?: string | null
-          vendor_name?: string | null
-          warehouse_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          organization_id?: string
-          posted_at?: string | null
-          posted_by?: string | null
-          receipt_number?: string | null
-          received_at?: string | null
-          status?: string
-          subtotal?: number | null
-          total_amount?: number | null
-          updated_at?: string
-          vendor_invoice?: string | null
-          vendor_name?: string | null
-          warehouse_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_wr_wh"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warehouse_receipts_posted_by_fkey"
-            columns: ["posted_by"]
-            isOneToOne: false
-            referencedRelation: "organization_user_hierarchy"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warehouse_receipts_posted_by_fkey"
-            columns: ["posted_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       warehouse_stock_adjustments: {
         Row: {
           adjustment_amount: number
@@ -10039,13 +9634,6 @@ export type Database = {
             foreignKeyName: "fk_wt_team"
             columns: ["to_team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "fk_wt_team"
-            columns: ["to_team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -10055,13 +9643,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_wt_team"
-            columns: ["to_team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "fk_wt_wh"
@@ -10108,13 +9689,6 @@ export type Database = {
             foreignKeyName: "warehouses_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "warehouses_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -10124,13 +9698,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "warehouses_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -10358,19 +9925,6 @@ export type Database = {
         }
         Relationships: []
       }
-      daily_inventory_summary: {
-        Row: {
-          low_stock_items: number | null
-          overstock_items: number | null
-          summary_date: string | null
-          team_id: string | null
-          team_name: string | null
-          total_inventory_value: number | null
-          total_items: number | null
-          total_stock_quantity: number | null
-        }
-        Relationships: []
-      }
       inventory_warehouse_items: {
         Row: {
           item_id: string | null
@@ -10430,13 +9984,6 @@ export type Database = {
             foreignKeyName: "inventory_counts_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "inventory_counts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -10446,13 +9993,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_counts_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -10545,13 +10085,6 @@ export type Database = {
             foreignKeyName: "fk_wt_team"
             columns: ["team_id"]
             isOneToOne: false
-            referencedRelation: "daily_inventory_summary"
-            referencedColumns: ["team_id"]
-          },
-          {
-            foreignKeyName: "fk_wt_team"
-            columns: ["team_id"]
-            isOneToOne: false
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
@@ -10563,13 +10096,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_wt_team"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "weekly_inventory_movements"
-            referencedColumns: ["team_id"]
-          },
-          {
             foreignKeyName: "fk_wtl_item"
             columns: ["item_id"]
             isOneToOne: false
@@ -10577,33 +10103,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      vendor_performance_analytics: {
-        Row: {
-          avg_item_cost: number | null
-          items_supplied: number | null
-          last_transaction_date: string | null
-          teams_served: number | null
-          total_inventory_value: number | null
-          total_transactions: number | null
-          vendor_id: string | null
-          vendor_name: string | null
-        }
-        Relationships: []
-      }
-      weekly_inventory_movements: {
-        Row: {
-          po_number: string | null
-          team_id: string | null
-          team_name: string | null
-          total_quantity: number | null
-          total_value: number | null
-          transaction_count: number | null
-          transaction_type: string | null
-          vendor_name: string | null
-          week_start: string | null
-        }
-        Relationships: []
       }
     }
     Functions: {
@@ -11119,17 +10618,9 @@ export type Database = {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
-      post_warehouse_receipt: {
-        Args: { receipt_id: string }
-        Returns: Json
-      }
       process_calendar_sync_queue: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      process_warehouse_receipt_posting: {
-        Args: { receipt_id_param: string }
-        Returns: Json
       }
       purge_sales_data: {
         Args: { p_date_from?: string; p_date_to?: string; p_location?: string }
@@ -11138,6 +10629,28 @@ export type Database = {
       recalculate_attempt_score: {
         Args: { p_quiz_attempt_id: string }
         Returns: undefined
+      }
+      receive_stock: {
+        Args:
+          | {
+              p_expiration_date?: string
+              p_item_id: string
+              p_lot_number?: string
+              p_manufacturing_date?: string
+              p_notes?: string
+              p_quantity: number
+              p_unit_cost: number
+              p_user_id?: string
+              p_warehouse_id: string
+            }
+          | {
+              p_item_id: string
+              p_notes?: string
+              p_quantity: number
+              p_unit_cost?: number
+              p_warehouse_id: string
+            }
+        Returns: Json
       }
       receive_warehouse_transfer: {
         Args: { p_transfer_id: string; p_user: string }
@@ -11277,10 +10790,6 @@ export type Database = {
       }
       validate_invite_code_without_consuming: {
         Args: { code: string }
-        Returns: Json
-      }
-      validate_warehouse_receipt: {
-        Args: { receipt_id_param: string }
         Returns: Json
       }
       would_leave_org_without_superadmin: {
