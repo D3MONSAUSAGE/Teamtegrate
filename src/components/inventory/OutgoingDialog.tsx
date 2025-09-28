@@ -347,13 +347,14 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
         // Update warehouse stock
         const warehouseItem = warehouseItems.find(wi => wi.item_id === line.item_id);
         if (warehouseItem && warehouseId) {
-          const newStock = Math.max(0, warehouseItem.on_hand - line.qty);
-          
           try {
-            await warehouseApi.updateWarehouseStock(warehouseId, line.item_id, newStock);
+            const stockUpdateResult = await warehouseApi.updateWarehouseStock(warehouseId, line.item_id, -line.qty);
+            if (!stockUpdateResult) {
+              throw new Error('Failed to update warehouse stock - insufficient permissions or stock');
+            }
           } catch (stockError) {
             console.error('Failed to update warehouse stock:', stockError);
-            toast.error(`Failed to update warehouse stock for ${line.name}`);
+            toast.error(`Failed to update warehouse stock for ${line.name}: ${stockError instanceof Error ? stockError.message : 'Unknown error'}`);
             throw stockError; // Stop processing if stock update fails
           }
         }

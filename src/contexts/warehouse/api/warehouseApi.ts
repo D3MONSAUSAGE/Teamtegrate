@@ -439,23 +439,51 @@ export const warehouseApi = {
     }
   },
 
-  // Update warehouse stock levels
-  async updateWarehouseStock(warehouseId: string, itemId: string, newStock: number): Promise<void> {
-    const { error } = await supabase
+  // Update warehouse stock levels  
+  async updateWarehouseStock(warehouseId: string, itemId: string, quantityChange: number): Promise<boolean> {
+    // First get current stock to validate the operation
+    const { data: currentItem, error: fetchError } = await supabase
       .from('warehouse_items')
-      .update({ 
-        on_hand: newStock 
+      .select('on_hand')
+      .eq('warehouse_id', warehouseId)
+      .eq('item_id', itemId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching current stock:', fetchError);
+      throw new Error(`Failed to fetch current stock: ${fetchError.message}`);
+    }
+
+    const newStock = Math.max(0, currentItem.on_hand + quantityChange);
+    
+    // Prevent negative stock
+    if (quantityChange < 0 && Math.abs(quantityChange) > currentItem.on_hand) {
+      throw new Error(`Insufficient stock: trying to withdraw ${Math.abs(quantityChange)} but only ${currentItem.on_hand} available`);
+    }
+
+    const { data, error } = await supabase
+      .from('warehouse_items')
+      .update({
+        on_hand: newStock,
+        updated_at: new Date().toISOString()
       })
       .eq('warehouse_id', warehouseId)
-      .eq('item_id', itemId);
+      .eq('item_id', itemId)
+      .select()
+      .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Warehouse stock update error:', error);
+      throw new Error(`Failed to update warehouse stock: ${error.message}`);
+    }
+
+    return !!data;
   },
 
   // Bulk update warehouse stock (for multiple items at once)
-  async bulkUpdateWarehouseStock(updates: Array<{ warehouseId: string; itemId: string; newStock: number }>): Promise<void> {
+  async bulkUpdateWarehouseStock(updates: Array<{ warehouseId: string; itemId: string; quantityChange: number }>): Promise<void> {
     const promises = updates.map(update => 
-      this.updateWarehouseStock(update.warehouseId, update.itemId, update.newStock)
+      this.updateWarehouseStock(update.warehouseId, update.itemId, update.quantityChange)
     );
     
     await Promise.all(promises);
