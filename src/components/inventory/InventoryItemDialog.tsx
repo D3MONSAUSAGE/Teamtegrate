@@ -35,6 +35,7 @@ const inventoryItemSchema = z.object({
   purchase_unit: z.string().optional(),
   conversion_factor: z.coerce.number().positive('Units per package must be greater than 0').optional(),
   purchase_price: z.coerce.number().min(0, 'Package price must be 0 or greater').optional(),
+  sale_price: z.coerce.number().min(0, 'Sale price must be 0 or greater').optional(),
   vendor_id: z.string().nullable().optional(),
   sku: z.string().optional().refine(async (sku) => {
     if (!sku || sku.trim() === '') return true;
@@ -107,6 +108,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       purchase_unit: '',
       conversion_factor: undefined,
       purchase_price: undefined,
+      sale_price: undefined,
       sku: '',
       barcode: '',
       location: '',
@@ -116,7 +118,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     },
   });
 
-  const watchedValues = form.watch(['conversion_factor', 'purchase_price']);
+  const watchedValues = form.watch(['conversion_factor', 'purchase_price', 'sale_price']);
 
   useEffect(() => {
     const [conversion, price] = watchedValues;
@@ -190,6 +192,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           purchase_unit: item.purchase_unit || '',
           conversion_factor: item.conversion_factor || undefined,
           purchase_price: item.purchase_price || undefined,
+          sale_price: item.sale_price || undefined,
           sku: item.sku || '',
           barcode: item.barcode || '',
           location: item.location || '',
@@ -289,6 +292,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         maximum_threshold: null,
         reorder_point: null,
         unit_cost: calculatedUnitPrice || null,
+        sale_price: values.sale_price || null,
         location: values.location,
         is_active: true,
         is_template: false,
@@ -653,42 +657,84 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
+                     />
 
-                    <FormField
-                      control={form.control}
-                      name="purchase_price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Package Price</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.01"
-                              placeholder="e.g., 24.00" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                     <FormField
+                       control={form.control}
+                       name="purchase_price"
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Package Price</FormLabel>
+                           <FormControl>
+                             <Input 
+                               type="number" 
+                               step="0.01"
+                               placeholder="e.g., 24.00" 
+                               {...field} 
+                             />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                   </div>
 
-                  {calculatedUnitPrice !== null && (
-                    <div className="bg-primary/5 border border-primary/20 p-4 rounded-md">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calculator className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-primary">Cost Calculation</span>
-                      </div>
-                      <p className="text-lg font-semibold">
-                        ${calculatedUnitPrice.toFixed(4)} per {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This is what each individual {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'} costs based on your package pricing
-                      </p>
-                    </div>
-                  )}
+                   <FormField
+                     control={form.control}
+                     name="sale_price"
+                     render={({ field }) => (
+                       <FormItem>
+                         <FormLabel>Sale Price (per unit)</FormLabel>
+                         <FormControl>
+                           <Input 
+                             type="number" 
+                             step="0.01"
+                             placeholder="e.g., 2.50" 
+                             {...field} 
+                           />
+                         </FormControl>
+                         <FormMessage />
+                       </FormItem>
+                     )}
+                   />
+
+                   {calculatedUnitPrice !== null && (
+                     <div className="bg-primary/5 border border-primary/20 p-4 rounded-md space-y-3">
+                       <div className="flex items-center gap-2 mb-2">
+                         <Calculator className="h-4 w-4 text-primary" />
+                         <span className="font-medium text-primary">Pricing Analysis</span>
+                       </div>
+                       <div>
+                         <p className="text-lg font-semibold">
+                           ${calculatedUnitPrice.toFixed(4)} per {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'}
+                         </p>
+                         <p className="text-sm text-muted-foreground mt-1">
+                           This is what each individual {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'} costs based on your package pricing
+                         </p>
+                       </div>
+                       {form.watch('sale_price') && (
+                         <div className="pt-2 border-t border-primary/10">
+                           <div className="flex justify-between items-center">
+                             <span className="text-sm font-medium">Profit per unit:</span>
+                             <span className="font-semibold text-green-600">
+                               ${(form.watch('sale_price') - calculatedUnitPrice).toFixed(4)}
+                             </span>
+                           </div>
+                           <div className="flex justify-between items-center mt-1">
+                             <span className="text-sm font-medium">Profit margin:</span>
+                             <span className="font-semibold text-green-600">
+                               {(((form.watch('sale_price') - calculatedUnitPrice) / form.watch('sale_price')) * 100).toFixed(1)}%
+                             </span>
+                           </div>
+                           {(form.watch('sale_price') - calculatedUnitPrice) < 0 && (
+                             <p className="text-sm text-red-600 mt-2">
+                               ⚠️ Warning: You're selling at a loss
+                             </p>
+                           )}
+                         </div>
+                       )}
+                     </div>
+                   )}
                 </div>
 
                 {/* Storage Location */}

@@ -49,6 +49,18 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
         {item.purchase_price ? formatCurrency(item.purchase_price) : 'N/A'}
       </TableCell>
       <TableCell>
+        <div className="space-y-1">
+          <div className="font-medium">
+            {item.sale_price ? formatCurrency(item.sale_price) : 'N/A'}
+          </div>
+          {item.sale_price && item.unit_cost && (
+            <div className="text-xs text-muted-foreground">
+              Profit: {formatCurrency(item.sale_price - item.unit_cost)}
+            </div>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
         {item.vendor?.name || 'No Vendor'}
       </TableCell>
       <TableCell>
