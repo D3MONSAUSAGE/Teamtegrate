@@ -142,15 +142,17 @@ export const inventoryReportsService = {
     }));
   },
 
-  async getRealTimeInventoryValue(organizationId: string, teamId?: string): Promise<InventoryValueSummary[]> {
+  async getRealTimeInventoryValue(organizationId: string, teamId?: string, warehouseId?: string): Promise<InventoryValueSummary[]> {
     console.log('inventoryReportsService.getRealTimeInventoryValue called with:', {
       organizationId,
-      teamId
+      teamId,
+      warehouseId
     });
 
     const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
       p_organization_id: organizationId,
-      p_team_id: teamId || null
+      p_team_id: teamId || null,
+      p_warehouse_id: warehouseId || null
     });
 
     if (error) {
@@ -168,8 +170,8 @@ export const inventoryReportsService = {
         team_name: teamId ? 'Selected Team' : 'All Teams',
         total_value: Number(result.total_value) || 0,
         item_count: Number(result.item_count) || 0,
-        low_stock_items: Number(result.low_stock_items) || 0,
-        overstock_items: Number(result.overstock_items) || 0
+        low_stock_items: Number(result.low_stock_count) || 0,
+        overstock_items: Number(result.out_of_stock_count) || 0
       }];
     }
 
@@ -205,8 +207,8 @@ export const inventoryReportsService = {
 
   // Legacy functions for backward compatibility
   async getWarehouseInventoryValue(organizationId: string, warehouseId?: string): Promise<InventoryValueSummary[]> {
-    // Use the real-time inventory value function with appropriate parameters
-    return this.getRealTimeInventoryValue(organizationId, undefined);
+    // Use the real-time inventory value function with warehouse filtering
+    return this.getRealTimeInventoryValue(organizationId, undefined, warehouseId);
   },
 
   async getWeeklyMovements(organizationId: string, startDate?: string, endDate?: string): Promise<WeeklyMovement[]> {

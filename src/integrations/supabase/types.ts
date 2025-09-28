@@ -10887,17 +10887,15 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args:
-          | { p_organization_id: string; p_team_id?: string }
-          | {
-              p_organization_id: string
-              p_team_id?: string
-              p_warehouse_id?: string
-            }
+        Args: {
+          p_organization_id: string
+          p_team_id?: string
+          p_warehouse_id?: string
+        }
         Returns: {
           item_count: number
-          low_stock_items: number
-          overstock_items: number
+          low_stock_count: number
+          out_of_stock_count: number
           total_value: number
         }[]
       }

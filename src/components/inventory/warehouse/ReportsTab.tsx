@@ -84,8 +84,8 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouse
     try {
       // Always load current inventory value (use warehouse-specific if available)
       const valueData = warehouseId 
-        ? await inventoryReportsService.getWarehouseInventoryValue(warehouseId)
-        : await inventoryReportsService.getRealTimeInventoryValue(selectedTeam);
+        ? await inventoryReportsService.getRealTimeInventoryValue(organizationId!, undefined, warehouseId)
+        : await inventoryReportsService.getRealTimeInventoryValue(organizationId!, selectedTeam);
       
       setInventoryValue(valueData);
 
