@@ -10663,7 +10663,7 @@ export type Database = {
         Returns: Json
       }
       create_inventory_transaction_from_receipt_line: {
-        Args: { receipt_line_id: string }
+        Args: { p_receipt_line_id: string }
         Returns: undefined
       }
       create_user_admin: {
