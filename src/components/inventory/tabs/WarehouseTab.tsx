@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
+import { SimpleCheckout } from '../warehouse/SimpleCheckout';
 
 import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
@@ -9,7 +10,7 @@ import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Minus } from 'lucide-react';
+import { Package, Minus, ShoppingCart } from 'lucide-react';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +40,7 @@ export const WarehouseTab: React.FC = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showOverview, setShowOverview] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -285,7 +287,12 @@ export const WarehouseTab: React.FC = () => {
       case 'processing':
         return <ProcessingTab />;
       case 'outgoing':
-        return <OutgoingTab warehouseId={warehouse.id} onRefresh={handleRefresh} />;
+        return <OutgoingTab 
+          warehouseId={warehouse.id} 
+          onRefresh={handleRefresh}
+          isCheckoutOpen={isCheckoutOpen}
+          onCheckoutOpenChange={setIsCheckoutOpen}
+        />;
       case 'reports':
         return <ReportsTab defaultTeamId={warehouse?.team_id} />;
       default:
@@ -349,6 +356,10 @@ export const WarehouseTab: React.FC = () => {
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
               />
+              <Button onClick={() => setIsCheckoutOpen(true)} className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                Start Checkout
+              </Button>
             </div>
           )}
         </div>
@@ -418,6 +429,18 @@ export const WarehouseTab: React.FC = () => {
             {renderTabContent()}
           </div>
         </ScrollableTabs>
+      )}
+
+      {/* Simple Checkout */}
+      {warehouse && (
+        <SimpleCheckout
+          warehouseId={warehouse.id}
+          open={isCheckoutOpen}
+          onOpenChange={setIsCheckoutOpen}
+          onRefresh={() => {
+            handleRefresh();
+          }}
+        />
       )}
     </div>
   );

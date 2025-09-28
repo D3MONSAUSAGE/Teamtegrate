@@ -13,6 +13,7 @@ const WarehouseOutgoingPage: React.FC = () => {
   const { availableTeams } = useTeamAccess();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   useEffect(() => {
     loadWarehouse();
@@ -84,7 +85,11 @@ const WarehouseOutgoingPage: React.FC = () => {
           </div>
         </div>
 
-        <OutgoingTab warehouseId={warehouse.id} />
+        <OutgoingTab 
+          warehouseId={warehouse.id} 
+          isCheckoutOpen={isCheckoutOpen}
+          onCheckoutOpenChange={setIsCheckoutOpen}
+        />
       </div>
     </InventoryProvider>
   );

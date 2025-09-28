@@ -13,20 +13,27 @@ import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 interface OutgoingTabProps {
   warehouseId: string;
   onRefresh?: () => void;
+  isCheckoutOpen: boolean;
+  onCheckoutOpenChange: (open: boolean) => void;
 }
 
-export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh }) => {
+export const OutgoingTab: React.FC<OutgoingTabProps> = ({ 
+  warehouseId, 
+  onRefresh, 
+  isCheckoutOpen, 
+  onCheckoutOpenChange 
+}) => {
   const { warehouseItems, itemsLoading, refreshWarehouseItems } = useWarehouse();
   const { user } = useAuth();
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   
   // Filter to only show items with stock > 0
   const itemsWithStock = useMemo(() => {
     return warehouseItems.filter(item => item.on_hand > 0);
   }, [warehouseItems]);
 
-  const totalStockValue = itemsWithStock.reduce((sum, item) => {
-    return sum + (item.on_hand * item.wac_unit_cost);
+  // Use ALL items for consistent stock value calculation (same as WarehouseStock)
+  const totalStockValue = warehouseItems.reduce((sum, item) => {
+    return sum + (Number(item.on_hand) * Number(item.wac_unit_cost));
   }, 0);
 
   return (
@@ -80,16 +87,10 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh
       {/* Main Actions */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TruckIcon className="h-5 w-5" />
-              Outgoing & Sales
-            </CardTitle>
-             <Button onClick={() => setIsCheckoutOpen(true)}>
-               <Plus className="h-4 w-4 mr-2" />
-               Start Checkout
-             </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <TruckIcon className="h-5 w-5" />
+            Outgoing & Sales
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {itemsLoading ? (
@@ -131,7 +132,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh
                          size="sm" 
                          variant="outline" 
                          className="w-full mt-3"
-                         onClick={() => setIsCheckoutOpen(true)}
+                         onClick={() => onCheckoutOpenChange(true)}
                        >
                          Add to Cart
                        </Button>
@@ -156,7 +157,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh
       <SimpleCheckout
         warehouseId={warehouseId}
         open={isCheckoutOpen}
-        onOpenChange={setIsCheckoutOpen}
+        onOpenChange={onCheckoutOpenChange}
         onRefresh={() => {
           refreshWarehouseItems(); // Refresh after checkout
           if (onRefresh) onRefresh(); // Refresh parent
