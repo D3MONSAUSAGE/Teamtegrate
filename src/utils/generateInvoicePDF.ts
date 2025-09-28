@@ -1,10 +1,11 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { CreatedInvoice } from '@/types/invoices';
 import { format } from 'date-fns';
 
 export const generateInvoicePDF = (invoice: CreatedInvoice): void => {
-  const doc = new jsPDF();
+  try {
+    const doc = new jsPDF();
   
   // Company header
   doc.setFontSize(20);
@@ -122,6 +123,11 @@ export const generateInvoicePDF = (invoice: CreatedInvoice): void => {
     doc.text(invoice.footer_text, 20, 280);
   }
   
-  // Save the PDF
-  doc.save(`${invoice.invoice_number}.pdf`);
+    // Save the PDF
+    doc.save(`${invoice.invoice_number}.pdf`);
+  } catch (error) {
+    console.error('PDF generation failed:', error);
+    // Fallback: show error but don't prevent checkout completion
+    throw new Error('PDF generation failed. Invoice was created successfully but PDF could not be generated.');
+  }
 };

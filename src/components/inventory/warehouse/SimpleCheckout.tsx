@@ -324,10 +324,14 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           transaction_reference: `Warehouse checkout: ${warehouseId}`,
         });
 
-        // Generate PDF
-        generateInvoicePDF(invoice);
-
-        toast.success(`Checkout completed and invoice ${invoice.invoice_number} created!`);
+        // Generate PDF with error handling
+        try {
+          generateInvoicePDF(invoice);
+          toast.success(`Checkout completed and invoice ${invoice.invoice_number} created with PDF!`);
+        } catch (pdfError) {
+          console.warn('PDF generation failed but checkout was successful:', pdfError);
+          toast.success(`Checkout completed and invoice ${invoice.invoice_number} created! (PDF generation failed - you can regenerate it later)`);
+        }
       } else {
         toast.success('Checkout completed successfully!');
       }
