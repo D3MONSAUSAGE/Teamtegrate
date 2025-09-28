@@ -6,4 +6,5 @@ export { LabelContentSelector } from './LabelContentSelector';
 export { SaveTemplateDialog } from './SaveTemplateDialog';
 export { ReprintDialog } from './ReprintDialog';
 export { LabelsAndBarcodesTab } from './LabelsAndBarcodesTab';
+export { SimpleLabelGenerator } from './SimpleLabelGenerator';
 export type { LabelContentConfig } from './LabelContentSelector';
