@@ -366,7 +366,7 @@ export const WarehouseTab: React.FC = () => {
           </div>
           {warehouse && (
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => {/* TODO: Open receive stock dialog */}} className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setIsReceiveOpen(true)} className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Receive Stock
               </Button>
