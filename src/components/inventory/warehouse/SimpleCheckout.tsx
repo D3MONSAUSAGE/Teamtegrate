@@ -43,6 +43,7 @@ interface InventoryItem {
   barcode?: string;
   on_hand?: number;
   unit_cost?: number;
+  sale_price?: number;
 }
 
 interface CheckoutItem extends InventoryItem {
@@ -177,7 +178,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       const newItem: CheckoutItem = {
         ...item,
         quantity: 1,
-        unit_price: item.unit_cost || 0
+        unit_price: item.sale_price || item.unit_cost || 0
       };
       setCheckoutItems(prev => [...prev, newItem]);
     }
@@ -201,6 +202,16 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     return checkoutItems.reduce((total, item) => {
       return total + (item.quantity * (item.unit_price || 0));
     }, 0);
+  };
+
+  const calculateTotalCost = () => {
+    return checkoutItems.reduce((total, item) => {
+      return total + (item.quantity * (item.unit_cost || 0));
+    }, 0);
+  };
+
+  const calculateTotalProfit = () => {
+    return calculateSubtotal() - calculateTotalCost();
   };
 
   const calculateTax = () => {
@@ -512,9 +523,9 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                                 <Badge variant={(item.on_hand || 0) > 0 ? 'secondary' : 'destructive'}>
                                   Stock: {item.on_hand || 0}
                                 </Badge>
-                                {item.unit_cost && (
+                                {item.sale_price && (
                                   <div className="text-sm font-medium">
-                                    {formatCurrency(item.unit_cost)}
+                                    {formatCurrency(item.sale_price)}
                                   </div>
                                 )}
                               </div>
@@ -609,18 +620,24 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                               />
                             </div>
                             
-                            {/* Unit Price */}
-                            <div className="lg:col-span-2">
-                              <Label className="text-xs">Unit Price</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="0.00"
-                                value={item.unit_price || ''}
-                                onChange={(e) => updateLineItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                              />
-                            </div>
+                             {/* Unit Price */}
+                             <div className="lg:col-span-2">
+                               <Label className="text-xs">Sale Price</Label>
+                               <Input
+                                 type="number"
+                                 step="0.01"
+                                 min="0"
+                                 placeholder="0.00"
+                                 value={item.unit_price || ''}
+                                 onChange={(e) => updateLineItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                               />
+                               {item.unit_cost && (
+                                 <div className="text-xs text-muted-foreground mt-1">
+                                   Cost: {formatCurrency(item.unit_cost)} | 
+                                   Profit: {formatCurrency((item.unit_price || 0) - item.unit_cost)}
+                                 </div>
+                               )}
+                             </div>
                             
                             {/* Line Total */}
                             <div className="lg:col-span-2 text-right">
@@ -646,28 +663,38 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                       </Card>
                     ))}
                     
-                    {/* Totals */}
-                    <div className="flex justify-end pt-4">
-                      <div className="text-right space-y-1 min-w-48">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Subtotal:</span>
-                          <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
-                        </div>
-                        {taxRate > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Tax ({taxRate}%):</span>
-                            <span className="font-medium">{formatCurrency(calculateTax())}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-lg font-semibold border-t pt-1">
-                          <span>Total:</span>
-                          <span>{formatCurrency(calculateTotal())}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {totalItems} items, {totalQuantity} units
-                        </div>
-                      </div>
-                    </div>
+                     {/* Totals */}
+                     <div className="flex justify-end pt-4">
+                       <div className="text-right space-y-1 min-w-64">
+                         <div className="flex justify-between">
+                           <span className="text-sm text-muted-foreground">Subtotal:</span>
+                           <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
+                         </div>
+                         <div className="flex justify-between text-sm">
+                           <span className="text-muted-foreground">Cost:</span>
+                           <span className="text-muted-foreground">{formatCurrency(calculateTotalCost())}</span>
+                         </div>
+                         <div className="flex justify-between text-sm">
+                           <span className="text-muted-foreground">Profit:</span>
+                           <span className={`font-medium ${calculateTotalProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                             {formatCurrency(calculateTotalProfit())}
+                           </span>
+                         </div>
+                         {taxRate > 0 && (
+                           <div className="flex justify-between">
+                             <span className="text-sm text-muted-foreground">Tax ({taxRate}%):</span>
+                             <span className="font-medium">{formatCurrency(calculateTax())}</span>
+                           </div>
+                         )}
+                         <div className="flex justify-between text-lg font-semibold border-t pt-1">
+                           <span>Total:</span>
+                           <span>{formatCurrency(calculateTotal())}</span>
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           {totalItems} items, {totalQuantity} units
+                         </div>
+                       </div>
+                     </div>
                   </div>
                 )}
               </div>

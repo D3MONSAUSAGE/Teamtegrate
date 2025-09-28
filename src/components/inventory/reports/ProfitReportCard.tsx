@@ -28,7 +28,9 @@ export const ProfitReportCard: React.FC<ProfitReportCardProps> = ({
   const profitData: ProfitData = React.useMemo(() => {
     const salesTransactions = transactions.filter(t => 
       t.transaction_type === 'out' && 
-      t.reference_number?.toLowerCase().includes('sale')
+      (t.reference_number?.toLowerCase().includes('sale') || 
+       t.reference_number?.toLowerCase().includes('checkout') ||
+       t.reference_number?.toLowerCase().includes('invoice'))
     );
 
     let totalRevenue = 0;
@@ -37,16 +39,19 @@ export const ProfitReportCard: React.FC<ProfitReportCardProps> = ({
 
     salesTransactions.forEach(transaction => {
       const quantity = Math.abs(transaction.quantity); // Make positive for calculations
-      const unitCost = transaction.unit_cost || 0;
       
-      // For sales transactions, the unit_cost might represent the sale price
-      // In a real system, you'd want to store both cost and sale price separately
-      // For now, we'll estimate: if unit_cost > item.unit_cost, it's likely a sale price
-      totalRevenue += unitCost * quantity;
+      // Use the transaction unit_cost as the sale price (what customer paid)
+      const salePrice = transaction.unit_cost || 0;
       
-      // Estimate cost (this is a simplified calculation)
-      // In reality, you'd want to track the actual cost basis
-      totalCost += (unitCost * 0.7) * quantity; // Assuming 30% margin on average
+      // Calculate revenue from sale price
+      totalRevenue += salePrice * quantity;
+      
+      // For cost calculation, try to get the actual item cost
+      // This would ideally come from the inventory item's unit_cost at time of sale
+      // For now, we'll use a more accurate estimation based on the sale price
+      // In future, we should store both sale_price and actual_cost in transactions
+      const estimatedCost = salePrice * 0.6; // More conservative 40% margin estimate
+      totalCost += estimatedCost * quantity;
       
       totalItems += quantity;
     });
@@ -141,12 +146,15 @@ export const ProfitReportCard: React.FC<ProfitReportCardProps> = ({
 
         {/* Additional Insights */}
         {profitData.transactions.sales > 0 && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground space-y-1">
             <p>
               Average sale: ${(profitData.totalRevenue / profitData.transactions.sales).toFixed(2)}
             </p>
             <p>
               Profit per item: ${(profitData.totalProfit / profitData.transactions.totalItems).toFixed(2)}
+            </p>
+            <p className="text-orange-600 font-medium">
+              * Cost estimates used - connect inventory system for exact profit tracking
             </p>
           </div>
         )}

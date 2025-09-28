@@ -9316,7 +9316,7 @@ export type Database = {
           on_hand: number
           reorder_max: number | null
           reorder_min: number | null
-          wac_unit_cost: number
+          sale_price: number | null
           warehouse_id: string
         }
         Insert: {
@@ -9324,7 +9324,7 @@ export type Database = {
           on_hand?: number
           reorder_max?: number | null
           reorder_min?: number | null
-          wac_unit_cost?: number
+          sale_price?: number | null
           warehouse_id: string
         }
         Update: {
@@ -9332,7 +9332,7 @@ export type Database = {
           on_hand?: number
           reorder_max?: number | null
           reorder_min?: number | null
-          wac_unit_cost?: number
+          sale_price?: number | null
           warehouse_id?: string
         }
         Relationships: [

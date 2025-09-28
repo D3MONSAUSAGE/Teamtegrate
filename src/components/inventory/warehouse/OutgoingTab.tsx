@@ -33,7 +33,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({
 
   // Use ALL items for consistent stock value calculation (same as WarehouseStock)
   const totalStockValue = warehouseItems.reduce((sum, item) => {
-    return sum + (Number(item.on_hand) * Number(item.wac_unit_cost));
+    return sum + (Number(item.on_hand) * Number(item.item?.unit_cost || 0));
   }, 0);
 
   return (
@@ -125,7 +125,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p>Stock: {warehouseItem.on_hand}</p>
                         {warehouseItem.item?.sku && <p>SKU: {warehouseItem.item.sku}</p>}
-                        <p>Value: ${(warehouseItem.on_hand * warehouseItem.wac_unit_cost).toFixed(2)}</p>
+                        <p>Value: ${(warehouseItem.on_hand * (warehouseItem.item?.unit_cost || 0)).toFixed(2)}</p>
                       </div>
                       
                        <Button 

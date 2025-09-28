@@ -20,15 +20,17 @@ export type WarehouseItem = {
   warehouse_id: string;
   item_id: string;
   on_hand: number;
-  wac_unit_cost: number;
   reorder_min?: number;
   reorder_max?: number;
+  sale_price?: number;
   // Joined from inventory_items
   item?: {
     id: string;
     name: string;
     sku?: string;
     barcode?: string;
+    unit_cost?: number;
+    sale_price?: number;
     category?: {
       name: string;
     };
@@ -166,6 +168,8 @@ export const warehouseApi = {
           name,
           sku,
           barcode,
+          unit_cost,
+          sale_price,
           category:inventory_categories(name),
           base_unit:inventory_units(name, abbreviation)
         )
@@ -477,7 +481,7 @@ export const warehouseApi = {
       
       for (const warehouse of warehouses) {
         const items = await this.listWarehouseItems(warehouse.id);
-        const totalValue = items.reduce((sum, item) => sum + (item.on_hand * item.wac_unit_cost), 0);
+        const totalValue = items.reduce((sum, item) => sum + (item.on_hand * (item.item?.unit_cost || 0)), 0);
         const lowStockCount = items.filter(item => 
           item.reorder_min && item.on_hand <= item.reorder_min
         ).length;
@@ -620,7 +624,7 @@ export const warehouseApi = {
         warehouse_id,
         item_id,
         on_hand,
-        wac_unit_cost,
+        sale_price,
         reorder_min,
         reorder_max,
         item:inventory_items(
@@ -629,6 +633,7 @@ export const warehouseApi = {
           sku,
           barcode,
           unit_cost,
+          sale_price,
           category:inventory_categories(name),
           base_unit:inventory_units(name, abbreviation)
         )
@@ -655,7 +660,8 @@ export const warehouseApi = {
       name: warehouseItem.item?.name || '',
       sku: warehouseItem.item?.sku,
       barcode: warehouseItem.item?.barcode,
-      unit_cost: warehouseItem.wac_unit_cost || warehouseItem.item?.unit_cost || 0,
+      unit_cost: warehouseItem.item?.unit_cost || 0,
+      sale_price: warehouseItem.sale_price || warehouseItem.item?.sale_price || 0,
       on_hand: warehouseItem.on_hand, // Include warehouse stock level
       category: warehouseItem.item?.category,
       base_unit: warehouseItem.item?.base_unit
@@ -689,6 +695,7 @@ export const warehouseApi = {
         sku,
         barcode,
         unit_cost,
+        sale_price,
         team_id,
         category:inventory_categories(name),
         base_unit:inventory_units(name, abbreviation)
@@ -741,7 +748,7 @@ export const warehouseApi = {
     const itemIds = inventoryItems.map(item => item.id);
     const { data: warehouseStockData, error: stockError } = await supabase
       .from('warehouse_items')
-      .select('item_id, on_hand, wac_unit_cost')
+      .select('item_id, on_hand, sale_price')
       .eq('warehouse_id', warehouseId)
       .in('item_id', itemIds);
 
@@ -760,7 +767,8 @@ export const warehouseApi = {
         name: item.name,
         sku: item.sku,
         barcode: item.barcode,
-        unit_cost: warehouseStock?.wac_unit_cost || item.unit_cost || 0,
+        unit_cost: item.unit_cost || 0,
+        sale_price: warehouseStock?.sale_price || item.sale_price || 0,
         on_hand: warehouseStock?.on_hand || 0, // Default to 0 if not in warehouse
         category: item.category,
         base_unit: item.base_unit,

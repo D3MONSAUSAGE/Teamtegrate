@@ -54,7 +54,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       purchase_price: null,
-      unit_cost: warehouseItem.wac_unit_cost,
+      unit_cost: warehouseItem.item?.unit_cost || 0,
       conversion_factor: null,
       purchase_unit: null,
       minimum_threshold: warehouseItem.reorder_min || null,
@@ -104,7 +104,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
     const totalSKUs = items.filter(item => item.item?.sku).length;
     const totalBarcodes = items.filter(item => item.item?.barcode).length;
     const totalStockValue = items.reduce((sum, item) => {
-      return sum + (Number(item.on_hand) * Number(item.wac_unit_cost));
+      return sum + (Number(item.on_hand) * Number(item.item?.unit_cost || 0));
     }, 0);
 
     const stockStatusItems = items.map(item => ({
@@ -275,7 +275,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(item.wac_unit_cost)}
+                        {formatCurrency(item.item?.unit_cost || 0)}
                       </TableCell>
                       <TableCell className="text-right">
                         {item.reorder_min ? formatNumber(item.reorder_min) : '-'}
