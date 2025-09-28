@@ -10887,7 +10887,13 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args: { p_organization_id: string; p_team_id?: string }
+        Args:
+          | { p_organization_id: string; p_team_id?: string }
+          | {
+              p_organization_id: string
+              p_team_id?: string
+              p_warehouse_id?: string
+            }
         Returns: {
           item_count: number
           low_stock_items: number
@@ -10912,7 +10918,9 @@ export type Database = {
         }[]
       }
       get_team_inventory_summary: {
-        Args: { p_organization_id: string }
+        Args:
+          | { p_organization_id: string }
+          | { p_organization_id: string; p_team_id?: string }
         Returns: {
           item_count: number
           low_stock_count: number
