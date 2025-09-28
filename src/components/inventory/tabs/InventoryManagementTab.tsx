@@ -678,10 +678,14 @@ export const InventoryManagementTab: React.FC = () => {
         onSave={handleSaveVendor}
       />
 
+      {/* Disabled: legacy inventory-wide receiving dialog.
+          We use the warehouse-specific ReceiveStockDrawer + RPC flow now. */}
+      {/*
       <ReceivingDialog
         open={isReceivingDialogOpen}
         onOpenChange={setIsReceivingDialogOpen}
       />
+      */}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
