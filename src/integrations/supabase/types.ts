@@ -10608,9 +10608,7 @@ export type Database = {
         Returns: Json
       }
       post_warehouse_receipt: {
-        Args:
-          | { p_receipt_id: string; p_user: string }
-          | { p_receipt_id: string; p_user: string }
+        Args: { p_receipt_id: string; p_user: string }
         Returns: Json
       }
       process_calendar_sync_queue: {
