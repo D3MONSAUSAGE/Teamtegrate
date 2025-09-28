@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { InventoryItemDialog } from '../InventoryItemDialog';
-import { ReceivingDialog } from '../ReceivingDialog';
+
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
 import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
@@ -50,7 +50,7 @@ export const InventoryManagementTab: React.FC = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [isReceivingDialogOpen, setIsReceivingDialogOpen] = useState(false);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
@@ -678,14 +678,6 @@ export const InventoryManagementTab: React.FC = () => {
         onSave={handleSaveVendor}
       />
 
-      {/* Disabled: legacy inventory-wide receiving dialog.
-          We use the warehouse-specific ReceiveStockDrawer + RPC flow now. */}
-      {/*
-      <ReceivingDialog
-        open={isReceivingDialogOpen}
-        onOpenChange={setIsReceivingDialogOpen}
-      />
-      */}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

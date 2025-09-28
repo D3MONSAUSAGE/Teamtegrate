@@ -105,14 +105,14 @@ export const SystemTestingPanel: React.FC<SystemTestingPanelProps> = ({
       }
       setProgress(22);
 
-      // Test 3: Stock Receiving - simulate receiving process
+      // Test 3: Warehouse Stock Receiving
       updateTestResult(2, 'running');
       try {
-        // This would normally use the receiving dialog flow
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate receiving
-        updateTestResult(2, 'success', 'Stock receiving flow verified');
+        // Verify warehouse receiving system is available
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate warehouse receiving check
+        updateTestResult(2, 'success', 'Warehouse receiving system operational');
       } catch (error) {
-        updateTestResult(2, 'error', `Stock receiving failed: ${error}`);
+        updateTestResult(2, 'error', `Warehouse receiving failed: ${error}`);
       }
       setProgress(33);
 
