@@ -84,7 +84,20 @@ export const inventoryReportsService = {
     console.log('📊 Fetching real-time inventory value for team:', teamId);
     
     try {
+      // Get current user context to get organization_id
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError || !userData?.organization_id) {
+        console.error('❌ Cannot get user organization:', userError);
+        return [];
+      }
+
       const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
+        p_organization_id: userData.organization_id,
         p_team_id: teamId || null
       });
 
@@ -134,13 +147,8 @@ export const inventoryReportsService = {
         // For now, we'll skip these calculations
       });
       
-      const summaries = Array.from(teamSummaries.values());
-      console.log('📈 Generated team summaries:', { 
-        teamCount: summaries.length,
-        totalValue: summaries.reduce((sum, s) => sum + s.total_value, 0) 
-      });
-      
-      return summaries;
+      // Return the data directly as it now matches InventoryValueSummary interface
+      return data || [];
     } catch (error) {
       console.error('💥 Exception in getRealTimeInventoryValue:', error);
       return [];
@@ -151,7 +159,20 @@ export const inventoryReportsService = {
     console.log('🏭 Fetching daily movements:', { date, teamId, warehouseId });
     
     try {
+      // Get current user context to get organization_id
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError || !userData?.organization_id) {
+        console.error('❌ Cannot get user organization:', userError);
+        return [];
+      }
+
       const { data, error } = await supabase.rpc('get_daily_movements', {
+        p_organization_id: userData.organization_id,
         p_date: date || new Date().toISOString().split('T')[0],
         p_team_id: teamId || null,
         p_warehouse_id: warehouseId || null
@@ -185,7 +206,20 @@ export const inventoryReportsService = {
     console.log('🏢 Fetching warehouse daily movements:', { warehouseId, date });
     
     try {
+      // Get current user context to get organization_id
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError || !userData?.organization_id) {
+        console.error('❌ Cannot get user organization:', userError);
+        return [];
+      }
+
       const { data, error } = await supabase.rpc('get_warehouse_daily_movements', {
+        p_organization_id: userData.organization_id,
         p_warehouse_id: warehouseId || null,
         p_date: date || new Date().toISOString().split('T')[0]
       });
@@ -214,12 +248,25 @@ export const inventoryReportsService = {
     }
   },
 
-  async getWarehouseInventoryValue(warehouseId?: string): Promise<any[]> {
+  async getWarehouseInventoryValue(warehouseId?: string): Promise<InventoryValueSummary[]> {
     console.log('🏪 Fetching warehouse inventory value:', warehouseId);
     
     try {
-      // Use the real-time inventory value function with warehouse filtering
+      // Get current user context to get organization_id
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError || !userData?.organization_id) {
+        console.error('❌ Cannot get user organization:', userError);
+        return [];
+      }
+
+      // Use the real-time inventory value function
       const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
+        p_organization_id: userData.organization_id,
         p_team_id: null
       });
 
