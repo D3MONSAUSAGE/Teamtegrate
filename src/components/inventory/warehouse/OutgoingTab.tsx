@@ -359,6 +359,7 @@ export const OutgoingTab: React.FC<OutgoingTabProps> = ({ warehouseId, onRefresh
           onScanItem={handleScanItem}
           onCreateInvoice={handleCreateInvoice}
           warehouseId={warehouseId} // Pass warehouse ID for validation
+          onRefreshItems={() => refreshWarehouseItems()} // Add refresh callback
         />
       )}
       

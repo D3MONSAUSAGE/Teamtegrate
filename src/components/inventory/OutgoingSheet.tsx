@@ -46,6 +46,7 @@ interface OutgoingSheetProps {
   onScanItem: (barcode: string) => Promise<InventoryItem | null>;
   onCreateInvoice?: (client: InvoiceClient, lineItems: LineItem[], notes?: string) => Promise<CreatedInvoice | void>;
   warehouseId?: string; // Add warehouse ID for validation
+  onRefreshItems?: () => void; // Add callback to refresh items after withdrawal
 }
 
 export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
@@ -55,7 +56,8 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   availableItems,
   onScanItem,
   onCreateInvoice,
-  warehouseId
+  warehouseId,
+  onRefreshItems
 }) => {
   // Debug logging for available items
   console.log('🔍 [OutgoingSheet] Component received availableItems:', availableItems);
@@ -74,10 +76,14 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   const [showCustomerManagement, setShowCustomerManagement] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Get current stock for a line item (refreshed data)
+  const getCurrentStock = (itemId: string): number => {
+    const refreshedItem = availableItems.find(item => item.id === itemId);
+    return refreshedItem?.current_stock || 0;
+  };
+
   // Get current withdrawal reason configuration
   const currentReason = WITHDRAWAL_REASONS.find(r => r.id === withdrawalReason);
-
-  // Calculate totals
   const totals = lineItems.reduce((acc, item) => {
     acc.totalCost += item.totalCost;
     acc.totalProfit += item.profit || 0;
@@ -254,6 +260,11 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
         currentReason?.requiresCustomer ? selectedClient : undefined,
         notes.trim() || undefined
       );
+
+      // Refresh items to get updated stock levels
+      if (onRefreshItems) {
+        onRefreshItems();
+      }
 
       // Create invoice if requested and it's a sale
       if (createInvoiceOption && currentReason?.id === 'sale' && selectedClient && onCreateInvoice) {
@@ -461,11 +472,11 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                   {lineItems.map(lineItem => (
                     <Card key={lineItem.id} className="p-3">
                       <CardContent className="p-0 space-y-3">
-                        <div className="flex items-start justify-between">
+                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium truncate">{lineItem.item.name}</h4>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <span>Warehouse Stock: {lineItem.item.current_stock}</span>
+                              <span>Warehouse Stock: {getCurrentStock(lineItem.item.id)}</span>
                               {lineItem.item.sku && <span>• SKU: {lineItem.item.sku}</span>}
                             </div>
                           </div>
@@ -497,28 +508,30 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                                 value={lineItem.quantity}
                                 onChange={(e) => {
                                   const newQuantity = parseFloat(e.target.value) || 1;
-                                  if (newQuantity > lineItem.item.current_stock) {
-                                    toast.error(`Cannot exceed available warehouse stock (${lineItem.item.current_stock})`);
+                                  const currentStock = getCurrentStock(lineItem.item.id);
+                                  if (newQuantity > currentStock) {
+                                    toast.error(`Cannot exceed available warehouse stock (${currentStock})`);
                                     return;
                                   }
                                   updateLineItemQuantity(lineItem.id, newQuantity);
                                 }}
                                 min="1"
-                                max={lineItem.item.current_stock}
+                                max={getCurrentStock(lineItem.item.id)}
                                 className="h-8 text-center"
-                              />
+                               />
                                <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  if (lineItem.quantity >= lineItem.item.current_stock) {
-                                    toast.error(`Cannot exceed available warehouse stock (${lineItem.item.current_stock})`);
+                                  const currentStock = getCurrentStock(lineItem.item.id);
+                                  if (lineItem.quantity >= currentStock) {
+                                    toast.error(`Cannot exceed available warehouse stock (${currentStock})`);
                                     return;
                                   }
                                   updateLineItemQuantity(lineItem.id, lineItem.quantity + 1);
                                 }}
-                                disabled={lineItem.quantity >= lineItem.item.current_stock}
-                              >
+                                disabled={lineItem.quantity >= getCurrentStock(lineItem.item.id)}
+                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>

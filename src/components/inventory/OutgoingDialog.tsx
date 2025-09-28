@@ -26,6 +26,7 @@ interface OutgoingDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedItemId?: string | null;
   warehouseId?: string;
+  onWithdrawSuccess?: () => void;
 }
 
 const withdrawalReasons = [
@@ -63,7 +64,8 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
   open,
   onOpenChange,
   selectedItemId,
-  warehouseId
+  warehouseId,
+  onWithdrawSuccess
 }) => {
   const [loading, setLoading] = useState(false);
   const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
@@ -155,6 +157,13 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
       toast.error('Failed to search items');
     } finally {
       setSearchLoading(false);
+    }
+  };
+
+  // Refresh search results with current stock levels
+  const refreshSearchResults = async () => {
+    if (searchQuery.trim() && warehouseId) {
+      await performSearch();
     }
   };
 
@@ -374,6 +383,15 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
       }
 
       await loadWarehouseItems(); // Refresh warehouse items
+      
+      // Clear and refresh search results to show updated stock levels
+      setSearchResults([]);
+      await refreshSearchResults();
+      
+      // Notify parent component to refresh its data
+      if (onWithdrawSuccess) {
+        onWithdrawSuccess();
+      }
       
       toast.success(`Successfully withdrew ${validLines.length} item(s) with batch numbers generated for traceability`);
       onOpenChange(false);
