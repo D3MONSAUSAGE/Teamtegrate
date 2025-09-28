@@ -208,11 +208,29 @@ export const ReceivingDialog: React.FC<ReceivingDialogProps> = ({
           shipment_id: shipmentId
         });
 
-        // Update item stock
+        // Update item stock and ensure proper pricing
         const selectedItem = items.find(i => i.id === item.item_id);
         if (selectedItem) {
           const newStock = (selectedItem.current_stock || 0) + item.quantity;
           await inventoryItemsApi.updateStock(selectedItem.id, newStock);
+
+          // Ensure item has a sale price (auto-calculate if missing)
+          const needsPriceUpdate = !selectedItem.sale_price || selectedItem.sale_price <= 0;
+          const needsCostUpdate = selectedItem.unit_cost !== item.cost_per_unit;
+          
+          if (needsPriceUpdate || needsCostUpdate) {
+            const updates: any = {};
+            
+            if (needsCostUpdate) {
+              updates.unit_cost = item.cost_per_unit;
+            }
+            
+            if (needsPriceUpdate) {
+              updates.sale_price = item.cost_per_unit * 1.4; // 40% markup
+            }
+            
+            await inventoryItemsApi.update(selectedItem.id, updates);
+          }
         }
       }
 

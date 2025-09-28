@@ -10,7 +10,7 @@ import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Minus, ShoppingCart } from 'lucide-react';
+import { Package, Minus, ShoppingCart, Plus, Play } from 'lucide-react';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,7 @@ import { useInventory } from '@/contexts/inventory';
 import { InvoiceClient } from '@/types/invoices';
 import { toast } from 'sonner';
 import { WarehouseProvider } from '@/contexts/warehouse/WarehouseContext';
+import { SystemTestingPanel } from '../SystemTestingPanel';
 
 // Lazy load the dashboard component to avoid circular dependencies
 const WarehouseOverviewDashboard = React.lazy(() => 
@@ -41,6 +42,7 @@ export const WarehouseTab: React.FC = () => {
   const [showOverview, setShowOverview] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [testingPanelOpen, setTestingPanelOpen] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -352,6 +354,14 @@ export const WarehouseTab: React.FC = () => {
           </div>
           {warehouse && (
             <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                onClick={() => setTestingPanelOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Play className="h-4 w-4" />
+                System Test
+              </Button>
               <ReceiveStockDrawer 
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
@@ -442,6 +452,12 @@ export const WarehouseTab: React.FC = () => {
           }}
         />
       )}
+
+      {/* System Testing Panel */}
+      <SystemTestingPanel
+        open={testingPanelOpen}
+        onOpenChange={setTestingPanelOpen}
+      />
     </div>
   );
 };
