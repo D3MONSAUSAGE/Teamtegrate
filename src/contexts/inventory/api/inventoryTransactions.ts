@@ -9,7 +9,7 @@ export const inventoryTransactionsApi = {
         *,
         inventory_items(name, sku, barcode, description),
         teams(id, name),
-        warehouses(id, name, location)
+        warehouses(id, name, address)
       `);
 
     if (teamId) {
@@ -76,7 +76,7 @@ export const inventoryTransactionsApi = {
         *,
         inventory_items(name, sku, barcode, description),
         teams(id, name),
-        warehouses(id, name, location)
+        warehouses(id, name, address)
       `)
       .eq('transaction_type', transactionType);
 

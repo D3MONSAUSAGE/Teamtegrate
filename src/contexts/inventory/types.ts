@@ -107,7 +107,7 @@ export interface InventoryTransaction {
   warehouses?: {
     id: string;
     name: string;
-    location?: string;
+    address?: string;
   };
   // We'll fetch user details separately if needed
   processor_name?: string;

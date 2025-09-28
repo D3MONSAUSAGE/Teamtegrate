@@ -451,9 +451,9 @@ export const WithdrawalReportsTab: React.FC = () => {
                                   <div className="flex items-center gap-1">
                                     <Package className="h-3 w-3" />
                                     <span>Warehouse: {transaction.warehouses.name}</span>
-                                    {transaction.warehouses.location && (
-                                      <span className="text-muted-foreground">({transaction.warehouses.location})</span>
-                                    )}
+                                     {transaction.warehouses.address && (
+                                       <span className="text-muted-foreground">({transaction.warehouses.address})</span>
+                                     )}
                                   </div>
                                 )}
                                 {transaction.teams?.name && (
