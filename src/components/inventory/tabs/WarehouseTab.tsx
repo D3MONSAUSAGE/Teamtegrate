@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
-import { OutgoingSheet } from '../OutgoingSheet';
 
 import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
@@ -40,7 +39,6 @@ export const WarehouseTab: React.FC = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [showOverview, setShowOverview] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [isOutgoingSheetOpen, setIsOutgoingSheetOpen] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -351,10 +349,6 @@ export const WarehouseTab: React.FC = () => {
                 warehouseId={warehouse.id}
                 onReceiptPosted={handleRefresh}
               />
-              <Button onClick={() => setIsOutgoingSheetOpen(true)} variant="outline">
-                <Minus className="h-4 w-4 mr-2" />
-                Withdraw
-              </Button>
             </div>
           )}
         </div>
@@ -424,18 +418,6 @@ export const WarehouseTab: React.FC = () => {
             {renderTabContent()}
           </div>
         </ScrollableTabs>
-      )}
-      
-      {/* Outgoing Sheet */}
-      {warehouse && (
-        <OutgoingSheet
-          open={isOutgoingSheetOpen}
-          onClose={() => setIsOutgoingSheetOpen(false)}
-          onItemsWithdrawn={handleItemsWithdrawn}
-          availableItems={inventoryItems}
-          onScanItem={handleScanItem}
-          onCreateInvoice={handleCreateInvoice}
-        />
       )}
     </div>
   );
