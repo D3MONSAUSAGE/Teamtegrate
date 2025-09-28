@@ -10353,6 +10353,48 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_warehouse_items: {
+        Row: {
+          item_id: string | null
+          on_hand: number | null
+          reorder_max: number | null
+          reorder_min: number | null
+          sale_price: number | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          item_id?: string | null
+          on_hand?: number | null
+          reorder_max?: number | null
+          reorder_min?: number | null
+          sale_price?: number | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          item_id?: string | null
+          on_hand?: number | null
+          reorder_max?: number | null
+          reorder_min?: number | null
+          sale_price?: number | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_wi_item"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_wi_wh"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_team_performance: {
         Row: {
           avg_completion_rate: number | null
