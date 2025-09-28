@@ -925,15 +925,15 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                       isGeneratingLabel || 
                       isSubmitting || 
                       loading || 
-                      !hasNutritionOrIngredients(nutritionalData, ingredientsData)
+                      (!hasNutritionOrIngredients(convertAdditiveToFlat(nutritionalData), ingredientsData) && !form.watch('name'))
                     }
                     title={
-                      !hasNutritionOrIngredients(nutritionalData, ingredientsData) 
-                        ? "Add nutritional info or ingredients to generate a label" 
+                      !hasNutritionOrIngredients(convertAdditiveToFlat(nutritionalData), ingredientsData) && !form.watch('name')
+                        ? "Add nutritional info, ingredients, or a product name to generate a label" 
                         : "Generate a PDF label with current data"
                     }
                   >
-                    {isGeneratingLabel ? 'Generating...' : 'Generate Label'}
+                    {isGeneratingLabel ? 'Generating...' : 'Print Label'}
                   </Button>
                   <Button type="submit" disabled={isSubmitting || loading || isGeneratingLabel}>
                     {isSubmitting || loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
