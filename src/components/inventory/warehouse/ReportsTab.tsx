@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/auth';
 
 // Import report components
 import { ReportsControls } from '../reports/ReportsControls';
@@ -42,6 +43,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouse
   const [selectedTeam, setSelectedTeam] = useState<string | undefined>(defaultTeamId);
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
   const [isLoading, setIsLoading] = useState(false);
 
   // Data state
@@ -114,8 +118,8 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouse
       
       // Use warehouse-specific function if we have a warehouseId
       const movements = warehouseId 
-        ? await inventoryReportsService.getWarehouseDailyMovements(warehouseId, dateString)
-        : await inventoryReportsService.getDailyMovements(dateString, selectedTeam);
+        ? await inventoryReportsService.getWarehouseDailyMovements(organizationId!, warehouseId, dateString)
+        : await inventoryReportsService.getDailyMovements(organizationId!, dateString, selectedTeam);
       
       setDailyMovements(movements);
     } catch (error) {
