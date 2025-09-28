@@ -495,16 +495,24 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
 
       // Add nutritional facts if available
       const flatNutritionalForLabel = convertAdditiveToFlat(nutritionalData);
+      
+      // Debug logging to trace data transformation
+      console.log('[NUTRI_PIPE] raw form:', nutritionalData);
+      console.log('[NUTRI_PIPE] flat:', flatNutritionalForLabel);
+      
       if (hasNutritionOrIngredients(flatNutritionalForLabel, ingredientsData)) {
-        if (nutritionalData.serving_size || nutritionalData.nutritional_fields.length > 0) {
+        // Use only flat structure for consistency (no mixing!)
+        if (flatNutritionalForLabel.serving_size || Object.values(flatNutritionalForLabel).some(v => typeof v === 'number' || v === 0)) {
           const nutritionData = {
-            servingSize: nutritionalData.serving_size,
-            calories: flatNutritionalForLabel.calories,
-            totalFat: flatNutritionalForLabel.total_fat,
-            sodium: flatNutritionalForLabel.sodium,
-            totalCarbs: flatNutritionalForLabel.total_carbohydrates,
-            protein: flatNutritionalForLabel.protein
+            servingSize: flatNutritionalForLabel.serving_size,
+            calories: flatNutritionalForLabel.calories ?? 0,
+            totalFat: flatNutritionalForLabel.total_fat ?? 0,
+            sodium: flatNutritionalForLabel.sodium ?? 0,
+            totalCarbs: flatNutritionalForLabel.total_carbohydrate ?? 0, // Fixed: singular, not plural
+            protein: flatNutritionalForLabel.protein ?? 0
           };
+          
+          console.log('[NUTRI_PIPE] nutritionData for renderer:', nutritionData);
           
           labelContent.push({
             type: 'nutritional_facts' as any,

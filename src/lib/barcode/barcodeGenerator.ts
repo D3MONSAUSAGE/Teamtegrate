@@ -241,7 +241,7 @@ export class BarcodeGenerator {
         currentY += lineHeight;
       }
       
-      if (data.calories) {
+      if (data.calories !== null && data.calories !== undefined) {
         pdf.setFont('helvetica', 'bold');
         pdf.text(`Calories: ${data.calories}`, x, currentY);
         pdf.setFont('helvetica', 'normal');
@@ -256,7 +256,7 @@ export class BarcodeGenerator {
       ];
 
       nutrients.forEach(nutrient => {
-        if (nutrient.value) {
+        if (nutrient.value !== null && nutrient.value !== undefined) {
           pdf.text(`${nutrient.label}: ${nutrient.value}${nutrient.unit}`, x, currentY);
           currentY += lineHeight;
         }
