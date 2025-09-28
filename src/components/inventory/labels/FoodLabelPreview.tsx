@@ -113,22 +113,29 @@ export const FoodLabelPreview: React.FC<FoodLabelPreviewProps> = ({
   const futureDate = new Date();
   futureDate.setMonth(futureDate.getMonth() + 6);
 
+  const hasNutritionalData = nutritionalInfo && (
+    nutritionalInfo.calories || 
+    nutritionalInfo.serving_size || 
+    nutritionalInfo.ingredients ||
+    nutritionalInfo.allergens?.length
+  );
+
   const labelData = {
     name: currentItem.name,
     sku: currentItem.sku || `SKU-${currentItem.id.slice(-6)}`,
     lot_number: activeLot?.lot_number || `LOT${today.toISOString().slice(2, 10).replace(/-/g, '')}${Math.random().toString(36).slice(-4).toUpperCase()}`,
     expiration_date: activeLot?.expiration_date || futureDate.toISOString().split('T')[0],
-    ingredients: nutritionalInfo?.ingredients || 'Organic ingredients, natural flavors, preservatives',
-    allergens: nutritionalInfo?.allergens?.join(', ') || 'May contain traces of nuts and dairy',
+    ingredients: nutritionalInfo?.ingredients,
+    allergens: nutritionalInfo?.allergens?.join(', '),
     image_url: currentItem.image_url,
-    nutritional_info: {
-      servingSize: nutritionalInfo?.serving_size || '1 serving (100g)',
-      calories: nutritionalInfo?.calories || 250,
-      totalFat: nutritionalInfo?.total_fat || 12,
-      sodium: nutritionalInfo?.sodium || 350,
-      totalCarbs: nutritionalInfo?.total_carbohydrates || 28,
-      protein: nutritionalInfo?.protein || 15
-    }
+    nutritional_info: nutritionalInfo ? {
+      servingSize: nutritionalInfo.serving_size,
+      calories: nutritionalInfo.calories,
+      totalFat: nutritionalInfo.total_fat,
+      sodium: nutritionalInfo.sodium,
+      totalCarbs: nutritionalInfo.total_carbohydrates,
+      protein: nutritionalInfo.protein
+    } : null
   };
 
   return (
@@ -210,28 +217,58 @@ export const FoodLabelPreview: React.FC<FoodLabelPreviewProps> = ({
         {/* Nutritional Facts */}
         <div className="border-t border-border pt-2">
           <div className="font-bold text-sm text-foreground">Nutrition Facts</div>
-          <div className="text-xs space-y-0.5 text-foreground">
-            <div>Serving Size: {labelData.nutritional_info.servingSize}</div>
-            <div className="font-semibold">Calories: {labelData.nutritional_info.calories}</div>
-            <div>Total Fat: {labelData.nutritional_info.totalFat}g</div>
-            <div>Sodium: {labelData.nutritional_info.sodium}mg</div>
-            <div>Total Carbs: {labelData.nutritional_info.totalCarbs}g</div>
-            <div>Protein: {labelData.nutritional_info.protein}g</div>
-          </div>
+          {labelData.nutritional_info ? (
+            <div className="text-xs space-y-0.5 text-foreground">
+              {labelData.nutritional_info.servingSize && (
+                <div>Serving Size: {labelData.nutritional_info.servingSize}</div>
+              )}
+              {labelData.nutritional_info.calories && (
+                <div className="font-semibold">Calories: {labelData.nutritional_info.calories}</div>
+              )}
+              {labelData.nutritional_info.totalFat && (
+                <div>Total Fat: {labelData.nutritional_info.totalFat}g</div>
+              )}
+              {labelData.nutritional_info.sodium && (
+                <div>Sodium: {labelData.nutritional_info.sodium}mg</div>
+              )}
+              {labelData.nutritional_info.totalCarbs && (
+                <div>Total Carbs: {labelData.nutritional_info.totalCarbs}g</div>
+              )}
+              {labelData.nutritional_info.protein && (
+                <div>Protein: {labelData.nutritional_info.protein}g</div>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border-2 border-dashed border-muted-foreground/30">
+              No nutritional data available
+            </div>
+          )}
         </div>
 
         {/* Ingredients */}
         <div className="border-t border-border pt-2">
           <div className="font-bold text-foreground">INGREDIENTS:</div>
-          <div className="text-xs leading-tight text-foreground">{labelData.ingredients}</div>
+          {labelData.ingredients ? (
+            <div className="text-xs leading-tight text-foreground">{labelData.ingredients}</div>
+          ) : (
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border-2 border-dashed border-muted-foreground/30">
+              No ingredients data available
+            </div>
+          )}
         </div>
 
         {/* Allergen Warning */}
         <div className="border-t border-border pt-2">
           <div className="font-bold text-foreground">ALLERGEN WARNING:</div>
-          <div className="text-xs font-medium bg-warning/20 text-warning-foreground p-1 rounded border border-warning/40">
-            Contains: {labelData.allergens}
-          </div>
+          {labelData.allergens ? (
+            <div className="text-xs font-medium bg-warning/20 text-warning-foreground p-1 rounded border border-warning/40">
+              Contains: {labelData.allergens}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border-2 border-dashed border-muted-foreground/30">
+              No allergen data available
+            </div>
+          )}
         </div>
 
         {/* Footer badges */}

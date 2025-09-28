@@ -15,6 +15,7 @@ import { labelTemplatesApi, LabelTemplate } from '@/contexts/inventory/api/label
 import { InventoryItem } from '@/contexts/inventory/types';
 import { ImageUpload } from '@/components/inventory/ImageUpload';
 import { FoodLabelPreview } from './FoodLabelPreview';
+import { NutritionalDataForm } from './NutritionalDataForm';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { 
   Package, 
@@ -411,12 +412,19 @@ export const ProfessionalLabelDesigner: React.FC = () => {
 
                 {selectedItem && (
                   <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Data Availability:</span>
-                      <Badge className="bg-green-100 text-green-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Data Availability:</span>
+                    <div className="flex items-center gap-2">
+                      <Badge className={availableDataStats.available === availableDataStats.total ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
                         {availableDataStats.available}/{availableDataStats.total} Available
                       </Badge>
+                      {availableDataStats.available < availableDataStats.total && (
+                        <span className="text-xs text-muted-foreground">
+                          Add nutritional data below for complete labels
+                        </span>
+                      )}
                     </div>
+                  </div>
                   </div>
                 )}
               </CardContent>
@@ -534,6 +542,18 @@ export const ProfessionalLabelDesigner: React.FC = () => {
                   ))}
                 </CardContent>
               </Card>
+            )}
+
+            {/* Step 3: Nutritional Data */}
+            {selectedItem && (
+              <NutritionalDataForm
+                selectedItem={selectedItem}
+                nutritionalInfo={nutritionalInfo}
+                onDataSaved={(data) => {
+                  setNutritionalInfo(data);
+                  toast.success('Nutritional data updated! Preview will refresh automatically.');
+                }}
+              />
             )}
 
             {/* Template Management */}
