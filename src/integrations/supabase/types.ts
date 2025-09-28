@@ -9399,6 +9399,7 @@ export type Database = {
           id: string
           item_id: string
           line_total: number | null
+          posted_at: string | null
           qty: number
           receipt_id: string
           unit_cost: number
@@ -9407,6 +9408,7 @@ export type Database = {
           id?: string
           item_id: string
           line_total?: number | null
+          posted_at?: string | null
           qty: number
           receipt_id: string
           unit_cost: number
@@ -9415,6 +9417,7 @@ export type Database = {
           id?: string
           item_id?: string
           line_total?: number | null
+          posted_at?: string | null
           qty?: number
           receipt_id?: string
           unit_cost?: number
@@ -9442,9 +9445,12 @@ export type Database = {
           created_by: string | null
           id: string
           notes: string | null
+          posted_at: string | null
+          posted_by: string | null
           received_at: string | null
           status: string
           subtotal: number | null
+          updated_at: string
           vendor_invoice: string | null
           vendor_name: string | null
           warehouse_id: string
@@ -9454,9 +9460,12 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
           received_at?: string | null
           status?: string
           subtotal?: number | null
+          updated_at?: string
           vendor_invoice?: string | null
           vendor_name?: string | null
           warehouse_id: string
@@ -9466,9 +9475,12 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
           received_at?: string | null
           status?: string
           subtotal?: number | null
+          updated_at?: string
           vendor_invoice?: string | null
           vendor_name?: string | null
           warehouse_id?: string
@@ -9479,6 +9491,20 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_receipts_posted_by_fkey"
+            columns: ["posted_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_receipts_posted_by_fkey"
+            columns: ["posted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
