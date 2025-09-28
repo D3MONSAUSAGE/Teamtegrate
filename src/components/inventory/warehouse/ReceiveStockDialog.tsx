@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Minus, Package, Search, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
+import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
+import { useScanGun } from '@/hooks/useScanGun';
+import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { toast } from 'sonner';
 
 interface ReceiveStockDialogProps {
@@ -20,8 +24,12 @@ interface ReceiveItem {
   item_id: string;
   item_name: string;
   sku?: string;
+  barcode?: string;
   quantity: number;
   unit_cost: number;
+  lot_number?: string;
+  expiration_date?: string;
+  manufacturing_date?: string;
 }
 
 export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
@@ -35,6 +43,52 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Scanner state
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanMode, setScanMode] = useState(false);
+  const [scannerConnected, setScannerConnected] = useState(false);
+
+  // Handle barcode scan
+  const handleBarcodeScanned = (barcode: string) => {
+    const item = inventoryItems.find(item => 
+      item.barcode === barcode || 
+      item.sku === barcode ||
+      item.name.toLowerCase().includes(barcode.toLowerCase())
+    );
+    
+    if (item) {
+      addItem(item.id);
+      toast.success(`Scanned: ${item.name}`);
+      
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    } else {
+      toast.error(`No item found with barcode: ${barcode}`);
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+    }
+  };
+
+  // Initialize hardware scanner
+  const { isListening, scannerConnected: hardwareScannerConnected, reset } = useScanGun({
+    onScan: handleBarcodeScanned,
+    onStart: () => console.log('SCANGUN_START'),
+    onStop: () => console.log('SCANGUN_STOP'),
+    enabled: scanMode && open,
+  });
+
+  // Update scanner connected state
+  useEffect(() => {
+    setScannerConnected(hardwareScannerConnected);
+    
+    if (hardwareScannerConnected && open) {
+      setScanMode(true);
+    }
+  }, [hardwareScannerConnected, open]);
 
   // Filter inventory items based on search
   const filteredItems = inventoryItems.filter(item => 
@@ -55,13 +109,18 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       updated[existingIndex].quantity += 1;
       setReceiveItems(updated);
     } else {
-      // Add new item
+      // Add new item with auto-generated lot number
+      const lotNumber = BarcodeGenerator.generateLotNumber('LOT');
       setReceiveItems([...receiveItems, {
         item_id: itemId,
         item_name: item.name,
         sku: item.sku,
+        barcode: item.barcode,
         quantity: 1,
-        unit_cost: 0
+        unit_cost: 0,
+        lot_number: lotNumber,
+        expiration_date: '',
+        manufacturing_date: new Date().toISOString().split('T')[0]
       }]);
     }
     setSearchQuery('');
@@ -79,6 +138,17 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
     const updated = [...receiveItems];
     updated[index].unit_cost = cost;
     setReceiveItems(updated);
+  };
+
+  const updateItemField = (index: number, field: keyof ReceiveItem, value: string | number) => {
+    const updated = [...receiveItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setReceiveItems(updated);
+  };
+
+  const generateLotNumber = (index: number) => {
+    const lotNumber = BarcodeGenerator.generateLotNumber('LOT');
+    updateItemField(index, 'lot_number', lotNumber);
   };
 
   const removeItem = (index: number) => {
@@ -101,12 +171,15 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
     try {
       setSubmitting(true);
 
-      // Prepare items for the API
+      // Prepare items for the API with lot tracking
       const items = receiveItems.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
         unit_cost: item.unit_cost,
-        notes: notes || 'Stock received'
+        notes: notes || 'Stock received',
+        lot_number: item.lot_number,
+        expiration_date: item.expiration_date || null,
+        manufacturing_date: item.manufacturing_date || null
       }));
 
       // Call the new receiveStock API
@@ -142,6 +215,40 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Scanner Controls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {scannerConnected && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">Scanner Connected</span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="scan-mode"
+                  checked={scanMode}
+                  onCheckedChange={setScanMode}
+                />
+                <Label htmlFor="scan-mode" className="flex items-center gap-2">
+                  <Scan className="h-4 w-4" />
+                  Scan Mode
+                </Label>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowScanner(true)}
+                className="flex items-center gap-2"
+              >
+                <Scan className="h-4 w-4" />
+                Camera Scan
+              </Button>
+            </div>
+          </div>
+
           {/* Add Items Section */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -183,58 +290,113 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
               <Label>Items to Receive</Label>
               <div className="space-y-3">
                 {receiveItems.map((item, index) => (
-                  <div key={item.item_id} className="flex items-center gap-3 p-3 border rounded-md">
-                    <div className="flex-1">
-                      <div className="font-medium">{item.item_name}</div>
-                      {item.sku && <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
+                  <div key={item.item_id} className="border rounded-lg p-4 space-y-4">
+                    {/* Item Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium">{item.item_name}</div>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          {item.sku && <span>SKU: {item.sku}</span>}
+                          {item.barcode && <span>Barcode: {item.barcode}</span>}
+                        </div>
+                      </div>
+                      
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateItemQuantity(index, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
+                        onClick={() => removeItem(index)}
+                        className="text-destructive hover:text-destructive"
                       >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
-                        className="w-20 text-center"
-                        min="1"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateItemQuantity(index, item.quantity + 1)}
-                      >
-                        <Plus className="h-3 w-3" />
+                        Remove
                       </Button>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        placeholder="Unit cost"
-                        value={item.unit_cost}
-                        onChange={(e) => updateItemCost(index, parseFloat(e.target.value) || 0)}
-                        className="w-24"
-                        min="0"
-                        step="0.01"
-                      />
+                    {/* Quantity and Cost Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Quantity</Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateItemQuantity(index, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
+                            className="w-20 text-center"
+                            min="1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateItemQuantity(index, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Unit Cost</Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">$</span>
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={item.unit_cost}
+                            onChange={(e) => updateItemCost(index, parseFloat(e.target.value) || 0)}
+                            className="flex-1"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Remove
-                    </Button>
+                    {/* Lot Tracking Row */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Lot Number</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={item.lot_number || ''}
+                            onChange={(e) => updateItemField(index, 'lot_number', e.target.value)}
+                            placeholder="Auto-generated"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => generateLotNumber(index)}
+                          >
+                            <QrCode className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Manufacturing Date</Label>
+                        <Input
+                          type="date"
+                          value={item.manufacturing_date || ''}
+                          onChange={(e) => updateItemField(index, 'manufacturing_date', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Expiration Date</Label>
+                        <Input
+                          type="date"
+                          value={item.expiration_date || ''}
+                          onChange={(e) => updateItemField(index, 'expiration_date', e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -263,6 +425,15 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Scanner Overlay */}
+      <ScannerOverlay
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onBarcode={handleBarcodeScanned}
+        continuous={true}
+        instructions="Scan item barcodes to add them to receiving"
+      />
     </Dialog>
   );
 };

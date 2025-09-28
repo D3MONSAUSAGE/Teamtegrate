@@ -186,66 +186,36 @@ export const warehouseApi = {
     return data || [];
   },
 
-  // Receive stock - simplified approach that updates warehouse items directly
+  // Receive stock using database function
   async receiveStock(warehouseId: string, items: Array<{
     item_id: string;
     quantity: number;
     unit_cost: number;
     notes?: string;
+    lot_number?: string;
+    expiration_date?: string;
+    manufacturing_date?: string;
   }>): Promise<{ success: boolean; message?: string }> {
     try {
-      // For each item, update or insert warehouse_items and create inventory transaction
+      const { data: authUser } = await supabase.auth.getUser();
+      if (!authUser.user) throw new Error('User not authenticated');
+
+      // Call the receive_stock database function for each item
       for (const item of items) {
-        // First, upsert warehouse_items
-        const { error: warehouseError } = await supabase
-          .from('warehouse_items')
-          .upsert({
-            warehouse_id: warehouseId,
-            item_id: item.item_id,
-            on_hand: item.quantity,
-            available: item.quantity,
-            allocated: 0
-          }, {
-            onConflict: 'warehouse_id,item_id'
-          });
+        const { error } = await supabase.rpc('receive_stock', {
+          p_warehouse_id: warehouseId,
+          p_item_id: item.item_id,
+          p_quantity: item.quantity,
+          p_unit_cost: item.unit_cost,
+          p_notes: item.notes || 'Stock received',
+          p_lot_number: item.lot_number || null,
+          p_expiration_date: item.expiration_date || null,
+          p_manufacturing_date: item.manufacturing_date || null,
+          p_user_id: authUser.user.id
+        });
 
-        if (warehouseError) {
-          throw new Error(`Failed to update warehouse stock: ${warehouseError.message}`);
-        }
-
-        // Create inventory transaction with required fields
-        const { data: authUser } = await supabase.auth.getUser();
-        if (!authUser.user) throw new Error('User not authenticated');
-
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('organization_id')
-          .eq('id', authUser.user.id)
-          .single();
-
-        if (userError || !userData?.organization_id) {
-          throw new Error('Could not determine your organization.');
-        }
-
-        const { error: transactionError } = await supabase
-          .from('inventory_transactions')
-          .insert({
-            organization_id: userData.organization_id,
-            item_id: item.item_id,
-            warehouse_id: warehouseId,
-            transaction_type: 'in',
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_cost: item.quantity * item.unit_cost,
-            transaction_date: new Date().toISOString().split('T')[0],
-            notes: item.notes || 'Stock received',
-            reference_number: `RCV-${Date.now()}`,
-            user_id: authUser.user.id,
-            created_by: authUser.user.id
-          });
-
-        if (transactionError) {
-          throw new Error(`Failed to create transaction: ${transactionError.message}`);
+        if (error) {
+          throw new Error(`Failed to receive ${item.quantity} of item: ${error.message}`);
         }
       }
 
