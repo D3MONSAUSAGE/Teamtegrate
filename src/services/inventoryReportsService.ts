@@ -66,11 +66,44 @@ export interface DailyInventorySummary {
 export const inventoryReportsService = {
   async getRealTimeInventoryValue(teamId?: string): Promise<InventoryValueSummary[]> {
     const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
-      p_team_id: teamId || null
+      team_id_param: teamId || null
     });
     
     if (error) throw error;
-    return data || [];
+    
+    // Transform the detailed inventory data into team summaries
+    if (!data || data.length === 0) return [];
+    
+    const teamSummaries = new Map<string, InventoryValueSummary>();
+    
+    data.forEach((item: any) => {
+      const teamId = item.team_id;
+      
+      if (!teamSummaries.has(teamId)) {
+        teamSummaries.set(teamId, {
+          team_id: teamId,
+          team_name: item.team_name,
+          total_value: 0,
+          total_items: 0,
+          low_stock_count: 0,
+          overstock_count: 0
+        });
+      }
+      
+      const summary = teamSummaries.get(teamId)!;
+      summary.total_value += Number(item.total_value);
+      summary.total_items += 1;
+      
+      // Check if item is low stock or overstock
+      if (item.current_stock <= item.reorder_point) {
+        summary.low_stock_count += 1;
+      }
+      if (item.current_stock >= item.max_stock_level) {
+        summary.overstock_count += 1;
+      }
+    });
+    
+    return Array.from(teamSummaries.values());
   },
 
   async getDailyMovements(date?: string, teamId?: string): Promise<DailyMovement[]> {

@@ -10413,14 +10413,18 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args: { p_team_id?: string }
+        Args: { team_id_param?: string }
         Returns: {
-          low_stock_count: number
-          overstock_count: number
+          current_stock: number
+          item_id: string
+          item_name: string
+          last_updated: string
+          max_stock_level: number
+          reorder_point: number
           team_id: string
           team_name: string
-          total_items: number
           total_value: number
+          unit_cost: number
         }[]
       }
       get_request_notification_recipients: {
