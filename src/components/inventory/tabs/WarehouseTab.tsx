@@ -3,6 +3,7 @@ import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { ReceiveStockDrawer } from '../warehouse/ReceiveStockDrawer';
 import { SimpleCheckout } from '../warehouse/SimpleCheckout';
+import { WarehouseSettingsTab } from '../warehouse/WarehouseSettingsTab';
 
 import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
@@ -10,7 +11,7 @@ import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Minus, ShoppingCart, Plus, Play } from 'lucide-react';
+import { Package, Minus, ShoppingCart, Plus, Play, Settings } from 'lucide-react';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -279,7 +280,8 @@ export const WarehouseTab: React.FC = () => {
     { id: 'stock', label: 'Warehouse Stock' },
     { id: 'processing', label: 'Processing' },
     { id: 'outgoing', label: 'Outgoing' },
-    { id: 'reports', label: 'Reports' }
+    { id: 'reports', label: 'Reports' },
+    { id: 'settings', label: 'Settings' }
   ];
 
   const renderTabContent = () => {
@@ -297,6 +299,11 @@ export const WarehouseTab: React.FC = () => {
         />;
       case 'reports':
         return <ReportsTab defaultTeamId={warehouse?.team_id} />;
+      case 'settings':
+        return <WarehouseSettingsTab 
+          warehouseId={warehouse.id} 
+          onRefresh={handleRefresh} 
+        />;
       default:
         return <WarehouseStock key={refreshKey} warehouseId={warehouse.id} onRefresh={handleRefresh} />;
     }
