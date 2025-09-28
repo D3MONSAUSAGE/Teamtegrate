@@ -193,9 +193,62 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   };
 
   const updateLineItem = (id: string, field: keyof CheckoutItem, value: string | number) => {
-    setCheckoutItems(prev => prev.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ));
+    setCheckoutItems(prev => prev.map(item => {
+      if (item.id === id) {
+        // Stock validation for quantity field
+        if (field === 'quantity') {
+          const numValue = typeof value === 'string' ? parseFloat(value) : value;
+          const maxStock = item.on_hand || 0;
+          
+          if (numValue > maxStock) {
+            toast.error(`Cannot exceed available stock of ${maxStock}`);
+            return item; // Don't update if exceeds stock
+          }
+          if (numValue < 0) {
+            return { ...item, [field]: 0 }; // Don't allow negative quantities
+          }
+        }
+        return { ...item, [field]: value };
+      }
+      return item;
+    }));
+  };
+
+  const incrementQuantity = (id: string) => {
+    const item = checkoutItems.find(item => item.id === id);
+    if (!item) return;
+    
+    const newQuantity = item.quantity + 1;
+    const maxStock = item.on_hand || 0;
+    
+    if (newQuantity > maxStock) {
+      toast.error(`Cannot exceed available stock of ${maxStock}`);
+      // Add haptic feedback for error
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+      return;
+    }
+    
+    updateLineItem(id, 'quantity', newQuantity);
+    
+    // Add haptic feedback for success
+    if (navigator.vibrate) {
+      navigator.vibrate(35);
+    }
+  };
+
+  const decrementQuantity = (id: string) => {
+    const item = checkoutItems.find(item => item.id === id);
+    if (!item) return;
+    
+    const newQuantity = Math.max(0, item.quantity - 1);
+    updateLineItem(id, 'quantity', newQuantity);
+    
+    // Add haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(35);
+    }
   };
 
   const calculateSubtotal = () => {
@@ -591,72 +644,133 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
                     {checkoutItems.map((item) => (
-                      <Card key={item.id}>
+                      <Card key={item.id} className="border-l-4 border-l-primary/20">
                         <CardContent className="p-4">
-                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-                            {/* Item Info */}
-                            <div className="lg:col-span-4">
-                              <div className="font-medium">{item.name}</div>
-                              <div className="text-sm text-muted-foreground flex gap-2">
-                                {item.sku && <span>SKU: {item.sku}</span>}
-                                {item.barcode && <span>| {item.barcode}</span>}
-                                <span>Available: {item.on_hand}</span>
+                          {/* Mobile-First Layout */}
+                          <div className="space-y-4">
+                            {/* Item Header */}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-base leading-tight mb-1">
+                                  {item.name}
+                                </h4>
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                  {item.sku && (
+                                    <Badge variant="outline" className="text-xs">
+                                      SKU: {item.sku}
+                                    </Badge>
+                                  )}
+                                  {item.barcode && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {item.barcode}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            
-                            {/* Quantity */}
-                            <div className="lg:col-span-2">
-                              <Label className="text-xs">Quantity</Label>
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                max={item.on_hand}
-                                placeholder="0"
-                                value={item.quantity || ''}
-                                onChange={(e) => updateLineItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                              />
-                            </div>
-                            
-                             {/* Unit Price */}
-                             <div className="lg:col-span-2">
-                               <Label className="text-xs">Sale Price</Label>
-                               <Input
-                                 type="number"
-                                 step="0.01"
-                                 min="0"
-                                 placeholder="0.00"
-                                 value={item.unit_price || ''}
-                                 onChange={(e) => updateLineItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                               />
-                               {item.unit_cost && (
-                                 <div className="text-xs text-muted-foreground mt-1">
-                                   Cost: {formatCurrency(item.unit_cost)} | 
-                                   Profit: {formatCurrency((item.unit_price || 0) - item.unit_cost)}
-                                 </div>
-                               )}
-                             </div>
-                            
-                            {/* Line Total */}
-                            <div className="lg:col-span-2 text-right">
-                              <Label className="text-xs">Line Total</Label>
-                              <div className="font-medium">
-                                {formatCurrency((item.quantity || 0) * (item.unit_price || 0))}
-                              </div>
-                            </div>
-                            
-                            {/* Actions */}
-                            <div className="lg:col-span-2 flex justify-end">
                               <Button
                                 onClick={() => removeLineItem(item.id)}
                                 size="sm"
                                 variant="ghost"
-                                className="text-destructive hover:text-destructive"
+                                className="text-destructive hover:text-destructive min-h-[44px] min-w-[44px] p-0 shrink-0 ml-2"
                               >
                                 <X className="h-4 w-4" />
                               </Button>
+                            </div>
+
+                            {/* Stock and Price Info */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Badge 
+                                  variant={
+                                    (item.on_hand || 0) <= 0 ? 'destructive' : 
+                                    (item.on_hand || 0) <= 5 ? 'secondary' : 'default'
+                                  }
+                                  className="text-xs"
+                                >
+                                  Stock: {item.on_hand || 0}
+                                </Badge>
+                                {item.unit_cost && (
+                                  <div className="text-sm text-muted-foreground">
+                                    Cost: {formatCurrency(item.unit_cost)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold">
+                                  {formatCurrency((item.quantity || 0) * (item.unit_price || 0))}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Line Total
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Quantity Controls - Mobile Optimized */}
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">Quantity</Label>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => decrementQuantity(item.id)}
+                                    disabled={item.quantity <= 0}
+                                    className="h-10 w-10 p-0 shrink-0"
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <div className="mx-3 text-center min-w-[60px]">
+                                    <div className="text-2xl font-bold">{item.quantity}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      of {item.on_hand || 0}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => incrementQuantity(item.id)}
+                                    disabled={item.quantity >= (item.on_hand || 0)}
+                                    className="h-10 w-10 p-0 shrink-0"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Unit Price Section */}
+                              <div className="flex items-center justify-between gap-4">
+                                <Label className="text-sm font-medium">Sale Price</Label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    value={item.unit_price || ''}
+                                    onChange={(e) => updateLineItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                    className="w-24 text-right h-10"
+                                  />
+                                  <div className="text-sm text-muted-foreground">
+                                    each
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Profit Display */}
+                              {item.unit_cost && (item.unit_price || 0) > 0 && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">Profit per unit:</span>
+                                  <span className={`font-medium ${
+                                    ((item.unit_price || 0) - item.unit_cost) >= 0 
+                                      ? 'text-green-600' 
+                                      : 'text-red-600'
+                                  }`}>
+                                    {formatCurrency((item.unit_price || 0) - item.unit_cost)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CardContent>
