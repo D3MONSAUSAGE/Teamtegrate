@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, Package, Trash2, Plus, Minus, ShoppingCart, DollarSign } from 'lucide-react';
+import { Search, Package, Trash2, Plus, Minus, ShoppingCart, DollarSign, Scan, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { inventoryTransactionsApi } from '@/contexts/inventory/api/inventoryTransactions';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
+import { useScanGun } from '@/hooks/useScanGun';
 
 interface CheckoutItem {
   id: string;
@@ -33,6 +35,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
   const [availableItems, setAvailableItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Load available items when search term changes
@@ -47,19 +50,9 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
   const loadAvailableItems = async () => {
     try {
       setIsLoading(true);
-      const warehouseItems = await warehouseApi.listWarehouseItems(warehouseId);
-      
-      // Filter items based on search and stock availability
-      const filtered = warehouseItems
-        .filter(item => 
-          item.on_hand > 0 && 
-          (item.item?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           item.item?.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           item.item?.barcode?.includes(searchTerm))
-        )
-        .slice(0, 10);
-      
-      setAvailableItems(filtered);
+      // Use hybrid search to show ALL team inventory items with their warehouse stock status
+      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId, searchTerm, 15);
+      setAvailableItems(results);
     } catch (error) {
       console.error('Error loading items:', error);
       toast.error('Failed to search items');
@@ -68,27 +61,33 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
     }
   };
 
-  const addToCart = (warehouseItem: any) => {
-    const existingItem = cart.find(item => item.id === warehouseItem.item_id);
+  const addToCart = (item: any) => {
+    // Check if item has stock
+    if (item.on_hand <= 0) {
+      toast.error(`${item.name} is out of stock`);
+      return;
+    }
+    
+    const existingItem = cart.find(cartItem => cartItem.id === item.id);
     
     if (existingItem) {
       // Increase quantity if already in cart
-      if (existingItem.quantity < warehouseItem.on_hand) {
-        updateQuantity(warehouseItem.item_id, existingItem.quantity + 1);
+      if (existingItem.quantity < item.on_hand) {
+        updateQuantity(item.id, existingItem.quantity + 1);
       } else {
-        toast.error(`Cannot add more. Only ${warehouseItem.on_hand} available in stock.`);
+        toast.error(`Cannot add more. Only ${item.on_hand} available in stock.`);
       }
     } else {
       // Add new item to cart
       const newItem: CheckoutItem = {
-        id: warehouseItem.item_id,
-        name: warehouseItem.item?.name || 'Unknown Item',
-        sku: warehouseItem.item?.sku,
-        barcode: warehouseItem.item?.barcode,
-        availableStock: warehouseItem.on_hand,
-        unitPrice: warehouseItem.wac_unit_cost || 0,
+        id: item.id,
+        name: item.name || 'Unknown Item',
+        sku: item.sku,
+        barcode: item.barcode,
+        availableStock: item.on_hand,
+        unitPrice: item.unit_cost || 0,
         quantity: 1,
-        total: warehouseItem.wac_unit_cost || 0
+        total: item.unit_cost || 0
       };
       
       setCart(prev => [...prev, newItem]);
@@ -183,6 +182,53 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
     }
   };
 
+  // Scanner functionality
+  const handleScanRequest = () => {
+    setShowScanner(true);
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    setShowScanner(false);
+    setSearchTerm(barcode);
+    
+    // Trigger search with barcode
+    try {
+      setIsLoading(true);
+      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId, barcode, 5);
+      
+      if (results.length === 0) {
+        toast.error(`No item found with barcode: ${barcode}`);
+        return;
+      }
+      
+      // Auto-add first result if it has stock
+      const item = results[0];
+      if (item.on_hand > 0) {
+        addToCart(item);
+        toast.success(`Scanned and added: ${item.name}`);
+      } else {
+        toast.error(`${item.name} is out of stock`);
+        setAvailableItems(results); // Show in search results
+      }
+    } catch (error) {
+      console.error('Error searching scanned item:', error);
+      toast.error('Failed to find scanned item');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Scan gun support
+  const handleScanGunDetected = (code: string) => {
+    handleBarcodeScanned(code);
+  };
+
+  useScanGun({
+    onScan: handleScanGunDetected,
+    enabled: true,
+    minLength: 4
+  });
+
   return (
     <div className="space-y-6 p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
@@ -205,15 +251,26 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                ref={searchInputRef}
-                placeholder="Search by name, SKU, or barcode..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  placeholder="Search by name, SKU, or barcode..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleScanRequest}
+                className="shrink-0"
+              >
+                <Scan className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Search Results */}
@@ -225,24 +282,44 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
             
             {availableItems.length > 0 && (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {availableItems.map((item) => (
-                  <div
-                    key={item.item_id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => addToCart(item)}
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium">{item.item?.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Stock: {item.on_hand} • ${item.wac_unit_cost?.toFixed(2) || '0.00'}
-                        {item.item?.sku && ` • SKU: ${item.item.sku}`}
+                {availableItems.map((item) => {
+                  const isOutOfStock = item.on_hand <= 0;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-center justify-between p-3 border rounded-lg ${
+                        isOutOfStock 
+                          ? 'opacity-60 cursor-not-allowed' 
+                          : 'hover:bg-muted/50 cursor-pointer'
+                      }`}
+                      onClick={() => !isOutOfStock && addToCart(item)}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium">{item.name}</div>
+                          {isOutOfStock && (
+                            <Badge variant="destructive" className="text-xs">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Out of Stock
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Stock: {item.on_hand} • ${item.unit_cost?.toFixed(2) || '0.00'}
+                          {item.sku && ` • SKU: ${item.sku}`}
+                          {item.team_id && ` • Team Item`}
+                        </div>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled={isOutOfStock}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button size="sm" variant="outline">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             
@@ -352,6 +429,15 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({ warehouseId, onC
           </CardContent>
         </Card>
       </div>
+
+      {/* Scanner Overlay */}
+      <ScannerOverlay
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onBarcode={handleBarcodeScanned}
+        continuous={false}
+        instructions="Position the barcode within the scanning frame"
+      />
     </div>
   );
 };
