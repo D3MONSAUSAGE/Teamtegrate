@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { ReportsControls } from '../reports/ReportsControls';
 import { InventoryMetricsCards } from '../reports/InventoryMetricsCards';
 import { TeamValueChart } from '../reports/TeamValueChart';
-import { DailyMovementChart } from '../reports/DailyMovementChart';
+import { TransactionRecordsChart } from '../reports/TransactionRecordsChart';
 import { SalesMetricsCards } from '../reports/SalesMetricsCards';
 import { TeamSalesChart } from '../reports/TeamSalesChart';
 
@@ -16,7 +16,7 @@ import { TeamSalesChart } from '../reports/TeamSalesChart';
 import { 
   inventoryReportsService, 
   InventoryValueSummary, 
-  DailyMovement,
+  TransactionRecord,
   WeeklyMovement,
   MonthlyTeamPerformance 
 } from '@/services/inventoryReportsService';
@@ -46,7 +46,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouse
 
   // Data state
   const [inventoryValue, setInventoryValue] = useState<InventoryValueSummary[]>([]);
-  const [dailyMovements, setDailyMovements] = useState<DailyMovement[]>([]);
+  const [dailyMovements, setDailyMovements] = useState<TransactionRecord[]>([]);
   const [weeklyMovements, setWeeklyMovements] = useState<WeeklyMovement[]>([]);
   const [monthlyPerformance, setMonthlyPerformance] = useState<MonthlyTeamPerformance[]>([]);
   
@@ -244,7 +244,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({ defaultTeamId, warehouse
         <TabsContent value="daily" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TeamValueChart data={inventoryValue} isLoading={isLoading} />
-            <DailyMovementChart 
+            <TransactionRecordsChart 
               data={dailyMovements} 
               selectedDate={format(selectedDate, 'yyyy-MM-dd')}
               isLoading={isLoading}

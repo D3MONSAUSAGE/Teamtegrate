@@ -17,6 +17,22 @@ export interface DailyMovement {
   po_numbers: string[];
 }
 
+export interface TransactionRecord {
+  id: string;
+  item_id: string;
+  item_name: string;
+  transaction_type: string;
+  quantity: number;
+  unit_cost: number;
+  total_value: number;
+  transaction_date: string;
+  created_by: string;
+  team_id: string;
+  warehouse_id: string;
+  notes?: string;
+  organization_id: string;
+}
+
 export interface WeeklyMovement {
   week_start: string;
   team_id: string;
@@ -65,76 +81,178 @@ export interface DailyInventorySummary {
 
 export const inventoryReportsService = {
   async getRealTimeInventoryValue(teamId?: string): Promise<InventoryValueSummary[]> {
-    const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
-      team_id_param: teamId || null
-    });
+    console.log('📊 Fetching real-time inventory value for team:', teamId);
     
-    if (error) throw error;
-    
-    // Transform the detailed inventory data into team summaries
-    if (!data || data.length === 0) return [];
-    
-    const teamSummaries = new Map<string, InventoryValueSummary>();
-    
-    data.forEach((item: any) => {
-      const teamId = item.team_id;
-      
-      if (!teamSummaries.has(teamId)) {
-        teamSummaries.set(teamId, {
-          team_id: teamId,
-          team_name: item.team_name,
-          total_value: 0,
-          total_items: 0,
-          low_stock_count: 0,
-          overstock_count: 0
+    try {
+      const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
+        p_team_id: teamId || null
+      });
+
+      if (error) {
+        console.error('❌ Error fetching real-time inventory value:', error);
+        console.error('Error details:', { 
+          message: error.message, 
+          details: error.details, 
+          hint: error.hint,
+          code: error.code 
         });
+        throw error;
+      }
+
+      console.log('✅ Raw inventory value data:', { 
+        count: data?.length || 0, 
+        sample: data?.[0] 
+      });
+
+      // Transform the detailed inventory data into team summaries
+      if (!data || data.length === 0) {
+        console.log('📦 No inventory data found');
+        return [];
       }
       
-      const summary = teamSummaries.get(teamId)!;
-      summary.total_value += Number(item.total_value);
-      summary.total_items += 1;
+      const teamSummaries = new Map<string, InventoryValueSummary>();
       
-      // Check if item is low stock or overstock
-      if (item.current_stock <= item.reorder_point) {
-        summary.low_stock_count += 1;
-      }
-      if (item.current_stock >= item.max_stock_level) {
-        summary.overstock_count += 1;
-      }
-    });
-    
-    return Array.from(teamSummaries.values());
+      data.forEach((item: any) => {
+        const itemTeamId = item.team_id || 'no-team';
+        
+        if (!teamSummaries.has(itemTeamId)) {
+          teamSummaries.set(itemTeamId, {
+            team_id: itemTeamId,
+            team_name: item.team_name || 'Unassigned',
+            total_value: 0,
+            total_items: 0,
+            low_stock_count: 0,
+            overstock_count: 0
+          });
+        }
+        
+        const summary = teamSummaries.get(itemTeamId)!;
+        summary.total_value += Number(item.total_value) || 0;
+        summary.total_items += 1;
+        
+        // Note: Stock level checking would need reorder_point and max_stock_level from inventory items
+        // For now, we'll skip these calculations
+      });
+      
+      const summaries = Array.from(teamSummaries.values());
+      console.log('📈 Generated team summaries:', { 
+        teamCount: summaries.length,
+        totalValue: summaries.reduce((sum, s) => sum + s.total_value, 0) 
+      });
+      
+      return summaries;
+    } catch (error) {
+      console.error('💥 Exception in getRealTimeInventoryValue:', error);
+      return [];
+    }
   },
 
-  async getDailyMovements(date?: string, teamId?: string, warehouseId?: string): Promise<DailyMovement[]> {
-    const { data, error } = await supabase.rpc('get_daily_movements', {
-      p_date: date || new Date().toISOString().split('T')[0],
-      p_team_id: teamId || null,
-      p_warehouse_id: warehouseId || null
-    });
+  async getDailyMovements(date?: string, teamId?: string, warehouseId?: string): Promise<TransactionRecord[]> {
+    console.log('🏭 Fetching daily movements:', { date, teamId, warehouseId });
     
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await supabase.rpc('get_daily_movements', {
+        p_date: date || new Date().toISOString().split('T')[0],
+        p_team_id: teamId || null,
+        p_warehouse_id: warehouseId || null
+      });
+
+      if (error) {
+        console.error('❌ Error fetching daily movements:', error);
+        console.error('Error details:', { 
+          message: error.message, 
+          details: error.details, 
+          hint: error.hint,
+          code: error.code 
+        });
+        throw error;
+      }
+
+      console.log('✅ Daily movements data:', { 
+        count: data?.length || 0, 
+        sample: data?.[0] 
+      });
+      
+      return data || [];
+    } catch (error) {
+      console.error('💥 Exception in getDailyMovements:', error);
+      return [];
+    }
   },
 
   // New warehouse-specific reporting functions
-  async getWarehouseDailyMovements(warehouseId?: string, date?: string): Promise<DailyMovement[]> {
-    const { data, error } = await supabase.rpc('get_warehouse_daily_movements', {
-      p_warehouse_id: warehouseId || null,
-      p_date: date || new Date().toISOString().split('T')[0]
-    });
+  async getWarehouseDailyMovements(warehouseId?: string, date?: string): Promise<TransactionRecord[]> {
+    console.log('🏢 Fetching warehouse daily movements:', { warehouseId, date });
     
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await supabase.rpc('get_warehouse_daily_movements', {
+        p_warehouse_id: warehouseId || null,
+        p_date: date || new Date().toISOString().split('T')[0]
+      });
+
+      if (error) {
+        console.error('❌ Error fetching warehouse daily movements:', error);
+        console.error('Error details:', { 
+          message: error.message, 
+          details: error.details, 
+          hint: error.hint,
+          code: error.code 
+        });
+        throw error;
+      }
+
+      console.log('✅ Warehouse daily movements:', { 
+        count: data?.length || 0, 
+        warehouseId,
+        date 
+      });
+      
+      return data || [];
+    } catch (error) {
+      console.error('💥 Exception in getWarehouseDailyMovements:', error);
+      return [];
+    }
   },
 
   async getWarehouseInventoryValue(warehouseId?: string): Promise<any[]> {
-    const { data, error } = await supabase.rpc('get_warehouse_inventory_value', {
-      p_warehouse_id: warehouseId || null
-    });
+    console.log('🏪 Fetching warehouse inventory value:', warehouseId);
     
-    if (error) throw error;
-    return data || [];
+    try {
+      // Use the real-time inventory value function with warehouse filtering
+      const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
+        p_team_id: null
+      });
+
+      if (error) {
+        console.error('❌ Error fetching warehouse inventory value:', error);
+        console.error('Error details:', { 
+          message: error.message, 
+          details: error.details, 
+          hint: error.hint,
+          code: error.code 
+        });
+        throw error;
+      }
+
+      // Filter by warehouse if specified
+      let filteredData = data || [];
+      if (warehouseId) {
+        filteredData = filteredData.filter((item: any) => 
+          item.warehouse_id && item.warehouse_id.toString() === warehouseId
+        );
+      }
+
+      console.log('✅ Warehouse inventory value:', { 
+        totalCount: data?.length || 0,
+        filteredCount: filteredData.length, 
+        warehouseId 
+      });
+      
+      return filteredData;
+    } catch (error) {
+      console.error('💥 Exception in getWarehouseInventoryValue:', error);
+      return [];
+    }
   },
 
   async getWeeklyMovements(startDate?: string, endDate?: string): Promise<WeeklyMovement[]> {
