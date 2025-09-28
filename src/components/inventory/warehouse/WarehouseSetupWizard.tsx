@@ -80,9 +80,9 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
       }
       
       // Post the receipt to update warehouse stock
-      await warehouseApi.postReceipt(receipt.id);
+      const postResult = await warehouseApi.postReceipt(receipt.id);
       
-      toast.success(`Added ${selectedItems.length} items to warehouse inventory`);
+      toast.success(`Added ${selectedItems.length} items to warehouse inventory! Processed ${postResult.processed_lines} inventory items.`);
       setCurrentStep('complete');
     } catch (error: any) {
       console.error('Error setting up inventory:', error);

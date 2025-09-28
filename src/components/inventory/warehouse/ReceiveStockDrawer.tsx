@@ -311,10 +311,10 @@ export const ReceiveStockDrawer: React.FC<ReceiveStockDrawerProps> = ({
 
       // Step 5: Post the receipt (this updates warehouse_items.on_hand)
       console.log('[WAREHOUSE_RECEIPT] Posting receipt...');
-      await warehouseApi.postReceipt(receipt.id);
-      console.log('[WAREHOUSE_RECEIPT] Receipt posted successfully');
+      const postResult = await warehouseApi.postReceipt(receipt.id);
+      console.log('[WAREHOUSE_RECEIPT] Receipt posted successfully:', postResult);
 
-      toast.success(`Receipt ${receipt.id.slice(0, 8)} posted successfully with lot ${sharedLotNumber}!`);
+      toast.success(`Receipt ${receipt.id.slice(0, 8)} posted successfully! Processed ${postResult.processed_lines} items with lot ${sharedLotNumber}.`);
       
       // Reset form
       resetForm();

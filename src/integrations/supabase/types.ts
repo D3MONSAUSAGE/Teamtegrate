@@ -9753,8 +9753,11 @@ export type Database = {
           id: string
           item_id: string
           line_total: number | null
+          notes: string | null
           posted_at: string | null
           qty: number
+          quantity_expected: number | null
+          quantity_received: number | null
           receipt_id: string
           unit_cost: number
         }
@@ -9762,8 +9765,11 @@ export type Database = {
           id?: string
           item_id: string
           line_total?: number | null
+          notes?: string | null
           posted_at?: string | null
           qty: number
+          quantity_expected?: number | null
+          quantity_received?: number | null
           receipt_id: string
           unit_cost: number
         }
@@ -9771,8 +9777,11 @@ export type Database = {
           id?: string
           item_id?: string
           line_total?: number | null
+          notes?: string | null
           posted_at?: string | null
           qty?: number
+          quantity_expected?: number | null
+          quantity_received?: number | null
           receipt_id?: string
           unit_cost?: number
         }
@@ -9799,11 +9808,14 @@ export type Database = {
           created_by: string | null
           id: string
           notes: string | null
+          organization_id: string
           posted_at: string | null
           posted_by: string | null
+          receipt_number: string | null
           received_at: string | null
           status: string
           subtotal: number | null
+          total_amount: number | null
           updated_at: string
           vendor_invoice: string | null
           vendor_name: string | null
@@ -9814,11 +9826,14 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          organization_id: string
           posted_at?: string | null
           posted_by?: string | null
+          receipt_number?: string | null
           received_at?: string | null
           status?: string
           subtotal?: number | null
+          total_amount?: number | null
           updated_at?: string
           vendor_invoice?: string | null
           vendor_name?: string | null
@@ -9829,11 +9844,14 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          organization_id?: string
           posted_at?: string | null
           posted_by?: string | null
+          receipt_number?: string | null
           received_at?: string | null
           status?: string
           subtotal?: number | null
+          total_amount?: number | null
           updated_at?: string
           vendor_invoice?: string | null
           vendor_name?: string | null
@@ -11109,6 +11127,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      process_warehouse_receipt_posting: {
+        Args: { receipt_id_param: string }
+        Returns: Json
+      }
       purge_sales_data: {
         Args: { p_date_from?: string; p_date_to?: string; p_location?: string }
         Returns: Json
@@ -11255,6 +11277,10 @@ export type Database = {
       }
       validate_invite_code_without_consuming: {
         Args: { code: string }
+        Returns: Json
+      }
+      validate_warehouse_receipt: {
+        Args: { receipt_id_param: string }
         Returns: Json
       }
       would_leave_org_without_superadmin: {

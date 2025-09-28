@@ -188,13 +188,29 @@ export const warehouseApi = {
 
   // Create a new receipt
   async createReceipt(warehouseId: string, vendorName?: string): Promise<WarehouseReceipt> {
+    // Get current user's organization
+    const { data: authUser } = await supabase.auth.getUser();
+    if (!authUser.user) throw new Error('User not authenticated');
+
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', authUser.user.id)
+      .single();
+
+    if (userError || !userData?.organization_id) {
+      throw new Error('Could not determine your organization.');
+    }
+
     const { data, error } = await supabase
       .from('warehouse_receipts')
-      .insert({
+      .insert([{
         warehouse_id: warehouseId,
         vendor_name: vendorName,
-        status: 'draft'
-      })
+        status: 'draft',
+        organization_id: userData.organization_id,
+        created_by: authUser.user.id
+      }])
       .select()
       .single();
 
@@ -223,15 +239,130 @@ export const warehouseApi = {
     return data;
   },
 
-  // Post a receipt (finalize it)
-  async postReceipt(receiptId: string): Promise<void> {
-    const { error } = await supabase.rpc('post_warehouse_receipt', {
-      receipt_id: receiptId
+  // Validate receipt before posting
+  async validateReceipt(receiptId: string): Promise<{ valid: boolean; errors: string[] }> {
+    const { data, error } = await supabase.rpc('validate_warehouse_receipt', {
+      receipt_id_param: receiptId
+    });
+
+    if (error) {
+      throw new Error(`Failed to validate receipt: ${error.message}`);
+    }
+
+    // Type assertion for RPC response
+    const validationResult = data as { valid: boolean; errors: string[] } | null;
+    return {
+      valid: validationResult?.valid || false,
+      errors: validationResult?.errors || []
+    };
+  },
+
+  // Post a receipt (finalize it) with validation
+  async postReceipt(receiptId: string): Promise<{ success: boolean; message?: string; processed_lines?: number }> {
+    // First validate the receipt
+    const validation = await this.validateReceipt(receiptId);
+    
+    if (!validation.valid) {
+      throw new Error(`Cannot post receipt: ${validation.errors.join(', ')}`);
+    }
+
+    // Process the receipt posting
+    const { data, error } = await supabase.rpc('process_warehouse_receipt_posting', {
+      receipt_id_param: receiptId
     });
 
     if (error) {
       throw new Error(`Failed to post receipt: ${error.message}`);
     }
+
+    // Type assertion for RPC response
+    const postingResult = data as { success: boolean; error?: string; processed_lines?: number; total_lines?: number } | null;
+    
+    if (!postingResult?.success) {
+      throw new Error(`Failed to post receipt: ${postingResult?.error || 'Unknown error'}`);
+    }
+
+    return {
+      success: true,
+      message: `Receipt posted successfully. Processed ${postingResult.processed_lines} items.`,
+      processed_lines: postingResult.processed_lines
+    };
+  },
+
+  // Get receipts for a warehouse with enhanced details
+  async getReceipts(warehouseId?: string): Promise<any[]> {
+    let query = supabase
+      .from('warehouse_receipts')
+      .select(`
+        *,
+        warehouse:warehouses(name, organization_id),
+        creator:users!warehouse_receipts_created_by_fkey(name),
+        poster:users!warehouse_receipts_posted_by_fkey(name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (warehouseId) {
+      query = query.eq('warehouse_id', warehouseId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Get receipt lines with enhanced item details
+  async getReceiptLines(receiptId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('warehouse_receipt_lines')
+      .select(`
+        *,
+        item:inventory_items(
+          id,
+          name, 
+          sku, 
+          barcode, 
+          description,
+          unit_id,
+          category_id,
+          current_quantity:quantity
+        )
+      `)
+      .eq('receipt_id', receiptId)
+      .order('id');
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Get complete receipt details (receipt + lines)
+  async getReceiptDetails(receiptId: string): Promise<{ receipt: any; lines: any[] } | null> {
+    // Get receipt details
+    const { data: receipt, error: receiptError } = await supabase
+      .from('warehouse_receipts')
+      .select(`
+        *,
+        warehouse:warehouses(name, organization_id),
+        creator:users!warehouse_receipts_created_by_fkey(name),
+        poster:users!warehouse_receipts_posted_by_fkey(name)
+      `)
+      .eq('id', receiptId)
+      .single();
+
+    if (receiptError) {
+      if (receiptError.code === 'PGRST116') {
+        return null; // Not found
+      }
+      throw receiptError;
+    }
+
+    // Get receipt lines
+    const lines = await this.getReceiptLines(receiptId);
+
+    return {
+      receipt,
+      lines
+    };
   },
 
   // Create a new transfer
