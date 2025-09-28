@@ -62,7 +62,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   // Debug logging for available items
   console.log('🔍 [OutgoingSheet] Component received availableItems:', availableItems);
   console.log('🔍 [OutgoingSheet] Available items count:', availableItems.length);
-  console.log('🔍 [OutgoingSheet] Available items names:', availableItems.map(item => `${item.name} (stock: ${item.current_stock}, id: ${item.id})`));
+  console.log('🔍 [OutgoingSheet] Available items names:', availableItems.map(item => `${item.name} (warehouse stock: ${item.current_stock}, id: ${item.id})`));
   // State management
   const [withdrawalReason, setWithdrawalReason] = useState<string>('');
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -76,9 +76,10 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
   const [showCustomerManagement, setShowCustomerManagement] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Get current stock for a line item (refreshed data)
+  // Get current warehouse stock for a line item (refreshed data)
   const getCurrentStock = (itemId: string): number => {
     const refreshedItem = availableItems.find(item => item.id === itemId);
+    // Use warehouse stock - availableItems already has warehouse stock mapped to current_stock
     return refreshedItem?.current_stock || 0;
   };
 
@@ -203,7 +204,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
         (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (item.barcode && item.barcode.includes(searchTerm));
       
-      // Then ensure item has valid stock and belongs to the correct warehouse
+      // Then ensure item has valid warehouse stock and belongs to the correct warehouse
       const hasValidStock = item.current_stock && item.current_stock > 0;
       
       // If warehouse ID is provided, ensure item belongs to that warehouse (team_id match)
@@ -218,10 +219,10 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
     console.log('🔍 [OutgoingSheet] Search term:', searchTerm);
     console.log('🔍 [OutgoingSheet] Warehouse ID for validation:', warehouseId);
     console.log('🔍 [OutgoingSheet] Available items before filtering:', availableItems.length);
-    console.log('🔍 [OutgoingSheet] Available items team_ids:', availableItems.map(item => `${item.name} (team_id: ${item.team_id}, stock: ${item.current_stock})`));
+    console.log('🔍 [OutgoingSheet] Available items team_ids:', availableItems.map(item => `${item.name} (team_id: ${item.team_id}, warehouse stock: ${item.current_stock})`));
     console.log('🔍 [OutgoingSheet] Filtered items from search:', filteredItems);
     console.log('🔍 [OutgoingSheet] Filtered items count:', filteredItems.length);
-    console.log('🔍 [OutgoingSheet] Filtered items names:', filteredItems.map(item => `${item.name} (stock: ${item.current_stock}, team_id: ${item.team_id}, id: ${item.id})`));
+    console.log('🔍 [OutgoingSheet] Filtered items names:', filteredItems.map(item => `${item.name} (warehouse stock: ${item.current_stock}, team_id: ${item.team_id}, id: ${item.id})`));
     
     // Runtime validation - ensure all filtered items belong to the correct warehouse
     const warehouseValidatedItems = filteredItems.filter(filteredItem => 
@@ -450,8 +451,8 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Warehouse Stock: {item.current_stock} • ${(item.unit_cost || 0).toFixed(2)}
+                         <p className="text-sm text-muted-foreground">
+                           Warehouse Stock: {item.current_stock} • ${(item.unit_cost || 0).toFixed(2)}
                           {currentReason?.allowsPricing && item.sale_price && (
                             <span className="text-green-600 ml-2">Sale: ${item.sale_price.toFixed(2)}</span>
                           )}
@@ -572,7 +573,7 @@ export const OutgoingSheet: React.FC<OutgoingSheetProps> = ({
                         )}
 
                         {/* Stock warning */}
-                        {lineItem.quantity > lineItem.item.current_stock && (
+                         {lineItem.quantity > lineItem.item.current_stock && (
                           <div className="flex items-center gap-1 text-xs text-destructive">
                             <AlertTriangle className="h-3 w-3" />
                             Insufficient stock available
