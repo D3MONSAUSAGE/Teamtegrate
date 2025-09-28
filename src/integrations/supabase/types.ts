@@ -10760,6 +10760,7 @@ export type Database = {
       }
       get_daily_movements: {
         Args:
+          | { p_date: string; p_organization_id: string }
           | { p_date?: string; p_team_id?: string }
           | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
           | { p_date?: string; p_team_id?: string; p_warehouse_id?: string }
@@ -10885,17 +10886,16 @@ export type Database = {
         }[]
       }
       get_real_time_inventory_value: {
-        Args: { p_team_id?: string } | { team_id_param?: string }
+        Args: { p_organization_id: string } | { p_team_id?: string }
         Returns: {
           current_stock: number
           item_id: string
           item_name: string
-          max_stock_level: number
-          reorder_point: number
+          organization_id: string
           team_id: string
-          team_name: string
           total_value: number
           unit_cost: number
+          warehouse_id: string
         }[]
       }
       get_request_notification_recipients: {
@@ -10973,14 +10973,22 @@ export type Database = {
       }
       get_warehouse_daily_movements: {
         Args:
-          | { p_date?: string; p_warehouse_id?: string }
+          | { p_date: string; p_organization_id: string }
           | { p_date?: string; p_warehouse_id?: string }
         Returns: {
-          po_numbers: string[]
-          total_quantity: number
+          created_by: string
+          id: string
+          item_id: string
+          item_name: string
+          notes: string
+          organization_id: string
+          quantity: number
+          team_id: string
           total_value: number
-          transaction_count: number
+          transaction_date: string
           transaction_type: string
+          unit_cost: number
+          warehouse_id: string
         }[]
       }
       get_warehouse_inventory_value: {
