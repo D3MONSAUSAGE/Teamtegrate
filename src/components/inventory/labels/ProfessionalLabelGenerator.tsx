@@ -182,14 +182,19 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     }
   };
 
-  // Generate lot code when item changes - memoized to prevent unnecessary renders
+  // Generate lot code when item changes - debounced to prevent re-renders on every keystroke
   useEffect(() => {
     if (selectedItem) {
-      const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-      const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
-      setLotCode(lotNumber);
+      // Debounce the lot code generation to prevent excessive re-renders
+      const timeoutId = setTimeout(() => {
+        const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+        const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
+        setLotCode(lotNumber);
+      }, 300); // Wait 300ms after user stops typing
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [selectedItem?.id, companyName]); // Only re-run when item ID or company name changes
+  }, [selectedItem?.id, companyName]);
 
   // Load item when selected - optimized to prevent page resets
   useEffect(() => {
@@ -244,7 +249,7 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     };
 
     loadNutritionalData();
-  }, [selectedItemId, items]); // Keep dependency on items array as needed
+  }, [selectedItemId]); // Removed items dependency to prevent re-renders
 
   const generateLabel = async () => {
     if (!selectedItem) {
