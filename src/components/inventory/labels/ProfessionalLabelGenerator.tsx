@@ -458,20 +458,27 @@ const ProfessionalLabelGenerator: React.FC = () => {
               {LABEL_TEMPLATES.map((template) => (
                 <div
                   key={template.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                  className={`p-4 border rounded-lg transition-all ${
                     selectedTemplate === template.id
                       ? 'border-primary bg-primary/5 shadow-sm'
                       : 'border-border hover:bg-muted/50'
                   }`}
-                  onClick={() => setSelectedTemplate(template.id)}
                 >
-                  <div className="font-medium text-sm">{template.name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{template.description}</div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {template.fields.includes('nutrition') && <Badge variant="outline" className="text-xs">Nutrition</Badge>}
-                    {template.fields.includes('ingredients') && <Badge variant="outline" className="text-xs">Ingredients</Badge>}
-                    {template.fields.includes('allergens') && <Badge variant="outline" className="text-xs">Allergens</Badge>}
-                    <Badge variant="outline" className="text-xs">Barcode</Badge>
+                  <div 
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTemplate(template.id);
+                    }}
+                  >
+                    <div className="font-medium text-sm">{template.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{template.description}</div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {template.fields.includes('nutrition') && <Badge variant="outline" className="text-xs">Nutrition</Badge>}
+                      {template.fields.includes('ingredients') && <Badge variant="outline" className="text-xs">Ingredients</Badge>}
+                      {template.fields.includes('allergens') && <Badge variant="outline" className="text-xs">Allergens</Badge>}
+                      <Badge variant="outline" className="text-xs">Barcode</Badge>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -670,13 +677,17 @@ const ProfessionalLabelGenerator: React.FC = () => {
               {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('ingredients') && (
                 <div>
                   <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients</Label>
-                  <Textarea
-                    id="ingredients"
-                    value={ingredients}
-                    onChange={(e) => setIngredients(e.target.value)}
-                    placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
-                    className="mt-1 min-h-[80px]"
-                  />
+                    <Textarea
+                      id="ingredients"
+                      value={ingredients}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setIngredients(e.target.value);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
+                      className="mt-1 min-h-[80px]"
+                    />
                 </div>
               )}
 
@@ -684,13 +695,17 @@ const ProfessionalLabelGenerator: React.FC = () => {
               {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('allergens') && (
                 <div>
                   <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
-                  <Input
-                    id="allergens"
-                    value={allergens}
-                    onChange={(e) => setAllergens(e.target.value)}
-                    placeholder="Contains: Milk, Eggs, Wheat..."
-                    className="mt-1"
-                  />
+                    <Input
+                      id="allergens"
+                      value={allergens}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setAllergens(e.target.value);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Contains: Milk, Eggs, Wheat..."
+                      className="mt-1"
+                    />
                 </div>
               )}
 
@@ -701,63 +716,87 @@ const ProfessionalLabelGenerator: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="serving-size" className="text-sm">Serving Size</Label>
-                      <Input
-                        id="serving-size"
-                        value={servingSize}
-                        onChange={(e) => setServingSize(e.target.value)}
-                        placeholder="1 cup (240ml)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="calories" className="text-sm">Calories</Label>
-                      <Input
-                        id="calories"
-                        value={calories}
-                        onChange={(e) => setCalories(e.target.value)}
-                        placeholder="150"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
-                      <Input
-                        id="total-fat"
-                        value={totalFat}
-                        onChange={(e) => setTotalFat(e.target.value)}
-                        placeholder="5"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
-                      <Input
-                        id="sodium"
-                        value={sodium}
-                        onChange={(e) => setSodium(e.target.value)}
-                        placeholder="200"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
-                      <Input
-                        id="total-carbs"
-                        value={totalCarbs}
-                        onChange={(e) => setTotalCarbs(e.target.value)}
-                        placeholder="30"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
-                      <Input
-                        id="protein"
-                        value={protein}
-                        onChange={(e) => setProtein(e.target.value)}
-                        placeholder="8"
-                        className="mt-1"
-                      />
+                        <Input
+                          id="serving-size"
+                          value={servingSize}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setServingSize(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="1 cup (240ml)"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="calories" className="text-sm">Calories</Label>
+                        <Input
+                          id="calories"
+                          value={calories}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setCalories(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="150"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
+                        <Input
+                          id="total-fat"
+                          value={totalFat}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setTotalFat(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="5"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
+                        <Input
+                          id="sodium"
+                          value={sodium}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setSodium(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="200"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
+                        <Input
+                          id="total-carbs"
+                          value={totalCarbs}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setTotalCarbs(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="30"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
+                        <Input
+                          id="protein"
+                          value={protein}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setProtein(e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="8"
+                          className="mt-1"
+                        />
                     </div>
                   </div>
                 </div>
