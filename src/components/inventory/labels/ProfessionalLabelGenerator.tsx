@@ -441,30 +441,63 @@ const ProfessionalLabelGenerator: React.FC = () => {
     const template = LABEL_TEMPLATES.find(t => t.id === selectedTemplate);
     if (!template) return;
 
+    console.log('[PDF_GEN] Starting PDF generation with:', {
+      item: selectedItem.name,
+      template: template.name,
+      hasLogo: !!logoData,
+      logoDataType: typeof logoData,
+      logoLength: logoData?.length || 0,
+      logoPreview: logoPreview?.substring(0, 50) + '...'
+    });
+
     setIsGenerating(true);
 
     try {
+      const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'in',
         format: [4, 6] // 4x6 inch thermal label
       });
 
+      console.log('[PDF_GEN] PDF document created, starting content generation');
       pdf.setFont('helvetica');
       let y = 0.2;
 
       // Logo and Company Header
       if (logoData) {
         try {
-          const logoSize = 0.6;
-          pdf.addImage(logoData, 'PNG', 0.3, y, logoSize, logoSize);
+          console.log('[PDF_LOGO] Attempting to add logo to PDF');
           
+          // Ensure logo data is in correct format
+          let imageData = logoData;
+          if (!logoData.startsWith('data:')) {
+            imageData = `data:image/png;base64,${logoData}`;
+          }
+          
+          const logoSize = 0.6;
+          const logoX = 0.3;
+          const logoY = y;
+          
+          // Add logo with better error handling
+          pdf.addImage(imageData, 'PNG', logoX, logoY, logoSize, logoSize);
+          console.log('[PDF_LOGO] Logo added successfully');
+          
+          // Company name next to logo
           pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(companyName.toUpperCase(), 1.0, y + 0.3);
-          y += logoSize + 0.15;
+          pdf.text(companyName.toUpperCase(), logoX + logoSize + 0.1, logoY + 0.35);
+          y += logoSize + 0.2;
         } catch (error) {
-          console.error('Failed to add logo to PDF:', error);
+          console.error('[PDF_LOGO] Failed to add logo to PDF:', error);
+          console.log('[PDF_LOGO] Logo data type:', typeof logoData);
+          console.log('[PDF_LOGO] Logo data length:', logoData?.length || 0);
+          
+          // Fallback: Just company name
+          pdf.setFontSize(14);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(companyName.toUpperCase(), 2, y + 0.2, { align: 'center' });
+          y += 0.4;
         }
       } else if (companyName) {
         pdf.setFontSize(14);
@@ -531,48 +564,50 @@ const ProfessionalLabelGenerator: React.FC = () => {
 
       // FDA-Compliant Nutrition Facts Table
       if (template.fields.includes('nutrition') && (servingSize || calories)) {
+        console.log('[PDF_NUTRITION] Starting nutrition facts table generation');
+        
         // Nutrition Facts header
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Nutrition Facts', 0.2, y);
-        y += 0.15;
+        pdf.text('Nutrition Facts', 0.2, y + 0.12); // Add baseline offset
+        y += 0.25;
 
         // Main nutrition facts box with borders
         const boxWidth = 3.6;
+        const boxStartY = y;
         pdf.setLineWidth(0.02);
-        pdf.rect(0.2, y, boxWidth, 2.0); // Main outer border
         
-        y += 0.1;
-
         // Serving size section
         if (servingSize) {
           pdf.setFontSize(9);
           pdf.setFont('helvetica', 'normal');
-          pdf.text(`Serving Size: ${servingSize}`, 0.3, y);
-          y += 0.15;
+          pdf.text(`Serving Size: ${servingSize}`, 0.3, y + 0.12);
+          y += 0.18;
           
+          // Line under serving size
+          pdf.setLineWidth(0.01);
           pdf.line(0.2, y, 3.8, y);
-          y += 0.05;
+          y += 0.08;
         }
 
         // Calories (large, bold)
         if (calories) {
           pdf.setFontSize(16);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(`Calories ${calories}`, 0.3, y);
-          y += 0.2;
+          pdf.text(`Calories ${calories}`, 0.3, y + 0.15);
+          y += 0.25;
           
+          // Thick line under calories
           pdf.setLineWidth(0.03);
           pdf.line(0.2, y, 3.8, y);
-          pdf.setLineWidth(0.01);
-          y += 0.1;
+          y += 0.12;
         }
 
         // % Daily Value header
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('% Daily Value*', 3.4, y, { align: 'right' });
-        y += 0.1;
+        pdf.text('% Daily Value*', 3.4, y + 0.08, { align: 'right' });
+        y += 0.12;
 
         // Nutrition items with % DV
         const nutritionData = [
@@ -595,19 +630,21 @@ const ProfessionalLabelGenerator: React.FC = () => {
             pdf.setFont('helvetica', 'normal');
             
             const text = `${item.label} ${item.value}${item.unit}`;
-            pdf.text(text, xPos, y);
+            pdf.text(text, xPos, y + 0.08); // Add baseline offset
             
             if (item.dvKey) {
               const dv = calculateDailyValue(item.dvKey, item.value);
               if (dv) {
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(dv, 3.7, y, { align: 'right' });
+                pdf.text(dv, 3.7, y + 0.08, { align: 'right' });
               }
             }
             
-            y += 0.1;
+            y += 0.12;
             
+            // Add lines after major categories (below text, not through it)
             if (['Total Fat', 'Cholesterol', 'Total Carbohydrate', 'Protein'].includes(item.label)) {
+              pdf.setLineWidth(0.01);
               pdf.line(0.2, y, 3.8, y);
               y += 0.05;
             }
@@ -631,30 +668,35 @@ const ProfessionalLabelGenerator: React.FC = () => {
           vitamins.forEach(vitamin => {
             if (vitamin.value && vitamin.value.trim()) {
               pdf.setFont('helvetica', 'normal');
-              pdf.text(`${vitamin.label} ${vitamin.value}${vitamin.unit}`, 0.3, y);
+              pdf.text(`${vitamin.label} ${vitamin.value}${vitamin.unit}`, 0.3, y + 0.08);
               
               const dv = calculateDailyValue(vitamin.dvKey, vitamin.value);
               if (dv) {
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(dv, 3.7, y, { align: 'right' });
+                pdf.text(dv, 3.7, y + 0.08, { align: 'right' });
               }
-              y += 0.1;
+              y += 0.12;
             }
           });
         }
 
-        // Bottom border of nutrition facts
+        // Calculate box height and draw outer border
+        const boxHeight = y - boxStartY + 0.05;
         pdf.setLineWidth(0.02);
-        pdf.line(0.2, y, 3.8, y);
+        pdf.rect(0.2, boxStartY, boxWidth, boxHeight);
+        
+        // Bottom border of nutrition facts
         y += 0.05;
 
         // Daily value footnote
         pdf.setFontSize(6);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('*The % Daily Value tells you how much a nutrient in', 0.3, y);
-        y += 0.07;
-        pdf.text('a serving of food contributes to a daily diet.', 0.3, y);
-        y += 0.15;
+        pdf.text('*The % Daily Value tells you how much a nutrient in', 0.3, y + 0.08);
+        y += 0.08;
+        pdf.text('a serving of food contributes to a daily diet.', 0.3, y + 0.08);
+        y += 0.18;
+        
+        console.log('[PDF_NUTRITION] Nutrition facts table completed');
       }
 
       // Ingredients (if included)
