@@ -150,10 +150,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
     }
   }, [selectedItemId, items, selectedItem?.id]);
 
-  // Logo upload handlers
+  // Logo upload handlers  
   const onLogoDrop = useCallback((acceptedFiles: File[]) => {
+    console.log('Logo drop handler called with files:', acceptedFiles.length);
     const file = acceptedFiles[0];
     if (file) {
+      console.log('Processing logo file:', file.name, file.type, file.size);
+      
       // Validate file type
       const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
       if (!validTypes.includes(file.type)) {
@@ -167,18 +170,23 @@ const ProfessionalLabelGenerator: React.FC = () => {
         return;
       }
 
+      console.log('Logo file validation passed, processing...');
       setLogoFile(file);
       
       // Create preview
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
+        console.log('Logo file processed, setting preview and data');
         setLogoPreview(result);
         setLogoData(result);
+        toast.success('Logo uploaded successfully!');
+      };
+      reader.onerror = () => {
+        console.error('Failed to read logo file');
+        toast.error('Failed to read logo file');
       };
       reader.readAsDataURL(file);
-      
-      toast.success('Logo uploaded successfully!');
     }
   }, []);
 
@@ -187,10 +195,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.svg']
     },
-    multiple: false
+    multiple: false,
+    noClick: false,
+    noKeyboard: false
   });
 
   const removeLogo = useCallback(() => {
+    console.log('Removing logo');
     setLogoFile(null);
     setLogoPreview('');
     setLogoData('');
@@ -248,11 +259,59 @@ const ProfessionalLabelGenerator: React.FC = () => {
 
   // Stabilized event handlers
   const handleTemplateSelect = useCallback((templateId: string) => {
+    console.log('Template selected:', templateId);
     setSelectedTemplate(templateId);
   }, []);
 
   const handleItemSelect = useCallback((itemId: string) => {
+    console.log('Item selected:', itemId);
     setSelectedItemId(itemId);
+  }, []);
+
+  // Input change handlers with debugging
+  const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Company name changing to:', e.target.value);
+    setCompanyName(e.target.value);
+  }, []);
+
+  const handleIngredientsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.log('Ingredients changing to:', e.target.value);
+    setIngredients(e.target.value);
+  }, []);
+
+  const handleServingSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Serving size changing to:', e.target.value);
+    setServingSize(e.target.value);
+  }, []);
+
+  const handleCaloriesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Calories changing to:', e.target.value);
+    setCalories(e.target.value);
+  }, []);
+
+  const handleTotalFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Total fat changing to:', e.target.value);
+    setTotalFat(e.target.value);
+  }, []);
+
+  const handleSodiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Sodium changing to:', e.target.value);
+    setSodium(e.target.value);
+  }, []);
+
+  const handleTotalCarbsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Total carbs changing to:', e.target.value);
+    setTotalCarbs(e.target.value);
+  }, []);
+
+  const handleProteinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Protein changing to:', e.target.value);
+    setProtein(e.target.value);
+  }, []);
+
+  const handleAllergensChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Allergens changing to:', e.target.value);
+    setAllergens(e.target.value);
   }, []);
 
   // Save template to localStorage
@@ -521,7 +580,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
               <Input
                 id="company-name"
                 value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
+                onChange={handleCompanyNameChange}
                 placeholder="Enter company name"
                 className="mt-1"
               />
@@ -845,7 +904,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     <Textarea
                       id="ingredients"
                       value={ingredients}
-                      onChange={(e) => setIngredients(e.target.value)}
+                      onChange={handleIngredientsChange}
                       placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
                       className="mt-1 min-h-[80px]"
                     />
@@ -856,13 +915,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
               {templateFields.includes('allergens') && (
                 <div>
                   <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
-                    <Input
-                      id="allergens"
-                      value={allergens}
-                      onChange={(e) => setAllergens(e.target.value)}
-                      placeholder="Contains: Milk, Eggs, Wheat..."
-                      className="mt-1"
-                    />
+                      <Input
+                        id="allergens"
+                        value={allergens}
+                        onChange={handleAllergensChange}
+                        placeholder="Contains: Milk, Eggs, Wheat..."
+                        className="mt-1"
+                      />
                 </div>
               )}
 
@@ -876,7 +935,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="serving-size"
                           value={servingSize}
-                          onChange={(e) => setServingSize(e.target.value)}
+                          onChange={handleServingSizeChange}
                           placeholder="1 cup (240ml)"
                           className="mt-1"
                         />
@@ -886,7 +945,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="calories"
                           value={calories}
-                          onChange={(e) => setCalories(e.target.value)}
+                          onChange={handleCaloriesChange}
                           placeholder="150"
                           className="mt-1"
                         />
@@ -896,7 +955,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="total-fat"
                           value={totalFat}
-                          onChange={(e) => setTotalFat(e.target.value)}
+                          onChange={handleTotalFatChange}
                           placeholder="5"
                           className="mt-1"
                         />
@@ -906,7 +965,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="sodium"
                           value={sodium}
-                          onChange={(e) => setSodium(e.target.value)}
+                          onChange={handleSodiumChange}
                           placeholder="200"
                           className="mt-1"
                         />
@@ -916,7 +975,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="total-carbs"
                           value={totalCarbs}
-                          onChange={(e) => setTotalCarbs(e.target.value)}
+                          onChange={handleTotalCarbsChange}
                           placeholder="30"
                           className="mt-1"
                         />
@@ -926,7 +985,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="protein"
                           value={protein}
-                          onChange={(e) => setProtein(e.target.value)}
+                          onChange={handleProteinChange}
                           placeholder="8"
                           className="mt-1"
                         />
