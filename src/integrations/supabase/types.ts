@@ -10842,6 +10842,18 @@ export type Database = {
         Args: { code: string }
         Returns: Json
       }
+      warehouse_receive_stock: {
+        Args: {
+          p_invoice_number?: string
+          p_item_id: string
+          p_lot_number?: string
+          p_quantity: number
+          p_unit_cost: number
+          p_vendor_id?: string
+          p_warehouse_id: string
+        }
+        Returns: Json
+      }
       would_leave_org_without_superadmin: {
         Args: { target_org_id: string; target_user_id: string }
         Returns: boolean

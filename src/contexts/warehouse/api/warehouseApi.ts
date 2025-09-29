@@ -199,9 +199,9 @@ export const warehouseApi = {
     invoice_number?: string;
   }>): Promise<{ success: boolean; message?: string }> {
     try {
-      // Call the receive_stock database function for each item
+      // Call the warehouse_receive_stock database function for each item
       for (const item of items) {
-        const { error } = await supabase.rpc('receive_stock', {
+        const { error } = await supabase.rpc('warehouse_receive_stock', {
           p_item_id: item.item_id,
           p_quantity: item.quantity,
           p_warehouse_id: warehouseId,
