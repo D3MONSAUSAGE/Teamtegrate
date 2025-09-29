@@ -51,7 +51,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   onSuccess
 }) => {
   const { items: inventoryItems, vendors } = useInventory();
-  const { updateItemStock } = useWarehouse();
+  const { refreshWarehouseItems } = useWarehouse();
   const [receiveItems, setReceiveItems] = useState<ReceiveItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [notes, setNotes] = useState('');
@@ -193,15 +193,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
     try {
       setSubmitting(true);
 
-      // Update stock levels instantly using warehouse context for each item
-      for (const item of receiveItems) {
-        const success = await updateItemStock(item.item_id, item.quantity);
-        if (!success) {
-          throw new Error(`Failed to receive ${item.item_name}`);
-        }
-      }
-
-      // Prepare items for the API with lot tracking (for lot/vendor data)
+      // Prepare items for the API with lot tracking and vendor information
       const items = receiveItems.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
@@ -211,8 +203,11 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
         invoice_number: invoiceNumber
       }));
 
-      // Call the receiveStock API for lot tracking and vendor information
+      // Call the receiveStock API which handles creating warehouse_items if they don't exist
       await warehouseApi.receiveStock(warehouseId, items);
+      
+      // Refresh warehouse items to show updated stock levels
+      await refreshWarehouseItems();
 
       toast.success(`Successfully received ${receiveItems.length} item${receiveItems.length !== 1 ? 's' : ''}!`);
       

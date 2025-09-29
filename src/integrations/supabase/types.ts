@@ -10661,6 +10661,19 @@ export type Database = {
         Args:
           | {
               p_expiration_date?: string
+              p_invoice_number?: string
+              p_item_id: string
+              p_lot_number?: string
+              p_manufacturing_date?: string
+              p_notes?: string
+              p_quantity: number
+              p_unit_cost: number
+              p_user_id?: string
+              p_vendor_id?: string
+              p_warehouse_id: string
+            }
+          | {
+              p_expiration_date?: string
               p_item_id: string
               p_lot_number?: string
               p_manufacturing_date?: string
