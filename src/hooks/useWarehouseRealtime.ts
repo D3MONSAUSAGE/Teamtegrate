@@ -5,12 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface UseWarehouseRealtimeOptions {
   warehouseId?: string;
+  callback?: () => Promise<void>;
 }
 
 export const useWarehouseRealtime = (options?: UseWarehouseRealtimeOptions) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { warehouseId } = options || {};
+  const { warehouseId, callback } = options || {};
 
   useEffect(() => {
     if (!user?.organizationId) return;
@@ -34,6 +35,11 @@ export const useWarehouseRealtime = (options?: UseWarehouseRealtimeOptions) => {
         (payload) => {
           console.log('🔄 Warehouse items real-time update received:', payload);
           
+          // Call custom callback if provided (for WarehouseContext)
+          if (callback) {
+            callback();
+          }
+          
           // Invalidate specific warehouse queries if we have a warehouseId
           if (warehouseId) {
             queryClient.invalidateQueries({ 
@@ -56,5 +62,5 @@ export const useWarehouseRealtime = (options?: UseWarehouseRealtimeOptions) => {
       console.log('🏭 useWarehouseRealtime: Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [queryClient, user?.organizationId, warehouseId]);
+  }, [queryClient, user?.organizationId, warehouseId, callback]);
 };

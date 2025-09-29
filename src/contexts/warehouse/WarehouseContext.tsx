@@ -39,9 +39,6 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
   const [itemsLoading, setItemsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Enable real-time updates for warehouse items with specific warehouse ID
-  useWarehouseRealtime({ warehouseId });
-
   // Load warehouse by ID
   const loadWarehouse = useCallback(async (id: string) => {
     try {
@@ -185,6 +182,12 @@ export const WarehouseProvider: React.FC<WarehouseProviderProps> = ({
       return false;
     }
   }, [warehouseId, warehouseItems, forceRefresh]);
+
+  // Enable real-time updates for warehouse items with specific warehouse ID
+  useWarehouseRealtime({ 
+    warehouseId,
+    callback: refreshWarehouseItems 
+  });
 
   // Auto-load warehouse when warehouseId changes
   useEffect(() => {
