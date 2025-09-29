@@ -466,10 +466,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 >
                   <div 
                     className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTemplate(template.id);
-                    }}
+                    onClick={() => setSelectedTemplate(template.id)}
                   >
                     <div className="font-medium text-sm">{template.name}</div>
                     <div className="text-xs text-muted-foreground mt-1">{template.description}</div>
@@ -680,11 +677,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     <Textarea
                       id="ingredients"
                       value={ingredients}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setIngredients(e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setIngredients(e.target.value)}
                       placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
                       className="mt-1 min-h-[80px]"
                     />
@@ -698,11 +691,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     <Input
                       id="allergens"
                       value={allergens}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setAllergens(e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setAllergens(e.target.value)}
                       placeholder="Contains: Milk, Eggs, Wheat..."
                       className="mt-1"
                     />
@@ -719,11 +708,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="serving-size"
                           value={servingSize}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setServingSize(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setServingSize(e.target.value)}
                           placeholder="1 cup (240ml)"
                           className="mt-1"
                         />
@@ -733,11 +718,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="calories"
                           value={calories}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setCalories(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setCalories(e.target.value)}
                           placeholder="150"
                           className="mt-1"
                         />
@@ -747,11 +728,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="total-fat"
                           value={totalFat}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setTotalFat(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setTotalFat(e.target.value)}
                           placeholder="5"
                           className="mt-1"
                         />
@@ -761,11 +738,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="sodium"
                           value={sodium}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setSodium(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setSodium(e.target.value)}
                           placeholder="200"
                           className="mt-1"
                         />
@@ -775,11 +748,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="total-carbs"
                           value={totalCarbs}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setTotalCarbs(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setTotalCarbs(e.target.value)}
                           placeholder="30"
                           className="mt-1"
                         />
@@ -789,11 +758,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                         <Input
                           id="protein"
                           value={protein}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setProtein(e.target.value);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setProtein(e.target.value)}
                           placeholder="8"
                           className="mt-1"
                         />
