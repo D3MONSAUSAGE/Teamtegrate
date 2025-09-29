@@ -9438,6 +9438,7 @@ export type Database = {
         Row: {
           item_id: string
           on_hand: number
+          organization_id: string
           reorder_max: number | null
           reorder_min: number | null
           sale_price: number | null
@@ -9446,6 +9447,7 @@ export type Database = {
         Insert: {
           item_id: string
           on_hand?: number
+          organization_id: string
           reorder_max?: number | null
           reorder_min?: number | null
           sale_price?: number | null
@@ -9454,6 +9456,7 @@ export type Database = {
         Update: {
           item_id?: string
           on_hand?: number
+          organization_id?: string
           reorder_max?: number | null
           reorder_min?: number | null
           sale_price?: number | null
