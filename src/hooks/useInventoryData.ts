@@ -269,45 +269,46 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     }
   }, [user?.organizationId, refreshTemplateItems]);
 
-  // Initial data load - use stable function to avoid dependency cycle
-  useEffect(() => {
+  // Stable initial data load function - avoid dependency cycle
+  const initialLoad = useCallback(async () => {
     if (!user?.organizationId) return;
     
-    const initialLoad = async () => {
-      setLoading(true);
-      try {
-        const refreshFunctions = [
-          refreshItems,
-          refreshTransactions,
-          refreshCounts,
-          refreshAlerts,
-          refreshTemplates,
-          refreshTeamAssignments,
-          refreshCategories,
-          refreshUnits,
-          refreshVendors,
-          refreshTemplateItems, // Load template items in parallel during initial load
-        ];
-        
-        await Promise.allSettled(refreshFunctions.map(fn => fn()));
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      // Direct API calls to avoid refresh function dependencies
+      const loadPromises = [
+        handleAsyncOperation(() => inventoryItemsApi.getAll(), 'Load Items')
+          .then(data => data && setItems(data)),
+        handleAsyncOperation(() => inventoryTransactionsApi.getAll(), 'Load Transactions')
+          .then(data => data && setTransactions(data)),
+        handleAsyncOperation(() => inventoryCountsApi.getAll(), 'Load Inventory Counts')
+          .then(data => data && setCounts(data)),
+        handleAsyncOperation(() => inventoryAlertsApi.getAll(), 'Load Alerts')
+          .then(data => data && setAlerts(data)),
+        handleAsyncOperation(() => inventoryTemplatesApi.getAll(), 'Load Templates')
+          .then(data => data && setTemplates(data)),
+        handleAsyncOperation(() => inventoryTemplatesApi.getTeamAssignments(), 'Load Team Assignments')
+          .then(data => data && setTeamAssignments(data)),
+        handleAsyncOperation(() => inventoryCategoriesApi.getAll(), 'Load Categories')
+          .then(data => data && setCategories(data)),
+        handleAsyncOperation(() => inventoryUnitsApi.getAll(), 'Load Units')
+          .then(data => data && setUnits(data)),
+        handleAsyncOperation(() => vendorsApi.getAll(), 'Load Vendors')
+          .then(data => data && setVendors(data)),
+        handleAsyncOperation(() => inventoryTemplatesApi.getAllTemplateItems(), 'Load Template Items')
+          .then(data => data && setTemplateItems(data)),
+      ];
+      
+      await Promise.allSettled(loadPromises);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.organizationId, handleAsyncOperation]);
 
+  // Initial data load - only depends on organizationId and handleAsyncOperation
+  useEffect(() => {
     initialLoad();
-  }, [
-    user?.organizationId,
-    refreshItems,
-    refreshTransactions,
-    refreshCounts,
-    refreshAlerts,
-    refreshTemplates,
-    refreshTeamAssignments,
-    refreshCategories,
-    refreshUnits,
-    refreshVendors,
-  ]);
+  }, [initialLoad]);
 
   return {
     // Data
