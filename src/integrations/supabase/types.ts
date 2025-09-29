@@ -3193,10 +3193,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          invoice_number: string | null
           item_id: string
+          lot_number: string | null
           notes: string | null
           organization_id: string
           po_number: string | null
+          processed_by: string | null
           quantity: number
           receipt_line_id: string | null
           reference_number: string | null
@@ -3206,6 +3209,7 @@ export type Database = {
           transaction_type: string
           unit_cost: number | null
           user_id: string
+          vendor_id: string | null
           vendor_name: string | null
           warehouse_id: string | null
         }
@@ -3213,10 +3217,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          invoice_number?: string | null
           item_id: string
+          lot_number?: string | null
           notes?: string | null
           organization_id: string
           po_number?: string | null
+          processed_by?: string | null
           quantity: number
           receipt_line_id?: string | null
           reference_number?: string | null
@@ -3226,6 +3233,7 @@ export type Database = {
           transaction_type: string
           unit_cost?: number | null
           user_id: string
+          vendor_id?: string | null
           vendor_name?: string | null
           warehouse_id?: string | null
         }
@@ -3233,10 +3241,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          invoice_number?: string | null
           item_id?: string
+          lot_number?: string | null
           notes?: string | null
           organization_id?: string
           po_number?: string | null
+          processed_by?: string | null
           quantity?: number
           receipt_line_id?: string | null
           reference_number?: string | null
@@ -3246,6 +3257,7 @@ export type Database = {
           transaction_type?: string
           unit_cost?: number | null
           user_id?: string
+          vendor_id?: string | null
           vendor_name?: string | null
           warehouse_id?: string | null
         }
