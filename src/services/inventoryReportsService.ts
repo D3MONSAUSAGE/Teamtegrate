@@ -152,9 +152,13 @@ export const inventoryReportsService = {
     try {
       // If we have a warehouseId, use the warehouse-specific function
       if (warehouseId) {
+        console.log('Making RPC call to get_real_time_inventory_value with warehouseId:', warehouseId);
+        
         const { data, error } = await supabase.rpc('get_real_time_inventory_value', {
           p_warehouse_id: warehouseId
         }) as { data: any, error: any };
+
+        console.log('RPC response:', { data, error });
 
         if (error) {
           console.error('Error fetching warehouse inventory value:', error);
@@ -171,14 +175,19 @@ export const inventoryReportsService = {
             throw new Error(`Database error: ${data.error || 'Unknown error'}`);
           }
           
-          return [{
+          const result = [{
             team_id: warehouseId,
             team_name: `Warehouse ${warehouseId.substring(0, 8)}`,
             total_value: Number(data.total_value) || 0,
-            item_count: Number(data.total_items) || 0,
+            item_count: Number(data.item_count) || 0,
             low_stock_items: Number(data.low_stock_items) || 0,
             overstock_items: Number(data.overstock_items) || 0
           }];
+          
+          console.log('Processed result:', result);
+          return result;
+        } else {
+          console.warn('No valid data returned from database function');
         }
       } else {
         // For team-based or organization-wide reporting, we need a different approach
