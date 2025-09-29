@@ -80,73 +80,175 @@ export const inventoryCountsApi = {
 
   async repairCountExpectedQuantities(countId: string): Promise<void> {
     try {
-      // Get the count to find its template_id
+      // Get the count to find its template_id and team_id
       const { data: count, error: countError } = await supabase
         .from('inventory_counts')
-        .select('template_id')
+        .select('template_id, team_id, organization_id')
         .eq('id', countId)
         .single();
 
       if (countError) throw countError;
 
-      if (count.template_id) {
-        // Get template items with their in-stock quantities
-        const { data: templateItems, error: templateError } = await supabase
-          .from('inventory_template_items')
-          .select('item_id, in_stock_quantity')
-          .eq('template_id', count.template_id);
-
-        if (templateError) throw templateError;
-
-        // Update count items with correct in-stock quantities
-        const updatePromises = templateItems.map(templateItem => 
-          supabase
-            .from('inventory_count_items')
-            .update({ in_stock_quantity: templateItem.in_stock_quantity })
-            .eq('count_id', countId)
-            .eq('item_id', templateItem.item_id)
-        );
-
-        const results = await Promise.all(updatePromises);
-        const errors = results.filter(result => result.error);
+      // Find warehouse associated with this team
+      let warehouseId: string | null = null;
+      if (count.team_id) {
+        const { data: warehouse, error: warehouseError } = await supabase
+          .from('warehouses')
+          .select('id')
+          .eq('team_id', count.team_id)
+          .eq('organization_id', count.organization_id)
+          .single();
         
-        if (errors.length > 0) {
-          throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+        if (!warehouseError && warehouse) {
+          warehouseId = warehouse.id;
+        }
+      }
+
+      if (count.template_id) {
+        if (warehouseId) {
+          // Get template items and their warehouse stock
+          const { data: templateItems, error: templateError } = await supabase
+            .from('inventory_template_items')
+            .select('item_id, in_stock_quantity')
+            .eq('template_id', count.template_id);
+
+          if (templateError) throw templateError;
+
+          // Get warehouse stock for these items
+          const itemIds = templateItems?.map(item => item.item_id) || [];
+          const { data: warehouseItems, error: warehouseError } = await supabase
+            .from('warehouse_items')
+            .select('item_id, on_hand')
+            .eq('warehouse_id', warehouseId)
+            .in('item_id', itemIds);
+
+          if (warehouseError) {
+            console.error('Error fetching warehouse stock for repair:', warehouseError);
+          }
+
+          // Create lookup map for warehouse stock
+          const warehouseStockMap = new Map(
+            warehouseItems?.map(item => [item.item_id, item]) || []
+          );
+
+          // Update count items with warehouse stock (preferred) or template stock (fallback)
+          const updatePromises = templateItems.map(templateItem => {
+            const warehouseItem = warehouseStockMap.get(templateItem.item_id);
+            const stockQuantity = warehouseItem?.on_hand ?? templateItem.in_stock_quantity;
+            
+            return supabase
+              .from('inventory_count_items')
+              .update({ in_stock_quantity: stockQuantity })
+              .eq('count_id', countId)
+              .eq('item_id', templateItem.item_id);
+          });
+
+          const results = await Promise.all(updatePromises);
+          const errors = results.filter(result => result.error);
+          
+          if (errors.length > 0) {
+            throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+          }
+
+          console.log(`Successfully repaired expected quantities for ${templateItems.length} items using warehouse stock`);
+        } else {
+          // Fallback to template stock if no warehouse
+          const { data: templateItems, error: templateError } = await supabase
+            .from('inventory_template_items')
+            .select('item_id, in_stock_quantity')
+            .eq('template_id', count.template_id);
+
+          if (templateError) throw templateError;
+
+          // Update count items with template stock
+          const updatePromises = templateItems.map(templateItem => 
+            supabase
+              .from('inventory_count_items')
+              .update({ in_stock_quantity: templateItem.in_stock_quantity })
+              .eq('count_id', countId)
+              .eq('item_id', templateItem.item_id)
+          );
+
+          const results = await Promise.all(updatePromises);
+          const errors = results.filter(result => result.error);
+          
+          if (errors.length > 0) {
+            throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+          }
+
+          console.log(`Successfully repaired expected quantities for ${templateItems.length} items using template stock`);
         }
 
         // Update count totals
         await this.updateCountTotals(countId);
-        
-        console.log(`Successfully repaired expected quantities for ${templateItems.length} items`);
       } else {
         // Fallback to current stock for counts without templates
-        const { data: countItems, error: itemsError } = await supabase
-          .from('inventory_count_items')
-          .select(`
-            item_id,
-            inventory_items!inner(current_stock)
-          `)
-          .eq('count_id', countId);
-
-        if (itemsError) throw itemsError;
-
-        const updatePromises = countItems.map(countItem => 
-          supabase
+        if (warehouseId) {
+          // Use warehouse stock
+          const { data: countItems, error: itemsError } = await supabase
             .from('inventory_count_items')
-            .update({ in_stock_quantity: countItem.inventory_items.current_stock || 0 })
-            .eq('count_id', countId)
-            .eq('item_id', countItem.item_id)
-        );
+            .select('item_id')
+            .eq('count_id', countId);
 
-        const results = await Promise.all(updatePromises);
-        const errors = results.filter(result => result.error);
-        
-        if (errors.length > 0) {
-          throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+          if (itemsError) throw itemsError;
+
+          // Get warehouse stock for these items
+          const itemIds = countItems?.map(item => item.item_id) || [];
+          const { data: warehouseItems, error: warehouseError } = await supabase
+            .from('warehouse_items')
+            .select('item_id, on_hand')
+            .eq('warehouse_id', warehouseId)
+            .in('item_id', itemIds);
+
+          if (warehouseError) throw warehouseError;
+
+          const updatePromises = warehouseItems?.map(warehouseItem => 
+            supabase
+              .from('inventory_count_items')
+              .update({ in_stock_quantity: warehouseItem.on_hand || 0 })
+              .eq('count_id', countId)
+              .eq('item_id', warehouseItem.item_id)
+          ) || [];
+
+          const results = await Promise.all(updatePromises);
+          const errors = results.filter(result => result.error);
+          
+          if (errors.length > 0) {
+            throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+          }
+
+          console.log(`Successfully repaired expected quantities for ${warehouseItems?.length || 0} items using warehouse stock`);
+        } else {
+          // Fallback to inventory stock
+          const { data: countItems, error: itemsError } = await supabase
+            .from('inventory_count_items')
+            .select(`
+              item_id,
+              inventory_items!inner(current_stock)
+            `)
+            .eq('count_id', countId);
+
+          if (itemsError) throw itemsError;
+
+          const updatePromises = countItems.map(countItem => 
+            supabase
+              .from('inventory_count_items')
+              .update({ in_stock_quantity: countItem.inventory_items.current_stock || 0 })
+              .eq('count_id', countId)
+              .eq('item_id', countItem.item_id)
+          );
+
+          const results = await Promise.all(updatePromises);
+          const errors = results.filter(result => result.error);
+          
+          if (errors.length > 0) {
+            throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
+          }
+
+          console.log(`Successfully repaired expected quantities for ${countItems.length} items using current stock`);
         }
 
         await this.updateCountTotals(countId);
-        console.log(`Successfully repaired expected quantities for ${countItems.length} items using current stock`);
       }
     } catch (error) {
       console.error('Error repairing count expected quantities:', error);
@@ -158,49 +260,153 @@ export const inventoryCountsApi = {
     try {
       let countItems: any[] = [];
 
+      // First, get the count to find its team_id for warehouse association
+      const { data: count, error: countError } = await supabase
+        .from('inventory_counts')
+        .select('team_id, organization_id')
+        .eq('id', countId)
+        .single();
+
+      if (countError) throw countError;
+
+      // Find warehouse associated with this team
+      let warehouseId: string | null = null;
+      if (count.team_id) {
+        const { data: warehouse, error: warehouseError } = await supabase
+          .from('warehouses')
+          .select('id')
+          .eq('team_id', count.team_id)
+          .eq('organization_id', count.organization_id)
+          .single();
+        
+        if (!warehouseError && warehouse) {
+          warehouseId = warehouse.id;
+        }
+      }
+
       if (templateId) {
-        // Initialize from template
-        const { data: templateItems, error: templateError } = await supabase
-          .from('inventory_template_items')
-          .select(`
-            item_id,
-            in_stock_quantity,
-            minimum_quantity,
-            maximum_quantity,
-            inventory_items!inner(id, current_stock, is_active)
-          `)
-          .eq('template_id', templateId)
-          .eq('inventory_items.is_active', true);
+        // Initialize from template with warehouse stock
+        if (warehouseId) {
+          // First get template items
+          const { data: templateItems, error: templateError } = await supabase
+            .from('inventory_template_items')
+            .select(`
+              item_id,
+              in_stock_quantity,
+              minimum_quantity,
+              maximum_quantity,
+              inventory_items!inner(id, is_active)
+            `)
+            .eq('template_id', templateId)
+            .eq('inventory_items.is_active', true);
 
-        if (templateError) {
-          console.error('Error fetching template items:', templateError);
-          throw new Error(`Failed to fetch template items: ${templateError.message}`);
+          if (templateError) {
+            console.error('Error fetching template items:', templateError);
+            throw new Error(`Failed to fetch template items: ${templateError.message}`);
+          }
+
+          // Get warehouse stock for these items
+          const itemIds = templateItems?.map(item => item.item_id) || [];
+          const { data: warehouseItems, error: warehouseError } = await supabase
+            .from('warehouse_items')
+            .select('item_id, on_hand, reorder_min, reorder_max')
+            .eq('warehouse_id', warehouseId)
+            .in('item_id', itemIds);
+
+          if (warehouseError) {
+            console.error('Error fetching warehouse stock for template items:', warehouseError);
+          }
+
+          // Create lookup map for warehouse stock
+          const warehouseStockMap = new Map(
+            warehouseItems?.map(item => [item.item_id, item]) || []
+          );
+
+          countItems = (templateItems || []).map(item => {
+            const warehouseItem = warehouseStockMap.get(item.item_id);
+            return {
+              count_id: countId,
+              item_id: item.item_id,
+              // Use warehouse stock if available, otherwise fall back to template stock
+              in_stock_quantity: warehouseItem?.on_hand ?? item.in_stock_quantity ?? 0,
+              // Use warehouse min/max if available, otherwise use template values
+              template_minimum_quantity: warehouseItem?.reorder_min ?? item.minimum_quantity,
+              template_maximum_quantity: warehouseItem?.reorder_max ?? item.maximum_quantity,
+            };
+          });
+        } else {
+          // Fallback to original template logic if no warehouse
+          const { data: templateItems, error: templateError } = await supabase
+            .from('inventory_template_items')
+            .select(`
+              item_id,
+              in_stock_quantity,
+              minimum_quantity,
+              maximum_quantity,
+              inventory_items!inner(id, current_stock, is_active)
+            `)
+            .eq('template_id', templateId)
+            .eq('inventory_items.is_active', true);
+
+          if (templateError) {
+            console.error('Error fetching template items:', templateError);
+            throw new Error(`Failed to fetch template items: ${templateError.message}`);
+          }
+
+          countItems = (templateItems || []).map(item => ({
+            count_id: countId,
+            item_id: item.item_id,
+            in_stock_quantity: item.in_stock_quantity || item.inventory_items.current_stock || 0,
+            template_minimum_quantity: item.minimum_quantity,
+            template_maximum_quantity: item.maximum_quantity,
+          }));
         }
-
-        countItems = (templateItems || []).map(item => ({
-          count_id: countId,
-          item_id: item.item_id,
-          in_stock_quantity: item.in_stock_quantity || item.inventory_items.current_stock || 0,
-          template_minimum_quantity: item.minimum_quantity,
-          template_maximum_quantity: item.maximum_quantity,
-        }));
       } else {
-        // Initialize from all active items
-        const { data: items, error: itemsError } = await supabase
-          .from('inventory_items')
-          .select('id, current_stock, organization_id')
-          .eq('is_active', true);
+        // Initialize from all active items with warehouse stock
+        if (warehouseId) {
+          // Get warehouse items with real stock levels
+          const { data: warehouseItems, error: warehouseError } = await supabase
+            .from('warehouse_items')
+            .select(`
+              item_id,
+              on_hand,
+              reorder_min,
+              reorder_max,
+              inventory_items!inner(id, is_active)
+            `)
+            .eq('warehouse_id', warehouseId)
+            .eq('inventory_items.is_active', true);
 
-        if (itemsError) {
-          console.error('Error fetching inventory items for count initialization:', itemsError);
-          throw new Error(`Failed to fetch inventory items: ${itemsError.message}`);
+          if (warehouseError) {
+            console.error('Error fetching warehouse items for count initialization:', warehouseError);
+            throw new Error(`Failed to fetch warehouse items: ${warehouseError.message}`);
+          }
+
+          countItems = (warehouseItems || []).map(item => ({
+            count_id: countId,
+            item_id: item.item_id,
+            in_stock_quantity: item.on_hand || 0,
+            template_minimum_quantity: item.reorder_min,
+            template_maximum_quantity: item.reorder_max,
+          }));
+        } else {
+          // Fallback to inventory items if no warehouse
+          const { data: items, error: itemsError } = await supabase
+            .from('inventory_items')
+            .select('id, current_stock, organization_id')
+            .eq('is_active', true);
+
+          if (itemsError) {
+            console.error('Error fetching inventory items for count initialization:', itemsError);
+            throw new Error(`Failed to fetch inventory items: ${itemsError.message}`);
+          }
+
+          countItems = (items || []).map(item => ({
+            count_id: countId,
+            item_id: item.id,
+            in_stock_quantity: item.current_stock || 0,
+          }));
         }
-
-        countItems = (items || []).map(item => ({
-          count_id: countId,
-          item_id: item.id,
-          in_stock_quantity: item.current_stock || 0,
-        }));
       }
 
       if (countItems.length === 0) {
