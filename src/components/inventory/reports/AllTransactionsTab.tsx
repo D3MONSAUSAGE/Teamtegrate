@@ -71,7 +71,11 @@ export const AllTransactionsTab: React.FC = () => {
       
       const matchesType = typeFilter === 'all' || transaction.transaction_type === typeFilter;
       
-      const matchesTeam = selectedTeam === '' || transaction.team_id === selectedTeam;
+      // Handle team filtering - show all transactions when no specific team selected
+      // or when showing unassigned transactions (team_id is null)
+      const matchesTeam = selectedTeam === '' || 
+        transaction.team_id === selectedTeam ||
+        (transaction.team_id === null && selectedTeam !== '');
       
       // Date filtering
       let matchesDate = true;
@@ -496,7 +500,11 @@ export const AllTransactionsTab: React.FC = () => {
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h4 className="text-lg font-semibold mb-2">No Transactions Found</h4>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    No transactions found matching your current filters. Try adjusting the search criteria or date range.
+                    {selectedTeam ? (
+                      <>No transactions found for the selected team. All new transactions will be automatically assigned to teams based on their warehouse location.</>
+                    ) : (
+                      <>No transactions found matching your current filters. Try adjusting the search criteria or date range.</>
+                    )}
                   </p>
                 </div>
               ) : (

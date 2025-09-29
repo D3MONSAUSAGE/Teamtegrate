@@ -70,22 +70,9 @@ export const UnifiedTeamSelector: React.FC<UnifiedTeamSelectorProps> = ({
         )}
         {availableTeams.map((team) => (
           <SelectItem key={team.id} value={team.id}>
-            <div className="flex items-center gap-2 w-full">
-              <div className="flex items-center gap-2 flex-1">
-                <Users className="h-4 w-4" />
-                <span>{team.name}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {canManageTeam(team.id) && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Crown className="h-3 w-3 mr-1" />
-                    Manager
-                  </Badge>
-                )}
-                <Badge variant="outline" className="text-xs">
-                  {team.member_count} members
-                </Badge>
-              </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>{team.name}</span>
             </div>
           </SelectItem>
         ))}
