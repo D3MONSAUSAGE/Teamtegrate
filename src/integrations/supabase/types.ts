@@ -9436,30 +9436,36 @@ export type Database = {
       }
       warehouse_items: {
         Row: {
+          created_at: string | null
           item_id: string
           on_hand: number
           organization_id: string
           reorder_max: number | null
           reorder_min: number | null
           sale_price: number | null
+          updated_at: string | null
           warehouse_id: string
         }
         Insert: {
+          created_at?: string | null
           item_id: string
           on_hand?: number
           organization_id: string
           reorder_max?: number | null
           reorder_min?: number | null
           sale_price?: number | null
+          updated_at?: string | null
           warehouse_id: string
         }
         Update: {
+          created_at?: string | null
           item_id?: string
           on_hand?: number
           organization_id?: string
           reorder_max?: number | null
           reorder_min?: number | null
           sale_price?: number | null
+          updated_at?: string | null
           warehouse_id?: string
         }
         Relationships: [
@@ -10645,6 +10651,14 @@ export type Database = {
               p_unit_cost: number
               p_user_id?: string
               p_warehouse_id: string
+            }
+          | {
+              p_invoice_number?: string
+              p_item_id: string
+              p_lot_number?: string
+              p_quantity: number
+              p_unit_cost?: number
+              p_vendor_id?: string
             }
           | {
               p_item_id: string
