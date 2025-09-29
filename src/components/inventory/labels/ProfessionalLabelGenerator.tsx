@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -92,6 +92,22 @@ const ProfessionalLabelGenerator: React.FC = () => {
   const [templateName, setTemplateName] = useState('');
   const [selectedSavedTemplate, setSelectedSavedTemplate] = useState<string>('');
 
+  // Cache current template to prevent re-renders during typing
+  const currentTemplate = useMemo(() => 
+    LABEL_TEMPLATES.find(t => t.id === selectedTemplate), 
+    [selectedTemplate]
+  );
+
+  const templateFields = useMemo(() => 
+    currentTemplate?.fields || [], 
+    [currentTemplate]
+  );
+
+  const showNutritionalFields = useMemo(() => 
+    templateFields.some(f => ['nutrition', 'ingredients', 'allergens'].includes(f)), 
+    [templateFields]
+  );
+
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -105,9 +121,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
     loadSavedTemplates();
   }, []);
 
-  // Handle item selection and generate lot code
+  // Handle item selection - simplified to prevent re-renders during typing
   useEffect(() => {
-    const selectedItemFromList = selectedItemId ? items.find(i => i.id === selectedItemId) || null : null;
+    if (!selectedItemId) {
+      setSelectedItem(null);
+      return;
+    }
+
+    const selectedItemFromList = items.find(i => i.id === selectedItemId) || null;
     
     if (selectedItemFromList?.id !== selectedItem?.id) {
       setSelectedItem(selectedItemFromList);
@@ -117,41 +138,46 @@ const ProfessionalLabelGenerator: React.FC = () => {
         const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
         const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
         setLotCode(lotNumber);
-        
-        // Load nutritional data if it exists
-        const loadNutritionalData = async () => {
-          try {
-            const nutritionalInfo = await nutritionalInfoApi.getByItemId(selectedItemFromList.id);
-            if (nutritionalInfo) {
-              const simpleData = convertFlatToSimple(nutritionalInfo);
-              setIngredients(simpleData.ingredients);
-              setServingSize(simpleData.servingSize);
-              setCalories(simpleData.calories);
-              setTotalFat(simpleData.totalFat);
-              setSodium(simpleData.sodium);
-              setTotalCarbs(simpleData.totalCarbs);
-              setProtein(simpleData.protein);
-              setAllergens(simpleData.allergens);
-            }
-          } catch (error) {
-            console.log('No nutritional data found for pre-population');
-          }
-        };
-        
-        loadNutritionalData();
-      } else {
-        // Clear all data when no item selected
-        setIngredients('');
-        setServingSize('');
-        setCalories('');
-        setTotalFat('');
-        setSodium('');
-        setTotalCarbs('');
-        setProtein('');
-        setAllergens('');
       }
     }
-  }, [selectedItemId, items, companyName, selectedItem?.id]);
+  }, [selectedItemId, items]);
+
+  // Load nutritional data separately to avoid re-renders
+  useEffect(() => {
+    if (!selectedItem?.id) {
+      // Clear all data when no item selected
+      setIngredients('');
+      setServingSize('');
+      setCalories('');
+      setTotalFat('');
+      setSodium('');
+      setTotalCarbs('');
+      setProtein('');
+      setAllergens('');
+      return;
+    }
+
+    const loadNutritionalData = async () => {
+      try {
+        const nutritionalInfo = await nutritionalInfoApi.getByItemId(selectedItem.id);
+        if (nutritionalInfo) {
+          const simpleData = convertFlatToSimple(nutritionalInfo);
+          setIngredients(simpleData.ingredients);
+          setServingSize(simpleData.servingSize);
+          setCalories(simpleData.calories);
+          setTotalFat(simpleData.totalFat);
+          setSodium(simpleData.sodium);
+          setTotalCarbs(simpleData.totalCarbs);
+          setProtein(simpleData.protein);
+          setAllergens(simpleData.allergens);
+        }
+      } catch (error) {
+        console.log('No nutritional data found for pre-population');
+      }
+    };
+    
+    loadNutritionalData();
+  }, [selectedItem?.id]);
 
   // Load saved templates from localStorage
   const loadSavedTemplates = () => {
@@ -657,7 +683,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       )}
 
       {/* Nutritional Information Form */}
-      {selectedItem && LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.some(f => ['nutrition', 'ingredients', 'allergens'].includes(f)) && (
+      {selectedItem && showNutritionalFields && (
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -671,7 +697,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               {/* Ingredients */}
-              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('ingredients') && (
+              {templateFields.includes('ingredients') && (
                 <div>
                   <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients</Label>
                     <Textarea
@@ -685,7 +711,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
               )}
 
               {/* Allergens */}
-              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('allergens') && (
+              {templateFields.includes('allergens') && (
                 <div>
                   <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
                     <Input
@@ -699,7 +725,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
               )}
 
               {/* Nutrition Facts */}
-              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('nutrition') && (
+              {templateFields.includes('nutrition') && (
                 <div className="space-y-3">
                   <div className="font-medium text-sm">Nutrition Facts</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
