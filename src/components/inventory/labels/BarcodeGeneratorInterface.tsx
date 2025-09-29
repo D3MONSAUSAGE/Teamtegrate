@@ -19,7 +19,7 @@ interface BarcodeGeneratorProps {
   onGenerate?: (barcode: string, format: string, selectedItems?: InventoryItem[]) => void;
 }
 
-export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({
+export const BarcodeGeneratorInterface: React.FC<BarcodeGeneratorProps> = ({
   initialValue = '',
   onGenerate
 }) => {

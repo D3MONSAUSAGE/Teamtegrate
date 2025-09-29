@@ -25,7 +25,6 @@ import { IngredientsPanel } from './IngredientsPanel';
 import { NutritionalInfoForm } from './NutritionalInfoForm';
 import { vendorsApi } from '@/contexts/inventory/api';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
-import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { 
   buildNutritionPayload, 
   hasNutritionOrIngredients, 
@@ -78,7 +77,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
-  const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
   
   // Shared state for ingredients and nutritional info
   const [ingredientsData, setIngredientsData] = useState({
@@ -462,106 +460,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     }
   };
 
-  const generateSimpleLabel = async () => {
-    if (isGeneratingLabel || isSubmitting) {
-      console.log('[LABEL_GEN] Blocked - operation in progress');
-      return;
-    }
-
-    setIsGeneratingLabel(true);
-    
-    try {
-      console.log('[LABEL_GEN] Start', { 
-        itemId: itemId || 'new', 
-        name: form.watch('name'),
-        hasNutrition: hasNutritionOrIngredients(nutritionalData, ingredientsData)
-      });
-
-      const itemName = form.watch('name') || 'Untitled Item';
-      const itemSKU = form.watch('sku') || 'N/A';
-      const itemBarcode = form.watch('barcode') || form.watch('sku') || itemId || 'NO-CODE';
-
-      const labelContent = [
-        { type: 'text' as const, value: itemName, x: 20, y: 30, options: { fontSize: 16, fontWeight: 'bold' } },
-        { type: 'text' as const, value: `SKU: ${itemSKU}`, x: 20, y: 50, options: { fontSize: 10 } },
-        { type: 'barcode' as const, value: itemBarcode, x: 20, y: 70, options: { 
-          format: 'CODE128', 
-          width: 100, 
-          height: 30,
-          symbology: 'code128',
-          quiet: 10 
-        } },
-      ];
-
-      // Add nutritional facts if available
-      const flatNutritionalForLabel = convertAdditiveToFlat(nutritionalData);
-      
-      // Debug logging to trace data transformation
-      console.log('[NUTRI_PIPE] raw form:', nutritionalData);
-      console.log('[NUTRI_PIPE] flat:', flatNutritionalForLabel);
-      
-      if (hasNutritionOrIngredients(flatNutritionalForLabel, ingredientsData)) {
-        // Use only flat structure for consistency (no mixing!)
-        if (flatNutritionalForLabel.serving_size || Object.values(flatNutritionalForLabel).some(v => typeof v === 'number' || v === 0)) {
-          const nutritionData = {
-            servingSize: flatNutritionalForLabel.serving_size,
-            calories: flatNutritionalForLabel.calories ?? 0,
-            totalFat: flatNutritionalForLabel.total_fat ?? 0,
-            sodium: flatNutritionalForLabel.sodium ?? 0,
-            totalCarbs: flatNutritionalForLabel.total_carbohydrate ?? 0, // Fixed: singular, not plural
-            protein: flatNutritionalForLabel.protein ?? 0
-          };
-          
-          console.log('[NUTRI_PIPE] nutritionData for renderer:', nutritionData);
-          
-          labelContent.push({
-            type: 'nutritional_facts' as any,
-            value: JSON.stringify(nutritionData),
-            x: 20,
-            y: 120,
-            options: { fontSize: 8 } as any
-          });
-        }
-
-        // Add ingredients if available
-        const ingredients = ingredientsData.ingredients?.trim();
-        if (ingredients) {
-          labelContent.push({
-            type: 'ingredients_list' as any,
-            value: ingredients,
-            x: 20,
-            y: 200,
-            options: { fontSize: 7 } as any
-          });
-        }
-
-        // Add allergen warning if available
-        const allergens = ingredientsData.allergens?.length ? ingredientsData.allergens.join(', ') : '';
-        if (allergens) {
-          labelContent.push({
-            type: 'allergen_warning' as any,
-            value: allergens,
-            x: 20,
-            y: 260,
-            options: { fontSize: 7 } as any
-          });
-        }
-      }
-
-      // Generate PDF using existing BarcodeGenerator
-      const pdf = BarcodeGenerator.createLabelPDF(labelContent, { width: 4, height: 6 });
-      const filename = sanitizeFilename(itemName);
-      pdf.save(`label-${filename}.pdf`);
-      
-      console.log('[LABEL_GEN] Done - PDF generated successfully');
-      toast.success('Label generated successfully!');
-      
-    } catch (error: any) {
-      console.error('[LABEL_GEN] Error:', error);
-      toast.error('Failed to generate label: ' + (error?.message || 'Unknown error'));
-    } finally {
-      setIsGeneratingLabel(false);
-    }
+  const openLabelSystem = () => {
+    toast.info('Use the Labels & Barcodes tab in Inventory Management for professional label generation');
   };
 
   return (
@@ -928,22 +828,13 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={generateSimpleLabel}
-                    disabled={
-                      isGeneratingLabel || 
-                      isSubmitting || 
-                      loading || 
-                      (!hasNutritionOrIngredients(convertAdditiveToFlat(nutritionalData), ingredientsData) && !form.watch('name'))
-                    }
-                    title={
-                      !hasNutritionOrIngredients(convertAdditiveToFlat(nutritionalData), ingredientsData) && !form.watch('name')
-                        ? "Add nutritional info, ingredients, or a product name to generate a label" 
-                        : "Generate a PDF label with current data"
-                    }
+                    onClick={openLabelSystem}
+                    disabled={isSubmitting || loading}
+                    title="Open the main label system for professional label generation"
                   >
-                    {isGeneratingLabel ? 'Generating...' : 'Print Label'}
+                    Generate Labels
                   </Button>
-                  <Button type="submit" disabled={isSubmitting || loading || isGeneratingLabel}>
+                  <Button type="submit" disabled={isSubmitting || loading}>
                     {isSubmitting || loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
                   </Button>
                 </div>
