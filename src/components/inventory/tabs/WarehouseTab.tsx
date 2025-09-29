@@ -435,9 +435,6 @@ export const WarehouseTab: React.FC = () => {
             open={isReceiveOpen}
             onOpenChange={setIsReceiveOpen}
             warehouseId={warehouse.id}
-            onSuccess={() => {
-              handleRefresh();
-            }}
           />
         </WarehouseProvider>
       ) : (showOverview || shouldShowOverview) && selectedTeamId === null ? (

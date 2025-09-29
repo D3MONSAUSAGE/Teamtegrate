@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode, DollarSign, X } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
+import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
 import { useScanGun } from '@/hooks/useScanGun';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
@@ -28,7 +29,7 @@ interface ReceiveStockDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   warehouseId: string;
-  onSuccess?: () => void;
+  onSuccess?: () => void; // Optional since we use warehouse context for updates
 }
 
 interface ReceiveItem {
@@ -50,6 +51,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   onSuccess
 }) => {
   const { items: inventoryItems, vendors } = useInventory();
+  const { updateItemStock } = useWarehouse();
   const [receiveItems, setReceiveItems] = useState<ReceiveItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [notes, setNotes] = useState('');
@@ -191,7 +193,15 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
     try {
       setSubmitting(true);
 
-      // Prepare items for the API with lot tracking
+      // Update stock levels instantly using warehouse context for each item
+      for (const item of receiveItems) {
+        const success = await updateItemStock(item.item_id, item.quantity);
+        if (!success) {
+          throw new Error(`Failed to receive ${item.item_name}`);
+        }
+      }
+
+      // Prepare items for the API with lot tracking (for lot/vendor data)
       const items = receiveItems.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
@@ -201,7 +211,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
         invoice_number: invoiceNumber
       }));
 
-      // Call the new receiveStock API
+      // Call the receiveStock API for lot tracking and vendor information
       await warehouseApi.receiveStock(warehouseId, items);
 
       toast.success(`Successfully received ${receiveItems.length} item${receiveItems.length !== 1 ? 's' : ''}!`);
@@ -213,9 +223,8 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       setSelectedVendor(undefined);
       setInvoiceNumber('');
       
-      // Close dialog and trigger refresh
+      // Close dialog (no manual refresh needed - warehouse context handles updates)
       onOpenChange(false);
-      onSuccess?.();
       
     } catch (error) {
       console.error('Error receiving stock:', error);
