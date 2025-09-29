@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useEnhancedInventoryManagement } from '@/hooks/useEnhancedInventoryManagement';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
@@ -22,6 +23,21 @@ interface LabelTemplate {
   name: string;
   description: string;
   fields: string[];
+}
+
+interface SavedTemplate {
+  id: string;
+  name: string;
+  companyName: string;
+  ingredients: string;
+  servingSize: string;
+  calories: string;
+  totalFat: string;
+  sodium: string;
+  totalCarbs: string;
+  protein: string;
+  allergens: string;
+  createdAt: string;
 }
 
 const LABEL_TEMPLATES: LabelTemplate[] = [
@@ -68,6 +84,12 @@ export const ProfessionalLabelGenerator: React.FC = () => {
   const [protein, setProtein] = useState('');
   const [allergens, setAllergens] = useState('');
 
+  // Template management state
+  const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
+  const [templateName, setTemplateName] = useState('');
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [selectedSavedTemplate, setSelectedSavedTemplate] = useState<string>('');
+
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -76,10 +98,89 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Set default company name
+  // Load saved templates and set default company name
   useEffect(() => {
     setCompanyName('Your Company Name');
+    loadSavedTemplates();
   }, []);
+
+  // Load saved templates from localStorage
+  const loadSavedTemplates = () => {
+    try {
+      const saved = localStorage.getItem('labelTemplates');
+      if (saved) {
+        setSavedTemplates(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+    }
+  };
+
+  // Save template to localStorage
+  const saveTemplate = () => {
+    if (!templateName.trim()) {
+      toast.error('Please enter a template name');
+      return;
+    }
+
+    const newTemplate: SavedTemplate = {
+      id: Date.now().toString(),
+      name: templateName.trim(),
+      companyName,
+      ingredients,
+      servingSize,
+      calories,
+      totalFat,
+      sodium,
+      totalCarbs,
+      protein,
+      allergens,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const updatedTemplates = [...savedTemplates, newTemplate];
+      localStorage.setItem('labelTemplates', JSON.stringify(updatedTemplates));
+      setSavedTemplates(updatedTemplates);
+      setTemplateName('');
+      setShowSaveTemplate(false);
+      toast.success(`Template "${newTemplate.name}" saved successfully!`);
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      toast.error('Failed to save template');
+    }
+  };
+
+  // Load a saved template
+  const loadTemplate = (templateId: string) => {
+    const template = savedTemplates.find(t => t.id === templateId);
+    if (template) {
+      setCompanyName(template.companyName);
+      setIngredients(template.ingredients);
+      setServingSize(template.servingSize);
+      setCalories(template.calories);
+      setTotalFat(template.totalFat);
+      setSodium(template.sodium);
+      setTotalCarbs(template.totalCarbs);
+      setProtein(template.protein);
+      setAllergens(template.allergens);
+      toast.success(`Template "${template.name}" loaded!`);
+    }
+  };
+
+  // Delete a saved template
+  const deleteTemplate = (templateId: string) => {
+    try {
+      const updatedTemplates = savedTemplates.filter(t => t.id !== templateId);
+      localStorage.setItem('labelTemplates', JSON.stringify(updatedTemplates));
+      setSavedTemplates(updatedTemplates);
+      setSelectedSavedTemplate('');
+      toast.success('Template deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+      toast.error('Failed to delete template');
+    }
+  };
 
   // Generate lot code when item changes - memoized to prevent unnecessary renders
   useEffect(() => {
@@ -538,6 +639,142 @@ export const ProfessionalLabelGenerator: React.FC = () => {
                         className="mt-1"
                       />
                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Template Management */}
+      {selectedItem && (
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FolderOpen className="h-5 w-5 text-primary" />
+              Label Templates
+            </CardTitle>
+            <CardDescription>
+              Save and reuse label configurations for faster generation
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Load Template */}
+              {savedTemplates.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">Load Saved Template</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Select value={selectedSavedTemplate} onValueChange={setSelectedSavedTemplate}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Choose a template..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {savedTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{template.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                {new Date(template.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => loadTemplate(selectedSavedTemplate)}
+                      disabled={!selectedSavedTemplate}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Load
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          disabled={!selectedSavedTemplate}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this template? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteTemplate(selectedSavedTemplate)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              )}
+
+              {/* Save Template */}
+              <div>
+                <Label className="text-sm font-medium">Save Current Configuration</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="Template name (e.g., 'Organic Products')"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={saveTemplate}
+                    disabled={!templateName.trim() || !companyName.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Save your current settings to quickly generate similar labels in the future
+                </p>
+              </div>
+
+              {/* Template List */}
+              {savedTemplates.length > 0 && (
+                <div className="pt-2">
+                  <div className="text-xs text-muted-foreground mb-2">
+                    {savedTemplates.length} template{savedTemplates.length !== 1 ? 's' : ''} saved
+                  </div>
+                  <div className="grid gap-2">
+                    {savedTemplates.slice(0, 3).map((template) => (
+                      <div
+                        key={template.id}
+                        className="flex items-center justify-between p-2 bg-muted/50 rounded border text-sm"
+                      >
+                        <div>
+                          <span className="font-medium">{template.name}</span>
+                          <span className="text-muted-foreground ml-2">
+                            ({template.companyName})
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={() => loadTemplate(template.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2"
+                          >
+                            Load
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

@@ -7,10 +7,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Calculator, Plus, Scan, QrCode, Apple } from 'lucide-react';
+import { Package, Calculator, Plus, Scan, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import { InventoryCategoryDialog } from './InventoryCategoryDialog';
 import { InventoryUnitDialog } from './InventoryUnitDialog';
@@ -21,16 +20,7 @@ import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';
 import { VendorDialog } from './dialogs/VendorDialog';
 import { ImageUpload } from './ImageUpload';
-import { SimpleNutritionalForm, SimpleNutritionalData, convertSimpleToFlat, convertFlatToSimple } from './SimpleNutritionalForm';
 import { vendorsApi } from '@/contexts/inventory/api';
-import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
-import { 
-  buildNutritionPayload, 
-  hasNutritionOrIngredients, 
-  sanitizeFilename, 
-  nutritionalSchema, 
-  ingredientsSchema 
-} from '@/utils/nutritionalValidation';
 import { useAuth } from '@/contexts/AuthContext';
 
 const inventoryItemSchema = z.object({
@@ -45,7 +35,6 @@ const inventoryItemSchema = z.object({
   vendor_id: z.string().nullable().optional(),
   sku: z.string().optional().refine(async (sku) => {
     if (!sku || sku.trim() === '') return true;
-    // This validation will be handled by the SKUValidationIndicator component
     return true;
   }, 'SKU validation failed'),
   barcode: z.string().optional(),
@@ -67,7 +56,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   onOpenChange,
   itemId
 }) => {
-  console.log('InventoryItemDialog rendering with SimpleNutritionalForm');
   const { createItem, updateItem, getItemById, loading, categories, units, vendors, refreshVendors } = useInventory();
   const { user } = useAuth();
   
@@ -77,21 +65,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
-  
-  // Simple nutritional data state
-  const [nutritionalData, setNutritionalData] = useState<SimpleNutritionalData>({
-    ingredients: '',
-    servingSize: '',
-    calories: '',
-    totalFat: '',
-    sodium: '',
-    totalCarbs: '',
-    protein: '',
-    allergens: '',
-  });
-
-  // Remove all the old complex data conversion and loading logic 
-  // Now using simple nutritional data structure only
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -144,20 +117,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       form.reset();
       setCalculatedUnitPrice(null);
       setCurrentItem(null);
-      // Reset nutritional data for new items
-      setNutritionalData({
-        ingredients: '',
-        servingSize: '',
-        calories: '',
-        totalFat: '',
-        sodium: '',
-        totalCarbs: '',
-        protein: '',
-        allergens: '',
-      });
     }
     
-    // Reset submitting state when dialog opens/closes
     if (!open) {
       setIsSubmitting(false);
     }
@@ -184,16 +145,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           vendor_id: item.vendor_id || null,
           image_url: item.image_url || null,
         });
-        
-        // Try to load nutritional info (simplified)
-        try {
-          const nutritionalInfo = await nutritionalInfoApi.getByItemId(itemId!);
-          if (nutritionalInfo) {
-            setNutritionalData(convertFlatToSimple(nutritionalInfo));
-          }
-        } catch (nutritionalError) {
-          console.log('No nutritional info found for item, using defaults');
-        }
       }
     } catch (error) {
       console.error('Error loading item:', error);
@@ -202,21 +153,15 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   };
 
   const onSubmit = async (values: InventoryItemFormData) => {
-    // Prevent multiple submissions
     if (isSubmitting || loading) {
-      console.log('🛑 Submission blocked - already submitting or loading');
       return;
     }
     
-    console.log('📋 Starting item submission...', values);
-    
     // Validate SKU uniqueness before submission
     if (values.sku && values.sku.trim() !== '') {
-      console.log('🔍 Validating SKU uniqueness:', values.sku);
       try {
         const skuValidation = await validateSKUUniqueness(values.sku, itemId || undefined);
         if (!skuValidation.isUnique) {
-          console.log('❌ SKU validation failed:', skuValidation.message);
           form.setError('sku', {
             type: 'manual',
             message: skuValidation.message || 'SKU must be unique'
@@ -224,9 +169,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           toast.error(skuValidation.message || 'SKU is already in use');
           return;
         }
-        console.log('✅ SKU validation passed');
       } catch (skuError) {
-        console.error('❌ SKU validation error:', skuError);
+        console.error('SKU validation error:', skuError);
         toast.error('Failed to validate SKU. Please try again.');
         return;
       }
@@ -235,9 +179,6 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
     setIsSubmitting(true);
     
     try {
-      console.log('📊 Form values submitted:', values);
-      console.log('💰 Calculated unit price:', calculatedUnitPrice);
-      
       const itemData = {
         name: values.name || '',
         description: values.description,
@@ -263,81 +204,24 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         image_url: values.image_url || null,
       };
 
-      console.log('📦 Item data being sent:', itemData);
-
       let result;
       if (itemId) {
-        console.log('✏️ Updating existing item:', itemId);
         result = await updateItem(itemId, itemData);
-        console.log('✅ Update result:', result);
       } else {
-        console.log('➕ Creating new item...');
         result = await createItem(itemData);
-        console.log('✅ Create result:', result);
       }
       
-      // Save nutritional info using simple structure
-      const savedItemId = itemId || result?.id;
-      if (savedItemId) {
-        console.log('💾 Checking simple nutritional data to save:', nutritionalData);
-        
-        // Check if we have any nutritional data to save
-        const hasDataToSave = Object.values(nutritionalData).some(value => value.trim() !== '');
-          
-        console.log('💾 Has nutritional data to save:', hasDataToSave);
-        
-        if (hasDataToSave) {
-          try {
-            console.log('💊 Saving nutritional info for item:', savedItemId);
-            const flatNutritionalData = convertSimpleToFlat(nutritionalData);
-            const nutritionalPayload = buildNutritionPayload(
-              flatNutritionalData, 
-              savedItemId,
-              user
-            );
-            
-            console.log('💊 Nutritional payload:', nutritionalPayload);
-            const nutritionalResult = await nutritionalInfoApi.upsert(nutritionalPayload);
-            console.log('✅ Nutritional info saved successfully:', nutritionalResult);
-          } catch (nutritionalError: any) {
-            console.error('❌ Error saving nutritional info:', nutritionalError);
-            
-            let errorMessage = 'Failed to save nutritional information';
-            if (nutritionalError?.message?.includes('permission')) {
-              errorMessage = 'Permission denied when saving nutrition data. Please check your access rights.';
-            } else if (nutritionalError?.message?.includes('organization_id')) {
-              errorMessage = 'Organization context missing. Please refresh and try again.';
-            } else if (nutritionalError?.message) {
-              errorMessage = `Nutrition save failed: ${nutritionalError.message}`;
-            }
-            
-            toast.error(errorMessage);
-            throw nutritionalError; // Don't continue if nutrition fails
-          }
-        } else {
-          console.log('⏭️ No nutritional data to save, skipping...');
-        }
-      }
-      
-      // Success message after everything is saved
       if (itemId) {
-        toast.success('Item and nutritional info updated successfully');
+        toast.success('Item updated successfully');
       } else {
-        toast.success('Item and nutritional info created successfully');
+        toast.success('Item created successfully');
       }
       
-      // Only close dialog and reset form on success
-      console.log('🎉 Operation successful, closing dialog');
       onOpenChange(false);
       form.reset();
       setCalculatedUnitPrice(null);
     } catch (error) {
-      console.error('❌ Error saving item:', error);
-      console.error('📝 Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        error: error
-      });
+      console.error('Error saving item:', error);
       
       let errorMessage = 'Failed to save item';
       if (error instanceof Error) {
@@ -374,17 +258,10 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="basic">Basic Information</TabsTrigger>
-            <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutritional Info</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="basic" className="mt-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <fieldset disabled={isSubmitting || loading} className="space-y-6">
+        <div className="w-full mt-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <fieldset disabled={isSubmitting || loading} className="space-y-6">
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -550,27 +427,130 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                         value={field.value}
                         onChange={field.onChange}
                         disabled={isSubmitting || loading}
-                        label="Team Access"
                       />
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
+                {/* Vendor Selection */}
                 <FormField
                   control={form.control}
                   name="vendor_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vendor</FormLabel>
+                      <VendorSelector
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        vendors={vendors}
+                        onAddVendor={() => setIsVendorDialogOpen(true)}
+                        disabled={isSubmitting || loading}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Packaging Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium flex items-center gap-2">
+                    <Calculator className="h-5 w-5 text-primary" />
+                    Packaging Information
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="purchase_unit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Purchase Unit</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., case, bag, box" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="conversion_factor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Units per Package</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="e.g., 12"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="purchase_price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Package Price ($)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01"
+                              placeholder="0.00"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Unit Cost Display */}
+                  {calculatedUnitPrice && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <div className="text-sm font-medium text-muted-foreground">Calculated Unit Cost</div>
+                      <div className="text-lg font-bold text-primary">
+                        ${calculatedUnitPrice.toFixed(4)} per unit
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sale Price */}
+                <FormField
+                  control={form.control}
+                  name="sale_price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sale Price ($)</FormLabel>
                       <FormControl>
-                        <VendorSelector
-                          vendors={vendors}
-                          value={field.value || undefined}
-                          onValueChange={(value) => field.onChange(value || null)}
-                          onAddVendor={() => setIsVendorDialogOpen(true)}
-                          disabled={isSubmitting || loading}
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field} 
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Location */}
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Storage location or area" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -583,171 +563,38 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   name="image_url"
                   render={({ field }) => (
                     <FormItem>
-                      <ImageUpload
-                        value={field.value || undefined}
-                        onChange={(imageUrl) => field.onChange(imageUrl)}
-                        disabled={isSubmitting || loading}
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Package Information */}
-                <div className="border rounded-lg p-4 space-y-4">
-                  <h3 className="flex items-center gap-2 font-medium text-sm">
-                    <Package className="h-4 w-4" />
-                    How do you buy this item?
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="conversion_factor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Units per Package</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.0001"
-                              placeholder="e.g., 12" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                     />
-
-                     <FormField
-                       control={form.control}
-                       name="purchase_price"
-                       render={({ field }) => (
-                         <FormItem>
-                           <FormLabel>Package Price</FormLabel>
-                           <FormControl>
-                             <Input 
-                               type="number" 
-                               step="0.01"
-                               placeholder="e.g., 24.00" 
-                               {...field} 
-                             />
-                           </FormControl>
-                           <FormMessage />
-                         </FormItem>
-                       )}
-                     />
-                   </div>
-
-                   <FormField
-                     control={form.control}
-                     name="sale_price"
-                     render={({ field }) => (
-                       <FormItem>
-                         <FormLabel>Sale Price (per unit)</FormLabel>
-                         <FormControl>
-                           <Input 
-                             type="number" 
-                             step="0.01"
-                             placeholder="e.g., 2.50" 
-                             {...field} 
-                           />
-                         </FormControl>
-                         <FormMessage />
-                       </FormItem>
-                     )}
-                   />
-
-                   {calculatedUnitPrice !== null && (
-                     <div className="bg-primary/5 border border-primary/20 p-4 rounded-md space-y-3">
-                       <div className="flex items-center gap-2 mb-2">
-                         <Calculator className="h-4 w-4 text-primary" />
-                         <span className="font-medium text-primary">Pricing Analysis</span>
-                       </div>
-                       <div>
-                         <p className="text-lg font-semibold">
-                           ${calculatedUnitPrice.toFixed(4)} per {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'}
-                         </p>
-                         <p className="text-sm text-muted-foreground mt-1">
-                           This is what each individual {form.watch('base_unit_id') ? units.find(u => u.id === form.watch('base_unit_id'))?.measurement_type || 'unit' : 'unit'} costs based on your package pricing
-                         </p>
-                       </div>
-                       {form.watch('sale_price') && (
-                         <div className="pt-2 border-t border-primary/10">
-                           <div className="flex justify-between items-center">
-                             <span className="text-sm font-medium">Profit per unit:</span>
-                             <span className="font-semibold text-green-600">
-                               ${(form.watch('sale_price') - calculatedUnitPrice).toFixed(4)}
-                             </span>
-                           </div>
-                           <div className="flex justify-between items-center mt-1">
-                             <span className="text-sm font-medium">Profit margin:</span>
-                             <span className="font-semibold text-green-600">
-                               {(((form.watch('sale_price') - calculatedUnitPrice) / form.watch('sale_price')) * 100).toFixed(1)}%
-                             </span>
-                           </div>
-                           {(form.watch('sale_price') - calculatedUnitPrice) < 0 && (
-                             <p className="text-sm text-red-600 mt-2">
-                               ⚠️ Warning: You're selling at a loss
-                             </p>
-                           )}
-                         </div>
-                       )}
-                     </div>
-                   )}
-                </div>
-
-                {/* Storage Location */}
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Storage Location</FormLabel>
+                      <FormLabel>Product Image</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Warehouse A, Shelf 5" {...field} />
+                        <ImageUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabled={isSubmitting || loading}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                </fieldset>
-                
-                <div className="flex justify-end gap-2 pt-4">
+
+                {/* Action Buttons */}
+                <div className="flex justify-between pt-6 border-t">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    disabled={isSubmitting || loading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
                     onClick={openLabelSystem}
                     disabled={isSubmitting || loading}
-                    title="Open the main label system for professional label generation"
                   >
+                    <QrCode className="mr-2 h-4 w-4" />
                     Generate Labels
                   </Button>
                   <Button type="submit" disabled={isSubmitting || loading}>
                     {isSubmitting || loading ? 'Saving...' : itemId ? 'Update Item' : 'Create Item'}
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </TabsContent>
-
-          <TabsContent value="nutrition" className="mt-6">
-            <SimpleNutritionalForm
-              itemName={form.watch('name') || 'New Item'}
-              data={nutritionalData}
-              onChange={setNutritionalData}
-            />
-          </TabsContent>
-        </Tabs>
+              </fieldset>
+            </form>
+          </Form>
+        </div>
 
         <InventoryCategoryDialog
           open={isCategoryDialogOpen}
