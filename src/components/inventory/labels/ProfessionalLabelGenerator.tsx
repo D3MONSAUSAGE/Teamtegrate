@@ -12,11 +12,12 @@ import { useEnhancedInventoryManagement } from '@/hooks/useEnhancedInventoryMana
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2 } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
 import jsPDF from 'jspdf';
+import { useDropzone } from 'react-dropzone';
 
 interface LabelTemplate {
   id: string;
@@ -29,6 +30,7 @@ interface SavedTemplate {
   id: string;
   name: string;
   companyName: string;
+  logoData?: string; // Base64 encoded logo image
   ingredients: string;
   servingSize: string;
   calories: string;
@@ -76,6 +78,11 @@ const ProfessionalLabelGenerator: React.FC = () => {
   // Company and lot code state
   const [companyName, setCompanyName] = useState('Your Company Name');
   const [lotCode, setLotCode] = useState('');
+  
+  // Logo state
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
+  const [logoData, setLogoData] = useState<string>(''); // Base64 for PDF
 
   // Simple nutritional info state
   const [ingredients, setIngredients] = useState('');
@@ -142,6 +149,53 @@ const ProfessionalLabelGenerator: React.FC = () => {
       }
     }
   }, [selectedItemId, items, selectedItem?.id]);
+
+  // Logo upload handlers
+  const onLogoDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (PNG, JPG, WEBP, SVG)');
+        return;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image file must be smaller than 5MB');
+        return;
+      }
+
+      setLogoFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        setLogoPreview(result);
+        setLogoData(result);
+      };
+      reader.readAsDataURL(file);
+      
+      toast.success('Logo uploaded successfully!');
+    }
+  }, []);
+
+  const { getRootProps: getLogoRootProps, getInputProps: getLogoInputProps, isDragActive: isLogoDragActive } = useDropzone({
+    onDrop: onLogoDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.svg']
+    },
+    multiple: false
+  });
+
+  const removeLogo = useCallback(() => {
+    setLogoFile(null);
+    setLogoPreview('');
+    setLogoData('');
+    toast.success('Logo removed');
+  }, []);
 
   // Load nutritional data only when item ID changes
   useEffect(() => {
@@ -212,6 +266,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       id: Date.now().toString(),
       name: templateName.trim(),
       companyName,
+      logoData, // Include logo data
       ingredients,
       servingSize,
       calories,
@@ -233,13 +288,25 @@ const ProfessionalLabelGenerator: React.FC = () => {
       console.error('Failed to save template:', error);
       toast.error('Failed to save template');
     }
-  }, [templateName, companyName, ingredients, servingSize, calories, totalFat, sodium, totalCarbs, protein, allergens, savedTemplates]);
+  }, [templateName, companyName, logoData, ingredients, servingSize, calories, totalFat, sodium, totalCarbs, protein, allergens, savedTemplates]);
 
   // Load a saved template
   const loadTemplate = useCallback((templateId: string) => {
     const template = savedTemplates.find(t => t.id === templateId);
     if (template) {
       setCompanyName(template.companyName);
+      
+      // Load logo data if available
+      if (template.logoData) {
+        setLogoData(template.logoData);
+        setLogoPreview(template.logoData);
+        // Don't set logoFile as it's not needed for display/PDF generation
+      } else {
+        setLogoData('');
+        setLogoPreview('');
+        setLogoFile(null);
+      }
+      
       setIngredients(template.ingredients);
       setServingSize(template.servingSize);
       setCalories(template.calories);
@@ -286,6 +353,18 @@ const ProfessionalLabelGenerator: React.FC = () => {
 
       pdf.setFont('helvetica');
       let y = 0.3;
+
+      // Logo (if present) - at the very top
+      if (logoData) {
+        try {
+          // Add logo centered at the top
+          const logoSize = 0.8; // Logo height in inches
+          pdf.addImage(logoData, 'PNG', 2 - (logoSize / 2), y, logoSize, logoSize);
+          y += logoSize + 0.1; // Add space after logo
+        } catch (error) {
+          console.error('Failed to add logo to PDF:', error);
+        }
+      }
 
       // Company Header (always included)
       if (companyName) {
@@ -436,7 +515,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <Label htmlFor="company-name" className="text-sm font-medium">Company Name</Label>
               <Input
@@ -446,6 +525,59 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 placeholder="Enter company name"
                 className="mt-1"
               />
+            </div>
+            
+            {/* Logo Upload Section */}
+            <div>
+              <Label className="text-sm font-medium">Company Logo (Optional)</Label>
+              <div className="mt-2">
+                {logoPreview ? (
+                  <div className="relative">
+                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
+                      <img 
+                        src={logoPreview} 
+                        alt="Logo preview" 
+                        className="w-12 h-12 object-contain bg-white rounded border"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Logo uploaded</p>
+                        <p className="text-xs text-muted-foreground">
+                          {logoFile?.name || 'From saved template'}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={removeLogo}
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    {...getLogoRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                      isLogoDragActive 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <input {...getLogoInputProps()} />
+                    <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">
+                      {isLogoDragActive ? 'Drop logo here' : 'Click or drag logo image'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PNG, JPG, WEBP, SVG (Max 5MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Logo will appear at the top of your labels
+              </p>
             </div>
           </div>
         </CardContent>
