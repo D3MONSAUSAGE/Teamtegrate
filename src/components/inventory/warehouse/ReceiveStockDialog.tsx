@@ -182,10 +182,9 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
         item_id: item.item_id,
         quantity: item.quantity,
         unit_cost: item.unit_cost,
-        notes: notes || 'Stock received',
         lot_number: item.lot_number,
-        expiration_date: item.expiration_date || null,
-        manufacturing_date: item.manufacturing_date || null
+        vendor_id: selectedVendor,
+        invoice_number: invoiceNumber
       }));
 
       // Call the new receiveStock API

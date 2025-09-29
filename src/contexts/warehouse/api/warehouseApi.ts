@@ -195,23 +195,19 @@ export const warehouseApi = {
     lot_number?: string;
     expiration_date?: string;
     manufacturing_date?: string;
+    vendor_id?: string;
+    invoice_number?: string;
   }>): Promise<{ success: boolean; message?: string }> {
     try {
-      const { data: authUser } = await supabase.auth.getUser();
-      if (!authUser.user) throw new Error('User not authenticated');
-
       // Call the receive_stock database function for each item
       for (const item of items) {
-        const { error } = await supabase.rpc('receive_stock' as any, {
-          p_warehouse_id: warehouseId,
+        const { error } = await supabase.rpc('receive_stock', {
           p_item_id: item.item_id,
           p_quantity: item.quantity,
-          p_unit_cost: item.unit_cost,
-          p_notes: item.notes || 'Stock received',
+          p_unit_cost: item.unit_cost || 0,
           p_lot_number: item.lot_number || null,
-          p_expiration_date: item.expiration_date || null,
-          p_manufacturing_date: item.manufacturing_date || null,
-          p_user_id: authUser.user.id
+          p_vendor_id: item.vendor_id || null,
+          p_invoice_number: item.invoice_number || null
         });
 
         if (error) {
