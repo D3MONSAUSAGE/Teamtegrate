@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode, DollarSign } from 'lucide-react';
+import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode, DollarSign, X } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
 import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
@@ -51,6 +61,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   const [showScanner, setShowScanner] = useState(false);
   const [scanMode, setScanMode] = useState(false);
   const [scannerConnected, setScannerConnected] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
   // Handle barcode scan
   const handleBarcodeScanned = (barcode: string) => {
@@ -214,275 +225,427 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const totalItems = receiveItems.length;
+  const totalQuantity = receiveItems.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Receive Stock
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-6xl">
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Receive Stock
+              </DrawerTitle>
+              <DrawerDescription>
+                Add items to warehouse inventory with lot tracking and vendor information
+              </DrawerDescription>
+            </DrawerHeader>
 
-        <div className="space-y-6">
-          {/* Vendor and Invoice Information */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Vendor</Label>
-              <VendorSelector
-                vendors={vendors}
-                value={selectedVendor}
-                onValueChange={setSelectedVendor}
-                placeholder="Select vendor..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Invoice/Reference Number</Label>
-              <Input
-                placeholder="Enter invoice or reference number..."
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Scanner Controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {scannerConnected && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-primary">Scanner Connected</span>
+            <div className="p-4 space-y-6">
+              {/* Header Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Vendor</Label>
+                  <VendorSelector
+                    vendors={vendors}
+                    value={selectedVendor}
+                    onValueChange={setSelectedVendor}
+                    placeholder="Select vendor..."
+                  />
                 </div>
-              )}
-              
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="scan-mode"
-                  checked={scanMode}
-                  onCheckedChange={setScanMode}
-                />
-                <Label htmlFor="scan-mode" className="flex items-center gap-2">
-                  <Scan className="h-4 w-4" />
-                  Scan Mode
-                </Label>
+                <div className="space-y-2">
+                  <Label>Invoice/Reference Number</Label>
+                  <Input
+                    placeholder="Enter invoice or reference number..."
+                    value={invoiceNumber}
+                    onChange={(e) => setInvoiceNumber(e.target.value)}
+                  />
+                </div>
               </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowScanner(true)}
-                className="flex items-center gap-2"
-              >
-                <Scan className="h-4 w-4" />
-                Camera Scan
-              </Button>
-            </div>
-          </div>
 
-          {/* Add Items Section */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Search Items</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, SKU, or barcode..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Search Results */}
-            {searchQuery && (
-              <div className="max-h-40 overflow-y-auto border rounded-md">
-                {filteredItems.slice(0, 10).map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                    onClick={() => addItem(item.id)}
-                  >
-                    <div className="font-medium">{item.name}</div>
-                    {item.sku && <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>}
+              {/* Items Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-lg font-semibold">Items to Receive</Label>
+                  
+                  {/* Scanner Controls */}
+                  <div className="flex items-center gap-4">
+                    {scannerConnected && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        <span className="text-sm font-medium text-primary">Hardware Scanner Active</span>
+                        <Zap className="h-3 w-3 text-primary" />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="scan-mode" className="text-sm">
+                        {scannerConnected ? 'Scanning' : 'Scan Mode'}
+                      </Label>
+                      <Switch
+                        id="scan-mode"
+                        checked={scanMode}
+                        onCheckedChange={setScanMode}
+                      />
+                    </div>
                   </div>
-                ))}
-                {filteredItems.length === 0 && (
-                  <div className="p-3 text-muted-foreground text-center">No items found</div>
+                </div>
+                
+                {/* Search Section */}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={
+                          scanMode && scannerConnected 
+                            ? "Ready for hardware scanner - or search manually..." 
+                            : scanMode 
+                              ? "Scan with camera or search manually..." 
+                              : "Search items by name, SKU, or barcode..."
+                        }
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => {
+                          if (filteredItems.length > 0) setShowResults(true);
+                        }}
+                        className="pl-10"
+                        disabled={scanMode && !searchQuery}
+                      />
+                    </div>
+                    
+                    {/* Scan Button */}
+                    {scanMode && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowScanner(true)}
+                          className="p-2"
+                        >
+                          <Scan className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {/* Search Results */}
+                    {searchQuery && filteredItems.length > 0 && (
+                      <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto border shadow-lg bg-background">
+                        <CardContent className="p-2">
+                          {filteredItems.slice(0, 10).map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => addItem(item.id)}
+                              className="flex items-center justify-between p-3 hover:bg-muted rounded-md cursor-pointer"
+                            >
+                              <div className="flex-1">
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-sm text-muted-foreground flex gap-2">
+                                  {item.sku && <span>SKU: {item.sku}</span>}
+                                  {item.barcode && <span>| {item.barcode}</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  Stock: {item.current_stock || 0}
+                                </Badge>
+                                {(item.purchase_price || item.unit_cost || item.calculated_unit_price) && (
+                                  <div className="text-sm font-medium">
+                                    {formatCurrency(item.purchase_price || item.unit_cost || item.calculated_unit_price || 0)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    )}
+                    
+                    {/* No Results */}
+                    {searchQuery && filteredItems.length === 0 && (
+                      <Card className="absolute top-full left-0 right-0 z-50 mt-1 border shadow-lg bg-background">
+                        <CardContent className="p-4 text-center text-muted-foreground">
+                          No items found matching "{searchQuery}"
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                  
+                  {/* Scanner Status */}
+                  {scanMode && (
+                    <div className={`rounded-lg p-3 border ${
+                      scannerConnected 
+                        ? 'bg-primary/5 border-primary/20' 
+                        : 'bg-muted/50 border-muted'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          scannerConnected ? 'bg-primary animate-pulse' : 'bg-muted-foreground/40'
+                        }`} />
+                        <div className="flex-1">
+                          {scannerConnected ? (
+                            <div>
+                              <div className="font-medium text-primary text-sm">🎯 Hardware Scanner Connected</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Point scanner at any barcode to add items instantly
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-medium text-sm">📱 Camera Scanning Available</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Use camera scan button or connect a hardware scanner for faster scanning
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {scannerConnected && <Zap className="h-4 w-4 text-primary" />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Items to Receive */}
+                {receiveItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-muted rounded-lg">
+                    <div className="rounded-full bg-muted p-4 mb-4">
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No Items Added</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Search for items above to add them to your receiving list
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {receiveItems.map((item, index) => (
+                      <Card key={item.item_id} className="border-l-4 border-l-primary/20">
+                        <CardContent className="p-4">
+                          {/* Mobile-First Layout */}
+                          <div className="space-y-4">
+                            {/* Item Header */}
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-base leading-tight mb-1">
+                                  {item.item_name}
+                                </h4>
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                  {item.sku && (
+                                    <Badge variant="outline" className="text-xs">
+                                      SKU: {item.sku}
+                                    </Badge>
+                                  )}
+                                  {item.barcode && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {item.barcode}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => removeItem(index)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive min-h-[44px] min-w-[44px] p-0 shrink-0 ml-2"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            {/* Total Cost Display */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="secondary" className="text-xs">
+                                  Lot: {item.lot_number || 'Auto-generated'}
+                                </Badge>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold">
+                                  {formatCurrency(item.quantity * item.unit_cost)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Line Total
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Quantity Controls - Mobile Optimized */}
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">Quantity</Label>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateItemQuantity(index, item.quantity - 1)}
+                                    disabled={item.quantity <= 1}
+                                    className="h-10 w-10 p-0 shrink-0"
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <div className="mx-3 text-center min-w-[60px]">
+                                    <div className="text-2xl font-bold">{item.quantity}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      units
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateItemQuantity(index, item.quantity + 1)}
+                                    className="h-10 w-10 p-0 shrink-0"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Unit Cost Section */}
+                              <div className="flex items-center justify-between gap-4">
+                                <Label className="text-sm font-medium">Unit Cost</Label>
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    value={item.unit_cost}
+                                    onChange={(e) => updateItemCost(index, parseFloat(e.target.value) || 0)}
+                                    className="w-24 text-right h-10"
+                                  />
+                                  <div className="text-sm text-muted-foreground">
+                                    each
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Lot Tracking Section */}
+                            <div className="space-y-3 pt-2 border-t">
+                              <div className="grid grid-cols-1 gap-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium min-w-[100px]">Lot Number</Label>
+                                  <div className="flex gap-2 flex-1">
+                                    <Input
+                                      value={item.lot_number || ''}
+                                      onChange={(e) => updateItemField(index, 'lot_number', e.target.value)}
+                                      placeholder="Auto-generated"
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => generateLotNumber(index)}
+                                      className="p-2"
+                                    >
+                                      <QrCode className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Manufacturing Date</Label>
+                                    <Input
+                                      type="date"
+                                      value={item.manufacturing_date || ''}
+                                      onChange={(e) => updateItemField(index, 'manufacturing_date', e.target.value)}
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Expiration Date</Label>
+                                    <Input
+                                      type="date"
+                                      value={item.expiration_date || ''}
+                                      onChange={(e) => updateItemField(index, 'expiration_date', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    
+                    {/* Totals */}
+                    <div className="flex justify-end pt-4">
+                      <div className="text-right space-y-1 min-w-64">
+                        <div className="flex justify-between text-lg font-semibold border-t pt-1">
+                          <span>Total Cost:</span>
+                          <span>{formatCurrency(totalCost)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {totalItems} items, {totalQuantity} units
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* Selected Items */}
-          {receiveItems.length > 0 && (
-            <div className="space-y-4">
-              <Label>Items to Receive</Label>
-              <div className="space-y-3">
-                {receiveItems.map((item, index) => (
-                  <div key={item.item_id} className="border rounded-lg p-4 space-y-4">
-                    {/* Item Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium">{item.item_name}</div>
-                        <div className="flex gap-2 text-sm text-muted-foreground">
-                          {item.sku && <span>SKU: {item.sku}</span>}
-                          {item.barcode && <span>Barcode: {item.barcode}</span>}
-                        </div>
-                        <div className="text-sm font-medium text-primary">
-                          Total: ${(item.quantity * item.unit_cost).toFixed(2)}
-                        </div>
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeItem(index)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-
-                    {/* Quantity and Cost Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Quantity</Label>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateItemQuantity(index, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
-                            className="w-20 text-center"
-                            min="1"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateItemQuantity(index, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Unit Cost</Label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">$</span>
-                          <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={item.unit_cost}
-                            onChange={(e) => updateItemCost(index, parseFloat(e.target.value) || 0)}
-                            className="flex-1"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Lot Tracking Row */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label>Lot Number</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={item.lot_number || ''}
-                            onChange={(e) => updateItemField(index, 'lot_number', e.target.value)}
-                            placeholder="Auto-generated"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => generateLotNumber(index)}
-                          >
-                            <QrCode className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Manufacturing Date</Label>
-                        <Input
-                          type="date"
-                          value={item.manufacturing_date || ''}
-                          onChange={(e) => updateItemField(index, 'manufacturing_date', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Expiration Date</Label>
-                        <Input
-                          type="date"
-                          value={item.expiration_date || ''}
-                          onChange={(e) => updateItemField(index, 'expiration_date', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Total Cost Summary */}
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total Cost:</span>
-                  <span className="text-xl font-bold text-primary flex items-center gap-1">
-                    <DollarSign className="h-5 w-5" />
-                    {totalCost.toFixed(2)}
-                  </span>
+              {/* Notes */}
+              {receiveItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Notes (Optional)</Label>
+                  <Textarea
+                    placeholder="Add any notes about this stock receipt..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {receiveItems.length} item{receiveItems.length !== 1 ? 's' : ''} • 
-                  {receiveItems.reduce((sum, item) => sum + item.quantity, 0)} total units
-                </div>
-              </div>
+              )}
             </div>
-          )}
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label>Notes (Optional)</Label>
-            <Textarea
-              placeholder="Add any notes about this stock receipt..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
+            <DrawerFooter>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  onClick={handleSubmit} 
+                  className="flex-1"
+                  disabled={receiveItems.length === 0 || submitting}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Receiving...
+                    </>
+                  ) : (
+                    `Receive Stock (${totalItems} items)`
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => onOpenChange(false)} 
+                  className="flex-1"
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </DrawerFooter>
           </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={submitting || receiveItems.length === 0}>
-            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Receive Stock (${totalCost.toFixed(2)})
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+        </DrawerContent>
+      </Drawer>
 
       {/* Scanner Overlay */}
       <ScannerOverlay
         open={showScanner}
         onClose={() => setShowScanner(false)}
         onBarcode={handleBarcodeScanned}
-        continuous={true}
-        instructions="Scan item barcodes to add them to receiving"
       />
-    </Dialog>
+    </>
   );
 };
