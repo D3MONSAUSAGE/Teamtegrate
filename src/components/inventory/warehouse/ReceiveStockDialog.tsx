@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode } from 'lucide-react';
+import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode, DollarSign } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
 import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
 import { useScanGun } from '@/hooks/useScanGun';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
+import { VendorSelector } from '@/components/inventory/VendorSelector';
 import { toast } from 'sonner';
 
 interface ReceiveStockDialogProps {
@@ -38,11 +39,13 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   warehouseId,
   onSuccess
 }) => {
-  const { items: inventoryItems } = useInventory();
+  const { items: inventoryItems, vendors } = useInventory();
   const [receiveItems, setReceiveItems] = useState<ReceiveItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<string>();
+  const [invoiceNumber, setInvoiceNumber] = useState('');
   
   // Scanner state
   const [showScanner, setShowScanner] = useState(false);
@@ -155,6 +158,9 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
     setReceiveItems(receiveItems.filter((_, i) => i !== index));
   };
 
+  // Calculate total cost
+  const totalCost = receiveItems.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
+
   const handleSubmit = async () => {
     if (receiveItems.length === 0) {
       toast.error('Please add at least one item to receive');
@@ -191,6 +197,8 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       setReceiveItems([]);
       setNotes('');
       setSearchQuery('');
+      setSelectedVendor(undefined);
+      setInvoiceNumber('');
       
       // Close dialog and trigger refresh
       onOpenChange(false);
@@ -215,6 +223,27 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Vendor and Invoice Information */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Vendor</Label>
+              <VendorSelector
+                vendors={vendors}
+                value={selectedVendor}
+                onValueChange={setSelectedVendor}
+                placeholder="Select vendor..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Invoice/Reference Number</Label>
+              <Input
+                placeholder="Enter invoice or reference number..."
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+              />
+            </div>
+          </div>
+
           {/* Scanner Controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -298,6 +327,9 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
                         <div className="flex gap-2 text-sm text-muted-foreground">
                           {item.sku && <span>SKU: {item.sku}</span>}
                           {item.barcode && <span>Barcode: {item.barcode}</span>}
+                        </div>
+                        <div className="text-sm font-medium text-primary">
+                          Total: ${(item.quantity * item.unit_cost).toFixed(2)}
                         </div>
                       </div>
                       
@@ -400,6 +432,21 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
                   </div>
                 ))}
               </div>
+
+              {/* Total Cost Summary */}
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold">Total Cost:</span>
+                  <span className="text-xl font-bold text-primary flex items-center gap-1">
+                    <DollarSign className="h-5 w-5" />
+                    {totalCost.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {receiveItems.length} item{receiveItems.length !== 1 ? 's' : ''} • 
+                  {receiveItems.reduce((sum, item) => sum + item.quantity, 0)} total units
+                </div>
+              </div>
             </div>
           )}
 
@@ -421,7 +468,7 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
           </Button>
           <Button onClick={handleSubmit} disabled={submitting || receiveItems.length === 0}>
             {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Receive {receiveItems.length} Item{receiveItems.length !== 1 ? 's' : ''}
+            Receive Stock (${totalCost.toFixed(2)})
           </Button>
         </DialogFooter>
       </DialogContent>
