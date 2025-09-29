@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -61,13 +61,14 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
   }
 ];
 
-export const ProfessionalLabelGenerator: React.FC = () => {
+const ProfessionalLabelGeneratorComponent: React.FC = () => {
   console.log('🔄 ProfessionalLabelGenerator render');
   const inventoryContext = useEnhancedInventoryManagement();
   const { user } = useAuth();
   
   // Memoize items to prevent re-renders on every inventory update
   const items = useMemo(() => inventoryContext.items || [], [inventoryContext.items?.length]);
+
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('basic');
@@ -93,6 +94,48 @@ export const ProfessionalLabelGenerator: React.FC = () => {
   const [templateName, setTemplateName] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [selectedSavedTemplate, setSelectedSavedTemplate] = useState<string>('');
+
+  // Memoize handlers to prevent re-renders
+  const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🏢 Company name changing:', e.target.value);
+    setCompanyName(e.target.value);
+  }, []);
+
+  const handleIngredientsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setIngredients(e.target.value);
+  }, []);
+
+  const handleAllergensChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAllergens(e.target.value);
+  }, []);
+
+  const handleServingSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setServingSize(e.target.value);
+  }, []);
+
+  const handleCaloriesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCalories(e.target.value);
+  }, []);
+
+  const handleTotalFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTotalFat(e.target.value);
+  }, []);
+
+  const handleSodiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSodium(e.target.value);
+  }, []);
+
+  const handleTotalCarbsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTotalCarbs(e.target.value);
+  }, []);
+
+  const handleProteinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProtein(e.target.value);
+  }, []);
+
+  const handleTemplateNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTemplateName(e.target.value);
+  }, []);
 
   // Check if mobile
   useEffect(() => {
@@ -420,11 +463,8 @@ export const ProfessionalLabelGenerator: React.FC = () => {
               <Label htmlFor="company-name" className="text-sm font-medium">Company Name</Label>
               <Input
                 id="company-name"
-                    value={companyName}
-                    onChange={(e) => {
-                      console.log('🏢 Company name changing:', e.target.value);
-                      setCompanyName(e.target.value);
-                    }}
+                value={companyName}
+                onChange={handleCompanyNameChange}
                 placeholder="Enter company name"
                 className="mt-1"
               />
@@ -534,121 +574,6 @@ export const ProfessionalLabelGenerator: React.FC = () => {
         </Card>
       )}
 
-      {/* Nutritional Information Form */}
-      {selectedItem && LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.some(f => ['nutrition', 'ingredients', 'allergens'].includes(f)) && (
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Utensils className="h-5 w-5 text-primary" />
-              Nutritional Information
-            </CardTitle>
-            <CardDescription>
-              Enter nutritional information and ingredients for your label
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Ingredients */}
-              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('ingredients') && (
-                <div>
-                  <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients</Label>
-                  <Textarea
-                    id="ingredients"
-                    value={ingredients}
-                    onChange={(e) => setIngredients(e.target.value)}
-                    placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
-                    className="mt-1 min-h-[80px]"
-                  />
-                </div>
-              )}
-
-              {/* Allergens */}
-              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('allergens') && (
-                <div>
-                  <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
-                  <Input
-                    id="allergens"
-                    value={allergens}
-                    onChange={(e) => setAllergens(e.target.value)}
-                    placeholder="Contains: Milk, Eggs, Wheat..."
-                    className="mt-1"
-                  />
-                </div>
-              )}
-
-              {/* Nutrition Facts */}
-              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('nutrition') && (
-                <div className="space-y-3">
-                  <div className="font-medium text-sm">Nutrition Facts</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="serving-size" className="text-sm">Serving Size</Label>
-                      <Input
-                        id="serving-size"
-                        value={servingSize}
-                        onChange={(e) => setServingSize(e.target.value)}
-                        placeholder="1 cup (240ml)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="calories" className="text-sm">Calories</Label>
-                      <Input
-                        id="calories"
-                        value={calories}
-                        onChange={(e) => setCalories(e.target.value)}
-                        placeholder="150"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
-                      <Input
-                        id="total-fat"
-                        value={totalFat}
-                        onChange={(e) => setTotalFat(e.target.value)}
-                        placeholder="5"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
-                      <Input
-                        id="sodium"
-                        value={sodium}
-                        onChange={(e) => setSodium(e.target.value)}
-                        placeholder="200"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
-                      <Input
-                        id="total-carbs"
-                        value={totalCarbs}
-                        onChange={(e) => setTotalCarbs(e.target.value)}
-                        placeholder="30"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
-                      <Input
-                        id="protein"
-                        value={protein}
-                        onChange={(e) => setProtein(e.target.value)}
-                        placeholder="8"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Template Management */}
       {selectedItem && (
         <Card>
@@ -728,7 +653,7 @@ export const ProfessionalLabelGenerator: React.FC = () => {
                 <div className="flex gap-2 mt-1">
                   <Input
                     value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
+                    onChange={handleTemplateNameChange}
                     placeholder="Template name (e.g., 'Organic Products')"
                     className="flex-1"
                   />
@@ -777,6 +702,121 @@ export const ProfessionalLabelGenerator: React.FC = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Nutritional Information Form */}
+      {selectedItem && LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.some(f => ['nutrition', 'ingredients', 'allergens'].includes(f)) && (
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Utensils className="h-5 w-5 text-primary" />
+              Nutritional Information
+            </CardTitle>
+            <CardDescription>
+              Enter nutritional information and ingredients for your label
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Ingredients */}
+              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('ingredients') && (
+                <div>
+                  <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients</Label>
+                  <Textarea
+                    id="ingredients"
+                    value={ingredients}
+                    onChange={handleIngredientsChange}
+                    placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
+                    className="mt-1 min-h-[80px]"
+                  />
+                </div>
+              )}
+
+              {/* Allergens */}
+              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('allergens') && (
+                <div>
+                  <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
+                  <Input
+                    id="allergens"
+                    value={allergens}
+                    onChange={handleAllergensChange}
+                    placeholder="Contains: Milk, Eggs, Wheat..."
+                    className="mt-1"
+                  />
+                </div>
+              )}
+
+              {/* Nutrition Facts */}
+              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('nutrition') && (
+                <div className="space-y-3">
+                  <div className="font-medium text-sm">Nutrition Facts</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="serving-size" className="text-sm">Serving Size</Label>
+                      <Input
+                        id="serving-size"
+                        value={servingSize}
+                        onChange={handleServingSizeChange}
+                        placeholder="1 cup (240ml)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="calories" className="text-sm">Calories</Label>
+                      <Input
+                        id="calories"
+                        value={calories}
+                        onChange={handleCaloriesChange}
+                        placeholder="150"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
+                      <Input
+                        id="total-fat"
+                        value={totalFat}
+                        onChange={handleTotalFatChange}
+                        placeholder="5"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
+                      <Input
+                        id="sodium"
+                        value={sodium}
+                        onChange={handleSodiumChange}
+                        placeholder="200"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
+                      <Input
+                        id="total-carbs"
+                        value={totalCarbs}
+                        onChange={handleTotalCarbsChange}
+                        placeholder="30"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
+                      <Input
+                        id="protein"
+                        value={protein}
+                        onChange={handleProteinChange}
+                        placeholder="8"
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -841,3 +881,6 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     </div>
   );
 };
+
+// Wrap component in React.memo to prevent unnecessary re-renders
+export const ProfessionalLabelGenerator = React.memo(ProfessionalLabelGeneratorComponent);
