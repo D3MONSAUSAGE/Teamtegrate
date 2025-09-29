@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -62,8 +62,12 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
 ];
 
 export const ProfessionalLabelGenerator: React.FC = () => {
-  const { items } = useEnhancedInventoryManagement();
+  console.log('🔄 ProfessionalLabelGenerator render');
+  const inventoryContext = useEnhancedInventoryManagement();
   const { user } = useAuth();
+  
+  // Memoize items to prevent re-renders on every inventory update
+  const items = useMemo(() => inventoryContext.items || [], [inventoryContext.items?.length]);
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('basic');
@@ -196,60 +200,50 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     }
   }, [selectedItem?.id, companyName]);
 
-  // Load item when selected - optimized to prevent page resets
+  // Load item when selected - memoized item to prevent re-renders
+  const selectedItemFromList = useMemo(() => {
+    return selectedItemId ? items.find(i => i.id === selectedItemId) || null : null;
+  }, [selectedItemId, items.length]); // Only depend on selectedItemId and items length, not items array
+
   useEffect(() => {
     const loadNutritionalData = async () => {
-      if (selectedItemId) {
-        const item = items.find(i => i.id === selectedItemId);
-        if (item?.id !== selectedItem?.id) { // Only update if actually different
-          setSelectedItem(item || null);
-          
-          // Pre-populate nutritional data if it exists (from database)
-          if (item?.id) {
-            try {
-              const nutritionalInfo = await nutritionalInfoApi.getByItemId(item.id);
-              if (nutritionalInfo) {
-                const simpleData = convertFlatToSimple(nutritionalInfo);
-                setIngredients(simpleData.ingredients);
-                setServingSize(simpleData.servingSize);
-                setCalories(simpleData.calories);
-                setTotalFat(simpleData.totalFat);
-                setSodium(simpleData.sodium);
-                setTotalCarbs(simpleData.totalCarbs);
-                setProtein(simpleData.protein);
-                setAllergens(simpleData.allergens);
-              }
-            } catch (error) {
-              console.log('No nutritional data found for pre-population');
+      if (selectedItemFromList?.id !== selectedItem?.id) { // Only update if actually different
+        setSelectedItem(selectedItemFromList);
+        
+        // Pre-populate nutritional data if it exists (from database)
+        if (selectedItemFromList?.id) {
+          try {
+            const nutritionalInfo = await nutritionalInfoApi.getByItemId(selectedItemFromList.id);
+            if (nutritionalInfo) {
+              const simpleData = convertFlatToSimple(nutritionalInfo);
+              setIngredients(simpleData.ingredients);
+              setServingSize(simpleData.servingSize);
+              setCalories(simpleData.calories);
+              setTotalFat(simpleData.totalFat);
+              setSodium(simpleData.sodium);
+              setTotalCarbs(simpleData.totalCarbs);
+              setProtein(simpleData.protein);
+              setAllergens(simpleData.allergens);
             }
-          } else {
-            // Clear nutritional data for new selection
-            setIngredients('');
-            setServingSize('');
-            setCalories('');
-            setTotalFat('');
-            setSodium('');
-            setTotalCarbs('');
-            setProtein('');
-            setAllergens('');
+          } catch (error) {
+            console.log('No nutritional data found for pre-population');
           }
+        } else {
+          // Clear nutritional data for new selection
+          setIngredients('');
+          setServingSize('');
+          setCalories('');
+          setTotalFat('');
+          setSodium('');
+          setTotalCarbs('');
+          setProtein('');
+          setAllergens('');
         }
-      } else {
-        setSelectedItem(null);
-        // Clear nutritional data when no item selected
-        setIngredients('');
-        setServingSize('');
-        setCalories('');
-        setTotalFat('');
-        setSodium('');
-        setTotalCarbs('');
-        setProtein('');
-        setAllergens('');
       }
     };
 
     loadNutritionalData();
-  }, [selectedItemId]); // Removed items dependency to prevent re-renders
+  }, [selectedItemFromList]); // Only depend on the memoized selected item
 
   const generateLabel = async () => {
     if (!selectedItem) {
@@ -426,8 +420,11 @@ export const ProfessionalLabelGenerator: React.FC = () => {
               <Label htmlFor="company-name" className="text-sm font-medium">Company Name</Label>
               <Input
                 id="company-name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
+                    value={companyName}
+                    onChange={(e) => {
+                      console.log('🏢 Company name changing:', e.target.value);
+                      setCompanyName(e.target.value);
+                    }}
                 placeholder="Enter company name"
                 className="mt-1"
               />
