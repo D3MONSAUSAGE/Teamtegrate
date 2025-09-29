@@ -108,6 +108,15 @@ const ProfessionalLabelGenerator: React.FC = () => {
     [templateFields]
   );
 
+  // Debug logging
+  console.log('Template Debug:', {
+    selectedTemplate,
+    currentTemplate: currentTemplate?.name,
+    templateFields,
+    showNutritionalFields,
+    selectedItem: !!selectedItem
+  });
+
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
