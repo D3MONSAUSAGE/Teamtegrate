@@ -25,7 +25,7 @@ import { InventoryExportDialog } from '../export/InventoryExportDialog';
 import { DailyInventoryMetrics } from '../daily/DailyInventoryMetrics';
 import { EnhancedDailyAnalysis } from '../daily/EnhancedDailyAnalysis';
 import { TimezoneIndicator } from '../TimezoneIndicator';
-import { WithdrawalReportsTab } from '../reports/WithdrawalReportsTab';
+import { AllTransactionsTab } from '../reports/AllTransactionsTab';
 import { SalesInvoicesTab } from '../reports/SalesInvoicesTab';
 import { 
   Search, Download, Calendar, TrendingUp, TrendingDown, AlertTriangle, DollarSign, 
@@ -990,7 +990,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
         )}
 
         {activeTab === 'transactions' && (
-          <WithdrawalReportsTab />
+          <AllTransactionsTab />
         )}
       </div>
 
