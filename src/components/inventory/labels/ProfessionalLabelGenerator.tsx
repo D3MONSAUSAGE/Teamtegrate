@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -108,14 +108,6 @@ const ProfessionalLabelGenerator: React.FC = () => {
     [templateFields]
   );
 
-  // Debug logging
-  console.log('Template Debug:', {
-    selectedTemplate,
-    currentTemplate: currentTemplate?.name,
-    templateFields,
-    showNutritionalFields,
-    selectedItem: !!selectedItem
-  });
 
   // Check if mobile
   useEffect(() => {
@@ -130,7 +122,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
     loadSavedTemplates();
   }, []);
 
-  // Handle item selection - simplified to prevent re-renders during typing
+  // Handle item selection - stabilized to prevent re-renders during typing
   useEffect(() => {
     if (!selectedItemId) {
       setSelectedItem(null);
@@ -142,16 +134,16 @@ const ProfessionalLabelGenerator: React.FC = () => {
     if (selectedItemFromList?.id !== selectedItem?.id) {
       setSelectedItem(selectedItemFromList);
       
-      // Generate lot code
+      // Generate lot code only when item changes
       if (selectedItemFromList) {
         const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
         const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
         setLotCode(lotNumber);
       }
     }
-  }, [selectedItemId, items]);
+  }, [selectedItemId, items, selectedItem?.id, companyName]);
 
-  // Load nutritional data separately to avoid re-renders
+  // Load nutritional data only when item ID changes
   useEffect(() => {
     if (!selectedItem?.id) {
       // Clear all data when no item selected
@@ -200,8 +192,17 @@ const ProfessionalLabelGenerator: React.FC = () => {
     }
   };
 
+  // Stabilized event handlers
+  const handleTemplateSelect = useCallback((templateId: string) => {
+    setSelectedTemplate(templateId);
+  }, []);
+
+  const handleItemSelect = useCallback((itemId: string) => {
+    setSelectedItemId(itemId);
+  }, []);
+
   // Save template to localStorage
-  const saveTemplate = () => {
+  const saveTemplate = useCallback(() => {
     if (!templateName.trim()) {
       toast.error('Please enter a template name');
       return;
@@ -232,10 +233,10 @@ const ProfessionalLabelGenerator: React.FC = () => {
       console.error('Failed to save template:', error);
       toast.error('Failed to save template');
     }
-  };
+  }, [templateName, companyName, ingredients, servingSize, calories, totalFat, sodium, totalCarbs, protein, allergens, savedTemplates]);
 
   // Load a saved template
-  const loadTemplate = (templateId: string) => {
+  const loadTemplate = useCallback((templateId: string) => {
     const template = savedTemplates.find(t => t.id === templateId);
     if (template) {
       setCompanyName(template.companyName);
@@ -249,10 +250,10 @@ const ProfessionalLabelGenerator: React.FC = () => {
       setAllergens(template.allergens);
       toast.success(`Template "${template.name}" loaded!`);
     }
-  };
+  }, [savedTemplates]);
 
   // Delete a saved template
-  const deleteTemplate = (templateId: string) => {
+  const deleteTemplate = useCallback((templateId: string) => {
     try {
       const updatedTemplates = savedTemplates.filter(t => t.id !== templateId);
       localStorage.setItem('labelTemplates', JSON.stringify(updatedTemplates));
@@ -263,7 +264,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       console.error('Failed to delete template:', error);
       toast.error('Failed to delete template');
     }
-  };
+  }, [savedTemplates]);
 
   const generateLabel = async () => {
     if (!selectedItem) {
@@ -459,7 +460,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+          <Select value={selectedItemId} onValueChange={handleItemSelect}>
             <SelectTrigger>
               <SelectValue placeholder="Choose a product..." />
             </SelectTrigger>
@@ -501,7 +502,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 >
                   <div 
                     className="cursor-pointer"
-                    onClick={() => setSelectedTemplate(template.id)}
+                    onClick={() => handleTemplateSelect(template.id)}
                   >
                     <div className="font-medium text-sm">{template.name}</div>
                     <div className="text-xs text-muted-foreground mt-1">{template.description}</div>
