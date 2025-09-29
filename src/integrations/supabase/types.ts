@@ -2911,6 +2911,7 @@ export type Database = {
           created_by: string
           expiration_date: string | null
           id: string
+          invoice_number: string | null
           is_active: boolean
           item_id: string
           lot_number: string
@@ -2922,6 +2923,7 @@ export type Database = {
           shipment_id: string | null
           supplier_info: Json | null
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
           cost_per_unit?: number | null
@@ -2929,6 +2931,7 @@ export type Database = {
           created_by: string
           expiration_date?: string | null
           id?: string
+          invoice_number?: string | null
           is_active?: boolean
           item_id: string
           lot_number: string
@@ -2940,6 +2943,7 @@ export type Database = {
           shipment_id?: string | null
           supplier_info?: Json | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
           cost_per_unit?: number | null
@@ -2947,6 +2951,7 @@ export type Database = {
           created_by?: string
           expiration_date?: string | null
           id?: string
+          invoice_number?: string | null
           is_active?: boolean
           item_id?: string
           lot_number?: string
@@ -2958,6 +2963,7 @@ export type Database = {
           shipment_id?: string | null
           supplier_info?: Json | null
           updated_at?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
