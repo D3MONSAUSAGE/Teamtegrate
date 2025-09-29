@@ -562,141 +562,155 @@ const ProfessionalLabelGenerator: React.FC = () => {
         console.error('Barcode generation failed:', error);
       }
 
-      // FDA-Compliant Nutrition Facts Table
+      // FDA-Compliant Nutrition Facts Table - Optimized Two-Column Layout
       if (template.fields.includes('nutrition') && (servingSize || calories)) {
-        console.log('[PDF_NUTRITION] Starting nutrition facts table generation');
+        console.log('[PDF_NUTRITION] Starting compact two-column nutrition facts table generation');
         
         // Nutrition Facts header
-        pdf.setFontSize(14);
+        pdf.setFontSize(12); // Slightly smaller
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Nutrition Facts', 0.2, y + 0.12); // Add baseline offset
-        y += 0.25;
+        pdf.text('Nutrition Facts', 0.2, y + 0.1);
+        y += 0.2; // Reduced spacing
 
         // Main nutrition facts box with borders
         const boxWidth = 3.6;
         const boxStartY = y;
+        const leftColX = 0.3;
+        const rightColX = 2.1; // Split at ~55%
+        const rightColWidth = 1.5;
+        
         pdf.setLineWidth(0.02);
         
-        // Serving size section
+        // Serving size section (compact)
         if (servingSize) {
-          pdf.setFontSize(9);
+          pdf.setFontSize(8); // Smaller text
           pdf.setFont('helvetica', 'normal');
-          pdf.text(`Serving Size: ${servingSize}`, 0.3, y + 0.12);
-          y += 0.18;
+          pdf.text(`Serving: ${servingSize}`, leftColX, y + 0.1);
+          y += 0.15; // Reduced spacing
           
           // Line under serving size
           pdf.setLineWidth(0.01);
           pdf.line(0.2, y, 3.8, y);
-          y += 0.08;
+          y += 0.06;
         }
 
-        // Calories (large, bold)
+        // Calories (compact)
         if (calories) {
-          pdf.setFontSize(16);
+          pdf.setFontSize(12); // Smaller than before
           pdf.setFont('helvetica', 'bold');
-          pdf.text(`Calories ${calories}`, 0.3, y + 0.15);
-          y += 0.25;
+          pdf.text(`Calories ${calories}`, leftColX, y + 0.12);
+          y += 0.2; // Reduced spacing
           
           // Thick line under calories
           pdf.setLineWidth(0.03);
           pdf.line(0.2, y, 3.8, y);
-          y += 0.12;
+          y += 0.08;
         }
 
         // % Daily Value header
-        pdf.setFontSize(7);
+        pdf.setFontSize(6);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('% Daily Value*', 3.4, y + 0.08, { align: 'right' });
-        y += 0.12;
+        pdf.text('% DV*', 3.5, y + 0.06, { align: 'right' });
+        y += 0.1;
 
-        // Nutrition items with % DV
-        const nutritionData = [
+        // Main nutrients for left column
+        const mainNutrients = [
           { label: 'Total Fat', value: totalFat, unit: 'g', dvKey: 'totalFat' },
-          { label: 'Saturated Fat', value: saturatedFat, unit: 'g', dvKey: 'saturatedFat', indent: true },
-          { label: 'Trans Fat', value: transFat, unit: 'g', indent: true },
-          { label: 'Cholesterol', value: cholesterol, unit: 'mg', dvKey: 'cholesterol' },
+          { label: 'Sat. Fat', value: saturatedFat, unit: 'g', dvKey: 'saturatedFat', indent: true },
           { label: 'Sodium', value: sodium, unit: 'mg', dvKey: 'sodium' },
-          { label: 'Total Carbohydrate', value: totalCarbs, unit: 'g', dvKey: 'totalCarbs' },
-          { label: 'Dietary Fiber', value: dietaryFiber, unit: 'g', dvKey: 'dietaryFiber', indent: true },
-          { label: 'Total Sugars', value: totalSugars, unit: 'g', indent: true },
-          { label: 'Added Sugars', value: addedSugars, unit: 'g', indent: true, extraIndent: true },
+          { label: 'Total Carbs', value: totalCarbs, unit: 'g', dvKey: 'totalCarbs' },
+          { label: 'Fiber', value: dietaryFiber, unit: 'g', dvKey: 'dietaryFiber', indent: true },
           { label: 'Protein', value: protein, unit: 'g' }
         ];
 
-        pdf.setFontSize(7);
-        nutritionData.forEach(item => {
-          if (item.value && item.value.trim()) {
-            const xPos = item.indent ? (item.extraIndent ? 0.5 : 0.4) : 0.3;
-            pdf.setFont('helvetica', 'normal');
-            
-            const text = `${item.label} ${item.value}${item.unit}`;
-            pdf.text(text, xPos, y + 0.08); // Add baseline offset
-            
-            if (item.dvKey) {
-              const dv = calculateDailyValue(item.dvKey, item.value);
-              if (dv) {
-                pdf.setFont('helvetica', 'bold');
-                pdf.text(dv, 3.7, y + 0.08, { align: 'right' });
-              }
-            }
-            
-            y += 0.12;
-            
-            // Add lines after major categories (below text, not through it)
-            if (['Total Fat', 'Cholesterol', 'Total Carbohydrate', 'Protein'].includes(item.label)) {
-              pdf.setLineWidth(0.01);
-              pdf.line(0.2, y, 3.8, y);
-              y += 0.05;
-            }
-          }
-        });
-
-        // Vitamins and Minerals
-        const vitamins = [
+        // Vitamins/minerals for right column
+        const vitaminsData = [
           { label: 'Vitamin D', value: vitaminD, unit: 'mcg', dvKey: 'vitaminD' },
           { label: 'Calcium', value: calcium, unit: 'mg', dvKey: 'calcium' },
           { label: 'Iron', value: iron, unit: 'mg', dvKey: 'iron' },
           { label: 'Potassium', value: potassium, unit: 'mg', dvKey: 'potassium' }
         ];
 
-        const hasVitamins = vitamins.some(v => v.value && v.value.trim());
+        // Start Y positions for both columns
+        const columnStartY = y;
+        let leftY = columnStartY;
+        let rightY = columnStartY;
+
+        // Render main nutrients (left column)
+        pdf.setFontSize(6); // Smaller for compact layout
+        mainNutrients.forEach(item => {
+          if (item.value && item.value.trim()) {
+            const xPos = item.indent ? leftColX + 0.1 : leftColX;
+            pdf.setFont('helvetica', 'normal');
+            
+            const text = `${item.label} ${item.value}${item.unit}`;
+            pdf.text(text, xPos, leftY + 0.07);
+            
+            if (item.dvKey) {
+              const dv = calculateDailyValue(item.dvKey, item.value);
+              if (dv) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(dv, rightColX - 0.1, leftY + 0.07, { align: 'right' });
+              }
+            }
+            
+            leftY += 0.1; // Compact spacing
+            
+            // Add subtle lines after major items
+            if (['Total Fat', 'Sodium', 'Total Carbs'].includes(item.label)) {
+              pdf.setLineWidth(0.005);
+              pdf.line(leftColX, leftY, rightColX - 0.15, leftY);
+              leftY += 0.03;
+            }
+          }
+        });
+
+        // Render vitamins/minerals (right column)
+        const hasVitamins = vitaminsData.some(v => v.value && v.value.trim());
         if (hasVitamins) {
-          pdf.setLineWidth(0.02);
-          pdf.line(0.2, y, 3.8, y);
-          y += 0.08;
+          // Column header
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(6);
+          pdf.text('Vitamins & Minerals', rightColX, rightY + 0.07);
+          rightY += 0.12;
           
-          vitamins.forEach(vitamin => {
+          pdf.setFont('helvetica', 'normal');
+          vitaminsData.forEach(vitamin => {
             if (vitamin.value && vitamin.value.trim()) {
-              pdf.setFont('helvetica', 'normal');
-              pdf.text(`${vitamin.label} ${vitamin.value}${vitamin.unit}`, 0.3, y + 0.08);
+              const text = `${vitamin.label} ${vitamin.value}${vitamin.unit}`;
+              pdf.text(text, rightColX, rightY + 0.07);
               
               const dv = calculateDailyValue(vitamin.dvKey, vitamin.value);
               if (dv) {
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(dv, 3.7, y + 0.08, { align: 'right' });
+                pdf.text(dv, 3.7, rightY + 0.07, { align: 'right' });
+                pdf.setFont('helvetica', 'normal');
               }
-              y += 0.12;
+              rightY += 0.1;
             }
           });
         }
 
+        // Use the maximum Y position from both columns
+        y = Math.max(leftY, rightY) + 0.08;
+
         // Calculate box height and draw outer border
-        const boxHeight = y - boxStartY + 0.05;
+        const boxHeight = y - boxStartY + 0.03;
         pdf.setLineWidth(0.02);
         pdf.rect(0.2, boxStartY, boxWidth, boxHeight);
         
-        // Bottom border of nutrition facts
-        y += 0.05;
+        // Vertical divider between columns (optional)
+        pdf.setLineWidth(0.005);
+        pdf.line(rightColX - 0.05, columnStartY, rightColX - 0.05, y - 0.05);
 
-        // Daily value footnote
-        pdf.setFontSize(6);
+        // Daily value footnote (compact)
+        y += 0.03;
+        pdf.setFontSize(5);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('*The % Daily Value tells you how much a nutrient in', 0.3, y + 0.08);
-        y += 0.08;
-        pdf.text('a serving of food contributes to a daily diet.', 0.3, y + 0.08);
-        y += 0.18;
+        pdf.text('*% Daily Value based on 2000 calorie diet', leftColX, y + 0.06);
+        y += 0.12;
         
-        console.log('[PDF_NUTRITION] Nutrition facts table completed');
+        console.log('[PDF_NUTRITION] Compact two-column nutrition facts table completed');
       }
 
       // Ingredients (if included)
