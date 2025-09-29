@@ -13,6 +13,8 @@ import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
 import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils } from 'lucide-react';
 import { toast } from 'sonner';
+import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
+import { convertFlatToSimple } from '../SimpleNutritionalForm';
 import jsPDF from 'jspdf';
 
 interface LabelTemplate {
@@ -79,24 +81,69 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     setCompanyName('Your Company Name');
   }, []);
 
-  // Generate lot code when item changes
+  // Generate lot code when item changes - memoized to prevent unnecessary renders
   useEffect(() => {
     if (selectedItem) {
       const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
       const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
       setLotCode(lotNumber);
     }
-  }, [selectedItem, companyName]);
+  }, [selectedItem?.id, companyName]); // Only re-run when item ID or company name changes
 
-  // Load item when selected
+  // Load item when selected - optimized to prevent page resets
   useEffect(() => {
-    if (selectedItemId) {
-      const item = items.find(i => i.id === selectedItemId);
-      setSelectedItem(item || null);
-    } else {
-      setSelectedItem(null);
-    }
-  }, [selectedItemId, items]);
+    const loadNutritionalData = async () => {
+      if (selectedItemId) {
+        const item = items.find(i => i.id === selectedItemId);
+        if (item?.id !== selectedItem?.id) { // Only update if actually different
+          setSelectedItem(item || null);
+          
+          // Pre-populate nutritional data if it exists (from database)
+          if (item?.id) {
+            try {
+              const nutritionalInfo = await nutritionalInfoApi.getByItemId(item.id);
+              if (nutritionalInfo) {
+                const simpleData = convertFlatToSimple(nutritionalInfo);
+                setIngredients(simpleData.ingredients);
+                setServingSize(simpleData.servingSize);
+                setCalories(simpleData.calories);
+                setTotalFat(simpleData.totalFat);
+                setSodium(simpleData.sodium);
+                setTotalCarbs(simpleData.totalCarbs);
+                setProtein(simpleData.protein);
+                setAllergens(simpleData.allergens);
+              }
+            } catch (error) {
+              console.log('No nutritional data found for pre-population');
+            }
+          } else {
+            // Clear nutritional data for new selection
+            setIngredients('');
+            setServingSize('');
+            setCalories('');
+            setTotalFat('');
+            setSodium('');
+            setTotalCarbs('');
+            setProtein('');
+            setAllergens('');
+          }
+        }
+      } else {
+        setSelectedItem(null);
+        // Clear nutritional data when no item selected
+        setIngredients('');
+        setServingSize('');
+        setCalories('');
+        setTotalFat('');
+        setSodium('');
+        setTotalCarbs('');
+        setProtein('');
+        setAllergens('');
+      }
+    };
+
+    loadNutritionalData();
+  }, [selectedItemId, items]); // Keep dependency on items array as needed
 
   const generateLabel = async () => {
     if (!selectedItem) {

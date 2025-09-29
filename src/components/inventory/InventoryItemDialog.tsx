@@ -21,8 +21,7 @@ import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';
 import { VendorDialog } from './dialogs/VendorDialog';
 import { ImageUpload } from './ImageUpload';
-import { IngredientsPanel } from './IngredientsPanel';
-import { NutritionalInfoForm } from './NutritionalInfoForm';
+import { SimpleNutritionalForm, SimpleNutritionalData, convertSimpleToFlat, convertFlatToSimple } from './SimpleNutritionalForm';
 import { vendorsApi } from '@/contexts/inventory/api';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { 
@@ -78,106 +77,20 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentItem, setCurrentItem] = useState<any>(null);
   
-  // Shared state for ingredients and nutritional info
-  const [ingredientsData, setIngredientsData] = useState({
+  // Simple nutritional data state
+  const [nutritionalData, setNutritionalData] = useState<SimpleNutritionalData>({
     ingredients: '',
-    allergens: [] as string[]
+    servingSize: '',
+    calories: '',
+    totalFat: '',
+    sodium: '',
+    totalCarbs: '',
+    protein: '',
+    allergens: '',
   });
-  
-  const [nutritionalData, setNutritionalData] = useState({
-    serving_size: '',
-    nutritional_fields: []
-  });
 
-  // Convert flat nutritional data to additive structure
-  const convertFlatToAdditive = (flatData: any) => {
-    const fieldMappings = [
-      { name: 'Servings per Container', key: 'servings_per_container', unit: 'servings' },
-      { name: 'Calories', key: 'calories', unit: 'kcal' },
-      { name: 'Total Fat', key: 'total_fat', unit: 'g' },
-      { name: 'Saturated Fat', key: 'saturated_fat', unit: 'g' },
-      { name: 'Trans Fat', key: 'trans_fat', unit: 'g' },
-      { name: 'Cholesterol', key: 'cholesterol', unit: 'mg' },
-      { name: 'Sodium', key: 'sodium', unit: 'mg' },
-      { name: 'Total Carbohydrates', key: 'total_carbohydrates', unit: 'g' },
-      { name: 'Dietary Fiber', key: 'dietary_fiber', unit: 'g' },
-      { name: 'Total Sugars', key: 'total_sugars', unit: 'g' },
-      { name: 'Added Sugars', key: 'added_sugars', unit: 'g' },
-      { name: 'Protein', key: 'protein', unit: 'g' },
-      { name: 'Vitamin D', key: 'vitamin_d', unit: 'mcg' },
-      { name: 'Calcium', key: 'calcium', unit: 'mg' },
-      { name: 'Iron', key: 'iron', unit: 'mg' },
-      { name: 'Potassium', key: 'potassium', unit: 'mg' },
-    ];
-
-    const nutritional_fields = fieldMappings
-      .filter(field => flatData[field.key] !== null && flatData[field.key] !== undefined && flatData[field.key] !== '' && flatData[field.key] !== 0)
-      .map(field => ({
-        name: field.name,
-        value: String(flatData[field.key]),
-        unit: field.unit
-      }));
-
-    return {
-      serving_size: flatData.serving_size || '',
-      nutritional_fields
-    };
-  };
-
-  // Convert additive structure to flat structure for database
-  const convertAdditiveToFlat = (additiveData: any) => {
-    const flatData: any = {
-      serving_size: additiveData.serving_size || null,
-      servings_per_container: null,
-      calories: null,
-      total_fat: null,
-      saturated_fat: null,
-      trans_fat: null,
-      cholesterol: null,
-      sodium: null,
-      total_carbohydrates: null,
-      dietary_fiber: null,
-      total_sugars: null,
-      added_sugars: null,
-      protein: null,
-      vitamin_d: null,
-      calcium: null,
-      iron: null,
-      potassium: null,
-      additional_nutrients: null
-    };
-
-    const fieldMappings = {
-      'Servings per Container': 'servings_per_container',
-      'Calories': 'calories',
-      'Total Fat': 'total_fat',
-      'Saturated Fat': 'saturated_fat',
-      'Trans Fat': 'trans_fat',
-      'Cholesterol': 'cholesterol',
-      'Sodium': 'sodium',
-      'Total Carbohydrates': 'total_carbohydrates',
-      'Dietary Fiber': 'dietary_fiber',
-      'Total Sugars': 'total_sugars',
-      'Added Sugars': 'added_sugars',
-      'Protein': 'protein',
-      'Vitamin D': 'vitamin_d',
-      'Calcium': 'calcium',
-      'Iron': 'iron',
-      'Potassium': 'potassium'
-    };
-
-    additiveData.nutritional_fields?.forEach((field: any) => {
-      const dbKey = fieldMappings[field.name as keyof typeof fieldMappings];
-      if (dbKey && field.value && field.value !== '') {
-        const numValue = parseFloat(field.value);
-        if (!isNaN(numValue)) {
-          flatData[dbKey] = numValue;
-        }
-      }
-    });
-
-    return flatData;
-  };
+  // Remove all the old complex data conversion and loading logic 
+  // Now using simple nutritional data structure only
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -230,11 +143,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       form.reset();
       setCalculatedUnitPrice(null);
       setCurrentItem(null);
-      // Reset shared state for new items
-      setIngredientsData({ ingredients: '', allergens: [] });
+      // Reset nutritional data for new items
       setNutritionalData({
-        serving_size: '',
-        nutritional_fields: []
+        ingredients: '',
+        servingSize: '',
+        calories: '',
+        totalFat: '',
+        sodium: '',
+        totalCarbs: '',
+        protein: '',
+        allergens: '',
       });
     }
     
@@ -266,15 +184,11 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           image_url: item.image_url || null,
         });
         
-        // Load nutritional info for shared state
+        // Try to load nutritional info (simplified)
         try {
           const nutritionalInfo = await nutritionalInfoApi.getByItemId(itemId!);
           if (nutritionalInfo) {
-            setIngredientsData({
-              ingredients: nutritionalInfo.ingredients || '',
-              allergens: nutritionalInfo.allergens || []
-            });
-            setNutritionalData(convertFlatToAdditive(nutritionalInfo));
+            setNutritionalData(convertFlatToSimple(nutritionalInfo));
           }
         } catch (nutritionalError) {
           console.log('No nutritional info found for item, using defaults');
@@ -361,39 +275,22 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         console.log('✅ Create result:', result);
       }
       
-      // Save ingredients and nutritional info using the result item ID
+      // Save nutritional info using simple structure
       const savedItemId = itemId || result?.id;
       if (savedItemId) {
-        console.log('💾 Checking nutritional data to save:', {
-          ingredientsData,
-          nutritionalData,
-          hasIngredients: !!ingredientsData.ingredients,
-          hasAllergens: ingredientsData.allergens.length > 0,
-          hasNutritionalValues: nutritionalData.serving_size !== '' || nutritionalData.nutritional_fields.length > 0
-        });
+        console.log('💾 Checking simple nutritional data to save:', nutritionalData);
         
-        // Validate nutritional data
-        try {
-          nutritionalSchema.parse(nutritionalData);
-          ingredientsSchema.parse(ingredientsData);
-        } catch (validationError: any) {
-          console.error('[NUTRI_SAVE] Validation error:', validationError);
-          toast.error('Invalid nutritional data: ' + validationError.errors?.[0]?.message || 'Please check your inputs');
-          return;
-        }
-
-        // Check if we have any nutritional data to save (convert to flat structure first for consistency)
-        const flatNutritionalForCheck = convertAdditiveToFlat(nutritionalData);
-        const hasDataToSave = hasNutritionOrIngredients(flatNutritionalForCheck, ingredientsData);
+        // Check if we have any nutritional data to save
+        const hasDataToSave = Object.values(nutritionalData).some(value => value.trim() !== '');
           
-        console.log('💾 Has data to save:', hasDataToSave);
+        console.log('💾 Has nutritional data to save:', hasDataToSave);
         
         if (hasDataToSave) {
           try {
             console.log('💊 Saving nutritional info for item:', savedItemId);
-            const flatNutritionalData = convertAdditiveToFlat(nutritionalData);
+            const flatNutritionalData = convertSimpleToFlat(nutritionalData);
             const nutritionalPayload = buildNutritionPayload(
-              { ...flatNutritionalData, ingredients: ingredientsData.ingredients, allergens: ingredientsData.allergens }, 
+              flatNutritionalData, 
               savedItemId,
               user
             );
@@ -842,18 +739,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
             </Form>
           </TabsContent>
 
-          <TabsContent value="ingredients" className="mt-6">
-            <IngredientsPanel
-              itemId={itemId || 'new-item'}
-              itemName={form.watch('name') || 'New Item'}
-              data={ingredientsData}
-              onChange={setIngredientsData}
-            />
-          </TabsContent>
-
           <TabsContent value="nutrition" className="mt-6">
-            <NutritionalInfoForm
-              itemId={itemId || 'new-item'}
+            <SimpleNutritionalForm
               itemName={form.watch('name') || 'New Item'}
               data={nutritionalData}
               onChange={setNutritionalData}
