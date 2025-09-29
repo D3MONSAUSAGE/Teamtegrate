@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useInventory } from '@/contexts/inventory';
@@ -86,6 +87,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('food');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Company and lot code state
   const [companyName, setCompanyName] = useState('Your Company Name');
@@ -1007,21 +1009,6 @@ const ProfessionalLabelGenerator: React.FC = () => {
         </Card>
       )}
 
-      {/* Label Preview */}
-      {selectedItem && (
-        <LabelPreview
-          selectedItem={selectedItem}
-          companyName={companyName}
-          companyAddress={companyAddress}
-          netWeight={netWeight}
-          logoPreview={logoPreview}
-          lotCode={lotCode}
-          servingSize={servingSize}
-          calories={calories}
-          ingredients={ingredients}
-          allergens={allergens}
-        />
-      )}
 
       {/* Lot Code & Barcode Info */}
       {selectedItem && (
@@ -1368,18 +1355,53 @@ const ProfessionalLabelGenerator: React.FC = () => {
         </Card>
       )}
 
-      {/* Generate Button */}
+      {/* Action Buttons */}
       {selectedItem && (
-        <Button 
-          onClick={generateLabel}
-          disabled={isGenerating || !companyName.trim()}
-          className="w-full py-6 text-lg"
-          size="lg"
-        >
-          <Download className="mr-2 h-5 w-5" />
-          {isGenerating ? 'Generating...' : 'Generate Professional FDA-Compliant Label'}
-        </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button 
+            onClick={() => setShowPreview(true)}
+            disabled={!companyName.trim()}
+            variant="outline"
+            className="w-full py-6 text-lg"
+            size="lg"
+          >
+            <Package className="mr-2 h-5 w-5" />
+            Preview Label
+          </Button>
+          <Button 
+            onClick={generateLabel}
+            disabled={isGenerating || !companyName.trim()}
+            className="w-full py-6 text-lg"
+            size="lg"
+          >
+            <Download className="mr-2 h-5 w-5" />
+            {isGenerating ? 'Generating...' : 'Generate PDF'}
+          </Button>
+        </div>
       )}
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Label Preview</DialogTitle>
+          </DialogHeader>
+          {selectedItem && (
+            <LabelPreview
+              selectedItem={selectedItem}
+              companyName={companyName}
+              companyAddress={companyAddress}
+              netWeight={netWeight}
+              logoPreview={logoPreview}
+              lotCode={lotCode}
+              servingSize={servingSize}
+              calories={calories}
+              ingredients={ingredients}
+              allergens={allergens}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
