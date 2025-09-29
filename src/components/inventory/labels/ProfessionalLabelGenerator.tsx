@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useEnhancedInventoryManagement } from '@/hooks/useEnhancedInventoryManagement';
+import { useInventory } from '@/contexts/inventory';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
@@ -76,7 +76,7 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
 ];
 
 const ProfessionalLabelGenerator: React.FC = () => {
-  const inventoryContext = useEnhancedInventoryManagement();
+  const inventoryContext = useInventory();
   const { user } = useAuth();
   
   const items = inventoryContext.items || [];
