@@ -204,6 +204,7 @@ export const warehouseApi = {
         const { error } = await supabase.rpc('receive_stock', {
           p_item_id: item.item_id,
           p_quantity: item.quantity,
+          p_warehouse_id: warehouseId,
           p_unit_cost: item.unit_cost || 0,
           p_lot_number: item.lot_number || null,
           p_vendor_id: item.vendor_id || null,
