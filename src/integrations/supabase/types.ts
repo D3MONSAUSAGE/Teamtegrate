@@ -10687,9 +10687,8 @@ export type Database = {
               p_invoice_number?: string
               p_item_id: string
               p_lot_number?: string
-              p_notes?: string
               p_quantity: number
-              p_vendor?: string
+              p_unit_cost: number
               p_vendor_id?: string
               p_warehouse_id: string
             }
