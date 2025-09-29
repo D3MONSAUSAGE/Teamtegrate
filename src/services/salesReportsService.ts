@@ -49,7 +49,7 @@ export const salesReportsService = {
         quantity,
         unit_cost,
         reference_number,
-        inventory_items(name),
+        inventory_items(name, unit_cost),
         teams(name)
       `)
       .eq('transaction_type', 'out')
@@ -69,19 +69,27 @@ export const salesReportsService = {
       throw error;
     }
 
-    return (data || []).map(transaction => ({
-      id: transaction.id,
-      transaction_date: transaction.transaction_date,
-      team_id: transaction.team_id,
-      team_name: (transaction.teams as any)?.name || 'Unknown Team',
-      item_id: transaction.item_id,
-      item_name: (transaction.inventory_items as any)?.name || 'Unknown Item',
-      quantity: Math.abs(transaction.quantity), // Convert negative quantity to positive
-      unit_cost: transaction.unit_cost,
-      total_revenue: Math.abs(transaction.quantity) * transaction.unit_cost,
-      profit: 0, // Will be calculated with cost data
-      reference_number: transaction.reference_number,
-    }));
+    return (data || []).map(transaction => {
+      const quantity = Math.abs(transaction.quantity); // Convert negative quantity to positive
+      const sellingPrice = transaction.unit_cost; // Sales transaction unit_cost is selling price
+      const costPrice = (transaction.inventory_items as any)?.unit_cost || 0; // Actual item cost
+      const totalRevenue = quantity * sellingPrice;
+      const profit = quantity * (sellingPrice - costPrice); // Calculate actual profit
+
+      return {
+        id: transaction.id,
+        transaction_date: transaction.transaction_date,
+        team_id: transaction.team_id,
+        team_name: (transaction.teams as any)?.name || 'Unknown Team',
+        item_id: transaction.item_id,
+        item_name: (transaction.inventory_items as any)?.name || 'Unknown Item',
+        quantity,
+        unit_cost: sellingPrice,
+        total_revenue: totalRevenue,
+        profit,
+        reference_number: transaction.reference_number,
+      };
+    });
   },
 
   /**
