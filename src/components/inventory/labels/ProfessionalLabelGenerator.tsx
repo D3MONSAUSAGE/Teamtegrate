@@ -17,7 +17,6 @@ import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
 import jsPDF from 'jspdf';
-import { useDropzone } from 'react-dropzone';
 
 interface LabelTemplate {
   id: string;
@@ -30,14 +29,26 @@ interface SavedTemplate {
   id: string;
   name: string;
   companyName: string;
-  logoData?: string; // Base64 encoded logo image
+  companyAddress: string;
+  netWeight: string;
+  logoData?: string;
   ingredients: string;
   servingSize: string;
   calories: string;
   totalFat: string;
+  saturatedFat: string;
+  transFat: string;
+  cholesterol: string;
   sodium: string;
   totalCarbs: string;
+  dietaryFiber: string;
+  totalSugars: string;
+  addedSugars: string;
   protein: string;
+  vitaminD: string;
+  calcium: string;
+  iron: string;
+  potassium: string;
   allergens: string;
   createdAt: string;
 }
@@ -51,9 +62,9 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
   },
   {
     id: 'food',
-    name: 'Food Safety Label',
-    description: 'Complete food label with nutrition facts and ingredients',
-    fields: ['company', 'product', 'sku', 'barcode', 'lot', 'nutrition', 'ingredients', 'allergens']
+    name: 'Professional Food Label',
+    description: 'FDA-compliant nutrition facts, ingredients, allergens, and company info',
+    fields: ['company', 'product', 'sku', 'barcode', 'lot', 'nutrition', 'ingredients', 'allergens', 'netweight', 'address']
   },
   {
     id: 'custom',
@@ -71,27 +82,40 @@ const ProfessionalLabelGenerator: React.FC = () => {
 
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('basic');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('food');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Company and lot code state
   const [companyName, setCompanyName] = useState('Your Company Name');
+  const [companyAddress, setCompanyAddress] = useState('123 Main St, City, State 12345');
+  const [netWeight, setNetWeight] = useState('1 lb (454g)');
   const [lotCode, setLotCode] = useState('');
   
   // Logo state
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
-  const [logoData, setLogoData] = useState<string>(''); // Base64 for PDF
+  const [logoData, setLogoData] = useState<string>('');
+  const [logoUploadStatus, setLogoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
-  // Simple nutritional info state
+  // Enhanced nutritional info state for FDA compliance
   const [ingredients, setIngredients] = useState('');
   const [servingSize, setServingSize] = useState('');
   const [calories, setCalories] = useState('');
   const [totalFat, setTotalFat] = useState('');
+  const [saturatedFat, setSaturatedFat] = useState('');
+  const [transFat, setTransFat] = useState('');
+  const [cholesterol, setCholesterol] = useState('');
   const [sodium, setSodium] = useState('');
   const [totalCarbs, setTotalCarbs] = useState('');
+  const [dietaryFiber, setDietaryFiber] = useState('');
+  const [totalSugars, setTotalSugars] = useState('');
+  const [addedSugars, setAddedSugars] = useState('');
   const [protein, setProtein] = useState('');
+  const [vitaminD, setVitaminD] = useState('');
+  const [calcium, setCalcium] = useState('');
+  const [iron, setIron] = useState('');
+  const [potassium, setPotassium] = useState('');
   const [allergens, setAllergens] = useState('');
 
   // Template management state
@@ -115,7 +139,6 @@ const ProfessionalLabelGenerator: React.FC = () => {
     [templateFields]
   );
 
-
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -129,7 +152,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
     loadSavedTemplates();
   }, []);
 
-  // Handle item selection - stabilized to prevent re-renders during typing
+  // Handle item selection
   useEffect(() => {
     if (!selectedItemId) {
       setSelectedItem(null);
@@ -141,19 +164,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
     if (selectedItemFromList?.id !== selectedItem?.id) {
       setSelectedItem(selectedItemFromList);
       
-      // Generate lot code only when item changes
       if (selectedItemFromList) {
         const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
         const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
         setLotCode(lotNumber);
       }
     }
-  }, [selectedItemId, items, selectedItem?.id]);
+  }, [selectedItemId, items, selectedItem?.id, companyName]);
 
-  // Enhanced state for thermal printer logo upload
-  const [logoUrl, setLogoUrl] = useState('');
-  const [logoUploadStatus, setLogoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  
   // Logo upload handling optimized for thermal printing
   const onLogoDrop = useCallback((acceptedFiles: File[]) => {
     console.log('🔍 Logo upload started - Files received:', acceptedFiles.length);
@@ -183,7 +201,6 @@ const ProfessionalLabelGenerator: React.FC = () => {
       return;
     }
     
-    // Reduced size limit for thermal printers (2MB)
     if (file.size > 2 * 1024 * 1024) {
       console.error('❌ File too large for thermal printer:', file.size);
       setLogoUploadStatus('error');
@@ -191,241 +208,102 @@ const ProfessionalLabelGenerator: React.FC = () => {
       return;
     }
     
-    // Check image dimensions for thermal printer optimization
     const img = new Image();
     img.onload = () => {
       console.log('🖼️ Image dimensions:', { width: img.width, height: img.height });
       
-      // For 4x6 thermal at 203 DPI: max recommended 812x1218 pixels
       if (img.width > 812 || img.height > 1218) {
-        console.warn('⚠️ Image large for thermal printer:', { width: img.width, height: img.height });
-        toast.warning('Image is large - may affect thermal print quality');
+        console.warn('⚠️ Large image detected for thermal printer:', { width: img.width, height: img.height });
+        toast.warning('Large image detected. Consider using smaller dimensions (max 812x1218px) for optimal thermal printing.');
       }
       
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        console.log('✅ Logo processed successfully');
-        setLogoUrl(result);
+      reader.onload = () => {
+        const result = reader.result as string;
+        console.log('✅ Logo processed for thermal printing:', { 
+          dataUrlLength: result.length,
+          hasData: !!result
+        });
+        
         setLogoData(result);
         setLogoPreview(result);
+        setLogoFile(file);
         setLogoUploadStatus('success');
-        toast.success('Logo uploaded - optimized for thermal printing!');
+        toast.success('Logo uploaded and optimized for thermal printing!');
       };
-      
-      reader.onerror = (e) => {
-        console.error('❌ FileReader error:', e);
+      reader.onerror = () => {
+        console.error('❌ FileReader error during logo processing');
         setLogoUploadStatus('error');
-        toast.error('Failed to process image file');
+        toast.error('Failed to process logo for thermal printing');
       };
-      
       reader.readAsDataURL(file);
     };
     
     img.onerror = () => {
-      console.error('❌ Failed to load image for validation');
+      console.error('❌ Image loading error during logo processing');
       setLogoUploadStatus('error');
-      toast.error('Invalid image file');
+      toast.error('Invalid image file for thermal printing');
     };
     
-    const tempUrl = URL.createObjectURL(file);
-    img.src = tempUrl;
+    img.src = URL.createObjectURL(file);
   }, []);
-
-  const { getRootProps: getLogoRootProps, getInputProps: getLogoInputProps, isDragActive: isLogoDragActive } = useDropzone({
-    onDrop: onLogoDrop,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.svg']
-    },
-    multiple: false,
-    noClick: false,
-    noKeyboard: false
-  });
-
-  const removeLogo = useCallback(() => {
-    console.log('Removing logo');
-    setLogoFile(null);
-    setLogoPreview('');
-    setLogoData('');
-    toast.success('Logo removed');
-  }, []);
-
-  // Load nutritional data only when item ID changes
-  useEffect(() => {
-    if (!selectedItem?.id) {
-      // Clear all data when no item selected
-      setIngredients('');
-      setServingSize('');
-      setCalories('');
-      setTotalFat('');
-      setSodium('');
-      setTotalCarbs('');
-      setProtein('');
-      setAllergens('');
-      return;
-    }
-
-    const loadNutritionalData = async () => {
-      try {
-        const nutritionalInfo = await nutritionalInfoApi.getByItemId(selectedItem.id);
-        if (nutritionalInfo) {
-          const simpleData = convertFlatToSimple(nutritionalInfo);
-          setIngredients(simpleData.ingredients);
-          setServingSize(simpleData.servingSize);
-          setCalories(simpleData.calories);
-          setTotalFat(simpleData.totalFat);
-          setSodium(simpleData.sodium);
-          setTotalCarbs(simpleData.totalCarbs);
-          setProtein(simpleData.protein);
-          setAllergens(simpleData.allergens);
-        }
-      } catch (error) {
-        console.log('No nutritional data found for pre-population');
-      }
-    };
-    
-    loadNutritionalData();
-  }, [selectedItem?.id]);
 
   // Load saved templates from localStorage
-  const loadSavedTemplates = () => {
+  const loadSavedTemplates = useCallback(() => {
     try {
       const saved = localStorage.getItem('labelTemplates');
       if (saved) {
         setSavedTemplates(JSON.parse(saved));
       }
     } catch (error) {
-      console.error('Failed to load templates:', error);
+      console.error('Failed to load saved templates:', error);
     }
-  };
+  }, []);
 
-  // Stabilized event handlers
+  // Input handlers
+  const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setCompanyName(newValue);
+  }, []);
+
+  const handleItemSelect = useCallback((value: string) => {
+    setSelectedItemId(value);
+  }, []);
+
   const handleTemplateSelect = useCallback((templateId: string) => {
-    console.log('Template selected:', templateId);
     setSelectedTemplate(templateId);
   }, []);
 
-  const handleItemSelect = useCallback((itemId: string) => {
-    console.log('Item selected:', itemId);
-    setSelectedItemId(itemId);
-  }, []);
-
-  // Enhanced input change handlers with comprehensive debugging
-  const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Company Name Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setCompanyName(newValue);
-    console.log('✅ Company name state updated to:', newValue);
-  }, []);
-
   const handleIngredientsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Ingredients Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setIngredients(newValue);
-    console.log('✅ Ingredients state updated to:', newValue);
+    setIngredients(e.target.value);
   }, []);
 
   const handleServingSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Serving Size Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setServingSize(newValue);
-    console.log('✅ Serving size state updated to:', newValue);
+    setServingSize(e.target.value);
   }, []);
 
   const handleCaloriesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Calories Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setCalories(newValue);
-    console.log('✅ Calories state updated to:', newValue);
+    setCalories(e.target.value);
   }, []);
 
   const handleTotalFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Total Fat Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setTotalFat(newValue);
-    console.log('✅ Total fat state updated to:', newValue);
+    setTotalFat(e.target.value);
   }, []);
 
   const handleSodiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Sodium Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setSodium(newValue);
-    console.log('✅ Sodium state updated to:', newValue);
+    setSodium(e.target.value);
   }, []);
 
   const handleTotalCarbsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Total Carbs Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setTotalCarbs(newValue);
-    console.log('✅ Total carbs state updated to:', newValue);
+    setTotalCarbs(e.target.value);
   }, []);
 
   const handleProteinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Protein Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setProtein(newValue);
-    console.log('✅ Protein state updated to:', newValue);
+    setProtein(e.target.value);
   }, []);
 
   const handleAllergensChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const newValue = e.target.value;
-    console.log('📝 Allergens Input:', { 
-      value: newValue, 
-      focused: document.activeElement === e.target,
-      timestamp: new Date().toISOString(),
-      eventType: e.type
-    });
-    setAllergens(newValue);
-    console.log('✅ Allergens state updated to:', newValue);
+    setAllergens(e.target.value);
   }, []);
 
   // Save template to localStorage
@@ -439,14 +317,26 @@ const ProfessionalLabelGenerator: React.FC = () => {
       id: Date.now().toString(),
       name: templateName.trim(),
       companyName,
-      logoData, // Include logo data
+      companyAddress,
+      netWeight,
+      logoData,
       ingredients,
       servingSize,
       calories,
       totalFat,
+      saturatedFat,
+      transFat,
+      cholesterol,
       sodium,
       totalCarbs,
+      dietaryFiber,
+      totalSugars,
+      addedSugars,
       protein,
+      vitaminD,
+      calcium,
+      iron,
+      potassium,
       allergens,
       createdAt: new Date().toISOString()
     };
@@ -461,19 +351,19 @@ const ProfessionalLabelGenerator: React.FC = () => {
       console.error('Failed to save template:', error);
       toast.error('Failed to save template');
     }
-  }, [templateName, companyName, logoData, ingredients, servingSize, calories, totalFat, sodium, totalCarbs, protein, allergens, savedTemplates]);
+  }, [templateName, companyName, companyAddress, netWeight, logoData, ingredients, servingSize, calories, totalFat, saturatedFat, transFat, cholesterol, sodium, totalCarbs, dietaryFiber, totalSugars, addedSugars, protein, vitaminD, calcium, iron, potassium, allergens, savedTemplates]);
 
   // Load a saved template
   const loadTemplate = useCallback((templateId: string) => {
     const template = savedTemplates.find(t => t.id === templateId);
     if (template) {
       setCompanyName(template.companyName);
+      setCompanyAddress(template.companyAddress || '123 Main St, City, State 12345');
+      setNetWeight(template.netWeight || '1 lb (454g)');
       
-      // Load logo data if available
       if (template.logoData) {
         setLogoData(template.logoData);
         setLogoPreview(template.logoData);
-        // Don't set logoFile as it's not needed for display/PDF generation
       } else {
         setLogoData('');
         setLogoPreview('');
@@ -484,9 +374,19 @@ const ProfessionalLabelGenerator: React.FC = () => {
       setServingSize(template.servingSize);
       setCalories(template.calories);
       setTotalFat(template.totalFat);
+      setSaturatedFat(template.saturatedFat || '');
+      setTransFat(template.transFat || '');
+      setCholesterol(template.cholesterol || '');
       setSodium(template.sodium);
       setTotalCarbs(template.totalCarbs);
+      setDietaryFiber(template.dietaryFiber || '');
+      setTotalSugars(template.totalSugars || '');
+      setAddedSugars(template.addedSugars || '');
       setProtein(template.protein);
+      setVitaminD(template.vitaminD || '');
+      setCalcium(template.calcium || '');
+      setIron(template.iron || '');
+      setPotassium(template.potassium || '');
       setAllergens(template.allergens);
       toast.success(`Template "${template.name}" loaded!`);
     }
@@ -505,6 +405,32 @@ const ProfessionalLabelGenerator: React.FC = () => {
       toast.error('Failed to delete template');
     }
   }, [savedTemplates]);
+
+  // Calculate % Daily Value for nutrition facts
+  const calculateDailyValue = (nutrient: string, value: string): string => {
+    if (!value || value.trim() === '') return '';
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return '';
+    
+    const dailyValues: { [key: string]: number } = {
+      totalFat: 65,
+      saturatedFat: 20,
+      cholesterol: 300,
+      sodium: 2300,
+      totalCarbs: 300,
+      dietaryFiber: 25,
+      vitaminD: 20,
+      calcium: 1300,
+      iron: 18,
+      potassium: 4700
+    };
+    
+    const dv = dailyValues[nutrient];
+    if (!dv) return '';
+    
+    const percentage = Math.round((numValue / dv) * 100);
+    return `${percentage}%`;
+  };
 
   const generateLabel = async () => {
     if (!selectedItem) {
@@ -525,110 +451,209 @@ const ProfessionalLabelGenerator: React.FC = () => {
       });
 
       pdf.setFont('helvetica');
-      let y = 0.3;
+      let y = 0.2;
 
-      // Logo (if present) - at the very top
+      // Logo and Company Header
       if (logoData) {
         try {
-          // Add logo centered at the top
-          const logoSize = 0.8; // Logo height in inches
-          pdf.addImage(logoData, 'PNG', 2 - (logoSize / 2), y, logoSize, logoSize);
-          y += logoSize + 0.1; // Add space after logo
+          const logoSize = 0.6;
+          pdf.addImage(logoData, 'PNG', 0.3, y, logoSize, logoSize);
+          
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(companyName.toUpperCase(), 1.0, y + 0.3);
+          y += logoSize + 0.15;
         } catch (error) {
           console.error('Failed to add logo to PDF:', error);
         }
-      }
-
-      // Company Header (always included)
-      if (companyName) {
+      } else if (companyName) {
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(companyName.toUpperCase(), 2, y, { align: 'center' });
-        y += 0.3;
-        
-        // Divider line
-        pdf.setLineWidth(0.01);
-        pdf.line(0.2, y, 3.8, y);
-        y += 0.2;
+        pdf.text(companyName.toUpperCase(), 2, y + 0.2, { align: 'center' });
+        y += 0.4;
       }
 
-      // Product Name
+      // Divider line
+      pdf.setLineWidth(0.01);
+      pdf.line(0.2, y, 3.8, y);
+      y += 0.15;
+
+      // Product Name (larger, centered)
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.text(selectedItem.name, 2, y, { align: 'center' });
-      y += 0.4;
+      y += 0.3;
 
-      // SKU
+      // Net Weight (centered, if specified)
+      if (template.fields.includes('netweight') && netWeight.trim()) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Net Weight: ${netWeight}`, 2, y, { align: 'center' });
+        y += 0.25;
+      }
+
+      // SKU and Date (left/right aligned)
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       pdf.text(`SKU: ${selectedItem.sku || 'N/A'}`, 0.2, y);
-      y += 0.25;
+      
+      const currentDate = new Date().toLocaleDateString();
+      pdf.text(`DATE: ${currentDate}`, 3.8, y, { align: 'right' });
+      y += 0.2;
 
-      // Lot Code
-      if (template.fields.includes('lot')) {
+      // LOT Code (if included)
+      if (template.fields.includes('lot') && lotCode) {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'bold');
         pdf.text(`LOT: ${lotCode}`, 0.2, y);
-        
-        // Date on right side
-        const currentDate = new Date().toLocaleDateString();
-        pdf.text(`DATE: ${currentDate}`, 3.8, y, { align: 'right' });
-        y += 0.3;
+        y += 0.25;
       }
 
-      // Barcode (always included)
+      // Barcode (centered)
       try {
         const barcodeValue = selectedItem.barcode || selectedItem.sku || lotCode;
         const barcodeImage = BarcodeGenerator.generateBarcode(barcodeValue, {
           format: 'CODE128',
           width: 2,
-          height: 40,
+          height: 35,
           displayValue: true,
           background: '#ffffff',
           lineColor: '#000000'
         });
         
         if (barcodeImage) {
-          pdf.addImage(barcodeImage, 'PNG', 0.5, y, 3, 0.6);
-          y += 0.8;
+          pdf.addImage(barcodeImage, 'PNG', 0.5, y, 3, 0.5);
+          y += 0.7;
         }
       } catch (error) {
         console.error('Barcode generation failed:', error);
       }
 
-      // Nutrition Facts (if included)
-      if (template.fields.includes('nutrition') && (servingSize || calories || totalFat || sodium || totalCarbs || protein)) {
-        pdf.setFontSize(11);
+      // FDA-Compliant Nutrition Facts Table
+      if (template.fields.includes('nutrition') && (servingSize || calories)) {
+        // Nutrition Facts header
+        pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
         pdf.text('Nutrition Facts', 0.2, y);
-        y += 0.2;
-
-        // Nutrition box
-        pdf.setLineWidth(0.02);
-        pdf.rect(0.2, y, 3.6, 1.2);
-        
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'normal');
         y += 0.15;
 
-        const nutritionItems = [
-          { label: 'Serving Size', value: servingSize },
-          { label: 'Calories', value: calories, bold: true },
-          { label: 'Total Fat', value: totalFat, unit: 'g' },
-          { label: 'Sodium', value: sodium, unit: 'mg' },
-          { label: 'Total Carbs', value: totalCarbs, unit: 'g' },
-          { label: 'Protein', value: protein, unit: 'g' },
+        // Main nutrition facts box with borders
+        const boxWidth = 3.6;
+        pdf.setLineWidth(0.02);
+        pdf.rect(0.2, y, boxWidth, 2.0); // Main outer border
+        
+        y += 0.1;
+
+        // Serving size section
+        if (servingSize) {
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`Serving Size: ${servingSize}`, 0.3, y);
+          y += 0.15;
+          
+          pdf.line(0.2, y, 3.8, y);
+          y += 0.05;
+        }
+
+        // Calories (large, bold)
+        if (calories) {
+          pdf.setFontSize(16);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Calories ${calories}`, 0.3, y);
+          y += 0.2;
+          
+          pdf.setLineWidth(0.03);
+          pdf.line(0.2, y, 3.8, y);
+          pdf.setLineWidth(0.01);
+          y += 0.1;
+        }
+
+        // % Daily Value header
+        pdf.setFontSize(7);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('% Daily Value*', 3.4, y, { align: 'right' });
+        y += 0.1;
+
+        // Nutrition items with % DV
+        const nutritionData = [
+          { label: 'Total Fat', value: totalFat, unit: 'g', dvKey: 'totalFat' },
+          { label: 'Saturated Fat', value: saturatedFat, unit: 'g', dvKey: 'saturatedFat', indent: true },
+          { label: 'Trans Fat', value: transFat, unit: 'g', indent: true },
+          { label: 'Cholesterol', value: cholesterol, unit: 'mg', dvKey: 'cholesterol' },
+          { label: 'Sodium', value: sodium, unit: 'mg', dvKey: 'sodium' },
+          { label: 'Total Carbohydrate', value: totalCarbs, unit: 'g', dvKey: 'totalCarbs' },
+          { label: 'Dietary Fiber', value: dietaryFiber, unit: 'g', dvKey: 'dietaryFiber', indent: true },
+          { label: 'Total Sugars', value: totalSugars, unit: 'g', indent: true },
+          { label: 'Added Sugars', value: addedSugars, unit: 'g', indent: true, extraIndent: true },
+          { label: 'Protein', value: protein, unit: 'g' }
         ];
 
-        nutritionItems.forEach(item => {
+        pdf.setFontSize(7);
+        nutritionData.forEach(item => {
           if (item.value && item.value.trim()) {
-            pdf.setFont('helvetica', item.bold ? 'bold' : 'normal');
-            const text = `${item.label}: ${item.value}${item.unit || ''}`;
-            pdf.text(text, 0.3, y);
-            y += 0.12;
+            const xPos = item.indent ? (item.extraIndent ? 0.5 : 0.4) : 0.3;
+            pdf.setFont('helvetica', 'normal');
+            
+            const text = `${item.label} ${item.value}${item.unit}`;
+            pdf.text(text, xPos, y);
+            
+            if (item.dvKey) {
+              const dv = calculateDailyValue(item.dvKey, item.value);
+              if (dv) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(dv, 3.7, y, { align: 'right' });
+              }
+            }
+            
+            y += 0.1;
+            
+            if (['Total Fat', 'Cholesterol', 'Total Carbohydrate', 'Protein'].includes(item.label)) {
+              pdf.line(0.2, y, 3.8, y);
+              y += 0.05;
+            }
           }
         });
-        
+
+        // Vitamins and Minerals
+        const vitamins = [
+          { label: 'Vitamin D', value: vitaminD, unit: 'mcg', dvKey: 'vitaminD' },
+          { label: 'Calcium', value: calcium, unit: 'mg', dvKey: 'calcium' },
+          { label: 'Iron', value: iron, unit: 'mg', dvKey: 'iron' },
+          { label: 'Potassium', value: potassium, unit: 'mg', dvKey: 'potassium' }
+        ];
+
+        const hasVitamins = vitamins.some(v => v.value && v.value.trim());
+        if (hasVitamins) {
+          pdf.setLineWidth(0.02);
+          pdf.line(0.2, y, 3.8, y);
+          y += 0.08;
+          
+          vitamins.forEach(vitamin => {
+            if (vitamin.value && vitamin.value.trim()) {
+              pdf.setFont('helvetica', 'normal');
+              pdf.text(`${vitamin.label} ${vitamin.value}${vitamin.unit}`, 0.3, y);
+              
+              const dv = calculateDailyValue(vitamin.dvKey, vitamin.value);
+              if (dv) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(dv, 3.7, y, { align: 'right' });
+              }
+              y += 0.1;
+            }
+          });
+        }
+
+        // Bottom border of nutrition facts
+        pdf.setLineWidth(0.02);
+        pdf.line(0.2, y, 3.8, y);
+        y += 0.05;
+
+        // Daily value footnote
+        pdf.setFontSize(6);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('*The % Daily Value tells you how much a nutrient in', 0.3, y);
+        y += 0.07;
+        pdf.text('a serving of food contributes to a daily diet.', 0.3, y);
         y += 0.15;
       }
 
@@ -637,13 +662,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('INGREDIENTS:', 0.2, y);
-        y += 0.15;
+        y += 0.12;
         
-        pdf.setFontSize(7);
+        pdf.setFontSize(8);
         pdf.setFont('helvetica', 'normal');
         const ingredientLines = pdf.splitTextToSize(ingredients, 3.6);
         pdf.text(ingredientLines, 0.2, y);
-        y += (ingredientLines.length * 0.08) + 0.1;
+        y += (ingredientLines.length * 0.09) + 0.1;
       }
 
       // Allergens (if included)
@@ -651,23 +676,31 @@ const ProfessionalLabelGenerator: React.FC = () => {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('CONTAINS:', 0.2, y);
-        y += 0.15;
+        y += 0.12;
         
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
         pdf.text(allergens.toUpperCase(), 0.2, y);
+        y += 0.15;
       }
 
-      // Footer with company branding
-      pdf.setFontSize(6);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated by ${companyName} - ${new Date().toLocaleDateString()}`, 2, 5.8, { align: 'center' });
+      // Company footer with address (if included)
+      if (template.fields.includes('address') && companyAddress.trim()) {
+        pdf.setFontSize(7);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Distributed by: ${companyName}`, 2, 5.7, { align: 'center' });
+        pdf.text(companyAddress, 2, 5.85, { align: 'center' });
+      } else {
+        pdf.setFontSize(6);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Generated by ${companyName} - ${new Date().toLocaleDateString()}`, 2, 5.85, { align: 'center' });
+      }
 
       // Save PDF
       const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
       pdf.save(filename);
       
-      toast.success('Professional label generated successfully!');
+      toast.success('Professional FDA-compliant label generated successfully!');
       
     } catch (error) {
       console.error('Error generating label:', error);
@@ -679,129 +712,16 @@ const ProfessionalLabelGenerator: React.FC = () => {
 
   const LabelForm = () => (
     <div className="space-y-6">
-      {/* Company Header */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Building2 className="h-5 w-5 text-primary" />
-            Company Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="company-name" className="text-sm font-medium">Company Name</Label>
-              <Input
-                id="company-name"
-                value={companyName}
-                onChange={handleCompanyNameChange}
-                onFocus={(e) => console.log('🎯 Company name field focused:', e.target.value)}
-                onBlur={(e) => console.log('👋 Company name field blurred:', e.target.value)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log('🖱️ Company name field clicked');
-                }}
-                placeholder="Enter company name"
-                className="mt-1"
-                autoComplete="off"
-              />
-            </div>
-            
-            {/* Logo Upload Section */}
-            <div>
-              <Label className="text-sm font-medium">Company Logo (Thermal Printer Optimized)</Label>
-              <div className="mt-2">
-                <div className={`text-center p-6 border-2 border-dashed rounded-lg transition-colors ${
-                  logoUploadStatus === 'uploading' ? 'border-primary bg-primary/5' :
-                  logoUploadStatus === 'success' ? 'border-green-500 bg-green-500/5' :
-                  logoUploadStatus === 'error' ? 'border-red-500 bg-red-500/5' :
-                  'border-border hover:border-primary/50'
-                }`}>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={(e) => {
-                      console.log('🎯 File input triggered');
-                      const files = e.target.files;
-                      if (files && files.length > 0) {
-                        console.log('📁 Files selected:', files.length);
-                        onLogoDrop(Array.from(files));
-                      } else {
-                        console.log('❌ No files in input');
-                      }
-                    }}
-                    className="hidden"
-                    id="thermal-logo-upload"
-                    disabled={logoUploadStatus === 'uploading'}
-                  />
-                  <label htmlFor="thermal-logo-upload" className={`cursor-pointer ${logoUploadStatus === 'uploading' ? 'pointer-events-none' : ''}`}>
-                    <div className="flex flex-col items-center gap-3">
-                      {logoUploadStatus === 'uploading' ? (
-                        <div className="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full" />
-                      ) : (
-                        <ImageIcon className={`h-10 w-10 ${
-                          logoUploadStatus === 'success' ? 'text-green-600' :
-                          logoUploadStatus === 'error' ? 'text-red-600' :
-                          'text-muted-foreground'
-                        }`} />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">
-                          {logoUploadStatus === 'uploading' ? 'Processing for thermal printer...' :
-                           logoUploadStatus === 'success' ? 'Logo ready for thermal printing!' :
-                           logoUploadStatus === 'error' ? 'Upload failed - please try again' :
-                           'Upload logo for 4×6 thermal labels'}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          PNG or JPG • Max 2MB • Best: 812×1218px or smaller
-                        </p>
-                        {logoUploadStatus === 'success' && (
-                          <p className="text-xs text-green-600 mt-1 font-medium">
-                            ✓ Optimized and ready for thermal printing
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </label>
-                </div>
-                
-                {logoUrl && (
-                  <div className="mt-4 flex justify-center">
-                    <div className="relative">
-                      <img 
-                        src={logoUrl} 
-                        alt="Thermal printer logo preview" 
-                        className="max-w-24 max-h-24 object-contain border rounded shadow-sm bg-white"
-                      />
-                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                        Thermal Ready
-                      </div>
-                      <Button
-                        onClick={() => {
-                          setLogoUrl('');
-                          setLogoData('');
-                          setLogoPreview('');
-                          setLogoFile(null);
-                          setLogoUploadStatus('idle');
-                          toast.success('Logo removed');
-                        }}
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-2 -left-2 h-6 w-6 rounded-full p-0"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Logo appears at the top of thermal labels. Smaller images print better on thermal printers.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Success Message */}
+      <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center justify-center gap-2 text-green-700">
+          <Utensils className="h-5 w-5" />
+          <span className="font-medium">FDA-Compliant Food Label Generator Ready!</span>
+        </div>
+        <p className="text-sm text-green-600 mt-1">
+          Now supports professional nutrition facts tables, company addresses, and thermal printer optimization.
+        </p>
+      </div>
 
       {/* Product Selection */}
       <Card>
@@ -859,14 +779,144 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     <div className="font-medium text-sm">{template.name}</div>
                     <div className="text-xs text-muted-foreground mt-1">{template.description}</div>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {template.fields.includes('nutrition') && <Badge variant="outline" className="text-xs">Nutrition</Badge>}
+                      {template.fields.includes('nutrition') && <Badge variant="outline" className="text-xs">FDA Nutrition</Badge>}
                       {template.fields.includes('ingredients') && <Badge variant="outline" className="text-xs">Ingredients</Badge>}
                       {template.fields.includes('allergens') && <Badge variant="outline" className="text-xs">Allergens</Badge>}
+                      {template.fields.includes('netweight') && <Badge variant="outline" className="text-xs">Net Weight</Badge>}
                       <Badge variant="outline" className="text-xs">Barcode</Badge>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Company Information */}
+      {selectedItem && (
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Building2 className="h-5 w-5 text-primary" />
+              Company Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="company-name" className="text-sm font-medium">Company Name</Label>
+                <Input
+                  id="company-name"
+                  value={companyName}
+                  onChange={handleCompanyNameChange}
+                  placeholder="Enter company name"
+                  className="mt-1"
+                />
+              </div>
+              
+              {templateFields.includes('address') && (
+                <div>
+                  <Label htmlFor="company-address" className="text-sm font-medium">Company Address</Label>
+                  <Input
+                    id="company-address"
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                    placeholder="123 Main St, City, State 12345"
+                    className="mt-1"
+                  />
+                </div>
+              )}
+              
+              {templateFields.includes('netweight') && (
+                <div>
+                  <Label htmlFor="net-weight" className="text-sm font-medium">Net Weight</Label>
+                  <Input
+                    id="net-weight"
+                    value={netWeight}
+                    onChange={(e) => setNetWeight(e.target.value)}
+                    placeholder="1 lb (454g)"
+                    className="mt-1"
+                  />
+                </div>
+              )}
+              
+              {/* Logo Upload Section */}
+              <div>
+                <Label className="text-sm font-medium">Company Logo (Thermal Printer Optimized)</Label>
+                <div className="mt-2">
+                  <div className={`text-center p-6 border-2 border-dashed rounded-lg transition-colors ${
+                    logoUploadStatus === 'uploading' ? 'border-primary bg-primary/5' :
+                    logoUploadStatus === 'success' ? 'border-green-500 bg-green-500/5' :
+                    logoUploadStatus === 'error' ? 'border-red-500 bg-red-500/5' :
+                    'border-border hover:border-primary/50'
+                  }`}>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) {
+                          onLogoDrop(Array.from(files));
+                        }
+                      }}
+                      className="hidden"
+                      id="thermal-logo-upload"
+                      disabled={logoUploadStatus === 'uploading'}
+                    />
+                    <label htmlFor="thermal-logo-upload" className={`cursor-pointer ${logoUploadStatus === 'uploading' ? 'pointer-events-none' : ''}`}>
+                      <div className="flex flex-col items-center gap-3">
+                        {logoUploadStatus === 'uploading' ? (
+                          <div className="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full" />
+                        ) : (
+                          <ImageIcon className={`h-10 w-10 ${
+                            logoUploadStatus === 'success' ? 'text-green-600' :
+                            logoUploadStatus === 'error' ? 'text-red-600' :
+                            'text-muted-foreground'
+                          }`} />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium">
+                            {logoUploadStatus === 'uploading' ? 'Processing for thermal printer...' :
+                             logoUploadStatus === 'success' ? 'Logo ready for thermal printing!' :
+                             logoUploadStatus === 'error' ? 'Upload failed - try again' :
+                             'Click to upload logo'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            PNG or JPG under 2MB recommended for thermal printers
+                          </p>
+                        </div>
+                      </div>
+                    </label>
+                    
+                    {logoPreview && logoUploadStatus === 'success' && (
+                      <div className="mt-4 p-4 bg-muted/30 rounded border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-muted-foreground">Thermal Print Preview</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setLogoPreview('');
+                              setLogoData('');
+                              setLogoFile(null);
+                              setLogoUploadStatus('idle');
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <img 
+                          src={logoPreview} 
+                          alt="Logo preview" 
+                          className="max-h-20 mx-auto rounded border bg-white p-2"
+                          style={{ filter: 'grayscale(100%) contrast(120%)' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -922,7 +972,6 @@ const ProfessionalLabelGenerator: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Load Template */}
               {savedTemplates.length > 0 && (
                 <div>
                   <Label className="text-sm font-medium">Load Saved Template</Label>
@@ -981,7 +1030,6 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 </div>
               )}
 
-              {/* Save Template */}
               <div>
                 <Label className="text-sm font-medium">Save Current Configuration</Label>
                 <div className="flex gap-2 mt-1">
@@ -1001,155 +1049,215 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     Save
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Save your current settings to quickly generate similar labels in the future
-                </p>
               </div>
-
-              {/* Template List */}
-              {savedTemplates.length > 0 && (
-                <div className="pt-2">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {savedTemplates.length} template{savedTemplates.length !== 1 ? 's' : ''} saved
-                  </div>
-                  <div className="grid gap-2">
-                    {savedTemplates.slice(0, 3).map((template) => (
-                      <div
-                        key={template.id}
-                        className="flex items-center justify-between p-2 bg-muted/50 rounded border text-sm"
-                      >
-                        <div>
-                          <span className="font-medium">{template.name}</span>
-                          <span className="text-muted-foreground ml-2">
-                            ({template.companyName})
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            onClick={() => loadTemplate(template.id)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2"
-                          >
-                            Load
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Nutritional Information Form */}
+      {/* Nutritional Information & Ingredients */}
       {selectedItem && showNutritionalFields && (
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Utensils className="h-5 w-5 text-primary" />
-              Nutritional Information
+              FDA-Compliant Nutrition & Ingredients
             </CardTitle>
-            <CardDescription>
-              Enter nutritional information and ingredients for your label
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Ingredients */}
               {templateFields.includes('ingredients') && (
                 <div>
-                  <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients</Label>
-                    <Textarea
-                      id="ingredients"
-                      value={ingredients}
-                      onChange={handleIngredientsChange}
-                      placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
-                      className="mt-1 min-h-[80px]"
-                    />
+                  <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients List</Label>
+                  <Textarea
+                    id="ingredients"
+                    value={ingredients}
+                    onChange={handleIngredientsChange}
+                    placeholder="List ingredients in descending order by weight (e.g., Water, Sugar, Salt...)"
+                    className="mt-1 h-20"
+                  />
                 </div>
               )}
 
               {/* Allergens */}
               {templateFields.includes('allergens') && (
                 <div>
-                  <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
-                      <Input
-                        id="allergens"
-                        value={allergens}
-                        onChange={handleAllergensChange}
-                        placeholder="Contains: Milk, Eggs, Wheat..."
-                        className="mt-1"
-                      />
+                  <Label htmlFor="allergens" className="text-sm font-medium">Allergen Information</Label>
+                  <Input
+                    id="allergens"
+                    value={allergens}
+                    onChange={handleAllergensChange}
+                    placeholder="e.g., Milk, Eggs, Peanuts, Tree Nuts"
+                    className="mt-1"
+                  />
                 </div>
               )}
 
-              {/* Nutrition Facts */}
+              {/* FDA Nutrition Facts */}
               {templateFields.includes('nutrition') && (
-                <div className="space-y-3">
-                  <div className="font-medium text-sm">Nutrition Facts</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm font-medium">FDA-Compliant Nutrition Facts</Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>
                       <Label htmlFor="serving-size" className="text-sm">Serving Size</Label>
-                        <Input
-                          id="serving-size"
-                          value={servingSize}
-                          onChange={handleServingSizeChange}
-                          placeholder="1 cup (240ml)"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="calories" className="text-sm">Calories</Label>
-                        <Input
-                          id="calories"
-                          value={calories}
-                          onChange={handleCaloriesChange}
-                          placeholder="150"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
-                        <Input
-                          id="total-fat"
-                          value={totalFat}
-                          onChange={handleTotalFatChange}
-                          placeholder="5"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
-                        <Input
-                          id="sodium"
-                          value={sodium}
-                          onChange={handleSodiumChange}
-                          placeholder="200"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
-                        <Input
-                          id="total-carbs"
-                          value={totalCarbs}
-                          onChange={handleTotalCarbsChange}
-                          placeholder="30"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
-                        <Input
-                          id="protein"
-                          value={protein}
-                          onChange={handleProteinChange}
-                          placeholder="8"
-                          className="mt-1"
-                        />
+                      <Input
+                        id="serving-size"
+                        value={servingSize}
+                        onChange={handleServingSizeChange}
+                        placeholder="1 cup (240ml)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="calories" className="text-sm">Calories</Label>
+                      <Input
+                        id="calories"
+                        value={calories}
+                        onChange={handleCaloriesChange}
+                        placeholder="150"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
+                      <Input
+                        id="total-fat"
+                        value={totalFat}
+                        onChange={handleTotalFatChange}
+                        placeholder="5"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="saturated-fat" className="text-sm">Saturated Fat (g)</Label>
+                      <Input
+                        id="saturated-fat"
+                        value={saturatedFat}
+                        onChange={(e) => setSaturatedFat(e.target.value)}
+                        placeholder="2"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="trans-fat" className="text-sm">Trans Fat (g)</Label>
+                      <Input
+                        id="trans-fat"
+                        value={transFat}
+                        onChange={(e) => setTransFat(e.target.value)}
+                        placeholder="0"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cholesterol" className="text-sm">Cholesterol (mg)</Label>
+                      <Input
+                        id="cholesterol"
+                        value={cholesterol}
+                        onChange={(e) => setCholesterol(e.target.value)}
+                        placeholder="10"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
+                      <Input
+                        id="sodium"
+                        value={sodium}
+                        onChange={handleSodiumChange}
+                        placeholder="200"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
+                      <Input
+                        id="total-carbs"
+                        value={totalCarbs}
+                        onChange={handleTotalCarbsChange}
+                        placeholder="30"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dietary-fiber" className="text-sm">Dietary Fiber (g)</Label>
+                      <Input
+                        id="dietary-fiber"
+                        value={dietaryFiber}
+                        onChange={(e) => setDietaryFiber(e.target.value)}
+                        placeholder="3"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-sugars" className="text-sm">Total Sugars (g)</Label>
+                      <Input
+                        id="total-sugars"
+                        value={totalSugars}
+                        onChange={(e) => setTotalSugars(e.target.value)}
+                        placeholder="12"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="added-sugars" className="text-sm">Added Sugars (g)</Label>
+                      <Input
+                        id="added-sugars"
+                        value={addedSugars}
+                        onChange={(e) => setAddedSugars(e.target.value)}
+                        placeholder="5"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
+                      <Input
+                        id="protein"
+                        value={protein}
+                        onChange={handleProteinChange}
+                        placeholder="8"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vitamin-d" className="text-sm">Vitamin D (mcg)</Label>
+                      <Input
+                        id="vitamin-d"
+                        value={vitaminD}
+                        onChange={(e) => setVitaminD(e.target.value)}
+                        placeholder="2"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="calcium" className="text-sm">Calcium (mg)</Label>
+                      <Input
+                        id="calcium"
+                        value={calcium}
+                        onChange={(e) => setCalcium(e.target.value)}
+                        placeholder="100"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="iron" className="text-sm">Iron (mg)</Label>
+                      <Input
+                        id="iron"
+                        value={iron}
+                        onChange={(e) => setIron(e.target.value)}
+                        placeholder="1"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="potassium" className="text-sm">Potassium (mg)</Label>
+                      <Input
+                        id="potassium"
+                        value={potassium}
+                        onChange={(e) => setPotassium(e.target.value)}
+                        placeholder="300"
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1168,7 +1276,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
           size="lg"
         >
           <Download className="mr-2 h-5 w-5" />
-          {isGenerating ? 'Generating...' : 'Generate Professional Label'}
+          {isGenerating ? 'Generating...' : 'Generate Professional FDA-Compliant Label'}
         </Button>
       )}
     </div>
@@ -1180,7 +1288,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       <div className="text-center mb-6 p-4">
         <h1 className="text-2xl md:text-3xl font-bold text-foreground">Professional Label Generator</h1>
         <p className="text-muted-foreground mt-2">
-          Generate professional labels with company branding, barcodes, and nutritional information
+          Generate FDA-compliant food labels with nutrition facts, company branding, and thermal printer optimization
         </p>
       </div>
 
@@ -1191,14 +1299,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
             <DrawerTrigger asChild>
               <Button className="w-full py-6 text-lg">
                 <Barcode className="mr-2 h-5 w-5" />
-                Create Label
+                Create Professional Label
               </Button>
             </DrawerTrigger>
             <DrawerContent>
               <DrawerHeader>
-                <DrawerTitle>Generate Label</DrawerTitle>
+                <DrawerTitle>Generate FDA-Compliant Label</DrawerTitle>
                 <DrawerDescription>
-                  Configure your professional label
+                  Configure your professional food label with nutrition facts
                 </DrawerDescription>
               </DrawerHeader>
               <div className="p-4 pb-8 max-h-[80vh] overflow-y-auto">
