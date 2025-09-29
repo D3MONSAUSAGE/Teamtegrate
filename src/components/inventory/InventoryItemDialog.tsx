@@ -67,6 +67,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   onOpenChange,
   itemId
 }) => {
+  console.log('InventoryItemDialog rendering with SimpleNutritionalForm');
   const { createItem, updateItem, getItemById, loading, categories, units, vendors, refreshVendors } = useInventory();
   const { user } = useAuth();
   
