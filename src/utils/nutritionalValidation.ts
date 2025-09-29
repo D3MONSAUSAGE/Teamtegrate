@@ -33,14 +33,14 @@ export const ingredientsSchema = z.object({
 });
 
 // Simple payload builder - no complex transformations
-export const buildNutritionPayload = (form: any, itemId: string, user: { organization_id?: string; id?: string } | null) => {
-  if (!user?.organization_id || !user?.id) {
+export const buildNutritionPayload = (form: any, itemId: string, user: { organizationId?: string; id?: string } | null) => {
+  if (!user?.organizationId || !user?.id) {
     throw new Error('User organization or ID not found');
   }
 
   return {
     item_id: itemId,
-    organization_id: user.organization_id,
+    organization_id: user.organizationId,
     created_by: user.id,
     ...form
   };
