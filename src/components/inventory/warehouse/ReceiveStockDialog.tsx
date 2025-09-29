@@ -112,15 +112,18 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       updated[existingIndex].quantity += 1;
       setReceiveItems(updated);
     } else {
-      // Add new item with auto-generated lot number
+      // Add new item with auto-generated lot number and auto-populated unit cost
       const lotNumber = BarcodeGenerator.generateLotNumber('LOT');
+      // Use existing cost with priority: purchase_price → unit_cost → calculated_unit_price → 0
+      const unitCost = item.purchase_price || item.unit_cost || item.calculated_unit_price || 0;
+      
       setReceiveItems([...receiveItems, {
         item_id: itemId,
         item_name: item.name,
         sku: item.sku,
         barcode: item.barcode,
         quantity: 1,
-        unit_cost: 0,
+        unit_cost: unitCost,
         lot_number: lotNumber,
         expiration_date: '',
         manufacturing_date: new Date().toISOString().split('T')[0]
