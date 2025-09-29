@@ -120,6 +120,14 @@ export type DailyMetrics = {
   date: string;
 };
 
+export type WarehouseReceiveStockResponse = {
+  success: boolean;
+  error?: string;
+  item_existed?: boolean;
+  new_stock_level?: number;
+  quantity_added?: number;
+};
+
 export const warehouseApi = {
   // Get warehouse by team ID
   async getWarehouseByTeam(teamId: string): Promise<Warehouse | null> {
@@ -199,9 +207,13 @@ export const warehouseApi = {
     invoice_number?: string;
   }>): Promise<{ success: boolean; message?: string }> {
     try {
+      console.log('🏭 warehouseApi.receiveStock: Starting to receive', items.length, 'items for warehouse', warehouseId);
+      
       // Call the warehouse_receive_stock database function for each item
       for (const item of items) {
-        const { error } = await supabase.rpc('warehouse_receive_stock', {
+        console.log('🏭 warehouseApi.receiveStock: Processing item', item.item_id, 'qty:', item.quantity);
+        
+        const { data, error } = await supabase.rpc('warehouse_receive_stock', {
           p_item_id: item.item_id,
           p_quantity: item.quantity,
           p_warehouse_id: warehouseId,
@@ -211,17 +223,31 @@ export const warehouseApi = {
           p_invoice_number: item.invoice_number || null
         });
 
+        console.log('🏭 warehouseApi.receiveStock: RPC response for item', item.item_id, '- data:', data, 'error:', error);
+
+        // Check for RPC-level errors first
         if (error) {
-          throw new Error(`Failed to receive ${item.quantity} of item: ${error.message}`);
+          console.error('🏭 warehouseApi.receiveStock: RPC error for item', item.item_id, ':', error);
+          throw new Error(`RPC Error for item ${item.item_id}: ${error.message}`);
         }
+
+        // Check the actual function response (data contains the JSONB response)
+        const responseData = data as WarehouseReceiveStockResponse;
+        if (responseData && !responseData.success) {
+          console.error('🏭 warehouseApi.receiveStock: Function returned error for item', item.item_id, ':', responseData.error);
+          throw new Error(`Failed to receive item ${item.item_id}: ${responseData.error}`);
+        }
+
+        console.log('🏭 warehouseApi.receiveStock: Successfully processed item', item.item_id, 'new stock level:', responseData?.new_stock_level);
       }
 
+      console.log('🏭 warehouseApi.receiveStock: Successfully received all', items.length, 'items');
       return { 
         success: true, 
         message: `Successfully received ${items.length} items` 
       };
     } catch (error) {
-      console.error('Error receiving stock:', error);
+      console.error('🏭 warehouseApi.receiveStock: Error receiving stock:', error);
       throw error;
     }
   },
