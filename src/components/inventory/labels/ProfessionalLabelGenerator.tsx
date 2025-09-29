@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,7 +12,7 @@ import { useEnhancedInventoryManagement } from '@/hooks/useEnhancedInventoryMana
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, Edit } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
@@ -61,13 +61,11 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
   }
 ];
 
-const ProfessionalLabelGeneratorComponent: React.FC = () => {
-  console.log('🔄 ProfessionalLabelGenerator render');
+const ProfessionalLabelGenerator: React.FC = () => {
   const inventoryContext = useEnhancedInventoryManagement();
   const { user } = useAuth();
   
-  // Memoize items to prevent re-renders on every inventory update
-  const items = useMemo(() => inventoryContext.items || [], [inventoryContext.items?.length]);
+  const items = inventoryContext.items || [];
 
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -76,7 +74,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Company and lot code state
-  const [companyName, setCompanyName] = useState('');
+  const [companyName, setCompanyName] = useState('Your Company Name');
   const [lotCode, setLotCode] = useState('');
 
   // Simple nutritional info state
@@ -92,50 +90,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
   // Template management state
   const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
   const [templateName, setTemplateName] = useState('');
-  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [selectedSavedTemplate, setSelectedSavedTemplate] = useState<string>('');
-
-  // Memoize handlers to prevent re-renders
-  const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🏢 Company name changing:', e.target.value);
-    setCompanyName(e.target.value);
-  }, []);
-
-  const handleIngredientsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setIngredients(e.target.value);
-  }, []);
-
-  const handleAllergensChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setAllergens(e.target.value);
-  }, []);
-
-  const handleServingSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setServingSize(e.target.value);
-  }, []);
-
-  const handleCaloriesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCalories(e.target.value);
-  }, []);
-
-  const handleTotalFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTotalFat(e.target.value);
-  }, []);
-
-  const handleSodiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSodium(e.target.value);
-  }, []);
-
-  const handleTotalCarbsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTotalCarbs(e.target.value);
-  }, []);
-
-  const handleProteinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setProtein(e.target.value);
-  }, []);
-
-  const handleTemplateNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTemplateName(e.target.value);
-  }, []);
 
   // Check if mobile
   useEffect(() => {
@@ -145,11 +100,58 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load saved templates and set default company name
+  // Load saved templates on mount
   useEffect(() => {
-    setCompanyName('Your Company Name');
     loadSavedTemplates();
   }, []);
+
+  // Handle item selection and generate lot code
+  useEffect(() => {
+    const selectedItemFromList = selectedItemId ? items.find(i => i.id === selectedItemId) || null : null;
+    
+    if (selectedItemFromList?.id !== selectedItem?.id) {
+      setSelectedItem(selectedItemFromList);
+      
+      // Generate lot code
+      if (selectedItemFromList) {
+        const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+        const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
+        setLotCode(lotNumber);
+        
+        // Load nutritional data if it exists
+        const loadNutritionalData = async () => {
+          try {
+            const nutritionalInfo = await nutritionalInfoApi.getByItemId(selectedItemFromList.id);
+            if (nutritionalInfo) {
+              const simpleData = convertFlatToSimple(nutritionalInfo);
+              setIngredients(simpleData.ingredients);
+              setServingSize(simpleData.servingSize);
+              setCalories(simpleData.calories);
+              setTotalFat(simpleData.totalFat);
+              setSodium(simpleData.sodium);
+              setTotalCarbs(simpleData.totalCarbs);
+              setProtein(simpleData.protein);
+              setAllergens(simpleData.allergens);
+            }
+          } catch (error) {
+            console.log('No nutritional data found for pre-population');
+          }
+        };
+        
+        loadNutritionalData();
+      } else {
+        // Clear all data when no item selected
+        setIngredients('');
+        setServingSize('');
+        setCalories('');
+        setTotalFat('');
+        setSodium('');
+        setTotalCarbs('');
+        setProtein('');
+        setAllergens('');
+      }
+    }
+  }, [selectedItemId, items, companyName, selectedItem?.id]);
 
   // Load saved templates from localStorage
   const loadSavedTemplates = () => {
@@ -190,7 +192,6 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
       localStorage.setItem('labelTemplates', JSON.stringify(updatedTemplates));
       setSavedTemplates(updatedTemplates);
       setTemplateName('');
-      setShowSaveTemplate(false);
       toast.success(`Template "${newTemplate.name}" saved successfully!`);
     } catch (error) {
       console.error('Failed to save template:', error);
@@ -228,65 +229,6 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
       toast.error('Failed to delete template');
     }
   };
-
-  // Generate lot code when item changes - debounced to prevent re-renders on every keystroke
-  useEffect(() => {
-    if (selectedItem) {
-      // Debounce the lot code generation to prevent excessive re-renders
-      const timeoutId = setTimeout(() => {
-        const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-        const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
-        setLotCode(lotNumber);
-      }, 300); // Wait 300ms after user stops typing
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedItem?.id, companyName]);
-
-  // Load item when selected - memoized item to prevent re-renders
-  const selectedItemFromList = useMemo(() => {
-    return selectedItemId ? items.find(i => i.id === selectedItemId) || null : null;
-  }, [selectedItemId, items.length]); // Only depend on selectedItemId and items length, not items array
-
-  useEffect(() => {
-    const loadNutritionalData = async () => {
-      if (selectedItemFromList?.id !== selectedItem?.id) { // Only update if actually different
-        setSelectedItem(selectedItemFromList);
-        
-        // Pre-populate nutritional data if it exists (from database)
-        if (selectedItemFromList?.id) {
-          try {
-            const nutritionalInfo = await nutritionalInfoApi.getByItemId(selectedItemFromList.id);
-            if (nutritionalInfo) {
-              const simpleData = convertFlatToSimple(nutritionalInfo);
-              setIngredients(simpleData.ingredients);
-              setServingSize(simpleData.servingSize);
-              setCalories(simpleData.calories);
-              setTotalFat(simpleData.totalFat);
-              setSodium(simpleData.sodium);
-              setTotalCarbs(simpleData.totalCarbs);
-              setProtein(simpleData.protein);
-              setAllergens(simpleData.allergens);
-            }
-          } catch (error) {
-            console.log('No nutritional data found for pre-population');
-          }
-        } else {
-          // Clear nutritional data for new selection
-          setIngredients('');
-          setServingSize('');
-          setCalories('');
-          setTotalFat('');
-          setSodium('');
-          setTotalCarbs('');
-          setProtein('');
-          setAllergens('');
-        }
-      }
-    };
-
-    loadNutritionalData();
-  }, [selectedItemFromList]); // Only depend on the memoized selected item
 
   const generateLabel = async () => {
     if (!selectedItem) {
@@ -464,7 +406,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
               <Input
                 id="company-name"
                 value={companyName}
-                onChange={handleCompanyNameChange}
+                onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="Enter company name"
                 className="mt-1"
               />
@@ -653,7 +595,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                 <div className="flex gap-2 mt-1">
                   <Input
                     value={templateName}
-                    onChange={handleTemplateNameChange}
+                    onChange={(e) => setTemplateName(e.target.value)}
                     placeholder="Template name (e.g., 'Organic Products')"
                     className="flex-1"
                   />
@@ -731,7 +673,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                   <Textarea
                     id="ingredients"
                     value={ingredients}
-                    onChange={handleIngredientsChange}
+                    onChange={(e) => setIngredients(e.target.value)}
                     placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
                     className="mt-1 min-h-[80px]"
                   />
@@ -745,7 +687,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                   <Input
                     id="allergens"
                     value={allergens}
-                    onChange={handleAllergensChange}
+                    onChange={(e) => setAllergens(e.target.value)}
                     placeholder="Contains: Milk, Eggs, Wheat..."
                     className="mt-1"
                   />
@@ -762,7 +704,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                       <Input
                         id="serving-size"
                         value={servingSize}
-                        onChange={handleServingSizeChange}
+                        onChange={(e) => setServingSize(e.target.value)}
                         placeholder="1 cup (240ml)"
                         className="mt-1"
                       />
@@ -772,7 +714,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                       <Input
                         id="calories"
                         value={calories}
-                        onChange={handleCaloriesChange}
+                        onChange={(e) => setCalories(e.target.value)}
                         placeholder="150"
                         className="mt-1"
                       />
@@ -782,7 +724,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                       <Input
                         id="total-fat"
                         value={totalFat}
-                        onChange={handleTotalFatChange}
+                        onChange={(e) => setTotalFat(e.target.value)}
                         placeholder="5"
                         className="mt-1"
                       />
@@ -792,7 +734,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                       <Input
                         id="sodium"
                         value={sodium}
-                        onChange={handleSodiumChange}
+                        onChange={(e) => setSodium(e.target.value)}
                         placeholder="200"
                         className="mt-1"
                       />
@@ -802,7 +744,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                       <Input
                         id="total-carbs"
                         value={totalCarbs}
-                        onChange={handleTotalCarbsChange}
+                        onChange={(e) => setTotalCarbs(e.target.value)}
                         placeholder="30"
                         className="mt-1"
                       />
@@ -812,7 +754,7 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
                       <Input
                         id="protein"
                         value={protein}
-                        onChange={handleProteinChange}
+                        onChange={(e) => setProtein(e.target.value)}
                         placeholder="8"
                         className="mt-1"
                       />
@@ -882,5 +824,4 @@ const ProfessionalLabelGeneratorComponent: React.FC = () => {
   );
 };
 
-// Wrap component in React.memo to prevent unnecessary re-renders
-export const ProfessionalLabelGenerator = React.memo(ProfessionalLabelGeneratorComponent);
+export { ProfessionalLabelGenerator };
