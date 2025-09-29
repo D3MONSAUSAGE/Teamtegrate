@@ -150,44 +150,86 @@ const ProfessionalLabelGenerator: React.FC = () => {
     }
   }, [selectedItemId, items, selectedItem?.id]);
 
-  // Logo upload handlers  
+  // Enhanced state for thermal printer logo upload
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUploadStatus, setLogoUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  
+  // Logo upload handling optimized for thermal printing
   const onLogoDrop = useCallback((acceptedFiles: File[]) => {
-    console.log('Logo drop handler called with files:', acceptedFiles.length);
-    const file = acceptedFiles[0];
-    if (file) {
-      console.log('Processing logo file:', file.name, file.type, file.size);
-      
-      // Validate file type
-      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
-      if (!validTypes.includes(file.type)) {
-        toast.error('Please select a valid image file (PNG, JPG, WEBP, SVG)');
-        return;
-      }
-
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image file must be smaller than 5MB');
-        return;
-      }
-
-      console.log('Logo file validation passed, processing...');
-      setLogoFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        console.log('Logo file processed, setting preview and data');
-        setLogoPreview(result);
-        setLogoData(result);
-        toast.success('Logo uploaded successfully!');
-      };
-      reader.onerror = () => {
-        console.error('Failed to read logo file');
-        toast.error('Failed to read logo file');
-      };
-      reader.readAsDataURL(file);
+    console.log('🔍 Logo upload started - Files received:', acceptedFiles.length);
+    setLogoUploadStatus('uploading');
+    
+    if (acceptedFiles.length === 0) {
+      console.log('❌ No files selected');
+      setLogoUploadStatus('error');
+      toast.error('No files selected');
+      return;
     }
+
+    const file = acceptedFiles[0];
+    console.log('📁 Processing file:', { 
+      name: file.name, 
+      size: file.size, 
+      type: file.type,
+      sizeInMB: (file.size / 1024 / 1024).toFixed(2) + 'MB'
+    });
+    
+    // Thermal printer optimized validation
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      console.error('❌ Invalid file type for thermal printer:', file.type);
+      setLogoUploadStatus('error');
+      toast.error('For thermal printers, please use PNG or JPG files only');
+      return;
+    }
+    
+    // Reduced size limit for thermal printers (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      console.error('❌ File too large for thermal printer:', file.size);
+      setLogoUploadStatus('error');
+      toast.error('Image must be smaller than 2MB for thermal printing');
+      return;
+    }
+    
+    // Check image dimensions for thermal printer optimization
+    const img = new Image();
+    img.onload = () => {
+      console.log('🖼️ Image dimensions:', { width: img.width, height: img.height });
+      
+      // For 4x6 thermal at 203 DPI: max recommended 812x1218 pixels
+      if (img.width > 812 || img.height > 1218) {
+        console.warn('⚠️ Image large for thermal printer:', { width: img.width, height: img.height });
+        toast.warning('Image is large - may affect thermal print quality');
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        console.log('✅ Logo processed successfully');
+        setLogoUrl(result);
+        setLogoData(result);
+        setLogoPreview(result);
+        setLogoUploadStatus('success');
+        toast.success('Logo uploaded - optimized for thermal printing!');
+      };
+      
+      reader.onerror = (e) => {
+        console.error('❌ FileReader error:', e);
+        setLogoUploadStatus('error');
+        toast.error('Failed to process image file');
+      };
+      
+      reader.readAsDataURL(file);
+    };
+    
+    img.onerror = () => {
+      console.error('❌ Failed to load image for validation');
+      setLogoUploadStatus('error');
+      toast.error('Invalid image file');
+    };
+    
+    const tempUrl = URL.createObjectURL(file);
+    img.src = tempUrl;
   }, []);
 
   const { getRootProps: getLogoRootProps, getInputProps: getLogoInputProps, isDragActive: isLogoDragActive } = useDropzone({
@@ -268,50 +310,122 @@ const ProfessionalLabelGenerator: React.FC = () => {
     setSelectedItemId(itemId);
   }, []);
 
-  // Input change handlers with debugging
+  // Enhanced input change handlers with comprehensive debugging
   const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Company name changing to:', e.target.value);
-    setCompanyName(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Company Name Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setCompanyName(newValue);
+    console.log('✅ Company name state updated to:', newValue);
   }, []);
 
   const handleIngredientsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    console.log('Ingredients changing to:', e.target.value);
-    setIngredients(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Ingredients Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setIngredients(newValue);
+    console.log('✅ Ingredients state updated to:', newValue);
   }, []);
 
   const handleServingSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Serving size changing to:', e.target.value);
-    setServingSize(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Serving Size Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setServingSize(newValue);
+    console.log('✅ Serving size state updated to:', newValue);
   }, []);
 
   const handleCaloriesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Calories changing to:', e.target.value);
-    setCalories(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Calories Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setCalories(newValue);
+    console.log('✅ Calories state updated to:', newValue);
   }, []);
 
   const handleTotalFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Total fat changing to:', e.target.value);
-    setTotalFat(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Total Fat Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setTotalFat(newValue);
+    console.log('✅ Total fat state updated to:', newValue);
   }, []);
 
   const handleSodiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Sodium changing to:', e.target.value);
-    setSodium(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Sodium Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setSodium(newValue);
+    console.log('✅ Sodium state updated to:', newValue);
   }, []);
 
   const handleTotalCarbsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Total carbs changing to:', e.target.value);
-    setTotalCarbs(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Total Carbs Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setTotalCarbs(newValue);
+    console.log('✅ Total carbs state updated to:', newValue);
   }, []);
 
   const handleProteinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Protein changing to:', e.target.value);
-    setProtein(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Protein Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setProtein(newValue);
+    console.log('✅ Protein state updated to:', newValue);
   }, []);
 
   const handleAllergensChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('Allergens changing to:', e.target.value);
-    setAllergens(e.target.value);
+    e.stopPropagation();
+    const newValue = e.target.value;
+    console.log('📝 Allergens Input:', { 
+      value: newValue, 
+      focused: document.activeElement === e.target,
+      timestamp: new Date().toISOString(),
+      eventType: e.type
+    });
+    setAllergens(newValue);
+    console.log('✅ Allergens state updated to:', newValue);
   }, []);
 
   // Save template to localStorage
@@ -581,61 +695,108 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 id="company-name"
                 value={companyName}
                 onChange={handleCompanyNameChange}
+                onFocus={(e) => console.log('🎯 Company name field focused:', e.target.value)}
+                onBlur={(e) => console.log('👋 Company name field blurred:', e.target.value)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('🖱️ Company name field clicked');
+                }}
                 placeholder="Enter company name"
                 className="mt-1"
+                autoComplete="off"
               />
             </div>
             
             {/* Logo Upload Section */}
             <div>
-              <Label className="text-sm font-medium">Company Logo (Optional)</Label>
+              <Label className="text-sm font-medium">Company Logo (Thermal Printer Optimized)</Label>
               <div className="mt-2">
-                {logoPreview ? (
-                  <div className="relative">
-                    <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo preview" 
-                        className="w-12 h-12 object-contain bg-white rounded border"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Logo uploaded</p>
-                        <p className="text-xs text-muted-foreground">
-                          {logoFile?.name || 'From saved template'}
+                <div className={`text-center p-6 border-2 border-dashed rounded-lg transition-colors ${
+                  logoUploadStatus === 'uploading' ? 'border-primary bg-primary/5' :
+                  logoUploadStatus === 'success' ? 'border-green-500 bg-green-500/5' :
+                  logoUploadStatus === 'error' ? 'border-red-500 bg-red-500/5' :
+                  'border-border hover:border-primary/50'
+                }`}>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={(e) => {
+                      console.log('🎯 File input triggered');
+                      const files = e.target.files;
+                      if (files && files.length > 0) {
+                        console.log('📁 Files selected:', files.length);
+                        onLogoDrop(Array.from(files));
+                      } else {
+                        console.log('❌ No files in input');
+                      }
+                    }}
+                    className="hidden"
+                    id="thermal-logo-upload"
+                    disabled={logoUploadStatus === 'uploading'}
+                  />
+                  <label htmlFor="thermal-logo-upload" className={`cursor-pointer ${logoUploadStatus === 'uploading' ? 'pointer-events-none' : ''}`}>
+                    <div className="flex flex-col items-center gap-3">
+                      {logoUploadStatus === 'uploading' ? (
+                        <div className="animate-spin h-10 w-10 border-3 border-primary border-t-transparent rounded-full" />
+                      ) : (
+                        <ImageIcon className={`h-10 w-10 ${
+                          logoUploadStatus === 'success' ? 'text-green-600' :
+                          logoUploadStatus === 'error' ? 'text-red-600' :
+                          'text-muted-foreground'
+                        }`} />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {logoUploadStatus === 'uploading' ? 'Processing for thermal printer...' :
+                           logoUploadStatus === 'success' ? 'Logo ready for thermal printing!' :
+                           logoUploadStatus === 'error' ? 'Upload failed - please try again' :
+                           'Upload logo for 4×6 thermal labels'}
                         </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PNG or JPG • Max 2MB • Best: 812×1218px or smaller
+                        </p>
+                        {logoUploadStatus === 'success' && (
+                          <p className="text-xs text-green-600 mt-1 font-medium">
+                            ✓ Optimized and ready for thermal printing
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                
+                {logoUrl && (
+                  <div className="mt-4 flex justify-center">
+                    <div className="relative">
+                      <img 
+                        src={logoUrl} 
+                        alt="Thermal printer logo preview" 
+                        className="max-w-24 max-h-24 object-contain border rounded shadow-sm bg-white"
+                      />
+                      <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        Thermal Ready
                       </div>
                       <Button
-                        onClick={removeLogo}
-                        variant="ghost"
+                        onClick={() => {
+                          setLogoUrl('');
+                          setLogoData('');
+                          setLogoPreview('');
+                          setLogoFile(null);
+                          setLogoUploadStatus('idle');
+                          toast.success('Logo removed');
+                        }}
+                        variant="destructive"
                         size="sm"
-                        className="text-destructive hover:text-destructive"
+                        className="absolute -top-2 -left-2 h-6 w-6 rounded-full p-0"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div
-                    {...getLogoRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
-                      isLogoDragActive 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-                    }`}
-                  >
-                    <input {...getLogoInputProps()} />
-                    <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm font-medium">
-                      {isLogoDragActive ? 'Drop logo here' : 'Click or drag logo image'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PNG, JPG, WEBP, SVG (Max 5MB)
-                    </p>
-                  </div>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Logo will appear at the top of your labels
+              <p className="text-xs text-muted-foreground mt-2">
+                Logo appears at the top of thermal labels. Smaller images print better on thermal printers.
               </p>
             </div>
           </div>
