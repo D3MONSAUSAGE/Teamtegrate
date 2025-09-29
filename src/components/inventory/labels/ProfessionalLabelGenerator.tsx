@@ -90,7 +90,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
   // Company and lot code state
   const [companyName, setCompanyName] = useState('Your Company Name');
   const [companyAddress, setCompanyAddress] = useState('123 Main St, City, State 12345');
-  const [netWeight, setNetWeight] = useState('1 lb (454g)');
+  const [netWeight, setNetWeight] = useState('');
   const [lotCode, setLotCode] = useState('');
   
   // Logo state
@@ -360,7 +360,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
     if (template) {
       setCompanyName(template.companyName);
       setCompanyAddress(template.companyAddress || '123 Main St, City, State 12345');
-      setNetWeight(template.netWeight || '1 lb (454g)');
+      setNetWeight(template.netWeight || '');
       
       if (template.logoData) {
         setLogoData(template.logoData);
@@ -544,8 +544,8 @@ const ProfessionalLabelGenerator: React.FC = () => {
       pdf.text(selectedItem.name, 2, y + 0.15, { align: 'center' });
       y += 0.25; // Reduced spacing
 
-      // Net Weight (centered, if specified)
-      if (template.fields.includes('netweight') && netWeight.trim()) {
+      // Net Weight (centered, only if user entered it)
+      if (template.fields.includes('netweight') && netWeight && netWeight.trim()) {
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Net Weight: ${netWeight}`, 2, y + 0.15, { align: 'center' });
@@ -730,12 +730,15 @@ const ProfessionalLabelGenerator: React.FC = () => {
         pdf.setLineWidth(0.005);
         pdf.line(rightColX - 0.05, columnStartY, rightColX - 0.05, y - 0.05);
 
-        // Daily value footnote (compact)
-        y += 0.03;
-        pdf.setFontSize(5);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('*% Daily Value based on 2000 calorie diet', leftColX, y + 0.06);
-        y += 0.12;
+        // Daily value footnote (compact) - only show if there are actual values with DV
+        const hasAnyDailyValues = mainNutrients.some(n => n.dvKey && calculateDailyValue(n.dvKey, n.value) !== '');
+        if (hasAnyDailyValues) {
+          y += 0.03;
+          pdf.setFontSize(5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text('*% Daily Value based on 2000 calorie diet', leftColX, y + 0.06);
+          y += 0.12;
+        }
         
         console.log('[PDF_NUTRITION] Compact two-column nutrition facts table completed');
       }
@@ -918,7 +921,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     id="net-weight"
                     value={netWeight}
                     onChange={(e) => setNetWeight(e.target.value)}
-                    placeholder="1 lb (454g)"
+                    placeholder="e.g., 1 lb (454g)"
                     className="mt-1"
                   />
                 </div>
