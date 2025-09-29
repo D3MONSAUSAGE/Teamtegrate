@@ -309,6 +309,58 @@ const ProfessionalLabelGenerator: React.FC = () => {
     setAllergens(e.target.value);
   }, []);
 
+  const handleCompanyAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCompanyAddress(e.target.value);
+  }, []);
+
+  const handleNetWeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNetWeight(e.target.value);
+  }, []);
+
+  const handleSaturatedFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSaturatedFat(e.target.value);
+  }, []);
+
+  const handleTransFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTransFat(e.target.value);
+  }, []);
+
+  const handleCholesterolChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCholesterol(e.target.value);
+  }, []);
+
+  const handleDietaryFiberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDietaryFiber(e.target.value);
+  }, []);
+
+  const handleTotalSugarsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTotalSugars(e.target.value);
+  }, []);
+
+  const handleAddedSugarsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddedSugars(e.target.value);
+  }, []);
+
+  const handleVitaminDChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setVitaminD(e.target.value);
+  }, []);
+
+  const handleCalciumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCalcium(e.target.value);
+  }, []);
+
+  const handleIronChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setIron(e.target.value);
+  }, []);
+
+  const handlePotassiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPotassium(e.target.value);
+  }, []);
+
+  const handleTemplateNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTemplateName(e.target.value);
+  }, []);
+
   // Save template to localStorage
   const saveTemplate = useCallback(() => {
     if (!templateName.trim()) {
@@ -909,7 +961,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                   <Input
                     id="company-address"
                     value={companyAddress}
-                    onChange={(e) => setCompanyAddress(e.target.value)}
+                    onChange={handleCompanyAddressChange}
                     placeholder="123 Main St, City, State 12345"
                     className="mt-1"
                   />
@@ -922,7 +974,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                   <Input
                     id="net-weight"
                     value={netWeight}
-                    onChange={(e) => setNetWeight(e.target.value)}
+                    onChange={handleNetWeightChange}
                     placeholder="e.g., 1 lb (454g)"
                     className="mt-1"
                   />
@@ -1123,7 +1175,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 <div className="flex gap-2 mt-1">
                   <Input
                     value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
+                    onChange={handleTemplateNameChange}
                     placeholder="Template name (e.g., 'Organic Products')"
                     className="flex-1"
                   />
@@ -1222,7 +1274,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="saturated-fat"
                         value={saturatedFat}
-                        onChange={(e) => setSaturatedFat(e.target.value)}
+                        onChange={handleSaturatedFatChange}
                         placeholder="2"
                         className="mt-1"
                       />
@@ -1232,7 +1284,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="trans-fat"
                         value={transFat}
-                        onChange={(e) => setTransFat(e.target.value)}
+                        onChange={handleTransFatChange}
                         placeholder="0"
                         className="mt-1"
                       />
@@ -1242,7 +1294,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="cholesterol"
                         value={cholesterol}
-                        onChange={(e) => setCholesterol(e.target.value)}
+                        onChange={handleCholesterolChange}
                         placeholder="10"
                         className="mt-1"
                       />
@@ -1272,7 +1324,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="dietary-fiber"
                         value={dietaryFiber}
-                        onChange={(e) => setDietaryFiber(e.target.value)}
+                        onChange={handleDietaryFiberChange}
                         placeholder="3"
                         className="mt-1"
                       />
@@ -1282,7 +1334,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="total-sugars"
                         value={totalSugars}
-                        onChange={(e) => setTotalSugars(e.target.value)}
+                        onChange={handleTotalSugarsChange}
                         placeholder="12"
                         className="mt-1"
                       />
@@ -1292,7 +1344,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="added-sugars"
                         value={addedSugars}
-                        onChange={(e) => setAddedSugars(e.target.value)}
+                        onChange={handleAddedSugarsChange}
                         placeholder="5"
                         className="mt-1"
                       />
@@ -1312,7 +1364,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="vitamin-d"
                         value={vitaminD}
-                        onChange={(e) => setVitaminD(e.target.value)}
+                        onChange={handleVitaminDChange}
                         placeholder="2"
                         className="mt-1"
                       />
@@ -1322,7 +1374,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="calcium"
                         value={calcium}
-                        onChange={(e) => setCalcium(e.target.value)}
+                        onChange={handleCalciumChange}
                         placeholder="100"
                         className="mt-1"
                       />
@@ -1332,7 +1384,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="iron"
                         value={iron}
-                        onChange={(e) => setIron(e.target.value)}
+                        onChange={handleIronChange}
                         placeholder="1"
                         className="mt-1"
                       />
@@ -1342,7 +1394,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
                       <Input
                         id="potassium"
                         value={potassium}
-                        onChange={(e) => setPotassium(e.target.value)}
+                        onChange={handlePotassiumChange}
                         placeholder="300"
                         className="mt-1"
                       />
