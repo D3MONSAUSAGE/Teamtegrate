@@ -141,7 +141,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
         setLotCode(lotNumber);
       }
     }
-  }, [selectedItemId, items, selectedItem?.id, companyName]);
+  }, [selectedItemId, items, selectedItem?.id]);
 
   // Load nutritional data only when item ID changes
   useEffect(() => {
