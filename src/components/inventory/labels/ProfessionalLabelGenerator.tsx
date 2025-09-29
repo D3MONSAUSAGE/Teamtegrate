@@ -8,11 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { useEnhancedInventoryManagement } from '@/hooks/useEnhancedInventoryManagement';
-import { nutritionalInfoApi, NutritionalInfo } from '@/contexts/inventory/api/nutritionalInfo';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils } from 'lucide-react';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 
@@ -50,13 +49,22 @@ export const ProfessionalLabelGenerator: React.FC = () => {
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('basic');
-  const [nutritionalInfo, setNutritionalInfo] = useState<NutritionalInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Company and lot code state
   const [companyName, setCompanyName] = useState('');
   const [lotCode, setLotCode] = useState('');
+
+  // Simple nutritional info state
+  const [ingredients, setIngredients] = useState('');
+  const [servingSize, setServingSize] = useState('');
+  const [calories, setCalories] = useState('');
+  const [totalFat, setTotalFat] = useState('');
+  const [sodium, setSodium] = useState('');
+  const [totalCarbs, setTotalCarbs] = useState('');
+  const [protein, setProtein] = useState('');
+  const [allergens, setAllergens] = useState('');
 
   // Check if mobile
   useEffect(() => {
@@ -85,24 +93,10 @@ export const ProfessionalLabelGenerator: React.FC = () => {
     if (selectedItemId) {
       const item = items.find(i => i.id === selectedItemId);
       setSelectedItem(item || null);
-      
-      if (item) {
-        loadNutritionalInfo(item.id);
-      }
     } else {
       setSelectedItem(null);
-      setNutritionalInfo(null);
     }
   }, [selectedItemId, items]);
-
-  const loadNutritionalInfo = async (itemId: string) => {
-    try {
-      const data = await nutritionalInfoApi.getByItemId(itemId);
-      setNutritionalInfo(data);
-    } catch (error) {
-      console.error('Failed to load nutritional info:', error);
-    }
-  };
 
   const generateLabel = async () => {
     if (!selectedItem) {
@@ -183,7 +177,7 @@ export const ProfessionalLabelGenerator: React.FC = () => {
       }
 
       // Nutrition Facts (if included)
-      if (template.fields.includes('nutrition') && nutritionalInfo) {
+      if (template.fields.includes('nutrition') && (servingSize || calories || totalFat || sodium || totalCarbs || protein)) {
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.text('Nutrition Facts', 0.2, y);
@@ -198,16 +192,16 @@ export const ProfessionalLabelGenerator: React.FC = () => {
         y += 0.15;
 
         const nutritionItems = [
-          { label: 'Serving Size', value: nutritionalInfo.serving_size },
-          { label: 'Calories', value: nutritionalInfo.calories, bold: true },
-          { label: 'Total Fat', value: nutritionalInfo.total_fat, unit: 'g' },
-          { label: 'Sodium', value: nutritionalInfo.sodium, unit: 'mg' },
-          { label: 'Total Carbs', value: nutritionalInfo.total_carbohydrates, unit: 'g' },
-          { label: 'Protein', value: nutritionalInfo.protein, unit: 'g' },
+          { label: 'Serving Size', value: servingSize },
+          { label: 'Calories', value: calories, bold: true },
+          { label: 'Total Fat', value: totalFat, unit: 'g' },
+          { label: 'Sodium', value: sodium, unit: 'mg' },
+          { label: 'Total Carbs', value: totalCarbs, unit: 'g' },
+          { label: 'Protein', value: protein, unit: 'g' },
         ];
 
         nutritionItems.forEach(item => {
-          if (item.value !== null && item.value !== undefined) {
+          if (item.value && item.value.trim()) {
             pdf.setFont('helvetica', item.bold ? 'bold' : 'normal');
             const text = `${item.label}: ${item.value}${item.unit || ''}`;
             pdf.text(text, 0.3, y);
@@ -219,7 +213,7 @@ export const ProfessionalLabelGenerator: React.FC = () => {
       }
 
       // Ingredients (if included)
-      if (template.fields.includes('ingredients') && nutritionalInfo?.ingredients) {
+      if (template.fields.includes('ingredients') && ingredients.trim()) {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('INGREDIENTS:', 0.2, y);
@@ -227,13 +221,13 @@ export const ProfessionalLabelGenerator: React.FC = () => {
         
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'normal');
-        const ingredients = pdf.splitTextToSize(nutritionalInfo.ingredients, 3.6);
-        pdf.text(ingredients, 0.2, y);
-        y += (ingredients.length * 0.08) + 0.1;
+        const ingredientLines = pdf.splitTextToSize(ingredients, 3.6);
+        pdf.text(ingredientLines, 0.2, y);
+        y += (ingredientLines.length * 0.08) + 0.1;
       }
 
       // Allergens (if included)
-      if (template.fields.includes('allergens') && nutritionalInfo?.allergens?.length) {
+      if (template.fields.includes('allergens') && allergens.trim()) {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('CONTAINS:', 0.2, y);
@@ -241,7 +235,7 @@ export const ProfessionalLabelGenerator: React.FC = () => {
         
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(nutritionalInfo.allergens.join(', ').toUpperCase(), 0.2, y);
+        pdf.text(allergens.toUpperCase(), 0.2, y);
       }
 
       // Footer with company branding
@@ -390,52 +384,118 @@ export const ProfessionalLabelGenerator: React.FC = () => {
         </Card>
       )}
 
-      {/* Nutritional Status */}
+      {/* Nutritional Information Form */}
       {selectedItem && LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.some(f => ['nutrition', 'ingredients', 'allergens'].includes(f)) && (
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Nutritional Information</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Utensils className="h-5 w-5 text-primary" />
+              Nutritional Information
+            </CardTitle>
             <CardDescription>
-              {nutritionalInfo ? (
-                <span className="text-green-600 font-medium flex items-center gap-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  Using existing nutritional data
-                </span>
-              ) : (
-                <span className="text-amber-600 font-medium flex items-center gap-2">
-                  <div className="h-2 w-2 bg-amber-500 rounded-full"></div>
-                  No nutritional data found - label will generate without nutrition facts
-                </span>
-              )}
+              Enter nutritional information and ingredients for your label
             </CardDescription>
           </CardHeader>
-          {nutritionalInfo && (
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {nutritionalInfo.serving_size && (
-                  <div><span className="text-muted-foreground">Serving:</span> {nutritionalInfo.serving_size}</div>
-                )}
-                {nutritionalInfo.calories && (
-                  <div><span className="text-muted-foreground">Calories:</span> {nutritionalInfo.calories}</div>
-                )}
-                {nutritionalInfo.ingredients && (
-                  <div className="col-span-2"><span className="text-muted-foreground">Ingredients:</span> Available</div>
-                )}
-                {nutritionalInfo.allergens?.length && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Allergens:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {nutritionalInfo.allergens.map(allergen => (
-                        <Badge key={allergen} variant="secondary" className="text-xs">
-                          {allergen}
-                        </Badge>
-                      ))}
+          <CardContent>
+            <div className="space-y-4">
+              {/* Ingredients */}
+              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('ingredients') && (
+                <div>
+                  <Label htmlFor="ingredients" className="text-sm font-medium">Ingredients</Label>
+                  <Textarea
+                    id="ingredients"
+                    value={ingredients}
+                    onChange={(e) => setIngredients(e.target.value)}
+                    placeholder="Enter ingredients list (e.g., Water, Sugar, Salt...)"
+                    className="mt-1 min-h-[80px]"
+                  />
+                </div>
+              )}
+
+              {/* Allergens */}
+              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('allergens') && (
+                <div>
+                  <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
+                  <Input
+                    id="allergens"
+                    value={allergens}
+                    onChange={(e) => setAllergens(e.target.value)}
+                    placeholder="Contains: Milk, Eggs, Wheat..."
+                    className="mt-1"
+                  />
+                </div>
+              )}
+
+              {/* Nutrition Facts */}
+              {LABEL_TEMPLATES.find(t => t.id === selectedTemplate)?.fields.includes('nutrition') && (
+                <div className="space-y-3">
+                  <div className="font-medium text-sm">Nutrition Facts</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="serving-size" className="text-sm">Serving Size</Label>
+                      <Input
+                        id="serving-size"
+                        value={servingSize}
+                        onChange={(e) => setServingSize(e.target.value)}
+                        placeholder="1 cup (240ml)"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="calories" className="text-sm">Calories</Label>
+                      <Input
+                        id="calories"
+                        value={calories}
+                        onChange={(e) => setCalories(e.target.value)}
+                        placeholder="150"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
+                      <Input
+                        id="total-fat"
+                        value={totalFat}
+                        onChange={(e) => setTotalFat(e.target.value)}
+                        placeholder="5"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
+                      <Input
+                        id="sodium"
+                        value={sodium}
+                        onChange={(e) => setSodium(e.target.value)}
+                        placeholder="200"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
+                      <Input
+                        id="total-carbs"
+                        value={totalCarbs}
+                        onChange={(e) => setTotalCarbs(e.target.value)}
+                        placeholder="30"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
+                      <Input
+                        id="protein"
+                        value={protein}
+                        onChange={(e) => setProtein(e.target.value)}
+                        placeholder="8"
+                        className="mt-1"
+                      />
                     </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          )}
+                </div>
+              )}
+            </div>
+          </CardContent>
         </Card>
       )}
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Simple helpers for basic data conversion
+// Simple helpers for basic data conversion (kept for backward compatibility)
 export const keepZeroOrNull = <T>(value: T): number | null => {
   if (value === null || value === undefined || value === '') return null;
   const num = Number(value);
@@ -15,7 +15,7 @@ export const toArray = (raw?: string | string[]): string[] => {
 
 export const toText = (arr: string[]): string => arr.join(', ');
 
-// Simple validation schemas - no complex nested structures
+// Simple validation schemas (kept for backward compatibility)
 export const nutritionalSchema = z.object({
   serving_size: z.string().optional(),
   servings_per_container: z.number().min(0).max(100).optional(),
@@ -32,7 +32,7 @@ export const ingredientsSchema = z.object({
   allergens: z.array(z.string()).optional(),
 });
 
-// Simple payload builder - no complex transformations
+// Simple payload builder (kept for backward compatibility)
 export const buildNutritionPayload = (form: any, itemId: string, user: { organizationId?: string; id?: string } | null) => {
   if (!user?.organizationId || !user?.id) {
     throw new Error('User organization or ID not found');
@@ -46,7 +46,7 @@ export const buildNutritionPayload = (form: any, itemId: string, user: { organiz
   };
 };
 
-// Simplified data checker - handles simple flat structure only
+// Simplified data checker (kept for backward compatibility)
 export const hasNutritionOrIngredients = (nutritionalData: any, ingredientsData: any): boolean => {
   console.log('🔍 Simple nutrition check:', { 
     hasNutrition: !!nutritionalData,
