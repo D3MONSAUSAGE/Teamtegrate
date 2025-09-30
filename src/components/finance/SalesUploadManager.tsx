@@ -199,11 +199,14 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       if (parseResult.success && parseResult.data) {
         // Add manual channel sales to destinations if provided
         if (channelSales.length > 0) {
+          // Store gross sales for percentage calculation
+          const grossSales = parseResult.data.grossSales;
+          
           parseResult.data.destinations = channelSales.map(ch => ({
             name: ch.channelName,
             quantity: 0,
             total: ch.amount,
-            percent: 0
+            percent: grossSales > 0 ? (ch.amount / grossSales) * 100 : 0
           }));
         }
         
@@ -376,11 +379,12 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       </div>
       
       {/* Channel Sales Input */}
-      {teamId && (
+      {teamId && salesDate && (
         <ChannelSalesInput
           teamId={teamId}
           value={channelSales}
           onChange={setChannelSales}
+          grossSales={0}
         />
       )}
       

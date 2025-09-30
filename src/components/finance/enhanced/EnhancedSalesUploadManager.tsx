@@ -236,11 +236,13 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           if (result.success && result.data) {
             // Add manual channel sales to destinations if provided
             if (channelSales.length > 0) {
+              const grossSales = result.data.grossSales;
+              
               result.data.destinations = channelSales.map(ch => ({
                 name: ch.channelName,
                 quantity: 0,
                 total: ch.amount,
-                percent: 0
+                percent: grossSales > 0 ? (ch.amount / grossSales) * 100 : 0
               }));
             }
             
@@ -472,6 +474,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           teamId={teamId}
           value={channelSales}
           onChange={setChannelSales}
+          grossSales={0}
         />
       )}
       

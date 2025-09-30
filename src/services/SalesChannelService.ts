@@ -27,8 +27,11 @@ export class SalesChannelService {
         return;
       }
 
-      // 2) Pre-compute section totals by name (case-insensitive)
-      const norm = (s: string) => (s || '').trim().toLowerCase();
+      // 2) Pre-compute section totals by name (case-insensitive & flexible matching)
+      const norm = (s: string) => (s || '').trim().toLowerCase()
+        .replace(/^ext\s+/i, '') // Remove "EXT " prefix
+        .replace(/\s+/g, ''); // Remove spaces for matching
+      
       const sumByName = (arr: any[] = []) => {
         const map = new Map<string, { total: number; quantity: number }>();
         arr.forEach((e) => {
