@@ -18,7 +18,8 @@ import {
   UserMinus,
   Filter
 } from 'lucide-react';
-import { useComplianceAssignments, useComplianceTemplates, useDeleteComplianceAssignment } from '@/hooks/useComplianceAssignment';
+import { useTrainingAssignments, useDeleteTrainingAssignment } from '@/hooks/useTrainingAssignments';
+import { useComplianceTemplates } from '@/hooks/useComplianceAssignment';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,29 +35,40 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
   onOpenChange
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  const [templateFilter, setTemplateFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
+  const [assignmentTypeFilter, setAssignmentTypeFilter] = useState<'all' | 'course' | 'quiz' | 'compliance_training'>('all');
   const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
   const [bulkRemoveConfirmOpen, setBulkRemoveConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const queryClient = useQueryClient();
-  const { data: assignments = [], isLoading } = useComplianceAssignments({
+  const { data: assignments = [], isLoading } = useTrainingAssignments({
     status: statusFilter,
-    templateId: templateFilter !== 'all' ? templateFilter : undefined,
+    assignmentType: assignmentTypeFilter !== 'all' ? assignmentTypeFilter : undefined,
   });
   
   const { data: templates = [] } = useComplianceTemplates();
-  const deleteAssignment = useDeleteComplianceAssignment();
+  const deleteAssignment = useDeleteTrainingAssignment();
 
   // Filter assignments
   const filteredAssignments = useMemo(() => {
     return assignments.filter(assignment => {
       const searchLower = searchTerm.toLowerCase();
+      
+      // Get content title based on assignment type
+      let contentTitle = '';
+      if (assignment.assignment_type === 'course' && assignment.training_courses) {
+        contentTitle = assignment.training_courses.title || '';
+      } else if (assignment.assignment_type === 'quiz' && assignment.quizzes) {
+        contentTitle = assignment.quizzes.title || '';
+      } else if (assignment.assignment_type === 'compliance_training' && assignment.compliance_training_templates) {
+        contentTitle = assignment.compliance_training_templates.title || '';
+      }
+
       const matchesSearch = !searchTerm || 
-        assignment.user?.name?.toLowerCase().includes(searchLower) ||
-        assignment.user?.email?.toLowerCase().includes(searchLower) ||
-        assignment.compliance_training_templates?.title?.toLowerCase().includes(searchLower);
+        assignment.users?.name?.toLowerCase().includes(searchLower) ||
+        assignment.users?.email?.toLowerCase().includes(searchLower) ||
+        contentTitle.toLowerCase().includes(searchLower);
 
       return matchesSearch;
     });
@@ -65,8 +77,9 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
   // Statistics
   const stats = useMemo(() => ({
     total: filteredAssignments.length,
-    pending: filteredAssignments.filter(a => !a.is_completed).length,
-    completed: filteredAssignments.filter(a => a.is_completed).length,
+    pending: filteredAssignments.filter(a => a.status === 'pending').length,
+    inProgress: filteredAssignments.filter(a => a.status === 'in_progress').length,
+    completed: filteredAssignments.filter(a => a.status === 'completed').length,
     selected: selectedAssignments.length,
   }), [filteredAssignments, selectedAssignments]);
 
@@ -109,7 +122,7 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
         selectedAssignments.map(async (id) => {
           try {
             const { error } = await supabase
-              .from('compliance_training_records')
+              .from('training_assignments')
               .delete()
               .eq('id', id);
             
@@ -144,8 +157,7 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
       setBulkRemoveConfirmOpen(false);
       
       // Single refetch after all operations
-      queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
-      queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
+      queryClient.invalidateQueries({ queryKey: ['training-assignments'] });
     } catch (error) {
       console.error('Bulk delete error:', error);
       toast.error('Failed to remove assignments');
@@ -155,10 +167,39 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
   };
 
   const getStatusBadge = (assignment: any) => {
-    if (assignment.is_completed) {
-      return <Badge variant="default">Completed</Badge>;
+    switch (assignment.status) {
+      case 'completed':
+        return <Badge variant="default" className="bg-green-600">Completed</Badge>;
+      case 'in_progress':
+        return <Badge variant="secondary" className="bg-blue-600 text-white">In Progress</Badge>;
+      case 'pending':
+      default:
+        return <Badge variant="secondary">Pending</Badge>;
     }
-    return <Badge variant="secondary">Pending</Badge>;
+  };
+
+  const getTypeBadge = (assignment: any) => {
+    switch (assignment.assignment_type) {
+      case 'course':
+        return <Badge variant="outline" className="border-purple-600 text-purple-600">Course</Badge>;
+      case 'quiz':
+        return <Badge variant="outline" className="border-orange-600 text-orange-600">Quiz</Badge>;
+      case 'compliance_training':
+        return <Badge variant="outline" className="border-blue-600 text-blue-600">Compliance</Badge>;
+      default:
+        return null;
+    }
+  };
+
+  const getContentTitle = (assignment: any) => {
+    if (assignment.assignment_type === 'course' && assignment.training_courses) {
+      return assignment.training_courses.title;
+    } else if (assignment.assignment_type === 'quiz' && assignment.quizzes) {
+      return assignment.quizzes.title;
+    } else if (assignment.assignment_type === 'compliance_training' && assignment.compliance_training_templates) {
+      return assignment.compliance_training_templates.title;
+    }
+    return 'Unknown Content';
   };
 
   return (
@@ -174,7 +215,7 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
           
           <div className="space-y-6">
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <Card className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-100">
@@ -201,6 +242,30 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
 
               <Card className="p-4">
                 <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100">
+                    <Filter className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{stats.selected}</p>
+                    <p className="text-xs text-muted-foreground">Selected</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{stats.inProgress}</p>
+                    <p className="text-xs text-muted-foreground">In Progress</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-green-100">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
@@ -211,17 +276,6 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-100">
-                    <Filter className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold">{stats.selected}</p>
-                    <p className="text-xs text-muted-foreground">Selected</p>
-                  </div>
-                </div>
-              </Card>
             </div>
 
             {/* Filters and Actions */}
@@ -238,28 +292,27 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
                     />
                   </div>
                   
-                  <Select value={statusFilter} onValueChange={(value: 'all' | 'pending' | 'completed') => setStatusFilter(value)}>
+                  <Select value={statusFilter} onValueChange={(value: 'all' | 'pending' | 'in_progress' | 'completed') => setStatusFilter(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                     </SelectContent>
                   </Select>
 
-                  <Select value={templateFilter} onValueChange={setTemplateFilter}>
+                  <Select value={assignmentTypeFilter} onValueChange={(value: 'all' | 'course' | 'quiz' | 'compliance_training') => setAssignmentTypeFilter(value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Training Types" />
+                      <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Training Types</SelectItem>
-                      {templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.title}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="course">Courses</SelectItem>
+                      <SelectItem value="quiz">Quizzes</SelectItem>
+                      <SelectItem value="compliance_training">Compliance</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -323,7 +376,8 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2">
-                                <h4 className="font-medium">{assignment.user?.name || 'Unknown User'}</h4>
+                                <h4 className="font-medium">{assignment.users?.name || 'Unknown User'}</h4>
+                                {getTypeBadge(assignment)}
                                 {getStatusBadge(assignment)}
                               </div>
                               <Button
@@ -338,17 +392,20 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
                             </div>
                             
                             <p className="text-sm text-muted-foreground mb-1">
-                              {assignment.user?.email}
+                              {assignment.users?.email}
                             </p>
                             
                             <p className="text-sm font-medium">
-                              Training: {assignment.compliance_training_templates?.title || 'Unknown Training'}
+                              {getContentTitle(assignment)}
                             </p>
                             
                             <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                              <span>Assigned: {format(new Date(assignment.created_at), 'MMM dd, yyyy')}</span>
-                              {assignment.completion_date && (
-                                <span>Completed: {format(new Date(assignment.completion_date), 'MMM dd, yyyy')}</span>
+                              <span>Assigned: {format(new Date(assignment.assigned_at || assignment.created_at), 'MMM dd, yyyy')}</span>
+                              {assignment.due_date && (
+                                <span>Due: {format(new Date(assignment.due_date), 'MMM dd, yyyy')}</span>
+                              )}
+                              {assignment.completed_at && (
+                                <span>Completed: {format(new Date(assignment.completed_at), 'MMM dd, yyyy')}</span>
                               )}
                             </div>
                           </div>
