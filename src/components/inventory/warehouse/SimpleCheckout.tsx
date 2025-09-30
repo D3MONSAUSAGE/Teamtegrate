@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
 import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
 import { useScanGun } from '@/hooks/useScanGun';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -304,6 +305,25 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           throw new Error(`Failed to withdraw ${item.name}`);
         }
       }
+
+      // Create sales transactions for revenue tracking
+      const transactionPromises = validItems.map(item => 
+        supabase.from('inventory_transactions').insert({
+          organization_id: user.organizationId,
+          user_id: user.id,
+          warehouse_id: warehouseId,
+          item_id: item.id,
+          transaction_type: 'out',
+          quantity: -item.quantity,
+          unit_cost: item.unit_price || item.sale_price || 0,
+          transaction_date: checkoutDate,
+          reference_number: reference ? `SALE-${reference}` : `SALE-CHECKOUT-${Date.now()}`,
+          processed_by: user.id,
+          notes: notes || 'Sales checkout'
+        })
+      );
+
+      await Promise.all(transactionPromises);
 
       let invoice = null;
 
