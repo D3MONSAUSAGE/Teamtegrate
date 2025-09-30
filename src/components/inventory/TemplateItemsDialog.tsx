@@ -29,14 +29,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [inStockQuantity, setInStockQuantity] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [editingItem, setEditingItem] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState<{
-    inStock: number;
-  }>({
-    inStock: 0
-  });
 
   // Get template items for this specific template from global state
   const currentTemplateItems = useMemo(() => {
@@ -64,15 +57,12 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleAddItem = async () => {
     if (!selectedItem) return;
     
-    const validatedInStock = Math.max(0, inStockQuantity || 0);
-    
     setIsLoading(true);
     try {
-      await addItemToTemplate(templateId, selectedItem.id, validatedInStock);
+      await addItemToTemplate(templateId, selectedItem.id);
       // Force refresh of template items to ensure UI updates
       await refreshTemplateItems();
       setSelectedItem(null);
-      setInStockQuantity(0);
       toast({
         title: "Success",
         description: "Item added to template",
@@ -92,7 +82,7 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
   const handleQuickAdd = async (item: InventoryItem) => {
     setIsLoading(true);
     try {
-      await addItemToTemplate(templateId, item.id, 0);
+      await addItemToTemplate(templateId, item.id);
       // Force refresh of template items to ensure UI updates
       await refreshTemplateItems();
       toast({
@@ -133,51 +123,6 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
     }
   };
 
-  const handleEditItem = (templateItem: InventoryTemplateItem) => {
-    setEditingItem(templateItem.id);
-    setEditValues({
-      inStock: templateItem.in_stock_quantity
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingItem(null);
-    setEditValues({
-      inStock: 0
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingItem) return;
-    
-    // Find the template item being edited
-    const templateItem = currentTemplateItems.find(ti => ti.id === editingItem);
-    if (!templateItem) return;
-    
-    const validatedInStock = Math.max(0, editValues.inStock || 0);
-    
-    setIsLoading(true);
-    try {
-      await updateTemplateItem(templateId, templateItem.item_id, {
-        in_stock_quantity: validatedInStock
-      });
-      await refreshTemplateItems();
-      handleCancelEdit();
-      toast({
-        title: "Success",
-        description: "Item updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating template item:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update item",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getItemDetails = (itemId: string): InventoryItem | undefined => {
     return items.find(item => item.id === itemId);
@@ -280,26 +225,13 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                     <ArrowRight className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-lg">Add: {selectedItem.name}</span>
                   </div>
-                   <div className="grid grid-cols-1 gap-3">
-                      <div>
-                        <Label htmlFor="in-stock-qty" className="text-sm font-medium">
-                          In-Stock Quantity
-                          <span className="text-xs text-muted-foreground block">Current expected stock</span>
-                        </Label>
-                        <Input
-                          id="in-stock-qty"
-                          type="number"
-                          min="0"
-                          value={inStockQuantity}
-                          onChange={(e) => setInStockQuantity(Number(e.target.value))}
-                          placeholder="0"
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded mt-2">
-                      <strong>Note:</strong> Min/Max thresholds are managed through Warehouse Settings
-                    </div>
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">SKU:</span> {selectedItem.sku || 'N/A'} • 
+                    <span className="font-medium"> Current Stock:</span> {selectedItem.current_stock}
+                  </div>
+                  <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                    <strong>Note:</strong> Stock quantities will be captured from the warehouse when creating counts from this template
+                  </div>
                   <div className="mt-3">
                     <Button
                       onClick={handleAddItem}
@@ -344,95 +276,32 @@ export const TemplateItemsDialog: React.FC<TemplateItemsDialogProps> = ({
                 currentTemplateItems.map((templateItem) => {
                   const itemDetails = getItemDetails(templateItem.item_id);
                   if (!itemDetails) return null;
-                  
-                  const isEditing = editingItem === templateItem.id;
 
                   return (
                     <Card key={templateItem.id} className="border-2">
                       <CardContent className="p-4">
-                        {isEditing ? (
-                          // Edit Mode
-                          <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
                             <div className="font-medium text-lg">{itemDetails.name}</div>
-                            
-                            <div className="grid grid-cols-1 gap-2">
-                              <div>
-                                <Label className="text-xs">In-Stock Quantity</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={editValues.inStock}
-                                  onChange={(e) => setEditValues(prev => ({
-                                    ...prev,
-                                    inStock: Number(e.target.value)
-                                  }))}
-                                  className="h-8 text-xs"
-                                />
-                              </div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              <span className="font-medium">SKU:</span> {itemDetails.sku || 'N/A'} • 
+                              <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
                             </div>
-                            <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                              <strong>Note:</strong> Min/Max thresholds are managed through Warehouse Settings
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={handleSaveEdit}
-                                disabled={isLoading}
-                                className="h-7 text-xs"
-                              >
-                                <Check className="h-3 w-3 mr-1" />
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                disabled={isLoading}
-                                className="h-7 text-xs"
-                              >
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Cancel
-                              </Button>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Stock will be captured from warehouse at count time
                             </div>
                           </div>
-                        ) : (
-                          // View Mode
-                          <div className="flex items-center justify-between">
-                             <div className="flex-1">
-                               <div className="font-medium text-lg">{itemDetails.name}</div>
-                               <div className="text-sm text-muted-foreground mt-1">
-                                 <span className="font-medium">In-Stock:</span> {templateItem.in_stock_quantity} • 
-                                 <span className="font-medium"> Current Stock:</span> {itemDetails.current_stock}
-                               </div>
-                               <div className="text-xs text-muted-foreground mt-1">
-                                 Thresholds managed via Warehouse Settings
-                               </div>
-                             </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditItem(templateItem)}
-                                disabled={isLoading}
-                                className="h-8 w-8 p-0"
-                                title="Edit quantities"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveItem(templateItem.item_id)}
-                                disabled={isLoading}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                title="Remove from template"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(templateItem.item_id)}
+                            disabled={isLoading}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            title="Remove from template"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   );

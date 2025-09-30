@@ -106,10 +106,10 @@ export const inventoryCountsApi = {
 
       if (count.template_id) {
         if (warehouseId) {
-          // Get template items and their warehouse stock
+          // Get template items
           const { data: templateItems, error: templateError } = await supabase
             .from('inventory_template_items')
-            .select('item_id, in_stock_quantity')
+            .select('item_id')
             .eq('template_id', count.template_id);
 
           if (templateError) throw templateError;
@@ -131,10 +131,10 @@ export const inventoryCountsApi = {
             warehouseItems?.map(item => [item.item_id, item]) || []
           );
 
-          // Update count items with warehouse stock (preferred) or template stock (fallback)
+          // Update count items with warehouse stock
           const updatePromises = templateItems.map(templateItem => {
             const warehouseItem = warehouseStockMap.get(templateItem.item_id);
-            const stockQuantity = warehouseItem?.on_hand ?? templateItem.in_stock_quantity;
+            const stockQuantity = warehouseItem?.on_hand ?? 0;
             
             return supabase
               .from('inventory_count_items')
@@ -152,19 +152,22 @@ export const inventoryCountsApi = {
 
           console.log(`Successfully repaired expected quantities for ${templateItems.length} items using warehouse stock`);
         } else {
-          // Fallback to template stock if no warehouse
+          // Fallback to current_stock if no warehouse
           const { data: templateItems, error: templateError } = await supabase
             .from('inventory_template_items')
-            .select('item_id, in_stock_quantity')
+            .select(`
+              item_id,
+              inventory_items!inner(current_stock)
+            `)
             .eq('template_id', count.template_id);
 
           if (templateError) throw templateError;
 
-          // Update count items with template stock
+          // Update count items with current stock
           const updatePromises = templateItems.map(templateItem => 
             supabase
               .from('inventory_count_items')
-              .update({ in_stock_quantity: templateItem.in_stock_quantity })
+              .update({ in_stock_quantity: templateItem.inventory_items.current_stock || 0 })
               .eq('count_id', countId)
               .eq('item_id', templateItem.item_id)
           );
@@ -176,7 +179,7 @@ export const inventoryCountsApi = {
             throw new Error(`Failed to repair ${errors.length} items: ${errors[0].error?.message}`);
           }
 
-          console.log(`Successfully repaired expected quantities for ${templateItems.length} items using template stock`);
+          console.log(`Successfully repaired expected quantities for ${templateItems.length} items using current stock`);
         }
 
         // Update count totals
@@ -292,7 +295,6 @@ export const inventoryCountsApi = {
             .from('inventory_template_items')
             .select(`
               item_id,
-              in_stock_quantity,
               minimum_quantity,
               maximum_quantity,
               inventory_items!inner(id, is_active)
@@ -327,8 +329,8 @@ export const inventoryCountsApi = {
             return {
               count_id: countId,
               item_id: item.item_id,
-              // Use warehouse stock if available, otherwise fall back to template stock
-              in_stock_quantity: warehouseItem?.on_hand ?? item.in_stock_quantity ?? 0,
+              // Snapshot warehouse stock at count creation time
+              in_stock_quantity: warehouseItem?.on_hand ?? 0,
               // Use warehouse min/max if available, otherwise use template values
               template_minimum_quantity: warehouseItem?.reorder_min ?? item.minimum_quantity,
               template_maximum_quantity: warehouseItem?.reorder_max ?? item.maximum_quantity,
@@ -356,7 +358,8 @@ export const inventoryCountsApi = {
           countItems = (templateItems || []).map(item => ({
             count_id: countId,
             item_id: item.item_id,
-            in_stock_quantity: item.in_stock_quantity || item.inventory_items.current_stock || 0,
+            // Fallback to current_stock if no warehouse available
+            in_stock_quantity: item.inventory_items.current_stock || 0,
             template_minimum_quantity: item.minimum_quantity,
             template_maximum_quantity: item.maximum_quantity,
           }));

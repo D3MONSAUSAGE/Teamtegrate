@@ -30,7 +30,6 @@ export interface TemplateFormData {
   // Items
   selectedItems: Array<{
     item: InventoryItem;
-    inStockQuantity: number;
     sortOrder: number;
   }>;
   
@@ -149,10 +148,9 @@ export const EnhancedTemplateDialog: React.FC<EnhancedTemplateDialogProps> = ({
       });
 
       // Add items to template
-      const itemPromises = formData.selectedItems.map(async ({ item, inStockQuantity, sortOrder }) => {
+      const itemPromises = formData.selectedItems.map(async ({ item, sortOrder }) => {
         try {
-          const validatedInStock = Math.max(0, inStockQuantity || 0);
-          await addItemToTemplate(template.id, item.id, validatedInStock, sortOrder);
+          await addItemToTemplate(template.id, item.id, sortOrder);
         } catch (error) {
           console.error(`Failed to add item ${item.name} to template:`, error);
           throw error;

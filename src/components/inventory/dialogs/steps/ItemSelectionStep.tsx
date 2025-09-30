@@ -40,7 +40,6 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
 
     const newSelectedItem = {
       item,
-      inStockQuantity: 0,
       sortOrder: formData.selectedItems.length
     };
 
@@ -55,18 +54,6 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
     });
   };
 
-  const updateItemQuantity = (itemId: string, field: 'inStockQuantity', value: number | undefined) => {
-    updateFormData({
-      selectedItems: formData.selectedItems.map(selected => {
-        if (selected.item.id !== itemId) return selected;
-        
-        const updatedSelected = { ...selected };
-        updatedSelected[field] = Math.max(0, value || 0);
-        
-        return updatedSelected;
-      })
-    });
-  };
 
   const addBulkItems = () => {
     const itemsToAdd = filteredItems
@@ -74,7 +61,6 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
       .slice(0, 10) // Limit to 10 items at once
       .map((item, index) => ({
         item,
-        inStockQuantity: 0,
         sortOrder: formData.selectedItems.length + index
       }));
 
@@ -129,19 +115,8 @@ export const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
                   </div>
                   
                   <div className="flex justify-center">
-                    <div className="flex flex-col items-center">
-                      <Label htmlFor={`instock-${selected.item.id}`} className="text-xs mb-1">
-                        In Stock:
-                      </Label>
-                      <Input
-                        id={`instock-${selected.item.id}`}
-                        type="number"
-                        min="0"
-                        value={selected.inStockQuantity || ''}
-                        onChange={(e) => updateItemQuantity(selected.item.id, 'inStockQuantity', parseInt(e.target.value) || 0)}
-                        className="w-20 text-center"
-                        placeholder="0"
-                      />
+                    <div className="text-xs text-muted-foreground">
+                      Stock will be captured from warehouse when creating counts
                     </div>
                   </div>
                   

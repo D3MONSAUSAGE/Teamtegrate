@@ -86,7 +86,6 @@ export const inventoryTemplatesApi = {
   async addItemToTemplate(
     templateId: string, 
     itemId: string, 
-    inStockQuantity: number = 0,
     sortOrder: number = 0
   ): Promise<InventoryTemplateItem> {
     const { data, error } = await supabase
@@ -94,7 +93,6 @@ export const inventoryTemplatesApi = {
       .insert([{
         template_id: templateId,
         item_id: itemId,
-        in_stock_quantity: inStockQuantity,
         sort_order: sortOrder
       }])
       .select()
@@ -118,7 +116,6 @@ export const inventoryTemplatesApi = {
     templateId: string, 
     itemId: string, 
     updates: {
-      in_stock_quantity?: number;
       sort_order?: number;
     }
   ): Promise<InventoryTemplateItem> {
