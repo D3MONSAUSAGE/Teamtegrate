@@ -15,7 +15,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedInventoryAnalytics } from '@/hooks/useEnhancedInventoryAnalytics';
-import { useDailyInventoryAnalytics } from '@/hooks/useDailyInventoryAnalytics';
+import { useDailyFinancialAnalytics } from '@/hooks/useDailyFinancialAnalytics';
 import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 import { StandardTeamSelector } from '@/components/teams';
 import { EnhancedCountDetailsDialog } from './EnhancedCountDetailsDialog';
@@ -40,7 +40,6 @@ import { cn } from '@/lib/utils';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
 import { getTZDayRangeUTC, formatInTZ } from '@/lib/dates/tzRange';
 import { useTZ } from '@/lib/dates/useTZ';
-import { buildDailyViewData } from '@/services/dailyViewSelector';
 import { CountApprovalDialog } from '@/components/inventory/approval/CountApprovalDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
@@ -258,33 +257,16 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   }, [tz, selectedDate]);
 
   // Convert selectedDailyTeam to teamIds array format
-  const dailyTeamIds = useMemo((): string[] | 'all' => {
-    if (!selectedDailyTeam) return 'all';
+  const dailyTeamIds = useMemo((): string[] => {
+    if (!selectedDailyTeam) return [];
     return [selectedDailyTeam];
   }, [selectedDailyTeam]);
 
-  const { metrics: dailyMetrics, chartData: dailyChartData, itemsData } = useDailyInventoryAnalytics(
-    counts,
-    alerts,
-    items,
-    transactions,
-    startUTC,
-    endUTC,
+  // Use new financial analytics hook
+  const { metrics: financialMetrics, loading: financialLoading } = useDailyFinancialAnalytics(
+    selectedDate,
     dailyTeamIds,
-    undefined, // No variance threshold for now
     tz
-  );
-
-  // Build unified daily view data
-  const dailyViewData = useMemo(() => 
-    buildDailyViewData({
-      analytics: { metrics: dailyMetrics, chartData: dailyChartData, itemsData },
-      timezone: tz,
-      selectedDate,
-      teamIds: dailyTeamIds,
-      varianceThreshold: undefined
-    }),
-    [dailyMetrics, dailyChartData, itemsData, tz, selectedDate, dailyTeamIds]
   );
 
   // Sort counts by most recent first (using updated_at for more accurate recent changes)
@@ -950,17 +932,40 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Daily Metrics */}
+          {/* Daily Financial Metrics */}
           <DailyInventoryMetrics 
-            summary={dailyViewData.summary}
+            summary={financialMetrics}
             timezone={tz}
           />
 
-          {/* Enhanced Daily Analysis */}
-          <EnhancedDailyAnalysis 
-            itemsData={itemsData} 
-            selectedDate={selectedDate} 
-          />
+          {/* Top Selling Items */}
+          {financialMetrics.topSellingItems.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Selling Items Today</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {financialMetrics.topSellingItems.slice(0, 5).map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Qty: {item.quantity} | Profit: {formatCurrency(item.profit)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-primary">{formatCurrency(item.revenue)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {((item.profit / item.revenue) * 100).toFixed(1)}% margin
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           </div>
         )}
 

@@ -3200,6 +3200,7 @@ export type Database = {
       }
       inventory_transactions: {
         Row: {
+          cost_of_goods: number | null
           created_at: string
           created_by: string | null
           id: string
@@ -3210,9 +3211,12 @@ export type Database = {
           organization_id: string
           po_number: string | null
           processed_by: string | null
+          profit: number | null
           quantity: number
           receipt_line_id: string | null
           reference_number: string | null
+          revenue: number | null
+          sale_price: number | null
           team_id: string | null
           total_cost: number | null
           transaction_date: string
@@ -3224,6 +3228,7 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          cost_of_goods?: number | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3234,9 +3239,12 @@ export type Database = {
           organization_id: string
           po_number?: string | null
           processed_by?: string | null
+          profit?: number | null
           quantity: number
           receipt_line_id?: string | null
           reference_number?: string | null
+          revenue?: number | null
+          sale_price?: number | null
           team_id?: string | null
           total_cost?: number | null
           transaction_date?: string
@@ -3248,6 +3256,7 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          cost_of_goods?: number | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3258,9 +3267,12 @@ export type Database = {
           organization_id?: string
           po_number?: string | null
           processed_by?: string | null
+          profit?: number | null
           quantity?: number
           receipt_line_id?: string | null
           reference_number?: string | null
+          revenue?: number | null
+          sale_price?: number | null
           team_id?: string | null
           total_cost?: number | null
           transaction_date?: string

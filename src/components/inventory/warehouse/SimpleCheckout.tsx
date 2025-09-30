@@ -324,7 +324,8 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           item_id: item.id,
           transaction_type: 'out',
           quantity: -item.quantity,
-          unit_cost: item.unit_price || item.sale_price || 0,
+          unit_cost: item.unit_cost || 0,  // ✅ Actual COGS
+          sale_price: item.unit_price || item.sale_price || 0,    // ✅ Selling price
           transaction_date: new Date(checkoutDate + 'T12:00:00').toISOString(),
           reference_number: reference ? `SALE-${reference}` : `SALE-CHECKOUT-${Date.now()}`,
           processed_by: user.id,
