@@ -112,17 +112,9 @@ export const useAssignCompliance = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
       queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
-      
-      toast.success('Compliance training assigned successfully');
-      toast.success('Compliance training assigned successfully');
-    },
-    onError: (error: Error) => {
-      console.error('Error assigning compliance training:', error);
-      toast.error(error.message || 'Failed to assign compliance training');
-      toast.error(error.message || 'Failed to assign compliance training');
     },
   });
 };
@@ -173,18 +165,9 @@ export const useBulkAssignCompliance = () => {
         total: userIds.length
       };
     },
-    onSuccess: (result) => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
       queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
-      
-      const message = `Successfully assigned to ${result.assigned} users${result.skipped > 0 ? ` (${result.skipped} already assigned)` : ''}`;
-      toast.success(message);
-      toast.success(message);
-    },
-    onError: (error: Error) => {
-      console.error('Error bulk assigning compliance training:', error);
-      toast.error(error.message || 'Failed to bulk assign compliance training');
-      toast.error(error.message || 'Failed to bulk assign compliance training');
     },
   });
 };
@@ -221,33 +204,37 @@ export const useComplianceAssignments = (filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
+      if (!data || data.length === 0) return [];
 
-      // Fetch user data separately to avoid RLS issues
-      const userIds = data?.map(record => record.user_id) || [];
-      if (userIds.length === 0) return [];
+      // Extract unique IDs
+      const userIds = [...new Set(data.map(r => r.user_id))];
+      const templateIds = [...new Set(data.map(r => r.template_id))];
 
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, name, email, role')
-        .in('id', userIds);
+      // Fetch both in parallel (not sequential!)
+      const [usersResult, templatesResult] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, name, email, role')
+          .in('id', userIds),
+        supabase
+          .from('compliance_training_templates')
+          .select('id, title, description')
+          .in('id', templateIds)
+      ]);
 
-      // Fetch template data separately
-      const templateIds = data?.map(record => record.template_id) || [];
-      if (templateIds.length === 0) return [];
+      // Build lookup maps for O(1) access
+      const usersMap = new Map(usersResult.data?.map(u => [u.id, u]) || []);
+      const templatesMap = new Map(templatesResult.data?.map(t => [t.id, t]) || []);
 
-      const { data: templates } = await supabase
-        .from('compliance_training_templates')
-        .select('id, title, description')
-        .in('id', templateIds);
-
-      // Combine the data
-      return data?.map(record => ({
+      // Combine data efficiently
+      return data.map(record => ({
         ...record,
-        user: users?.find(u => u.id === record.user_id),
-        compliance_training_templates: templates?.find(t => t.id === record.template_id)
-      })) || [];
+        user: usersMap.get(record.user_id),
+        compliance_training_templates: templatesMap.get(record.template_id)
+      }));
     },
     enabled: !!user?.organizationId,
+    staleTime: 30000, // Cache for 30 seconds to prevent excessive refetches
   });
 };
 
@@ -263,17 +250,35 @@ export const useDeleteComplianceAssignment = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (assignmentId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['compliance-assignments'] });
+      
+      // Snapshot previous value
+      const previousAssignments = queryClient.getQueryData(['compliance-assignments']);
+      
+      // Optimistically remove from cache
+      queryClient.setQueriesData(
+        { queryKey: ['compliance-assignments'] },
+        (old: any) => {
+          if (!Array.isArray(old)) return old;
+          return old.filter((a: any) => a.id !== assignmentId);
+        }
+      );
+      
+      return { previousAssignments };
+    },
+    onError: (err, assignmentId, context: any) => {
+      // Rollback on error
+      if (context?.previousAssignments) {
+        queryClient.setQueryData(['compliance-assignments'], context.previousAssignments);
+      }
+      console.error('Error deleting assignment:', err);
+    },
+    onSettled: () => {
+      // Always refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
       queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
-      
-      toast.success('Assignment deleted successfully');
-      toast.success('Assignment deleted successfully');
-    },
-    onError: (error: Error) => {
-      console.error('Error deleting assignment:', error);
-      toast.error('Failed to delete assignment');
-      toast.error('Failed to delete assignment');
     },
   });
 };

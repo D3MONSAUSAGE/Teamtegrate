@@ -21,6 +21,8 @@ import {
 import { useComplianceAssignments, useComplianceTemplates, useDeleteComplianceAssignment } from '@/hooks/useComplianceAssignment';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AssignmentManagementDialogProps {
   open: boolean;
@@ -36,7 +38,9 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
   const [templateFilter, setTemplateFilter] = useState<string>('all');
   const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
   const [bulkRemoveConfirmOpen, setBulkRemoveConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
+  const queryClient = useQueryClient();
   const { data: assignments = [], isLoading } = useComplianceAssignments({
     status: statusFilter,
     templateId: templateFilter !== 'all' ? templateFilter : undefined,
@@ -95,15 +99,58 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
 
   // Handle bulk assignment removal
   const handleBulkRemove = async () => {
+    if (selectedAssignments.length === 0) return;
+    
+    setIsDeleting(true);
+    
     try {
-      await Promise.all(
-        selectedAssignments.map(id => deleteAssignment.mutateAsync(id))
+      // Execute all deletions in parallel without triggering individual invalidations
+      const results = await Promise.allSettled(
+        selectedAssignments.map(async (id) => {
+          try {
+            const { error } = await supabase
+              .from('compliance_training_records')
+              .delete()
+              .eq('id', id);
+            
+            if (error) throw error;
+            return { id, success: true };
+          } catch (error) {
+            console.error(`Failed to delete assignment ${id}:`, error);
+            return { id, success: false, error };
+          }
+        })
       );
-      toast.success(`Successfully removed ${selectedAssignments.length} assignment(s)`);
+
+      // Count successes and failures
+      const successful = results.filter(
+        (r): r is PromiseFulfilledResult<{id: string, success: true}> => 
+          r.status === 'fulfilled' && r.value.success
+      ).length;
+      const failed = results.length - successful;
+
+      // Show appropriate message
+      if (failed === 0) {
+        toast.success(`Successfully removed ${successful} assignment(s)`);
+      } else if (successful === 0) {
+        toast.error(`Failed to remove all ${failed} assignment(s)`);
+      } else {
+        toast.warning(
+          `Removed ${successful} assignment(s), but ${failed} failed. Please try again.`
+        );
+      }
+
       setSelectedAssignments([]);
       setBulkRemoveConfirmOpen(false);
+      
+      // Single refetch after all operations
+      queryClient.invalidateQueries({ queryKey: ['compliance-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance-records'] });
     } catch (error) {
-      toast.error('Failed to remove some assignments');
+      console.error('Bulk delete error:', error);
+      toast.error('Failed to remove assignments');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -221,10 +268,19 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
                   variant="destructive"
                   size="sm"
                   onClick={() => setBulkRemoveConfirmOpen(true)}
-                  disabled={selectedAssignments.length === 0}
+                  disabled={selectedAssignments.length === 0 || isDeleting || deleteAssignment.isPending}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remove Selected ({selectedAssignments.length})
+                  {isDeleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Removing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove Selected ({selectedAssignments.length})
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -321,10 +377,10 @@ export const AssignmentManagementDialog: React.FC<AssignmentManagementDialogProp
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkRemove}
-              disabled={deleteAssignment.isPending}
+              disabled={isDeleting || deleteAssignment.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteAssignment.isPending ? 'Removing...' : 'Remove All Selected'}
+              {isDeleting ? 'Removing...' : 'Remove All Selected'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
