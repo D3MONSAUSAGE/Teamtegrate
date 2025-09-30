@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,7 @@ import { useTZ } from '@/lib/dates/useTZ';
 import { buildDailyViewData } from '@/services/dailyViewSelector';
 import { CountApprovalDialog } from '@/components/inventory/approval/CountApprovalDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { inventoryCountsApi } from '@/contexts/inventory/api';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
@@ -105,6 +106,43 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   
   // Active tab state
   const [activeTab, setActiveTab] = useState<string>('records');
+  
+  // Financial data state
+  const [countFinancials, setCountFinancials] = useState<Record<string, { 
+    totalValue: number; 
+    totalVarianceCost: number; 
+    costImpact: number; 
+  }>>({});
+  const [loadingFinancials, setLoadingFinancials] = useState(false);
+
+  // Helper function to calculate real financial metrics
+  const calculateCountFinancials = async (countId: string) => {
+    try {
+      const items = await inventoryCountsApi.getCountItems(countId);
+      let totalValue = 0;
+      let totalVarianceCost = 0;
+      let costImpact = 0;
+
+      items.forEach(item => {
+        if (item.actual_quantity !== null) {
+          const unitCost = (item as any).inventory_items?.unit_cost || 
+                          (item as any).inventory_items?.purchase_price || 0;
+          const itemValue = item.actual_quantity * unitCost;
+          totalValue += itemValue;
+
+          const variance = item.actual_quantity - (item.in_stock_quantity || 0);
+          const varianceCost = Math.abs(variance) * unitCost;
+          totalVarianceCost += varianceCost;
+          costImpact += variance * unitCost;
+        }
+      });
+
+      return { totalValue, totalVarianceCost, costImpact };
+    } catch (error) {
+      console.error('Failed to calculate financials for count:', countId, error);
+      return { totalValue: 0, totalVarianceCost: 0, costImpact: 0 };
+    }
+  };
 
   // Working DatePicker component (reused from PastTimeEntriesManager)
   const DatePicker = ({ date, setDate }: { date: Date; setDate: (d: Date) => void }) => {
@@ -163,6 +201,28 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
       return matchesSearch && matchesTeam && matchesStatus && matchesDate;
     });
   }, [counts, searchTerm, selectedTeam, statusFilter, dateFilter, getTeamDisplayName]);
+
+  // Load financial data when counts are loaded
+  useEffect(() => {
+    const loadFinancials = async () => {
+      if (filteredCounts.length === 0) return;
+      
+      setLoadingFinancials(true);
+      const financials: Record<string, any> = {};
+      
+      // Load financials for completed counts only
+      const completedCounts = filteredCounts.filter(c => c.status === 'completed' && !c.is_voided);
+      
+      for (const count of completedCounts) {
+        financials[count.id] = await calculateCountFinancials(count.id);
+      }
+      
+      setCountFinancials(financials);
+      setLoadingFinancials(false);
+    };
+    
+    loadFinancials();
+  }, [filteredCounts.map(c => c.id).join(',')]); // Only re-run when count IDs change
 
   // Filter team-based analytics data
   const filteredAlertsForAnalytics = useMemo(() => {
@@ -607,8 +667,7 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
                     <div className="space-y-4 pr-4">
                       {sortedCounts.map((count, index) => {
                         const previousCount = index < sortedCounts.length - 1 ? sortedCounts[index + 1] : null;
-                        const mockValue = count.total_items_count * 25; // Mock calculation
-                        const mockVarianceCost = count.variance_count * 15;
+                        const financials = countFinancials[count.id] || { costImpact: 0, totalVarianceCost: 0, totalValue: 0 };
                         
                         return (
                           <div
@@ -686,12 +745,33 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
 
                                   <div>
                                     <div className="text-muted-foreground">Financial Impact</div>
-                                    <div className="font-medium text-green-600">
-                                      {formatCurrency(mockValue)}
-                                    </div>
-                                    <div className="text-muted-foreground text-xs">
-                                      Variance cost: <span className="text-orange-600">{formatCurrency(mockVarianceCost)}</span>
-                                    </div>
+                                    {count.is_voided ? (
+                                      <div className="font-medium text-muted-foreground">
+                                        N/A (Voided)
+                                      </div>
+                                    ) : count.status !== 'completed' ? (
+                                      <div className="font-medium text-muted-foreground">
+                                        Pending
+                                      </div>
+                                    ) : loadingFinancials ? (
+                                      <div className="font-medium text-muted-foreground">
+                                        Loading...
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className={cn(
+                                          "font-medium",
+                                          financials.costImpact >= 0 ? "text-green-600" : "text-red-600"
+                                        )}>
+                                          {financials.costImpact >= 0 ? '+' : ''}{formatCurrency(financials.costImpact)}
+                                        </div>
+                                        <div className="text-muted-foreground text-xs">
+                                          Variance cost: <span className="text-orange-600">
+                                            {formatCurrency(financials.totalVarianceCost)}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
 
