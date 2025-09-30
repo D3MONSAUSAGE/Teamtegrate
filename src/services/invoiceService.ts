@@ -15,11 +15,53 @@ export interface CreateInvoiceData {
   tax_rate?: number;
   transaction_reference?: string; // Link to inventory transaction
   team_id?: string; // Team that created the invoice
+  warehouse_id?: string; // Warehouse that created the invoice
 }
 
 export const invoiceService = {
+  async generateWarehouseInvoiceNumber(warehouseId: string): Promise<string> {
+    try {
+      // Get warehouse name for code
+      const { data: warehouse } = await supabase
+        .from('warehouses')
+        .select('name')
+        .eq('id', warehouseId)
+        .single();
+
+      const warehouseCode = warehouse?.name
+        ? warehouse.name.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '')
+        : 'WH';
+
+      const year = new Date().getFullYear();
+
+      // Get the highest invoice number for this warehouse in the current year
+      const { data: invoices } = await supabase
+        .from('created_invoices')
+        .select('invoice_number')
+        .eq('warehouse_id', warehouseId)
+        .ilike('invoice_number', `INV-${warehouseCode}-${year}-%`)
+        .order('invoice_number', { ascending: false })
+        .limit(1);
+
+      let sequence = 1;
+      if (invoices && invoices.length > 0) {
+        // Extract sequence number from last invoice (e.g., INV-MAIN-2025-0001 -> 0001)
+        const lastNumber = invoices[0].invoice_number;
+        const match = lastNumber.match(/-(\d+)$/);
+        if (match) {
+          sequence = parseInt(match[1]) + 1;
+        }
+      }
+
+      return `INV-${warehouseCode}-${year}-${String(sequence).padStart(4, '0')}`;
+    } catch (error) {
+      console.error('Error generating warehouse invoice number:', error);
+      throw error;
+    }
+  },
+
   async createInvoice(data: CreateInvoiceData): Promise<CreatedInvoice> {
-    const { client, lineItems, notes, footer_text, payment_terms, tax_rate = 0, transaction_reference, team_id } = data;
+    const { client, lineItems, notes, footer_text, payment_terms, tax_rate = 0, transaction_reference, team_id, warehouse_id } = data;
 
     // Calculate totals
     const subtotal = lineItems.reduce((sum, item) => sum + item.total_price, 0);
@@ -27,7 +69,9 @@ export const invoiceService = {
     const total_amount = subtotal + tax_amount;
 
     // Generate invoice number
-    const invoice_number = `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    const invoice_number = warehouse_id 
+      ? await this.generateWarehouseInvoiceNumber(warehouse_id)
+      : `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     const issue_date = new Date().toISOString().split('T')[0];
     const due_date = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 30 days from now
 
@@ -40,6 +84,7 @@ export const invoiceService = {
           client_id: client.id,
           created_by: client.created_by, // This will be set by RLS
           team_id,
+          warehouse_id,
           invoice_number,
           status: 'draft' as const,
           issue_date,

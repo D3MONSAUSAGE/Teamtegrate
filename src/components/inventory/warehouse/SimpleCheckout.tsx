@@ -323,6 +323,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           payment_terms: paymentTerms,
           tax_rate: taxRate,
           transaction_reference: `Warehouse checkout: ${warehouseId}`,
+          warehouse_id: warehouseId,
         });
 
         // Generate PDF with error handling

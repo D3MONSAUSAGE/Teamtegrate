@@ -36,6 +36,8 @@ export interface CreatedInvoice {
   client_id: string;
   template_id?: string;
   created_by: string;
+  team_id?: string;
+  warehouse_id?: string;
   invoice_number: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   issue_date: string;
