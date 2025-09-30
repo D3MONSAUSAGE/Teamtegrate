@@ -12,7 +12,8 @@ import {
   Plus,
   Users,
   Settings,
-  ExternalLink
+  ExternalLink,
+  Store
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
@@ -22,8 +23,9 @@ import FinanceDashboardTab from '@/components/finance/tabs/FinanceDashboardTab';
 import WeeklyReportsTab from '@/components/finance/tabs/WeeklyReportsTab';
 import AdvancedReportsTab from '@/components/finance/tabs/AdvancedReportsTab';
 import UploadCenterTab from '@/components/finance/tabs/UploadCenterTab';
+import { SalesChannelsManager } from '@/components/finance/sales-channels/SalesChannelsManager';
 
-type FinanceTab = 'dashboard' | 'weekly-reports' | 'advanced-reports' | 'upload';
+type FinanceTab = 'dashboard' | 'weekly-reports' | 'advanced-reports' | 'upload' | 'sales-channels';
 
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState<FinanceTab>('dashboard');
@@ -153,7 +155,7 @@ export default function FinancePage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as FinanceTab)}>
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-fit">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 lg:w-fit">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Analytics</span>
@@ -169,6 +171,10 @@ export default function FinancePage() {
               <TabsTrigger value="upload" className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
                 <span className="hidden sm:inline">Upload Center</span>
+              </TabsTrigger>
+              <TabsTrigger value="sales-channels" className="flex items-center gap-2">
+                <Store className="h-4 w-4" />
+                <span className="hidden sm:inline">Sales Channels</span>
               </TabsTrigger>
             </TabsList>
 
@@ -186,6 +192,10 @@ export default function FinancePage() {
 
             <TabsContent value="upload" className="space-y-6 mt-6">
               <UploadCenterTab />
+            </TabsContent>
+
+            <TabsContent value="sales-channels" className="space-y-6 mt-6">
+              <SalesChannelsManager />
             </TabsContent>
           </Tabs>
         </CardContent>
