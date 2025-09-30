@@ -271,32 +271,37 @@ export const InventoryManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="items" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="items" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Product Catalog
-          </TabsTrigger>
-          <TabsTrigger value="labels" className="flex items-center gap-2">
-            <QrCode className="h-4 w-4" />
-            Labels
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            <FolderOpen className="h-4 w-4" />
-            Item Types
-          </TabsTrigger>
-          <TabsTrigger value="units" className="flex items-center gap-2">
-            <Ruler className="h-4 w-4" />
-            Units
-          </TabsTrigger>
-          <TabsTrigger value="vendors" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Vendors
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Templates
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-2 -mx-1 px-1">
+          <TabsList className="inline-flex w-auto min-w-full">
+            <TabsTrigger value="items" className="flex items-center gap-2 whitespace-nowrap">
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Product Catalog</span>
+              <span className="sm:hidden">Catalog</span>
+            </TabsTrigger>
+            <TabsTrigger value="labels" className="flex items-center gap-2 whitespace-nowrap">
+              <QrCode className="h-4 w-4" />
+              Labels
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="flex items-center gap-2 whitespace-nowrap">
+              <FolderOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Item Types</span>
+              <span className="sm:hidden">Types</span>
+            </TabsTrigger>
+            <TabsTrigger value="units" className="flex items-center gap-2 whitespace-nowrap">
+              <Ruler className="h-4 w-4" />
+              Units
+            </TabsTrigger>
+            <TabsTrigger value="vendors" className="flex items-center gap-2 whitespace-nowrap">
+              <Building2 className="h-4 w-4" />
+              Vendors
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2 whitespace-nowrap">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Templates</span>
+              <span className="sm:hidden">Saved</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="items" className="mt-6">
           <div className="space-y-4">
