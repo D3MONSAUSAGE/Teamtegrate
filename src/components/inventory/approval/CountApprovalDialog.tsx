@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, AlertTriangle, Package } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, Package, Loader2 } from 'lucide-react';
+import { fetchUserInfo } from '@/contexts/task/operations/assignment/fetchUserInfo';
 import { InventoryCount, InventoryCountItem } from '@/contexts/inventory/types';
 import { useCountApproval } from '@/hooks/useCountApproval';
 
@@ -42,7 +43,18 @@ export const CountApprovalDialog: React.FC<CountApprovalDialogProps> = ({
   const [notes, setNotes] = useState('');
   const [showWarning, setShowWarning] = useState(false);
   const [pendingApproval, setPendingApproval] = useState<boolean | null>(null);
+  const [conductedByName, setConductedByName] = useState<string>('Loading...');
   const { approveCount, isApproving } = useCountApproval();
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      if (count.conducted_by) {
+        const userName = await fetchUserInfo(count.conducted_by);
+        setConductedByName(userName || 'Unknown User');
+      }
+    };
+    loadUserName();
+  }, [count.conducted_by]);
 
   const handleApproval = async (approved: boolean) => {
     if (approved) {
@@ -125,7 +137,7 @@ export const CountApprovalDialog: React.FC<CountApprovalDialogProps> = ({
               </div>
               <div>
                 <Label className="text-sm font-medium">Conducted By</Label>
-                <p className="text-sm">{count.conducted_by}</p>
+                <p className="text-sm">{conductedByName}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Total Items</Label>
@@ -214,13 +226,27 @@ export const CountApprovalDialog: React.FC<CountApprovalDialogProps> = ({
                 onClick={() => handleApproval(false)}
                 disabled={isApproving}
               >
-                Reject Count
+                {isApproving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Rejecting...
+                  </>
+                ) : (
+                  'Reject Count'
+                )}
               </Button>
               <Button
                 onClick={() => handleApproval(true)}
                 disabled={isApproving}
               >
-                Approve Count
+                {isApproving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  'Approve Count'
+                )}
               </Button>
             </div>
           </div>
@@ -263,7 +289,14 @@ export const CountApprovalDialog: React.FC<CountApprovalDialogProps> = ({
               disabled={isApproving}
               className="bg-primary hover:bg-primary/90"
             >
-              {isApproving ? 'Updating...' : 'Confirm & Update Warehouse'}
+              {isApproving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Confirm & Update Warehouse'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
