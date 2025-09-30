@@ -558,13 +558,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
           // Company name centered under logo
           pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(companyName.toUpperCase(), logoX + (logoSize / 2), logoY + logoSize + 0.15, { align: 'center' });
+          pdf.text(companyName.toUpperCase(), 2, logoY + logoSize + 0.15, { align: 'center' });
           
           // Company address under company name
           if (companyAddress.trim()) {
             pdf.setFontSize(8);
             pdf.setFont('helvetica', 'normal');
-            pdf.text(companyAddress, logoX + (logoSize / 2), logoY + logoSize + 0.25, { align: 'center' });
+            pdf.text(companyAddress, 2, logoY + logoSize + 0.25, { align: 'center' });
             y += logoSize + 0.35;
           } else {
             y += logoSize + 0.25;
@@ -816,13 +816,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
         pdf.setLineWidth(0.005);
         pdf.line(rightColX - 0.05, columnStartY, rightColX - 0.05, y - 0.05);
 
-        // Daily value footnote (compact) - only show if there are actual values with DV
+        // Daily value footnote (compact) - positioned at bottom right of nutrition box
         const hasAnyDailyValues = mainNutrients.some(n => n.dvKey && calculateDailyValue(n.dvKey, n.value) !== '');
         if (hasAnyDailyValues) {
           y += 0.03;
-          pdf.setFontSize(5);
+          pdf.setFontSize(4.5);
           pdf.setFont('helvetica', 'normal');
-          pdf.text('*% Daily Value based on 2000 calorie diet', leftColX, y + 0.06);
+          pdf.text('*% Daily Value based on 2000 calorie diet', 3.7, y + 0.06, { align: 'right' });
           y += 0.12;
         }
         
