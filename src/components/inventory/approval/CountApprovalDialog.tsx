@@ -188,7 +188,7 @@ export const CountApprovalDialog: React.FC<CountApprovalDialogProps> = ({
                     
                     return (
                       <div key={item.id} className="flex items-center justify-between p-2 text-sm border rounded">
-                        <span className="font-medium">{item.item?.name || 'Unknown Item'}</span>
+                        <span className="font-medium">{(item as any).inventory_items?.name || 'Unknown Item'}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">
                             {item.in_stock_quantity || 0} → {item.actual_quantity || 0}
