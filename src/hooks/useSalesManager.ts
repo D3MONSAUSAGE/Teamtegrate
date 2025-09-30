@@ -4,6 +4,7 @@ import { salesDataService, SalesDataFilters } from '@/services/SalesDataService'
 import { startOfWeek, endOfWeek, format, parseISO, isSameWeek } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
 import { useTeams } from '@/hooks/useTeams';
+import { useSalesChannelTransactions } from '@/hooks/useSalesChannelTransactions';
 
 interface UseSalesManagerReturn {
   // Data
@@ -85,19 +86,35 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     );
   }, [salesData, selectedTeam]);
 
+  // Get channel transactions for the selected week
+  const weekStart = useMemo(() => startOfWeek(selectedWeek, { weekStartsOn: 1 }), [selectedWeek]);
+  const weekEnd = useMemo(() => endOfWeek(selectedWeek, { weekStartsOn: 1 }), [selectedWeek]);
+  
+  const { 
+    transactions: channelTransactions,
+    totalCommission,
+    channelBreakdown,
+    isLoading: isLoadingChannels
+  } = useSalesChannelTransactions(
+    format(weekStart, 'yyyy-MM-dd'),
+    format(weekEnd, 'yyyy-MM-dd'),
+    selectedTeam
+  );
+
   // Weekly data calculation
   const weeklyData = useMemo((): WeeklySalesData | null => {
     console.log('[useSalesManager] Calculating weekly data. Filtered data length:', filteredSalesData.length);
     console.log('[useSalesManager] Selected week:', selectedWeek);
     console.log('[useSalesManager] Selected team:', selectedTeam);
+    console.log('[useSalesManager] Channel commission:', totalCommission);
     
     if (filteredSalesData.length === 0) {
       console.log('[useSalesManager] No filtered data available');
       return null;
     }
     
-    const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+    const weekStartDate = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+    const weekEndDate = endOfWeek(selectedWeek, { weekStartsOn: 1 });
     
     const weekSales = filteredSalesData.filter(sale => 
       isSameWeek(sale.date, selectedWeek, { weekStartsOn: 1 })
@@ -110,8 +127,8 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
         teams.find(t => t.id === selectedTeam)?.name || selectedTeam;
       console.log('[useSalesManager] No sales for selected week, returning empty data for team:', selectedTeamName);
       return {
-        weekStart,
-        weekEnd,
+        weekStart: weekStartDate,
+        weekEnd: weekEndDate,
         location: selectedTeamName,
         dailySales: [],
         totals: {
@@ -125,7 +142,12 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
           calculatedCash: 0,
           expenses: 0,
           totalInHouseCash: 0
-        }
+        },
+        channelData: totalCommission > 0 ? {
+          totalCommission,
+          adjustedNetSales: -totalCommission,
+          channelBreakdown
+        } : undefined
       };
     }
     
@@ -168,14 +190,20 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     
     const selectedTeamName = selectedTeam === 'all' ? 'All Teams' : 
       teams.find(t => t.id === selectedTeam)?.name || selectedTeam;
+    
     return {
-      weekStart,
-      weekEnd,
+      weekStart: weekStartDate,
+      weekEnd: weekEndDate,
       location: selectedTeamName,
       dailySales: dailySalesWithStringDates,
-      totals
+      totals,
+      channelData: totalCommission > 0 ? {
+        totalCommission,
+        adjustedNetSales: totals.netSales - totalCommission,
+        channelBreakdown
+      } : undefined
     };
-  }, [filteredSalesData, selectedWeek, selectedTeam, teams]);
+  }, [filteredSalesData, selectedWeek, selectedTeam, teams, totalCommission, channelBreakdown]);
 
   // Data fetching
   const fetchData = useCallback(async (showLoadingState = true) => {

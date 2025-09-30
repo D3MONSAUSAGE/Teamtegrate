@@ -11,13 +11,16 @@ import {
   ChevronRight, 
   TrendingUp,
   Users,
-  CalendarDays
+  CalendarDays,
+  Store,
+  DollarSign
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import WeeklySalesTable from './WeeklySalesTable';
 import { WeekSelectorPopover } from './WeekSelectorPopover';
 import { format, addWeeks, subWeeks, endOfWeek } from 'date-fns';
 import { WeeklySalesData } from '@/types/sales';
+import { formatCurrency } from '@/utils/formatters';
 
 interface WeeklySalesViewProps {
   weeklyData: WeeklySalesData | null;
@@ -51,14 +54,14 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
       return;
     }
     
-    // Create enhanced CSV content
+    // Create enhanced CSV content with channel fees
     const headers = [
       'Day', 'Date', 'Location', 'Non Cash', 'Total Cash', 'Gross Total', 'Discount', 
       'Tax Paid', 'Tips', 'Net Sales', 'Calculated Cash', 'Expenses', 'Total In-House Cash'
     ];
     
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const csvContent = [
+    const csvRows = [
       // Header
       headers.join(','),
       // Daily data
@@ -110,7 +113,44 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
         weeklyData.totals.expenses,
         weeklyData.totals.totalInHouseCash
       ].join(',')
-    ].join('\n');
+    ];
+
+    // Add channel fee breakdown if available
+    if (weeklyData.channelData && weeklyData.channelData.totalCommission > 0) {
+      csvRows.push('');
+      csvRows.push('SALES CHANNEL FEES (Deductible Business Expense)');
+      csvRows.push('Channel,Gross Sales,Commission Fee,Net Sales,Orders');
+      
+      Object.entries(weeklyData.channelData.channelBreakdown).forEach(([channel, data]) => {
+        csvRows.push([
+          channel,
+          data.grossSales.toFixed(2),
+          data.commission.toFixed(2),
+          data.netSales.toFixed(2),
+          data.orders
+        ].join(','));
+      });
+      
+      csvRows.push('');
+      csvRows.push([
+        'TOTAL CHANNEL FEES',
+        '',
+        weeklyData.channelData.totalCommission.toFixed(2),
+        '',
+        ''
+      ].join(','));
+      
+      csvRows.push('');
+      csvRows.push([
+        'ADJUSTED NET SALES (After Channel Fees)',
+        '',
+        '',
+        weeklyData.channelData.adjustedNetSales.toFixed(2),
+        ''
+      ].join(','));
+    }
+    
+    const csvContent = csvRows.join('\n');
     
     // Download CSV
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -121,7 +161,7 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
     link.click();
     URL.revokeObjectURL(url);
     
-    toast.success("Weekly report exported successfully!");
+    toast.success("Weekly report with channel fees exported successfully!");
   };
 
   if (isLoading) {
@@ -228,6 +268,73 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
           Export Weekly Report
         </Button>
       </div>
+
+      {/* Sales Channel Fees Summary */}
+      {weeklyData?.channelData && weeklyData.channelData.totalCommission > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5" />
+              Sales Channel Fees Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-accent/50 p-4 rounded-lg">
+                  <div className="text-sm text-muted-foreground mb-1">Net Sales (Before Fees)</div>
+                  <div className="text-2xl font-bold">{formatCurrency(weeklyData.totals.netSales)}</div>
+                </div>
+                <div className="bg-destructive/10 p-4 rounded-lg">
+                  <div className="text-sm text-muted-foreground mb-1">Total Channel Fees</div>
+                  <div className="text-2xl font-bold text-destructive">-{formatCurrency(weeklyData.channelData.totalCommission)}</div>
+                </div>
+                <div className="bg-primary/10 p-4 rounded-lg">
+                  <div className="text-sm text-muted-foreground mb-1">Adjusted Net Sales</div>
+                  <div className="text-2xl font-bold text-primary">{formatCurrency(weeklyData.channelData.adjustedNetSales)}</div>
+                </div>
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="text-sm text-muted-foreground mb-1">Tax Deductible</div>
+                  <div className="text-2xl font-bold">{formatCurrency(weeklyData.channelData.totalCommission)}</div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Channel-by-Channel Breakdown
+                </h4>
+                <div className="grid gap-3">
+                  {Object.entries(weeklyData.channelData.channelBreakdown).map(([channel, data]) => (
+                    <div key={channel} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Store className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">{channel}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {data.orders} orders • {formatCurrency(data.grossSales)} gross
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-destructive">-{formatCurrency(data.commission)}</div>
+                        <div className="text-sm text-muted-foreground">{formatCurrency(data.netSales)} net</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Alert>
+                <TrendingUp className="h-4 w-4" />
+                <AlertDescription>
+                  Channel fees are deductible business expenses. This breakdown helps you track delivery service costs for tax purposes.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Weekly Data Display */}
       {weeklyData && weeklyData.dailySales.length > 0 ? (

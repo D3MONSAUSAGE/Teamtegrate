@@ -106,6 +106,17 @@ export interface WeeklySalesData {
     expenses: number;
     totalInHouseCash: number;
   };
+  channelData?: {
+    totalCommission: number;
+    adjustedNetSales: number;
+    channelBreakdown: Record<string, { 
+      grossSales: number; 
+      commission: number; 
+      netSales: number; 
+      orders: number;
+      commissionRate?: number;
+    }>;
+  };
 }
 
 export interface ParsedSalesData extends Omit<SalesData, 'date'> {
