@@ -116,8 +116,12 @@ export const useEnhancedInventoryAnalytics = (
     const averageCompletionTime = completedCounts.length > 0 ? 
       completedCounts.reduce((sum, count) => {
         const createdAt = new Date(count.created_at);
-        const countDate = new Date(count.count_date);
-        return sum + Math.abs(countDate.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        // Use approved_at if available (most accurate), otherwise use updated_at
+        const completionTime = count.approved_at 
+          ? new Date(count.approved_at)
+          : new Date(count.updated_at);
+        const hours = Math.abs(completionTime.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        return sum + hours;
       }, 0) / completedCounts.length : 0;
 
     // Calculate financial metrics using real data

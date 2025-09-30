@@ -387,8 +387,18 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
   // Calculate financial metrics for filtered counts (excluding voided counts)
   const calculateFilteredMetrics = () => {
     const completedCounts = filteredCounts.filter(c => c.status === 'completed' && !c.is_voided);
-    const totalValue = completedCounts.reduce((sum, count) => sum + (count.total_items_count * 25), 0); // Mock calculation
-    const totalVarianceCost = completedCounts.reduce((sum, count) => sum + (count.variance_count * 15), 0);
+    
+    // Calculate real totals from the countFinancials we already loaded
+    let totalValue = 0;
+    let totalVarianceCost = 0;
+    
+    completedCounts.forEach(count => {
+      const financials = countFinancials[count.id];
+      if (financials) {
+        totalValue += financials.totalValue || 0;
+        totalVarianceCost += financials.totalVarianceCost || 0;
+      }
+    });
     
     return { totalValue, totalVarianceCost, countCompletions: completedCounts.length };
   };
