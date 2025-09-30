@@ -393,9 +393,9 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
             </Button>
           </DrawerTrigger>
         )}
-        <DrawerContent>
-          <div className="mx-auto w-full max-w-6xl">
-            <DrawerHeader>
+        <DrawerContent className="max-h-[90vh]">
+          <div className="mx-auto w-full max-w-6xl flex flex-col h-full">
+            <DrawerHeader className="flex-shrink-0">
               <DrawerTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
                 Inventory Checkout
@@ -405,7 +405,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
               </DrawerDescription>
             </DrawerHeader>
 
-            <div className="p-4 space-y-6">
+            <div className="p-4 space-y-6 overflow-y-auto flex-1">
               {/* Header Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -817,7 +817,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
               </div>
             </div>
 
-            <DrawerFooter>
+            <DrawerFooter className="flex-shrink-0 border-t">
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   onClick={handleSubmit} 
