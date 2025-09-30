@@ -1127,6 +1127,30 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_v1_to_v2_migration_log: {
+        Row: {
+          id: string
+          items_migrated: number | null
+          migrated_at: string | null
+          notes: string | null
+          templates_migrated: number | null
+        }
+        Insert: {
+          id?: string
+          items_migrated?: number | null
+          migrated_at?: string | null
+          notes?: string | null
+          templates_migrated?: number | null
+        }
+        Update: {
+          id?: string
+          items_migrated?: number | null
+          migrated_at?: string | null
+          notes?: string | null
+          templates_migrated?: number | null
+        }
+        Relationships: []
+      }
       checklists: {
         Row: {
           assignment_type: Database["public"]["Enums"]["assignment_type"]
