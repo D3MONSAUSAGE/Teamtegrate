@@ -69,7 +69,13 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const setOpen = controlledOnOpenChange || setInternalOpen;
   
   // Form data
-  const [checkoutDate, setCheckoutDate] = useState(new Date().toISOString().split('T')[0]);
+  const [checkoutDate, setCheckoutDate] = useState(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [createInvoice, setCreateInvoice] = useState(true);
