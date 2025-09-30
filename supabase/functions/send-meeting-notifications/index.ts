@@ -23,11 +23,13 @@ interface MeetingNotificationRequest {
     id: string;
     email: string;
     name?: string;
+    timezone?: string;
   };
   participants: Array<{
     id: string;
     email: string;
     name?: string;
+    timezone?: string;
   }>;
   meeting: {
     id: string;
@@ -506,18 +508,37 @@ const handler = async (req: Request): Promise<Response> => {
     // Mark as in progress
     await markInProgress(supabase, idempotencyKey, requestData);
 
-    // Determine recipients based on type
-    let recipientEmails: string[] = [];
+    // Determine recipients based on type and build recipient-timezone map
+    let recipientsWithTimezones: Array<{ email: string; timezone: string; name?: string }> = [];
+    
     if (type === 'created') {
-      // Send to organizer + all participants (deduped)
-      const allEmails = [organizer.email, ...participants.map(p => p.email)];
-      recipientEmails = [...new Set(allEmails.filter(Boolean))];
+      // Send to organizer + all participants with their individual timezones
+      recipientsWithTimezones = [
+        { email: organizer.email, timezone: organizer.timezone || 'UTC', name: organizer.name },
+        ...participants.map(p => ({ 
+          email: p.email, 
+          timezone: p.timezone || 'UTC',
+          name: p.name
+        }))
+      ];
+      // Dedupe by email while preserving timezone
+      const emailMap = new Map<string, { email: string; timezone: string; name?: string }>();
+      recipientsWithTimezones.forEach(r => {
+        if (r.email && !emailMap.has(r.email)) {
+          emailMap.set(r.email, r);
+        }
+      });
+      recipientsWithTimezones = Array.from(emailMap.values());
     } else if (type === 'response') {
-      // Send only to organizer
-      recipientEmails = [organizer.email].filter(Boolean);
+      // Send only to organizer with their timezone
+      recipientsWithTimezones = [{ 
+        email: organizer.email, 
+        timezone: organizer.timezone || 'UTC',
+        name: organizer.name
+      }].filter(r => r.email);
     }
 
-    if (recipientEmails.length === 0) {
+    if (recipientsWithTimezones.length === 0) {
       await markCompleted(supabase, idempotencyKey, false, 'No valid recipients');
       return new Response(JSON.stringify({ success: false, error: "No valid recipients" }), { 
         status: 400, 
@@ -525,50 +546,54 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Format meeting details
-    const meetingDate = formatDate(meeting.startISO);
-    const meetingTime = formatTimeRange(meeting.startISO, meeting.endISO, meeting.timezone);
+    console.log(`[Timezone] Sending personalized emails to ${recipientsWithTimezones.length} recipients with their timezones:`,
+      recipientsWithTimezones.map(r => ({ email: r.email, timezone: r.timezone }))
+    );
+
+    // Base meeting URL
     const meetingUrl = `${base}/dashboard/meetings/${meeting.id}`;
+    const meetingDate = formatDate(meeting.startISO);
 
-    // Build email context
-    const emailContext: MeetingEmailContext = {
-      orgName,
-      logoUrl,
-      meetingTitle: meeting.title,
-      organizerName: organizer.name || organizer.email,
-      meetingDate,
-      meetingTime,
-      location: meeting.location,
-      participantCount: participants.length,
-      meetingUrl,
-      notes: meeting.notes
-    };
-
-    // Handle different notification types
-    let subject: string;
-    let html: string;
-
-    if (type === 'created') {
-      subject = `📅 Meeting Invitation: ${meeting.title} — ${meetingDate}`;
-      html = renderMeetingInvitationHTML(emailContext);
-    } else if (type === 'response' && responder) {
-      subject = `${responder.response === 'accepted' ? '✅' : responder.response === 'declined' ? '❌' : '⚠️'} Meeting Response: ${responder.name || 'Participant'} ${responder.response} — ${meeting.title}`;
-      emailContext.responderName = responder.name || 'Unknown Participant';
-      emailContext.responseType = responder.response;
-      html = renderMeetingResponseHTML(emailContext);
-    } else {
-      await markCompleted(supabase, idempotencyKey, false, 'Unsupported notification type');
-      return new Response(JSON.stringify({ success: false, error: "Unsupported notification type" }), { 
-        status: 400, 
-        headers: CORS 
-      });
-    }
-
-    // Send emails to all recipients with fan-out
+    // Send emails to all recipients with personalized timezone information
     const emailResults = await Promise.allSettled(
-      recipientEmails.map(async (toEmail) => {
-        const result = await sendViaResend(apiKey, from, toEmail, subject, html);
-        return { to: toEmail, success: true, id: result?.id ?? null };
+      recipientsWithTimezones.map(async (recipient) => {
+        // Format meeting time in recipient's timezone
+        const recipientMeetingTime = formatTimeRange(meeting.startISO, meeting.endISO, recipient.timezone);
+        
+        console.log(`[Timezone] Formatting for ${recipient.email}: ${recipientMeetingTime} (${recipient.timezone})`);
+
+        // Build personalized email context for this recipient
+        const emailContext: MeetingEmailContext = {
+          orgName,
+          logoUrl,
+          meetingTitle: meeting.title,
+          organizerName: organizer.name || organizer.email,
+          meetingDate,
+          meetingTime: recipientMeetingTime, // Personalized to recipient's timezone
+          location: meeting.location,
+          participantCount: participants.length,
+          meetingUrl,
+          notes: meeting.notes
+        };
+
+        // Handle different notification types
+        let subject: string;
+        let html: string;
+
+        if (type === 'created') {
+          subject = `📅 Meeting Invitation: ${meeting.title} — ${meetingDate}`;
+          html = renderMeetingInvitationHTML(emailContext);
+        } else if (type === 'response' && responder) {
+          subject = `${responder.response === 'accepted' ? '✅' : responder.response === 'declined' ? '❌' : '⚠️'} Meeting Response: ${responder.name || 'Participant'} ${responder.response} — ${meeting.title}`;
+          emailContext.responderName = responder.name || 'Unknown Participant';
+          emailContext.responseType = responder.response;
+          html = renderMeetingResponseHTML(emailContext);
+        } else {
+          throw new Error('Unsupported notification type');
+        }
+
+        const result = await sendViaResend(apiKey, from, recipient.email, subject, html);
+        return { to: recipient.email, timezone: recipient.timezone, success: true, id: result?.id ?? null };
       })
     );
 

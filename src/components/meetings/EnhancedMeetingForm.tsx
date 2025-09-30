@@ -12,9 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Users, Video, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import MeetingDateTimeSection from './MeetingDateTimeSection';
+import { TimezoneIndicator } from './TimezoneIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useUserTimezone } from '@/hooks/useUserTimezone';
 
 const meetingSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -40,6 +42,7 @@ const EnhancedMeetingForm: React.FC<EnhancedMeetingFormProps> = ({
   googleCalendarConnected = false,
 }) => {
   const { user } = useAuth();
+  const { userTimezone } = useUserTimezone();
   const [startTimeInput, setStartTimeInput] = useState('09:00');
   const [endTimeInput, setEndTimeInput] = useState('10:00');
 
@@ -150,30 +153,37 @@ const EnhancedMeetingForm: React.FC<EnhancedMeetingFormProps> = ({
               )}
             />
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <MeetingDateTimeSection
-                label="Start"
-                date={form.watch('start_date')}
-                onDateChange={(date) => form.setValue('start_date', date || new Date())}
-                timeInput={startTimeInput}
-                onTimeChange={(time) => {
-                  setStartTimeInput(time);
-                  form.setValue('start_time', time);
-                }}
-                required
-              />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Meeting Time</span>
+                <TimezoneIndicator showLabel={true} />
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <MeetingDateTimeSection
+                  label="Start"
+                  date={form.watch('start_date')}
+                  onDateChange={(date) => form.setValue('start_date', date || new Date())}
+                  timeInput={startTimeInput}
+                  onTimeChange={(time) => {
+                    setStartTimeInput(time);
+                    form.setValue('start_time', time);
+                  }}
+                  required
+                />
 
-              <MeetingDateTimeSection
-                label="End"
-                date={form.watch('end_date')}
-                onDateChange={(date) => form.setValue('end_date', date || new Date())}
-                timeInput={endTimeInput}
-                onTimeChange={(time) => {
-                  setEndTimeInput(time);
-                  form.setValue('end_time', time);
-                }}
-                required
-              />
+                <MeetingDateTimeSection
+                  label="End"
+                  date={form.watch('end_date')}
+                  onDateChange={(date) => form.setValue('end_date', date || new Date())}
+                  timeInput={endTimeInput}
+                  onTimeChange={(time) => {
+                    setEndTimeInput(time);
+                    form.setValue('end_time', time);
+                  }}
+                  required
+                />
+              </div>
             </div>
 
             <FormField

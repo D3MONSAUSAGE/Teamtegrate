@@ -177,33 +177,40 @@ export const createMeetingRequestAPI = async (params: CreateMeetingParams) => {
 
   await supabase.from('notifications').insert(notifications);
 
-  // Fetch organizer and participant details for email notification
+  // Fetch organizer and participant details for email notification with their timezones
   try {
     const { data: organizerData } = await supabase
       .from('users')
-      .select('id, email, name')
+      .select('id, email, name, timezone')
       .eq('id', user.id)
       .single();
 
     const { data: participantData } = await supabase
       .from('users')
-      .select('id, email, name')
+      .select('id, email, name, timezone')
       .in('id', participantIds);
 
     if (organizerData && participantData) {
-      // Send meeting invitation emails
+      console.log('📧 Preparing email with timezone info:', {
+        organizer: { email: organizerData.email, timezone: organizerData.timezone || 'UTC' },
+        participants: participantData.map(p => ({ email: p.email, timezone: p.timezone || 'UTC' }))
+      });
+
+      // Send meeting invitation emails with timezone information
       const emailPayload = {
         version: 'v1',
         type: 'created',
         organizer: {
           id: organizerData.id,
           email: organizerData.email,
-          name: organizerData.name
+          name: organizerData.name,
+          timezone: organizerData.timezone || timezone || 'UTC'
         },
         participants: participantData.map(p => ({
           id: p.id,
           email: p.email,
-          name: p.name
+          name: p.name,
+          timezone: p.timezone || 'UTC'
         })),
         meeting: {
           id: meeting.id,
