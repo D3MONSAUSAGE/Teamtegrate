@@ -155,7 +155,7 @@ export default function FinancePage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as FinanceTab)}>
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 lg:w-fit">
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:w-fit gap-2">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Analytics</span>
