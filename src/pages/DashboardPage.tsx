@@ -300,16 +300,17 @@ const DashboardPage = () => {
           </div>
           
           {/* Quick Actions and Stats Grid - Side by Side Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             {/* Quick Actions Panel - Takes 1/3 on desktop (LEFT) */}
-            <div className="lg:col-span-1 animate-fade-in delay-100">
+            <div className="lg:col-span-1 animate-fade-in delay-100 flex">
               <ModernSectionCard
                 title="Quick Actions"
                 subtitle="Fast access to common tasks"
                 icon={Target}
                 noPadding
+                className="w-full"
               >
-                <div className="p-6">
+                <div className="p-6 flex flex-col h-full">
                   <QuickActionsPanel
                     userRole={user?.role || 'user'}
                   />
@@ -318,13 +319,15 @@ const DashboardPage = () => {
             </div>
 
             {/* Interactive Stats Grid - Takes 2/3 on desktop (RIGHT) */}
-            <div className="lg:col-span-2 animate-fade-in delay-200">
-              <InteractiveStatsGrid 
-                dailyScore={personalDailyScore.percentage}
-                todaysTasks={todaysTasks}
-                upcomingTasks={upcomingTasks}
-                overdueTasks={overdueTasks}
-              />
+            <div className="lg:col-span-2 animate-fade-in delay-200 flex">
+              <div className="w-full">
+                <InteractiveStatsGrid 
+                  dailyScore={personalDailyScore.percentage}
+                  todaysTasks={todaysTasks}
+                  upcomingTasks={upcomingTasks}
+                  overdueTasks={overdueTasks}
+                />
+              </div>
             </div>
           </div>
 
