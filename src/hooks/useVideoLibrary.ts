@@ -225,6 +225,35 @@ export const useIncrementViewCount = () => {
   });
 };
 
+// Hook to update a video
+export const useUpdateVideo = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ videoId, videoData }: { 
+      videoId: string; 
+      videoData: Partial<Omit<VideoLibraryItem, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'organization_id' | 'view_count' | 'category'>> 
+    }) => {
+      if (!user?.organizationId) throw new Error('Organization ID not found');
+
+      const { data, error } = await supabase
+        .from('video_library_items')
+        .update(videoData)
+        .eq('id', videoId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['video-library-items'] });
+      queryClient.invalidateQueries({ queryKey: ['all-video-library-items'] });
+    },
+  });
+};
+
 // Hook to delete a video
 export const useDeleteVideo = () => {
   const queryClient = useQueryClient();

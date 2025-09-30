@@ -7,14 +7,16 @@ import { AddVideoDialog } from './AddVideoDialog';
 import { AddCategoryDialog } from './AddCategoryDialog';
 import { VideoPermissionsDialog } from './VideoPermissionsDialog';
 import { DeleteVideoDialog } from './DeleteVideoDialog';
+import { EditVideoDialog } from './EditVideoDialog';
 import { VideoLibraryItemCard } from './VideoLibraryItemCard';
 import { VideoLibraryCategoryCard } from './VideoLibraryCategoryCard';
-import { useAllVideoLibraryItems, useVideoLibraryCategories } from '@/hooks/useVideoLibrary';
+import { useAllVideoLibraryItems, useVideoLibraryCategories, VideoLibraryItem } from '@/hooks/useVideoLibrary';
 
 export const VideoLibraryManager: React.FC = () => {
   const [showAddVideo, setShowAddVideo] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [videoToEdit, setVideoToEdit] = useState<VideoLibraryItem | null>(null);
   const [videoToDelete, setVideoToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const { data: videos, isLoading: videosLoading } = useAllVideoLibraryItems();
@@ -22,6 +24,10 @@ export const VideoLibraryManager: React.FC = () => {
 
   const handleManagePermissions = (videoId: string) => {
     setSelectedVideo(videoId);
+  };
+
+  const handleEditVideo = (video: VideoLibraryItem) => {
+    setVideoToEdit(video);
   };
 
   const handleDeleteVideo = (videoId: string, videoTitle: string) => {
@@ -84,6 +90,7 @@ export const VideoLibraryManager: React.FC = () => {
                       key={video.id}
                       video={video}
                       onManagePermissions={handleManagePermissions}
+                      onEditVideo={handleEditVideo}
                       onDeleteVideo={handleDeleteVideo}
                       showManagement
                     />
@@ -164,6 +171,14 @@ export const VideoLibraryManager: React.FC = () => {
           videoId={selectedVideo}
           open={!!selectedVideo}
           onOpenChange={(open) => !open && setSelectedVideo(null)}
+        />
+      )}
+
+      {videoToEdit && (
+        <EditVideoDialog
+          video={videoToEdit}
+          open={!!videoToEdit}
+          onOpenChange={(open) => !open && setVideoToEdit(null)}
         />
       )}
 

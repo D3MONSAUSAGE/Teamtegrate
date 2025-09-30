@@ -2,13 +2,14 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Settings, Eye, Clock, Tag, Trash2 } from 'lucide-react';
+import { Play, Settings, Eye, Clock, Tag, Trash2, Pencil } from 'lucide-react';
 import { VideoLibraryItem } from '@/hooks/useVideoLibrary';
 
 interface VideoLibraryItemCardProps {
   video: VideoLibraryItem;
   onPlayVideo?: (videoId: string) => void;
   onManagePermissions?: (videoId: string) => void;
+  onEditVideo?: (video: VideoLibraryItem) => void;
   onDeleteVideo?: (videoId: string, videoTitle: string) => void;
   showManagement?: boolean;
 }
@@ -17,6 +18,7 @@ export const VideoLibraryItemCard: React.FC<VideoLibraryItemCardProps> = ({
   video,
   onPlayVideo,
   onManagePermissions,
+  onEditVideo,
   onDeleteVideo,
   showManagement = false,
 }) => {
@@ -89,6 +91,15 @@ export const VideoLibraryItemCard: React.FC<VideoLibraryItemCardProps> = ({
             >
               <Play className="h-3 w-3 mr-1" />
               Watch
+            </Button>
+          )}
+          {showManagement && onEditVideo && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEditVideo(video)}
+            >
+              <Pencil className="h-3 w-3" />
             </Button>
           )}
           {showManagement && onManagePermissions && (
