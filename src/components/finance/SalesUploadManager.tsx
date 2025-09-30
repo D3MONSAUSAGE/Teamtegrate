@@ -28,6 +28,7 @@ import { parseUniversalPDF } from '@/utils/universalPdfParser';
 import { salesDataService } from '@/services/SalesDataService';
 import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
+import ChannelSalesInput, { ChannelSalesEntry } from './ChannelSalesInput';
 
 interface SalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -57,6 +58,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
   const [pendingUpload, setPendingUpload] = useState<SalesData | null>(null);
+  const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -195,6 +197,16 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       setUploadProgress(90);
       
       if (parseResult.success && parseResult.data) {
+        // Add manual channel sales to destinations if provided
+        if (channelSales.length > 0) {
+          parseResult.data.destinations = channelSales.map(ch => ({
+            name: ch.channelName,
+            quantity: 0,
+            total: ch.amount,
+            percent: 0
+          }));
+        }
+        
         // Upload to database with replace flag
         await onUpload(parseResult.data, replaceExisting);
         
@@ -206,6 +218,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           setSalesDate(new Date());
           setTeamId(null);
           setFiles([]);
+          setChannelSales([]);
           setUploadProgress(0);
           setUploadStatus('idle');
           setIsDateExtracted(false);
@@ -244,6 +257,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         setSalesDate(new Date());
         setTeamId(null);
         setFiles([]);
+        setChannelSales([]);
         setIsDateExtracted(false);
         setExistingData(null);
         setPendingUpload(null);
@@ -360,6 +374,15 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Channel Sales Input */}
+      {teamId && (
+        <ChannelSalesInput
+          teamId={teamId}
+          value={channelSales}
+          onChange={setChannelSales}
+        />
+      )}
       
       {/* Upload Zone */}
       <Card>

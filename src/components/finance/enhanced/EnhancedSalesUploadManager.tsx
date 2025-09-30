@@ -33,6 +33,7 @@ import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { DataPreviewModal } from './DataPreviewModal';
 import { BatchProgressCard } from './BatchProgressCard';
+import ChannelSalesInput, { ChannelSalesEntry } from '../ChannelSalesInput';
 
 interface EnhancedSalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -67,6 +68,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   const [stagedData, setStagedData] = useState<StagedData[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
+  const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -232,6 +234,16 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           );
           
           if (result.success && result.data) {
+            // Add manual channel sales to destinations if provided
+            if (channelSales.length > 0) {
+              result.data.destinations = channelSales.map(ch => ({
+                name: ch.channelName,
+                quantity: 0,
+                total: ch.amount,
+                percent: 0
+              }));
+            }
+            
             // Stage the data for review
             const stagedId = await uploadBatchService.stageData(
               batchId,
@@ -361,6 +373,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     setBatchMode(false);
     setSalesDate(new Date());
     setTeamId(null);
+    setChannelSales([]);
   };
 
   const removeFile = (index: number) => {
@@ -452,6 +465,15 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           </Select>
         </div>
       </div>
+      
+      {/* Channel Sales Input */}
+      {teamId && (
+        <ChannelSalesInput
+          teamId={teamId}
+          value={channelSales}
+          onChange={setChannelSales}
+        />
+      )}
       
       {/* Upload Zone */}
       <Card>
