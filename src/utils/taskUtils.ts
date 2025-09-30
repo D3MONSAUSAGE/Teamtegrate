@@ -10,10 +10,16 @@ export const isTaskOverdue = (task: Task | null): boolean => {
   const now = new Date();
   const deadline = new Date(task.deadline);
   
+  // Normalize status to lowercase for case-insensitive comparison
+  const status = task.status?.toLowerCase();
+  
+  // Exclude both Completed and Archived statuses
+  const excludedStatuses = ['completed', 'archived'];
+  
   // A task is overdue if:
   // 1. The deadline is in the past (using full timestamp precision)
-  // 2. The task is not completed
-  return deadline < now && task.status !== 'Completed';
+  // 2. The task is not completed or archived
+  return deadline < now && !excludedStatuses.includes(status);
 };
 
 /**

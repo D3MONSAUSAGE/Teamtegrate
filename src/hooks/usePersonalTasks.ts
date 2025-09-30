@@ -1,14 +1,20 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthProvider';
 import { Task } from '@/types';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { requestManager } from '@/utils/requestManager';
 import { useTaskRealtime } from './useTaskRealtime';
 
 export const usePersonalTasks = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Force query invalidation when user context changes to ensure fresh data
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['personal-tasks'] });
+  }, [user?.organizationId, user?.id, queryClient]);
 
   // Add real-time subscription
   useTaskRealtime();

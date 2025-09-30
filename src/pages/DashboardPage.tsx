@@ -91,7 +91,46 @@ const DashboardPage = () => {
       return taskDate > today && taskDate <= nextWeek;
     }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
 
-    const overdueTasks = tasks.filter((task) => isTaskOverdue(task));
+    const overdueTasks = tasks.filter((task) => {
+      // Basic validation
+      if (!task || !task.deadline) return false;
+      
+      // Check if deadline has passed
+      const now = new Date();
+      const deadline = new Date(task.deadline);
+      if (deadline >= now) return false;
+      
+      // Case-insensitive status check
+      const status = task.status?.toLowerCase();
+      
+      // Explicitly exclude completed and archived
+      if (status === 'completed' || status === 'archived') return false;
+      
+      // Double-check with isTaskOverdue for consistency
+      return isTaskOverdue(task);
+    });
+    
+    // Temporary debugging - can be removed after fix is verified
+    console.log('=== OVERDUE TASKS DIAGNOSTIC ===');
+    console.log('Total tasks loaded:', tasks.length);
+    console.log('Filtered overdue count:', overdueTasks.length);
+    console.log('Status breakdown:', {
+      completed: tasks.filter(t => t.status?.toLowerCase() === 'completed').length,
+      'in progress': tasks.filter(t => t.status?.toLowerCase() === 'in progress').length,
+      'to do': tasks.filter(t => t.status?.toLowerCase() === 'to do').length,
+      archived: tasks.filter(t => t.status?.toLowerCase() === 'archived').length,
+      other: tasks.filter(t => {
+        const s = t.status?.toLowerCase();
+        return !['completed', 'in progress', 'to do', 'archived'].includes(s);
+      }).length
+    });
+    console.log('Sample of overdue tasks:', overdueTasks.slice(0, 3).map(t => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      deadline: t.deadline,
+      assignedTo: t.assignedToNames
+    })));
     
     const flatProjects = projects.map(project => ({
       id: project.id,
