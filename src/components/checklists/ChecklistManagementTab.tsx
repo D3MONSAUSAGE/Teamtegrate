@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useChecklists, useUpdateChecklistStatus, useDeleteChecklist } from '@/hooks/useChecklists';
+import { useChecklistTemplatesV2, useToggleTemplateStatus, useDeleteChecklistTemplateV2 } from '@/hooks/useChecklistTemplatesV2';
 import { ChecklistCreationDialog } from './ChecklistCreationDialog';
 import { ChecklistEditDialog } from './ChecklistEditDialog';
 import { Checklist } from '@/types/checklist';
@@ -23,52 +23,45 @@ export const ChecklistManagementTab: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingChecklistId, setDeletingChecklistId] = useState<string | null>(null);
 
-  const { data: checklists, isLoading } = useChecklists();
-  const updateStatus = useUpdateChecklistStatus();
-  const deleteChecklist = useDeleteChecklist();
+  const { data: templates, isLoading } = useChecklistTemplatesV2();
+  const toggleStatus = useToggleTemplateStatus();
+  const deleteTemplate = useDeleteChecklistTemplateV2();
 
-  const filteredChecklists = checklists?.filter(checklist => {
-    const matchesSearch = checklist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         checklist.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || checklist.status === statusFilter;
+  const filteredTemplates = templates?.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         template.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && template.is_active) ||
+      (statusFilter === 'inactive' && !template.is_active);
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusChange = (id: string, status: 'active' | 'inactive' | 'archived') => {
-    updateStatus.mutate({ id, status });
+  const handleToggleStatus = (id: string, currentStatus: boolean) => {
+    toggleStatus.mutate({ id, is_active: !currentStatus });
   };
 
-  const handleEditChecklist = (id: string) => {
+  const handleEditTemplate = (id: string) => {
     setEditingChecklistId(id);
     setEditDialogOpen(true);
   };
 
-  const handleDeleteChecklist = (id: string) => {
+  const handleDeleteTemplate = (id: string) => {
     setDeletingChecklistId(id);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteChecklist = () => {
+  const confirmDeleteTemplate = () => {
     if (deletingChecklistId) {
-      deleteChecklist.mutate(deletingChecklistId);
+      deleteTemplate.mutate(deletingChecklistId);
       setDeleteDialogOpen(false);
       setDeletingChecklistId(null);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'archived':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'draft':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  const getStatusColor = (isActive: boolean) => {
+    return isActive
+      ? 'bg-green-100 text-green-800 border-green-200'
+      : 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getPriorityColor = (priority: string) => {
@@ -132,25 +125,25 @@ export const ChecklistManagementTab: React.FC = () => {
 
       {/* Results Count */}
       <div className="text-sm text-muted-foreground">
-        Showing {filteredChecklists?.length || 0} of {checklists?.length || 0} checklists
+        Showing {filteredTemplates?.length || 0} of {templates?.length || 0} templates
       </div>
 
-      {/* Checklists Grid */}
+      {/* Templates Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredChecklists?.map((checklist) => (
-          <Card key={checklist.id} className="hover:shadow-md transition-shadow">
+        {filteredTemplates?.map((template) => (
+          <Card key={template.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg font-semibold mb-2">
-                    {checklist.name}
+                    {template.name}
                   </CardTitle>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className={getStatusColor(checklist.status)}>
-                      {checklist.status}
+                    <Badge className={getStatusColor(template.is_active)}>
+                      {template.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <Badge className={getPriorityColor(checklist.priority)}>
-                      {checklist.priority}
+                    <Badge className={getPriorityColor(template.priority)}>
+                      {template.priority}
                     </Badge>
                   </div>
                 </div>
@@ -162,31 +155,15 @@ export const ChecklistManagementTab: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditChecklist(checklist.id)}>
+                    <DropdownMenuItem onClick={() => handleEditTemplate(template.id)}>
                       <Edit className="mr-2 h-4 w-4" />
-                      Edit Checklist
+                      Edit Template
                     </DropdownMenuItem>
-                    {checklist.status === 'active' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(checklist.id, 'inactive')}
-                      >
-                        Deactivate
-                      </DropdownMenuItem>
-                    )}
-                    {checklist.status === 'inactive' && (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(checklist.id, 'active')}
-                      >
-                        Activate
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(checklist.id, 'archived')}
-                    >
-                      Archive
+                    <DropdownMenuItem onClick={() => handleToggleStatus(template.id, template.is_active)}>
+                      {template.is_active ? 'Deactivate' : 'Activate'}
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => handleDeleteChecklist(checklist.id)}
+                      onClick={() => handleDeleteTemplate(template.id)}
                       className="text-destructive"
                     >
                       Delete
@@ -197,9 +174,9 @@ export const ChecklistManagementTab: React.FC = () => {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {checklist.description && (
+              {template.description && (
                 <p className="text-sm text-muted-foreground line-clamp-2">
-                  {checklist.description}
+                  {template.description}
                 </p>
               )}
 
@@ -209,18 +186,16 @@ export const ChecklistManagementTab: React.FC = () => {
                   <span className="text-muted-foreground">Assignment:</span>
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
-                    <span className="capitalize">{checklist.assignment_type.replace('_', ' ')}</span>
+                    <span className="capitalize">{template.assignment_type}</span>
                   </div>
                 </div>
 
-                {checklist.execution_window_start && checklist.execution_window_end && (
+                {template.start_time && template.end_time && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Time Window:</span>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      <span>
-                        {checklist.execution_window_start} - {checklist.execution_window_end}
-                      </span>
+                      <span>{template.start_time} - {template.end_time}</span>
                     </div>
                   </div>
                 )}
@@ -229,37 +204,27 @@ export const ChecklistManagementTab: React.FC = () => {
                   <span className="text-muted-foreground">Verification:</span>
                   <div className="flex items-center gap-1">
                     <CheckCircle className="h-3 w-3" />
-                    <span>{checklist.verification_required ? 'Required' : 'Optional'}</span>
+                    <span>{template.require_verification ? 'Required' : 'Optional'}</span>
                   </div>
                 </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Created:</span>
-                    <span>{format(new Date(checklist.created_at), 'MMM d, yyyy')}</span>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Created:</span>
+                  <span>{format(new Date(template.created_at), 'MMM d, yyyy')}</span>
                 </div>
+              </div>
 
-                {/* Scheduled Days */}
-                {checklist.scheduled_days && checklist.scheduled_days.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-sm text-muted-foreground">Scheduled Days:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {checklist.scheduled_days.map(day => (
-                        <Badge key={day} variant="outline" className="text-xs capitalize">
-                          {day.slice(0, 3)}
-                        </Badge>
-                      ))}
-                    </div>
+              {/* Scheduled Days */}
+              {template.scheduled_days && template.scheduled_days.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-sm text-muted-foreground">Scheduled Days:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {template.scheduled_days.map(day => (
+                      <Badge key={day} variant="outline" className="text-xs capitalize">
+                        {day.slice(0, 3)}
+                      </Badge>
+                    ))}
                   </div>
-                )}
-
-              {/* Additional Info */}
-              {checklist.branch_area && (
-                <div className="flex items-center gap-2 text-xs">
-                  <Badge variant="outline">{checklist.branch_area}</Badge>
-                  {checklist.shift_type && (
-                    <Badge variant="outline">{checklist.shift_type}</Badge>
-                  )}
                 </div>
               )}
             </CardContent>
@@ -267,34 +232,34 @@ export const ChecklistManagementTab: React.FC = () => {
         ))}
       </div>
 
-      {filteredChecklists?.length === 0 && (
+      {filteredTemplates?.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No checklists found</h3>
+            <h3 className="text-lg font-semibold mb-2">No templates found</h3>
             <p className="text-muted-foreground mb-4">
               {searchTerm || statusFilter !== 'all' 
                 ? 'Try adjusting your search or filter criteria.'
-                : 'Create your first checklist to get started.'
+                : 'Create your first template to get started.'
               }
             </p>
             {!searchTerm && statusFilter === 'all' && (
               <Button onClick={() => setCreateDialogOpen(true)} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Create First Checklist
+                Create First Template
               </Button>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Create Checklist Dialog */}
+      {/* Create Template Dialog */}
       <ChecklistCreationDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
 
-      {/* Edit Checklist Dialog */}
+      {/* Edit Template Dialog */}
       <ChecklistEditDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
@@ -305,15 +270,15 @@ export const ChecklistManagementTab: React.FC = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Checklist</AlertDialogTitle>
+            <AlertDialogTitle>Delete Template</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this checklist? This action cannot be undone.
-              All associated data will be permanently removed.
+              Are you sure you want to delete this template? This action cannot be undone.
+              All associated instances will remain, but the template will be removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteChecklist} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={confirmDeleteTemplate} className="bg-destructive text-destructive-foreground">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
