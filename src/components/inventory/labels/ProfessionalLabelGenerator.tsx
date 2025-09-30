@@ -850,7 +850,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
     }
   };
 
-  const LabelForm = () => (
+  const renderLabelForm = () => (
     <div className="space-y-6">
       {/* Success Message */}
       <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -1214,192 +1214,298 @@ const ProfessionalLabelGenerator: React.FC = () => {
                     id="ingredients"
                     value={ingredients}
                     onChange={handleIngredientsChange}
-                    placeholder="List ingredients in descending order by weight (e.g., Water, Sugar, Salt...)"
-                    className="mt-1 h-20"
+                    placeholder="List ingredients in descending order by weight (e.g., Water, Wheat flour, Sugar, Salt...)"
+                    className="mt-1 min-h-[100px]"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    List in descending order by weight. Must comply with FDA labeling requirements.
+                  </p>
+                </div>
+              )}
+
+              {/* Serving Size & Calories */}
+              {templateFields.includes('nutrition') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="serving-size" className="text-sm font-medium">Serving Size</Label>
+                    <Input
+                      id="serving-size"
+                      value={servingSize}
+                      onChange={handleServingSizeChange}
+                      placeholder="e.g., 1 cup (240ml)"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="calories" className="text-sm font-medium">Calories</Label>
+                    <Input
+                      id="calories"
+                      type="number"
+                      value={calories}
+                      onChange={handleCaloriesChange}
+                      placeholder="e.g., 250"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Macronutrients Grid */}
+              {templateFields.includes('nutrition') && (
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Macronutrients</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="total-fat" className="text-sm font-medium">Total Fat (g)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="total-fat"
+                          type="number"
+                          step="0.1"
+                          value={totalFat}
+                          onChange={handleTotalFatChange}
+                          placeholder="e.g., 8"
+                        />
+                        {totalFat && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('totalFat', totalFat)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="saturated-fat" className="text-sm font-medium">Saturated Fat (g)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="saturated-fat"
+                          type="number"
+                          step="0.1"
+                          value={saturatedFat}
+                          onChange={handleSaturatedFatChange}
+                          placeholder="e.g., 3"
+                        />
+                        {saturatedFat && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('saturatedFat', saturatedFat)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="trans-fat" className="text-sm font-medium">Trans Fat (g)</Label>
+                      <Input
+                        id="trans-fat"
+                        type="number"
+                        step="0.1"
+                        value={transFat}
+                        onChange={handleTransFatChange}
+                        placeholder="e.g., 0"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cholesterol" className="text-sm font-medium">Cholesterol (mg)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="cholesterol"
+                          type="number"
+                          value={cholesterol}
+                          onChange={handleCholesterolChange}
+                          placeholder="e.g., 30"
+                        />
+                        {cholesterol && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('cholesterol', cholesterol)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="sodium" className="text-sm font-medium">Sodium (mg)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="sodium"
+                          type="number"
+                          value={sodium}
+                          onChange={handleSodiumChange}
+                          placeholder="e.g., 470"
+                        />
+                        {sodium && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('sodium', sodium)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="total-carbs" className="text-sm font-medium">Total Carbohydrates (g)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="total-carbs"
+                          type="number"
+                          step="0.1"
+                          value={totalCarbs}
+                          onChange={handleTotalCarbsChange}
+                          placeholder="e.g., 37"
+                        />
+                        {totalCarbs && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('totalCarbs', totalCarbs)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="dietary-fiber" className="text-sm font-medium">Dietary Fiber (g)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="dietary-fiber"
+                          type="number"
+                          step="0.1"
+                          value={dietaryFiber}
+                          onChange={handleDietaryFiberChange}
+                          placeholder="e.g., 4"
+                        />
+                        {dietaryFiber && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('dietaryFiber', dietaryFiber)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="total-sugars" className="text-sm font-medium">Total Sugars (g)</Label>
+                      <Input
+                        id="total-sugars"
+                        type="number"
+                        step="0.1"
+                        value={totalSugars}
+                        onChange={handleTotalSugarsChange}
+                        placeholder="e.g., 12"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="added-sugars" className="text-sm font-medium">Added Sugars (g)</Label>
+                      <Input
+                        id="added-sugars"
+                        type="number"
+                        step="0.1"
+                        value={addedSugars}
+                        onChange={handleAddedSugarsChange}
+                        placeholder="e.g., 10"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="protein" className="text-sm font-medium">Protein (g)</Label>
+                      <Input
+                        id="protein"
+                        type="number"
+                        step="0.1"
+                        value={protein}
+                        onChange={handleProteinChange}
+                        placeholder="e.g., 3"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Micronutrients Grid */}
+              {templateFields.includes('nutrition') && (
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Micronutrients</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="vitamin-d" className="text-sm font-medium">Vitamin D (mcg)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="vitamin-d"
+                          type="number"
+                          step="0.1"
+                          value={vitaminD}
+                          onChange={handleVitaminDChange}
+                          placeholder="e.g., 2"
+                        />
+                        {vitaminD && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('vitaminD', vitaminD)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="calcium" className="text-sm font-medium">Calcium (mg)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="calcium"
+                          type="number"
+                          value={calcium}
+                          onChange={handleCalciumChange}
+                          placeholder="e.g., 260"
+                        />
+                        {calcium && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('calcium', calcium)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="iron" className="text-sm font-medium">Iron (mg)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="iron"
+                          type="number"
+                          step="0.1"
+                          value={iron}
+                          onChange={handleIronChange}
+                          placeholder="e.g., 0.4"
+                        />
+                        {iron && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('iron', iron)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="potassium" className="text-sm font-medium">Potassium (mg)</Label>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Input
+                          id="potassium"
+                          type="number"
+                          value={potassium}
+                          onChange={handlePotassiumChange}
+                          placeholder="e.g., 240"
+                        />
+                        {potassium && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {calculateDailyValue('potassium', potassium)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Allergens */}
               {templateFields.includes('allergens') && (
                 <div>
-                  <Label htmlFor="allergens" className="text-sm font-medium">Allergen Information</Label>
+                  <Label htmlFor="allergens" className="text-sm font-medium">Allergens</Label>
                   <Input
                     id="allergens"
                     value={allergens}
                     onChange={handleAllergensChange}
-                    placeholder="e.g., Milk, Eggs, Peanuts, Tree Nuts"
+                    placeholder="e.g., MILK, SOY, WHEAT"
                     className="mt-1"
                   />
-                </div>
-              )}
-
-              {/* FDA Nutrition Facts */}
-              {templateFields.includes('nutrition') && (
-                <div>
-                  <Label className="text-sm font-medium">FDA-Compliant Nutrition Facts</Label>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <div>
-                      <Label htmlFor="serving-size" className="text-sm">Serving Size</Label>
-                      <Input
-                        id="serving-size"
-                        value={servingSize}
-                        onChange={handleServingSizeChange}
-                        placeholder="1 cup (240ml)"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="calories" className="text-sm">Calories</Label>
-                      <Input
-                        id="calories"
-                        value={calories}
-                        onChange={handleCaloriesChange}
-                        placeholder="150"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-fat" className="text-sm">Total Fat (g)</Label>
-                      <Input
-                        id="total-fat"
-                        value={totalFat}
-                        onChange={handleTotalFatChange}
-                        placeholder="5"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="saturated-fat" className="text-sm">Saturated Fat (g)</Label>
-                      <Input
-                        id="saturated-fat"
-                        value={saturatedFat}
-                        onChange={handleSaturatedFatChange}
-                        placeholder="2"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="trans-fat" className="text-sm">Trans Fat (g)</Label>
-                      <Input
-                        id="trans-fat"
-                        value={transFat}
-                        onChange={handleTransFatChange}
-                        placeholder="0"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cholesterol" className="text-sm">Cholesterol (mg)</Label>
-                      <Input
-                        id="cholesterol"
-                        value={cholesterol}
-                        onChange={handleCholesterolChange}
-                        placeholder="10"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="sodium" className="text-sm">Sodium (mg)</Label>
-                      <Input
-                        id="sodium"
-                        value={sodium}
-                        onChange={handleSodiumChange}
-                        placeholder="200"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-carbs" className="text-sm">Total Carbs (g)</Label>
-                      <Input
-                        id="total-carbs"
-                        value={totalCarbs}
-                        onChange={handleTotalCarbsChange}
-                        placeholder="30"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dietary-fiber" className="text-sm">Dietary Fiber (g)</Label>
-                      <Input
-                        id="dietary-fiber"
-                        value={dietaryFiber}
-                        onChange={handleDietaryFiberChange}
-                        placeholder="3"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="total-sugars" className="text-sm">Total Sugars (g)</Label>
-                      <Input
-                        id="total-sugars"
-                        value={totalSugars}
-                        onChange={handleTotalSugarsChange}
-                        placeholder="12"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="added-sugars" className="text-sm">Added Sugars (g)</Label>
-                      <Input
-                        id="added-sugars"
-                        value={addedSugars}
-                        onChange={handleAddedSugarsChange}
-                        placeholder="5"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="protein" className="text-sm">Protein (g)</Label>
-                      <Input
-                        id="protein"
-                        value={protein}
-                        onChange={handleProteinChange}
-                        placeholder="8"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="vitamin-d" className="text-sm">Vitamin D (mcg)</Label>
-                      <Input
-                        id="vitamin-d"
-                        value={vitaminD}
-                        onChange={handleVitaminDChange}
-                        placeholder="2"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="calcium" className="text-sm">Calcium (mg)</Label>
-                      <Input
-                        id="calcium"
-                        value={calcium}
-                        onChange={handleCalciumChange}
-                        placeholder="100"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="iron" className="text-sm">Iron (mg)</Label>
-                      <Input
-                        id="iron"
-                        value={iron}
-                        onChange={handleIronChange}
-                        placeholder="1"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="potassium" className="text-sm">Potassium (mg)</Label>
-                      <Input
-                        id="potassium"
-                        value={potassium}
-                        onChange={handlePotassiumChange}
-                        placeholder="300"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    List major allergens in CAPITAL LETTERS (Milk, Eggs, Fish, Shellfish, Tree nuts, Peanuts, Wheat, Soybeans)
+                  </p>
                 </div>
               )}
             </div>
@@ -1485,14 +1591,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 </DrawerDescription>
               </DrawerHeader>
               <div className="p-4 pb-8 max-h-[80vh] overflow-y-auto">
-                <LabelForm />
+                {renderLabelForm()}
               </div>
             </DrawerContent>
           </Drawer>
         </div>
       ) : (
         <div className="p-6">
-          <LabelForm />
+          {renderLabelForm()}
         </div>
       )}
     </div>
