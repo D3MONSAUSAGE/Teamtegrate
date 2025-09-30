@@ -19,6 +19,7 @@ interface BatchCountInterfaceProps {
   completedItems: number;
   totalItems: number;
   isLoading?: boolean;
+  isCompletingCount?: boolean;
 }
 
 export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
@@ -29,7 +30,8 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
   progress,
   completedItems,
   totalItems,
-  isLoading = false
+  isLoading = false,
+  isCompletingCount = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [localCounts, setLocalCounts] = useState<Record<string, string>>({});
@@ -246,11 +248,21 @@ export const BatchCountInterface: React.FC<BatchCountInterfaceProps> = ({
               </Button>
               <Button 
                 onClick={onCompleteCount}
-                disabled={completedItems === 0}
+                disabled={completedItems === 0 || isCompletingCount}
                 variant="default"
                 size="sm"
               >
-                Complete Count
+                {isCompletingCount ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Complete Count
+                  </>
+                )}
               </Button>
             </div>
           </div>

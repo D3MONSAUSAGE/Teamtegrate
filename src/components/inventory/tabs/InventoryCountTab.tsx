@@ -58,6 +58,7 @@ export const InventoryCountTab: React.FC = () => {
   const [loadingCountItems, setLoadingCountItems] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [countInterface, setCountInterface] = useState<CountInterface>('batch');
+  const [isCompletingCount, setIsCompletingCount] = useState(false);
   
 
   const activeCountRecord = counts.find(c => c.id === activeCount && c.status === 'in_progress');
@@ -272,8 +273,9 @@ export const InventoryCountTab: React.FC = () => {
   };
 
   const handleCompleteCount = async () => {
-    if (!activeCount) return;
+    if (!activeCount || isCompletingCount) return;
     
+    setIsCompletingCount(true);
     try {
       await completeInventoryCount(activeCount);
       setActiveCount(null);
@@ -291,6 +293,8 @@ export const InventoryCountTab: React.FC = () => {
         description: 'Failed to complete inventory count',
         variant: 'destructive',
       });
+    } finally {
+      setIsCompletingCount(false);
     }
   };
 
@@ -480,11 +484,20 @@ export const InventoryCountTab: React.FC = () => {
             <div className="flex flex-col gap-2 sm:flex-row mt-6">
               <Button 
                 onClick={handleCompleteCount}
-                disabled={completedItems === 0}
+                disabled={completedItems === 0 || isCompletingCount}
                 className="w-full sm:flex-1"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Complete Count
+                {isCompletingCount ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Complete Count
+                  </>
+                )}
               </Button>
               
               
@@ -571,6 +584,7 @@ export const InventoryCountTab: React.FC = () => {
           completedItems={completedItems}
           totalItems={totalItems}
           isLoading={loadingCountItems}
+          isCompletingCount={isCompletingCount}
         />
       )}
 
