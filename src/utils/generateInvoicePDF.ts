@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { CreatedInvoice } from '@/types/invoices';
 import { format } from 'date-fns';
 
@@ -61,7 +61,7 @@ export const generateInvoicePDF = (invoice: CreatedInvoice): void => {
     `$${item.total_price.toFixed(2)}`
   ]) || [];
   
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Description', 'Quantity', 'Unit Price', 'Total']],
     body: tableData,
     startY: yPos + 10,
@@ -80,7 +80,7 @@ export const generateInvoicePDF = (invoice: CreatedInvoice): void => {
   });
   
   // Calculate totals position
-  const finalY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 20 : yPos + 50;
+  const finalY = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : yPos + 50;
   
   // Totals section
   doc.setFontSize(12);
