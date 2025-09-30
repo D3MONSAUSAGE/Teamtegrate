@@ -307,8 +307,11 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
       }
 
       // Create sales transactions for revenue tracking
-      const transactionPromises = validItems.map(item => 
-        supabase.from('inventory_transactions').insert({
+      console.log('💰 Creating sales transactions for', validItems.length, 'items');
+      const transactionPromises = validItems.map(async item => {
+        console.log('💰 Creating sales transaction for:', item.name, 'qty:', item.quantity);
+        
+        const { data, error } = await supabase.from('inventory_transactions').insert({
           organization_id: user.organizationId,
           user_id: user.id,
           warehouse_id: warehouseId,
@@ -316,14 +319,23 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           transaction_type: 'out',
           quantity: -item.quantity,
           unit_cost: item.unit_price || item.sale_price || 0,
-          transaction_date: checkoutDate,
+          transaction_date: new Date(checkoutDate + 'T12:00:00').toISOString(),
           reference_number: reference ? `SALE-${reference}` : `SALE-CHECKOUT-${Date.now()}`,
           processed_by: user.id,
           notes: notes || 'Sales checkout'
-        })
-      );
+        }).select();
+        
+        if (error) {
+          console.error('❌ Failed to create transaction for', item.name, ':', error);
+          throw new Error(`Failed to record sale transaction: ${error.message}`);
+        }
+        
+        console.log('✅ Created sales transaction ID:', data?.[0]?.id);
+        return data;
+      });
 
       await Promise.all(transactionPromises);
+      console.log('✅ All sales transactions recorded successfully');
 
       let invoice = null;
 

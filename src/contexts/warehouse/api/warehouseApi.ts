@@ -242,6 +242,39 @@ export const warehouseApi = {
       }
 
       console.log('🏭 warehouseApi.receiveStock: Successfully received all', items.length, 'items');
+      
+      // Create incoming transaction records for audit trail
+      console.log('🏭 warehouseApi.receiveStock: Creating incoming transactions for audit trail');
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser) {
+        console.warn('⚠️ No authenticated user found for transaction tracking');
+      } else {
+        const transactionRecords = items.map(item => ({
+          organization_id: null, // Will be set by trigger
+          user_id: authUser.id,
+          warehouse_id: warehouseId,
+          item_id: item.item_id,
+          transaction_type: 'in',
+          quantity: item.quantity,
+          unit_cost: item.unit_cost || 0,
+          transaction_date: new Date().toISOString(),
+          reference_number: item.invoice_number || `RCPT-${Date.now()}`,
+          processed_by: authUser.id,
+          notes: item.notes || 'Warehouse stock receipt'
+        }));
+
+        const { error: txError } = await supabase
+          .from('inventory_transactions')
+          .insert(transactionRecords);
+        
+        if (txError) {
+          console.error('❌ Failed to create incoming transactions:', txError);
+        } else {
+          console.log('✅ Created', items.length, 'incoming transaction records');
+        }
+      }
+      
       return { 
         success: true, 
         message: `Successfully received ${items.length} items` 
