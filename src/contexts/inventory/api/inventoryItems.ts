@@ -21,6 +21,7 @@ export const inventoryItemsApi = {
         *,
         category:inventory_categories(*),
         base_unit:inventory_units(*),
+        vendor:vendors(*),
         teams:team_id(name)
       `)
       .eq('is_active', true)
@@ -83,6 +84,7 @@ export const inventoryItemsApi = {
         *,
         category:inventory_categories(*),
         base_unit:inventory_units(*),
+        vendor:vendors(*),
         teams:team_id(name)
       `)
       .single();
@@ -127,6 +129,7 @@ export const inventoryItemsApi = {
         *,
         category:inventory_categories(*),
         base_unit:inventory_units(*),
+        vendor:vendors(*),
         teams:team_id(name)
       `)
       .single();
@@ -170,6 +173,7 @@ export const inventoryItemsApi = {
         *,
         category:inventory_categories(*),
         base_unit:inventory_units(*),
+        vendor:vendors(*),
         teams:team_id(name)
       `)
       .eq('id', id)
@@ -201,6 +205,7 @@ export const inventoryItemsApi = {
         *,
         category:inventory_categories(*),
         base_unit:inventory_units(*),
+        vendor:vendors(*),
         teams:team_id(name)
       `)
       .eq('barcode', barcode.trim())
