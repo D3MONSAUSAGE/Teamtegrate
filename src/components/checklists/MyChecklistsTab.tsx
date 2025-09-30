@@ -207,8 +207,9 @@ export const MyChecklistsTab: React.FC = () => {
               <Card 
                 key={execution.id} 
                 className={cn(
-                  "hover:shadow-md transition-all duration-200 relative overflow-hidden",
-                  timeStatus?.isInWindow && "ring-2 ring-green-200 shadow-lg",
+                  "group hover:shadow-xl transition-all duration-300 relative overflow-hidden border-border/50",
+                  "hover:border-primary/20 hover:-translate-y-1",
+                  timeStatus?.isInWindow && "ring-2 ring-success/30 shadow-lg bg-gradient-to-br from-success/5 to-transparent",
                   !canStart && execution.status === 'pending' && "opacity-75"
                 )}
               >
@@ -216,21 +217,27 @@ export const MyChecklistsTab: React.FC = () => {
                 {timeStatus && timeStatus.status !== 'no-window' && (
                   <div 
                     className={cn(
-                      "absolute top-0 left-0 right-0 h-1",
-                      timeStatus.status === 'available' && "bg-green-500",
-                      timeStatus.status === 'upcoming' && "bg-blue-500", 
-                      timeStatus.status === 'expired' && "bg-red-500"
+                      "absolute top-0 left-0 right-0 h-1.5 transition-all duration-300",
+                      timeStatus.status === 'available' && "bg-gradient-to-r from-success to-success/70",
+                      timeStatus.status === 'upcoming' && "bg-gradient-to-r from-primary to-primary/70", 
+                      timeStatus.status === 'expired' && "bg-gradient-to-r from-destructive to-destructive/70"
                     )}
                   />
                 )}
                 
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold truncate">
+                    <CardTitle className="text-lg font-semibold truncate group-hover:text-primary transition-colors">
                       {execution.checklist?.name}
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                      <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
+                      <Badge 
+                        variant="outline"
+                        className={cn(
+                          "transition-all duration-200 shadow-sm",
+                          getPriorityColor(execution.checklist?.priority || 'medium')
+                        )}
+                      >
                         {execution.checklist?.priority}
                       </Badge>
                       {!canStart && execution.status === 'pending' && (
@@ -240,7 +247,7 @@ export const MyChecklistsTab: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     {getStatusIcon(execution.status)}
-                    <span className="capitalize">{execution.status.replace('_', ' ')}</span>
+                    <span className="capitalize font-medium">{execution.status.replace('_', ' ')}</span>
                   </div>
                 </CardHeader>
               
@@ -271,11 +278,11 @@ export const MyChecklistsTab: React.FC = () => {
 
                   {/* Progress Bar */}
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Progress</span>
-                      <span>{execution.execution_score}%</span>
+                    <div className="flex justify-between text-sm font-medium">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="text-primary">{execution.execution_score}%</span>
                     </div>
-                    <Progress value={execution.execution_score} className="h-2" />
+                    <Progress value={execution.execution_score} className="h-2.5 bg-muted" />
                   </div>
 
                   {/* Enhanced Timing Info */}
@@ -322,23 +329,39 @@ export const MyChecklistsTab: React.FC = () => {
                   <Button
                     onClick={() => handleStartExecution(execution)}
                     className={cn(
-                      "w-full transition-all duration-200",
-                      timeStatus?.isInWindow && execution.status === 'pending' && "shadow-md hover:shadow-lg"
+                      "w-full transition-all duration-300 font-medium",
+                      timeStatus?.isInWindow && execution.status === 'pending' && "shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-primary/90",
+                      execution.status === 'in_progress' && "bg-gradient-to-r from-accent to-accent/90"
                     )}
                     variant={execution.status === 'pending' && canStart ? 'default' : 'outline'}
                     disabled={execution.status === 'verified' || (execution.status === 'pending' && !canStart)}
                     title={!canStart ? reason : undefined}
                   >
-                    {execution.status === 'pending' && canStart && 'Start Checklist'}
+                    {execution.status === 'pending' && canStart && (
+                      <span className="flex items-center gap-2">
+                        <Play className="h-4 w-4" />
+                        Start Checklist
+                      </span>
+                    )}
                     {execution.status === 'pending' && !canStart && (
                       <span className="flex items-center gap-2">
                         <Lock className="h-4 w-4" />
                         {timeStatus?.status === 'upcoming' ? 'Not Available Yet' : 'Time Expired'}
                       </span>
                     )}
-                    {execution.status === 'in_progress' && 'Continue'}
+                    {execution.status === 'in_progress' && (
+                      <span className="flex items-center gap-2">
+                        <Play className="h-4 w-4" />
+                        Continue
+                      </span>
+                    )}
                     {execution.status === 'completed' && 'Review'}
-                    {execution.status === 'verified' && 'Verified ✓'}
+                    {execution.status === 'verified' && (
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Verified
+                      </span>
+                    )}
                   </Button>
 
                   {/* Time restriction message */}

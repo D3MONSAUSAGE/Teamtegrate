@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Search, Filter, Edit, MoreVertical, Users, Clock, CheckCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export const ChecklistManagementTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,18 +132,33 @@ export const ChecklistManagementTab: React.FC = () => {
       {/* Templates Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredTemplates?.map((template) => (
-          <Card key={template.id} className="hover:shadow-md transition-shadow">
+          <Card 
+            key={template.id} 
+            className="group hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/20 hover:-translate-y-1"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-lg font-semibold mb-2">
+                  <CardTitle className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
                     {template.name}
                   </CardTitle>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className={getStatusColor(template.is_active)}>
+                    <Badge 
+                      variant="outline"
+                      className={cn(
+                        "shadow-sm transition-all duration-200",
+                        getStatusColor(template.is_active)
+                      )}
+                    >
                       {template.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <Badge className={getPriorityColor(template.priority)}>
+                    <Badge 
+                      variant="outline"
+                      className={cn(
+                        "shadow-sm transition-all duration-200",
+                        getPriorityColor(template.priority)
+                      )}
+                    >
                       {template.priority}
                     </Badge>
                   </div>

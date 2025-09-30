@@ -6,6 +6,7 @@ import { MyChecklistsTab } from '@/components/checklists/MyChecklistsTab';
 import { ChecklistHistoryTab } from '@/components/checklists/ChecklistHistoryTab';
 import { ChecklistManagementTab } from '@/components/checklists/ChecklistManagementTab';
 import ChecklistTeamReportsTab from '@/components/checklists/ChecklistTeamReportsTab';
+import ModernChecklistHeader from '@/components/checklists/ModernChecklistHeader';
 import { ClipboardList, History, Settings, BarChart3 } from 'lucide-react';
 
 const ChecklistsPage: React.FC = () => {
@@ -16,34 +17,41 @@ const ChecklistsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <ClipboardList className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Checklists</h1>
-          <p className="text-muted-foreground">
-            Manage daily tasks, track completion, and ensure quality standards
-          </p>
-        </div>
-      </div>
+      <ModernChecklistHeader
+        title="Checklists"
+        subtitle="Manage daily tasks, track completion, and ensure quality standards"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${canManage ? 'grid-cols-4' : 'grid-cols-2'}`}>
-          <TabsTrigger value="my-checklists" className="flex items-center gap-2">
+        <TabsList className={`grid w-full ${canManage ? 'grid-cols-4' : 'grid-cols-2'} bg-muted/50 p-1`}>
+          <TabsTrigger 
+            value="my-checklists" 
+            className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <ClipboardList className="h-4 w-4" />
             My Checklists
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="history" 
+            className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
             <History className="h-4 w-4" />
             History
           </TabsTrigger>
           {canManage && (
-            <TabsTrigger value="team-reports" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="team-reports" 
+              className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
               <BarChart3 className="h-4 w-4" />
               Team Reports
             </TabsTrigger>
           )}
           {canManage && (
-            <TabsTrigger value="management" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="management" 
+              className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
               <Settings className="h-4 w-4" />
               Management
             </TabsTrigger>
