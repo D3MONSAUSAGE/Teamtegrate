@@ -394,7 +394,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
           </DrawerTrigger>
         )}
         <DrawerContent className="max-h-[90vh]">
-          <div className="mx-auto w-full max-w-6xl flex flex-col h-full">
+          <div className="mx-auto w-full max-w-6xl flex flex-col">
             <DrawerHeader className="flex-shrink-0">
               <DrawerTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
