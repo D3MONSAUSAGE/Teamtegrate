@@ -11,6 +11,7 @@ interface LabelPreviewProps {
   netWeight: string;
   logoPreview: string;
   lotCode: string;
+  expirationDate: string;
   servingSize: string;
   calories: string;
   ingredients: string;
@@ -24,6 +25,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
   netWeight,
   logoPreview,
   lotCode,
+  expirationDate,
   servingSize,
   calories,
   ingredients,
@@ -82,10 +84,15 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
             <span>DATE: {new Date().toLocaleDateString()}</span>
           </div>
 
-          {/* Lot Code */}
-          {lotCode && (
-            <div className="text-[8px] font-bold mb-2">LOT: {lotCode}</div>
-          )}
+          {/* Lot Code and Expiration */}
+          <div className="flex justify-between items-center mb-2 text-[8px]">
+            {lotCode && (
+              <span className="font-bold">LOT: {lotCode}</span>
+            )}
+            {expirationDate && (
+              <span className="font-bold">EXP: {expirationDate}</span>
+            )}
+          </div>
 
           {/* Barcode Placeholder */}
           <div className="bg-black h-6 mb-2 flex items-center justify-center text-white text-[6px]">
@@ -118,13 +125,13 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
             </div>
           )}
 
-          {/* Allergens */}
-          {allergens && (
-            <div className="mb-1">
-              <div className="text-[6px] font-bold">CONTAINS:</div>
-              <div className="text-[6px]">{allergens}</div>
+          {/* Allergens - Always show for FDA compliance */}
+          <div className="mb-1">
+            <div className="text-[6px] font-bold">CONTAINS:</div>
+            <div className="text-[6px]">
+              {allergens || '(To be filled as applicable)'}
             </div>
-          )}
+          </div>
 
           {/* Footer indicator */}
           <div className="text-center mt-2">

@@ -36,6 +36,7 @@ interface SavedTemplate {
   logoData?: string;
   ingredients: string;
   servingSize: string;
+  servingsPerContainer: string;
   calories: string;
   totalFat: string;
   saturatedFat: string;
@@ -52,6 +53,7 @@ interface SavedTemplate {
   iron: string;
   potassium: string;
   allergens: string;
+  expirationDate: string;
   createdAt: string;
 }
 
@@ -94,6 +96,8 @@ const ProfessionalLabelGenerator: React.FC = () => {
   const [companyAddress, setCompanyAddress] = useState('123 Main St, City, State 12345');
   const [netWeight, setNetWeight] = useState('');
   const [lotCode, setLotCode] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
+  const [servingsPerContainer, setServingsPerContainer] = useState('');
   
   // Logo state
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -361,6 +365,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
     setTemplateName(e.target.value);
   }, []);
 
+  const handleExpirationDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setExpirationDate(e.target.value);
+  }, []);
+
+  const handleServingsPerContainerChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setServingsPerContainer(e.target.value);
+  }, []);
+
   // Save template to localStorage
   const saveTemplate = useCallback(() => {
     if (!templateName.trim()) {
@@ -377,6 +389,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       logoData,
       ingredients,
       servingSize,
+      servingsPerContainer,
       calories,
       totalFat,
       saturatedFat,
@@ -393,6 +406,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       iron,
       potassium,
       allergens,
+      expirationDate,
       createdAt: new Date().toISOString()
     };
 
@@ -427,6 +441,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       
       setIngredients(template.ingredients);
       setServingSize(template.servingSize);
+      setServingsPerContainer(template.servingsPerContainer || '');
       setCalories(template.calories);
       setTotalFat(template.totalFat);
       setSaturatedFat(template.saturatedFat || '');
@@ -443,6 +458,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
       setIron(template.iron || '');
       setPotassium(template.potassium || '');
       setAllergens(template.allergens);
+      setExpirationDate(template.expirationDate || '');
       toast.success(`Template "${template.name}" loaded!`);
     }
   }, [savedTemplates]);
@@ -615,6 +631,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
       pdf.text(`DATE: ${currentDate}`, 3.8, y, { align: 'right' });
       y += 0.2;
 
+      // Expiration Date (if provided)
+      if (expirationDate && expirationDate.trim()) {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`EXP: ${expirationDate}`, 3.8, y, { align: 'right' });
+        y += 0.2;
+      }
+
       // LOT Code (if included)
       if (template.fields.includes('lot') && lotCode) {
         pdf.setFontSize(10);
@@ -648,10 +672,10 @@ const ProfessionalLabelGenerator: React.FC = () => {
         console.log('[PDF_NUTRITION] Starting compact two-column nutrition facts table generation');
         
         // Nutrition Facts header
-        pdf.setFontSize(12); // Slightly smaller
+        pdf.setFontSize(14); // Increased from 12 for FDA compliance
         pdf.setFont('helvetica', 'bold');
         pdf.text('Nutrition Facts', 0.2, y + 0.1);
-        y += 0.2; // Reduced spacing
+        y += 0.25; // Increased spacing for prominence
 
         // Main nutrition facts box with borders
         const boxWidth = 3.6;
@@ -660,17 +684,25 @@ const ProfessionalLabelGenerator: React.FC = () => {
         const rightColX = 2.1; // Split at ~55%
         const rightColWidth = 1.5;
         
-        pdf.setLineWidth(0.02);
+        pdf.setLineWidth(0.03); // Thicker border for FDA compliance
+        
+        // Servings per container (if provided)
+        if (servingsPerContainer) {
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`Servings per container: ${servingsPerContainer}`, leftColX, y + 0.1);
+          y += 0.15;
+        }
         
         // Serving size section (compact)
         if (servingSize) {
           pdf.setFontSize(8); // Smaller text
           pdf.setFont('helvetica', 'normal');
-          pdf.text(`Serving: ${servingSize}`, leftColX, y + 0.1);
+          pdf.text(`Serving size: ${servingSize}`, leftColX, y + 0.1);
           y += 0.15; // Reduced spacing
           
-          // Line under serving size
-          pdf.setLineWidth(0.01);
+          // Thick line under serving size
+          pdf.setLineWidth(0.03);
           pdf.line(0.2, y, 3.8, y);
           y += 0.06;
         }
@@ -811,29 +843,36 @@ const ProfessionalLabelGenerator: React.FC = () => {
         y += (ingredientLines.length * 0.09) + 0.1;
       }
 
-      // Allergens (if included)
-      if (template.fields.includes('allergens') && allergens.trim()) {
+      // Allergens - Always show "CONTAINS:" section for FDA compliance
+      if (template.fields.includes('allergens')) {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('CONTAINS:', 0.2, y);
         y += 0.12;
         
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(allergens.toUpperCase(), 0.2, y);
+        if (allergens.trim()) {
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(allergens.toUpperCase(), 0.2, y);
+        } else {
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text('(To be filled as applicable)', 0.2, y);
+        }
         y += 0.15;
       }
 
-      // Company footer with address (if included)
+      // FDA-compliant footer with distributor info
       if (template.fields.includes('address') && companyAddress.trim()) {
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Distributed by: ${companyName}`, 2, 5.7, { align: 'center' });
+        pdf.text(`Distributed by ${companyName}`, 2, 5.7, { align: 'center' });
+        pdf.setFontSize(6);
         pdf.text(companyAddress, 2, 5.85, { align: 'center' });
       } else {
         pdf.setFontSize(6);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Generated by ${companyName} - ${new Date().toLocaleDateString()}`, 2, 5.85, { align: 'center' });
+        pdf.text(`Distributed by ${companyName}`, 2, 5.85, { align: 'center' });
       }
 
       // Save PDF
@@ -1087,6 +1126,17 @@ const ProfessionalLabelGenerator: React.FC = () => {
                   </code>
                 </div>
               </div>
+              <div>
+                <Label htmlFor="expiration-date" className="text-sm font-medium">Expiration Date</Label>
+                <Input
+                  id="expiration-date"
+                  type="date"
+                  value={expirationDate}
+                  onChange={handleExpirationDateChange}
+                  placeholder="MM/DD/YYYY"
+                  className="mt-1"
+                />
+              </div>
               <div className="col-span-full">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
@@ -1223,9 +1273,23 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 </div>
               )}
 
-              {/* Serving Size & Calories */}
+              {/* Serving Size, Servings Per Container & Calories */}
               {templateFields.includes('nutrition') && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="servings-per-container" className="text-sm font-medium">Servings Per Container</Label>
+                    <Input
+                      id="servings-per-container"
+                      type="number"
+                      value={servingsPerContainer}
+                      onChange={handleServingsPerContainerChange}
+                      placeholder="e.g., 8"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Required for FDA compliance
+                    </p>
+                  </div>
                   <div>
                     <Label htmlFor="serving-size" className="text-sm font-medium">Serving Size</Label>
                     <Input
@@ -1552,6 +1616,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
               netWeight={netWeight}
               logoPreview={logoPreview}
               lotCode={lotCode}
+              expirationDate={expirationDate}
               servingSize={servingSize}
               calories={calories}
               ingredients={ingredients}
