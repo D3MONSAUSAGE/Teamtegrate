@@ -71,7 +71,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
   const [checkoutDate, setCheckoutDate] = useState(new Date().toISOString().split('T')[0]);
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
-  const [createInvoice, setCreateInvoice] = useState(false);
+  const [createInvoice, setCreateInvoice] = useState(true);
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
   const [taxRate, setTaxRate] = useState(0);
@@ -319,7 +319,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
         invoice = await invoiceService.createInvoice({
           client: selectedClient,
           lineItems,
-          notes: notes + (reference ? ` | Reference: ${reference}` : ''),
+          notes: `Sale: ${notes || 'Inventory checkout'}` + (reference ? ` | Reference: ${reference}` : ''),
           payment_terms: paymentTerms,
           tax_rate: taxRate,
           transaction_reference: `Warehouse checkout: ${warehouseId}`,
@@ -358,7 +358,7 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
     setCheckoutDate(new Date().toISOString().split('T')[0]);
     setReference('');
     setNotes('');
-    setCreateInvoice(false);
+    setCreateInvoice(true);
     setSelectedClient(null);
     setPaymentTerms('Net 30');
     setTaxRate(0);

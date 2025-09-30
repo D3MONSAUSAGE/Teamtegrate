@@ -122,8 +122,7 @@ export const invoiceService = {
           line_items:invoice_line_items(*)
         `)
         .eq('organization_id', organizationId)
-        .not('notes', 'is', null)
-        .ilike('notes', '%sale%');
+        .or('transaction_reference.ilike.%checkout%,notes.ilike.%sale%');
 
       if (teamId) {
         query = query.eq('team_id', teamId);
