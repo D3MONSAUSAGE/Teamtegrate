@@ -580,7 +580,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
           
           // Larger logo to better utilize top space
           const logoSize = 1.0; // Increased from 0.6 to 1.0
-          const logoX = 0.15; // Moved left to center better
+          const logoX = 1.5; // Center logo on 4-inch label (2" center - 0.5" logo half-width)
           const logoY = y;
           
           // Add logo with better error handling
