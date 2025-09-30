@@ -55,6 +55,12 @@ interface SavedTemplate {
   allergens: string;
   expirationDate: string;
   createdAt: string;
+  // Product-specific fields
+  productName?: string;
+  sku?: string;
+  lotCode?: string;
+  barcodeValue?: string;
+  selectedItemId?: string;
 }
 
 const LABEL_TEMPLATES: LabelTemplate[] = [
@@ -407,7 +413,13 @@ const ProfessionalLabelGenerator: React.FC = () => {
       potassium,
       allergens,
       expirationDate,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Save product-specific fields
+      productName: selectedItem?.name,
+      sku: selectedItem?.sku,
+      lotCode: lotCode,
+      barcodeValue: selectedItem?.barcode || selectedItem?.sku,
+      selectedItemId: selectedItem?.id
     };
 
     try {
@@ -420,16 +432,18 @@ const ProfessionalLabelGenerator: React.FC = () => {
       console.error('Failed to save template:', error);
       toast.error('Failed to save template');
     }
-  }, [templateName, companyName, companyAddress, netWeight, logoData, ingredients, servingSize, calories, totalFat, saturatedFat, transFat, cholesterol, sodium, totalCarbs, dietaryFiber, totalSugars, addedSugars, protein, vitaminD, calcium, iron, potassium, allergens, savedTemplates]);
+  }, [templateName, companyName, companyAddress, netWeight, logoData, ingredients, servingSize, calories, totalFat, saturatedFat, transFat, cholesterol, sodium, totalCarbs, dietaryFiber, totalSugars, addedSugars, protein, vitaminD, calcium, iron, potassium, allergens, savedTemplates, selectedItem, lotCode]);
 
   // Load a saved template
   const loadTemplate = useCallback((templateId: string) => {
     const template = savedTemplates.find(t => t.id === templateId);
     if (template) {
+      // Load company info
       setCompanyName(template.companyName);
       setCompanyAddress(template.companyAddress || '123 Main St, City, State 12345');
       setNetWeight(template.netWeight || '');
       
+      // Load logo
       if (template.logoData) {
         setLogoData(template.logoData);
         setLogoPreview(template.logoData);
@@ -439,6 +453,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
         setLogoFile(null);
       }
       
+      // Load nutritional info
       setIngredients(template.ingredients);
       setServingSize(template.servingSize);
       setServingsPerContainer(template.servingsPerContainer || '');
@@ -459,9 +474,26 @@ const ProfessionalLabelGenerator: React.FC = () => {
       setPotassium(template.potassium || '');
       setAllergens(template.allergens);
       setExpirationDate(template.expirationDate || '');
-      toast.success(`Template "${template.name}" loaded!`);
+      
+      // Load product-specific fields if available (backward compatibility)
+      if (template.selectedItemId) {
+        // Try to select the original item if it still exists
+        const originalItem = items.find(item => item.id === template.selectedItemId);
+        if (originalItem) {
+          setSelectedItemId(template.selectedItemId);
+        }
+      }
+      
+      // Generate a NEW lot number (don't reuse the old one)
+      const companyPrefix = template.companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+      const newLotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
+      setLotCode(newLotNumber);
+      
+      toast.success(`Template "${template.name}" loaded with new lot number!`, {
+        description: `New lot: ${newLotNumber}`
+      });
     }
-  }, [savedTemplates]);
+  }, [savedTemplates, items]);
 
   // Delete a saved template
   const deleteTemplate = useCallback((templateId: string) => {

@@ -49,11 +49,11 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({
           {/* Header Section */}
           <div className="text-center mb-3">
             {logoPreview && (
-              <div className="mb-2">
+              <div className="mb-2 flex justify-center">
                 <img 
                   src={logoPreview} 
                   alt="Company logo" 
-                  className="h-12 w-12 mx-auto object-contain rounded"
+                  className="h-12 w-12 object-contain rounded"
                 />
               </div>
             )}
