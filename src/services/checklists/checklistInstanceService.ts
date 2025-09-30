@@ -247,6 +247,27 @@ class ChecklistInstanceService {
       throw new Error('Checklist instance not found');
     }
 
+    // CRITICAL SECURITY: Verify actor has manager/admin role
+    const { data: actorUser, error: userError } = await supabase
+      .from('users')
+      .select('role, organization_id')
+      .eq('id', params.actor.id)
+      .single();
+
+    if (userError || !actorUser) {
+      throw new Error('Unable to verify user permissions');
+    }
+
+    const allowedRoles = ['manager', 'admin', 'superadmin'];
+    if (!allowedRoles.includes(actorUser.role)) {
+      throw new Error('Only managers and admins can verify checklists');
+    }
+
+    // Verify user is in the same organization
+    if (actorUser.organization_id !== instance.org_id) {
+      throw new Error('Cannot verify checklists from another organization');
+    }
+
     // Update verification status
     for (const item of params.items) {
       await supabase
