@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useChecklist } from '@/hooks/useChecklists';
+import { useChecklistTemplateV2 } from '@/hooks/useChecklistTemplatesV2';
 import { ChecklistCreationDialog } from './ChecklistCreationDialog';
 import { Checklist } from '@/types/checklist';
 
@@ -15,20 +15,20 @@ export const ChecklistEditDialog: React.FC<ChecklistEditDialogProps> = ({
   checklistId,
 }) => {
   const [editingChecklist, setEditingChecklist] = useState<Checklist | null>(null);
-  const { data: checklist, isLoading } = useChecklist(checklistId || '');
+  const { data: template, isLoading } = useChecklistTemplateV2(checklistId);
 
   useEffect(() => {
-    if (checklist && open) {
-      // Transform the checklist data to match expected format
-      const transformedChecklist = {
-        ...checklist,
-        scheduled_days: Array.isArray(checklist.scheduled_days) 
-          ? checklist.scheduled_days 
-          : JSON.parse(checklist.scheduled_days as string) || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+    if (template && open) {
+      // Transform to match expected format
+      const transformedTemplate = {
+        ...template,
+        scheduled_days: Array.isArray(template.scheduled_days) 
+          ? template.scheduled_days 
+          : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
       };
-      setEditingChecklist(transformedChecklist);
+      setEditingChecklist(transformedTemplate as any);
     }
-  }, [checklist, open]);
+  }, [template, open]);
 
   if (isLoading || !editingChecklist) {
     return null;

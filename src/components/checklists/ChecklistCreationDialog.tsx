@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { useCreateChecklist, useUpdateChecklist } from '@/hooks/useChecklists';
+import { useCreateChecklistTemplateV2, useUpdateChecklistTemplateV2, ChecklistTemplateFormData } from '@/hooks/useChecklistTemplatesV2';
 import { ChecklistFormData, ChecklistPriority, AssignmentType, Checklist } from '@/types/checklist';
 import { useUsers } from '@/hooks/useUsers';
 import { useTeams } from '@/hooks/useTeams';
@@ -107,8 +107,8 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
     verification_required: true,
   });
 
-  const createChecklist = useCreateChecklist();
-  const updateChecklist = useUpdateChecklist();
+  const createTemplate = useCreateChecklistTemplateV2();
+  const updateTemplate = useUpdateChecklistTemplateV2();
   const { users } = useUsers();
   const { teams } = useTeams();
 
@@ -177,10 +177,32 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
     if (formData.items.length === 0) return;
 
     try {
+      // Transform V1 format to V2 format
+      const v2FormData = {
+        name: formData.name,
+        description: formData.description,
+        priority: formData.priority as 'low' | 'medium' | 'high' | 'critical',
+        assignment_type: 'team' as const,
+        team_id: formData.assignments[0]?.type === 'team' ? formData.assignments[0].id : undefined,
+        role_key: formData.assignments[0]?.type === 'role' ? formData.assignments[0].id : undefined,
+        start_time: formData.execution_window_start,
+        end_time: formData.execution_window_end,
+        scheduled_days: formData.scheduled_days,
+        require_verification: formData.verification_required,
+        scoring_enabled: formData.scoring_enabled,
+        items: formData.items.map((item, index) => ({
+          label: item.title,
+          instructions: item.description,
+          position: index,
+          requires_photo: false,
+          requires_note: false,
+        })),
+      };
+
       if (editingChecklist) {
-        await updateChecklist.mutateAsync({ id: editingChecklist.id, data: formData });
+        await updateTemplate.mutateAsync({ id: editingChecklist.id, formData: v2FormData });
       } else {
-        await createChecklist.mutateAsync(formData);
+        await createTemplate.mutateAsync(v2FormData);
       }
       onOpenChange(false);
       // Reset form
@@ -628,11 +650,11 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!formData.name.trim() || formData.items.length === 0 || createChecklist.isPending || updateChecklist.isPending}
+            disabled={!formData.name.trim() || formData.items.length === 0 || createTemplate.isPending || updateTemplate.isPending}
           >
-            {createChecklist.isPending || updateChecklist.isPending 
+            {createTemplate.isPending || updateTemplate.isPending 
               ? (editingChecklist ? 'Updating...' : 'Creating...') 
-              : (editingChecklist ? 'Update Checklist' : 'Create Checklist')
+              : (editingChecklist ? 'Update Template' : 'Create Template')
             }
           </Button>
           </div>
