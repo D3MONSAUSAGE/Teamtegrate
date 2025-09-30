@@ -145,7 +145,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
       };
     }
 
-    const totalItems = items.length;
+    const totalItems = items.reduce((sum, item) => sum + Number(item.on_hand), 0);
     const totalSKUs = items.filter(item => item.item?.sku).length;
     const totalBarcodes = items.filter(item => item.item?.barcode).length;
     const totalStockValue = items.reduce((sum, item) => {
