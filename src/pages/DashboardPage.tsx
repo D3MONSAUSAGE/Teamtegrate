@@ -299,30 +299,33 @@ const DashboardPage = () => {
             />
           </div>
           
-          {/* Interactive Stats Grid */}
-          <div className="animate-fade-in delay-100">
-            <InteractiveStatsGrid 
-              dailyScore={personalDailyScore.percentage}
-              todaysTasks={todaysTasks}
-              upcomingTasks={upcomingTasks}
-              overdueTasks={overdueTasks}
-            />
-          </div>
+          {/* Stats Grid and Quick Actions - Side by Side Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Interactive Stats Grid - Takes 2/3 on desktop */}
+            <div className="lg:col-span-2 animate-fade-in delay-100">
+              <InteractiveStatsGrid 
+                dailyScore={personalDailyScore.percentage}
+                todaysTasks={todaysTasks}
+                upcomingTasks={upcomingTasks}
+                overdueTasks={overdueTasks}
+              />
+            </div>
 
-          {/* Quick Actions Panel */}
-          <div className="animate-fade-in delay-200">
-            <ModernSectionCard
-              title="Quick Actions"
-              subtitle="Fast access to common tasks"
-              icon={Target}
-              noPadding
-            >
-              <div className="p-6">
-                <QuickActionsPanel
-                  userRole={user?.role || 'user'}
-                />
-              </div>
-            </ModernSectionCard>
+            {/* Quick Actions Panel - Takes 1/3 on desktop */}
+            <div className="lg:col-span-1 animate-fade-in delay-200">
+              <ModernSectionCard
+                title="Quick Actions"
+                subtitle="Fast access to common tasks"
+                icon={Target}
+                noPadding
+              >
+                <div className="p-6">
+                  <QuickActionsPanel
+                    userRole={user?.role || 'user'}
+                  />
+                </div>
+              </ModernSectionCard>
+            </div>
           </div>
 
           {/* Enhanced Time Tracking Section */}
