@@ -8,6 +8,7 @@ export interface SupabaseSalesData {
   id: string;
   user_id: string;
   organization_id: string;
+  team_id: string;
   date: string;
   location: string;
   gross_sales: number;
@@ -41,6 +42,7 @@ export const useSalesDataSupabase = () => {
       id: data.id,
       date: data.date,
       location: data.location,
+      team_id: data.team_id,
       grossSales: data.gross_sales,
       netSales: data.net_sales,
       orderCount: data.order_count,
@@ -87,6 +89,7 @@ export const useSalesDataSupabase = () => {
     return {
       date: salesData.date,
       location: salesData.location,
+      team_id: salesData.team_id,
       gross_sales: salesData.grossSales,
       net_sales: salesData.netSales,
       order_count: salesData.orderCount,

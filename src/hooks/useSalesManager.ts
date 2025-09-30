@@ -60,7 +60,12 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
 
   const weeksWithData = useMemo(() => {
     const weeks = new Map<string, Date>();
-    salesData.forEach(sale => {
+    // Use filtered data so weeks reflect the selected team
+    const dataToUse = selectedTeam === 'all' 
+      ? salesData 
+      : salesData.filter(sale => sale.team_id === selectedTeam);
+    
+    dataToUse.forEach(sale => {
       const weekStart = startOfWeek(parseISO(sale.date), { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
       if (!weeks.has(weekKey)) {
@@ -68,7 +73,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       }
     });
     return Array.from(weeks.values()).sort((a, b) => b.getTime() - a.getTime());
-  }, [salesData]);
+  }, [salesData, selectedTeam]);
 
   // Filtered data for weekly view
   const filteredSalesData = useMemo(() => {
@@ -188,13 +193,25 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       console.log('[useSalesManager] Fetched data count:', data.length);
       setSalesData(data);
       
-      // Auto-select most recent week with data if no week selected
-      if (data.length > 0 && weeksWithData.length === 0) {
-        const mostRecentData = data.reduce((latest, current) => {
-          return new Date(current.date) > new Date(latest.date) ? current : latest;
-        });
-        console.log('[useSalesManager] Auto-selecting week:', mostRecentData.date);
-        setSelectedWeek(new Date(mostRecentData.date));
+      // Auto-select most recent week with data if current selection has no data
+      if (data.length > 0) {
+        const filteredForTeam = selectedTeam !== 'all' 
+          ? data.filter(d => d.team_id === selectedTeam)
+          : data;
+        
+        // Check if current week has data for selected team
+        const currentWeekHasData = filteredForTeam.some(sale => 
+          isSameWeek(parseISO(sale.date), selectedWeek, { weekStartsOn: 1 })
+        );
+        
+        // If no data for current week, jump to most recent week with data
+        if (!currentWeekHasData && filteredForTeam.length > 0) {
+          const mostRecentData = filteredForTeam.reduce((latest, current) => {
+            return new Date(current.date) > new Date(latest.date) ? current : latest;
+          });
+          console.log('[useSalesManager] Auto-selecting week with data:', mostRecentData.date);
+          setSelectedWeek(parseISO(mostRecentData.date));
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch sales data';

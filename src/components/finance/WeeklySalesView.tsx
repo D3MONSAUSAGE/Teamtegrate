@@ -249,6 +249,17 @@ const WeeklySalesView: React.FC<WeeklySalesViewProps> = ({
                   No sales data found for {format(selectedWeek, 'MMM dd')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
                   {selectedTeam !== 'all' && ` for ${teams.find(t => t.id === selectedTeam)?.name}`}
                 </p>
+                {weeksWithData.length > 0 && (
+                  <div className="pt-4">
+                    <Button 
+                      onClick={() => setSelectedWeek(weeksWithData[0])}
+                      variant="default"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Jump to Latest Data
+                    </Button>
+                  </div>
+                )}
               </div>
               
               {totalRecords > 0 ? (

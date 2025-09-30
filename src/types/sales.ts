@@ -30,7 +30,7 @@ export interface SalesData {
   id: string;
   date: string;
   location: string;
-  team_id?: string;
+  team_id: string; // Now required - matches database constraint
   grossSales: number;
   netSales: number;
   orderCount: number;
@@ -110,7 +110,7 @@ export interface WeeklySalesData {
 
 export interface ParsedSalesData extends Omit<SalesData, 'date'> {
   date: Date;
-  team_id?: string;
+  team_id: string; // Required to match SalesData
 }
 
 // Removed sample data - now using real data from Supabase

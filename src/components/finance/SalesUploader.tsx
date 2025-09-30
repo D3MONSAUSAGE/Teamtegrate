@@ -11,12 +11,14 @@ import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { SalesData } from '@/types/sales';
+import { useUserTeam } from '@/hooks/useUserTeam';
 
 interface SalesUploaderProps {
   onUpload: (data: SalesData) => void;
 }
 
 const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
+  const { team, isLoading: isLoadingTeam } = useUserTeam();
   const [isUploading, setIsUploading] = useState(false);
   const [salesDate, setSalesDate] = useState<Date | undefined>(new Date());
   const [location, setLocation] = useState('Santa Clarita');
@@ -42,6 +44,11 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       toast.error("Please select a file");
       return;
     }
+
+    if (!team) {
+      toast.error("Unable to determine your team. Please contact support.");
+      return;
+    }
     
     setIsUploading(true);
     
@@ -55,6 +62,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
         id: uuidv4(),
         date: format(salesDate, 'yyyy-MM-dd'),
         location: location,
+        team_id: team.id,
         grossSales: 9545.49 + Math.random() * 1000,
         netSales: 8684.61 + Math.random() * 800,
         orderCount: 291 + Math.floor(Math.random() * 50),
@@ -212,7 +220,7 @@ const SalesUploader: React.FC<SalesUploaderProps> = ({ onUpload }) => {
       <div className="flex justify-end">
         <Button 
           onClick={handleUpload} 
-          disabled={!salesDate || files.length === 0 || isUploading}
+          disabled={!salesDate || files.length === 0 || isUploading || isLoadingTeam || !team}
         >
           {isUploading ? (
             <>
