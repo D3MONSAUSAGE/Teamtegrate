@@ -7222,7 +7222,7 @@ export type Database = {
           refunds: number | null
           sales_per_labor_hour: number
           surcharges: number | null
-          team_id: string | null
+          team_id: string
           tips: number
           total_cash: number
           updated_at: string
@@ -7249,7 +7249,7 @@ export type Database = {
           refunds?: number | null
           sales_per_labor_hour?: number
           surcharges?: number | null
-          team_id?: string | null
+          team_id: string
           tips?: number
           total_cash?: number
           updated_at?: string
@@ -7276,7 +7276,7 @@ export type Database = {
           refunds?: number | null
           sales_per_labor_hour?: number
           surcharges?: number | null
-          team_id?: string | null
+          team_id?: string
           tips?: number
           total_cash?: number
           updated_at?: string
@@ -10228,8 +10228,8 @@ export type Database = {
           | { p_count_id: string; p_count_item_id: string; p_delta: number }
           | { p_count_id: string; p_delta: number; p_item_id: string }
         Returns: {
-          count_item_id: string
-          new_actual: number
+          actual_quantity: number
+          id: string
         }[]
       }
       calculate_execution_score: {
@@ -10497,22 +10497,22 @@ export type Database = {
           | { organization_id_param: string; quiz_id_param: string }
           | { quiz_id_param: string }
         Returns: {
+          adjusted_passed: boolean
+          adjusted_score: number
           answers: Json
           attempt_number: number
           completed_at: string
           email: string
-          final_passed: boolean
-          final_score: number
           has_overrides: boolean
           id: string
           max_score: number
           name: string
           organization_id: string
-          original_passed: boolean
-          original_score: number
           override_count: number
+          passed: boolean
           quiz_id: string
           role: string
+          score: number
           started_at: string
           total_adjustment: number
           user_id: string
@@ -10526,7 +10526,12 @@ export type Database = {
               p_warehouse_id?: string
             }
           | { p_warehouse_id: string }
-        Returns: Json
+        Returns: {
+          item_count: number
+          low_stock_items: number
+          overstock_items: number
+          total_value: number
+        }[]
       }
       get_request_notification_recipients: {
         Args: { request_id_param: string }
@@ -10549,12 +10554,17 @@ export type Database = {
           | { p_organization_id: string }
           | { p_organization_id: string; p_team_id?: string }
         Returns: {
-          low_stock_items: number
-          out_of_stock_count: number
+          item_count: number
+          low_stock_count: number
+          overstock_count: number
+          team_id: string
           team_name: string
-          total_items: number
           total_value: number
         }[]
+      }
+      get_team_name_for_sales: {
+        Args: { p_team_id: string }
+        Returns: string
       }
       get_team_stats: {
         Args: { org_id: string }
@@ -10742,7 +10752,7 @@ export type Database = {
               p_unit_cost?: number
               p_vendor_id?: string
             }
-        Returns: Json
+        Returns: undefined
       }
       receive_warehouse_transfer: {
         Args: { p_transfer_id: string; p_user: string }
