@@ -224,3 +224,23 @@ export const useIncrementViewCount = () => {
     },
   });
 };
+
+// Hook to delete a video
+export const useDeleteVideo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (videoId: string) => {
+      const { error } = await supabase
+        .from('video_library_items')
+        .delete()
+        .eq('id', videoId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['video-library-items'] });
+      queryClient.invalidateQueries({ queryKey: ['all-video-library-items'] });
+    },
+  });
+};

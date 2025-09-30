@@ -6,6 +6,7 @@ import { Plus, Video, Settings, Users, FolderOpen } from 'lucide-react';
 import { AddVideoDialog } from './AddVideoDialog';
 import { AddCategoryDialog } from './AddCategoryDialog';
 import { VideoPermissionsDialog } from './VideoPermissionsDialog';
+import { DeleteVideoDialog } from './DeleteVideoDialog';
 import { VideoLibraryItemCard } from './VideoLibraryItemCard';
 import { VideoLibraryCategoryCard } from './VideoLibraryCategoryCard';
 import { useAllVideoLibraryItems, useVideoLibraryCategories } from '@/hooks/useVideoLibrary';
@@ -14,12 +15,17 @@ export const VideoLibraryManager: React.FC = () => {
   const [showAddVideo, setShowAddVideo] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [videoToDelete, setVideoToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const { data: videos, isLoading: videosLoading } = useAllVideoLibraryItems();
   const { data: categories, isLoading: categoriesLoading } = useVideoLibraryCategories();
 
   const handleManagePermissions = (videoId: string) => {
     setSelectedVideo(videoId);
+  };
+
+  const handleDeleteVideo = (videoId: string, videoTitle: string) => {
+    setVideoToDelete({ id: videoId, title: videoTitle });
   };
 
   return (
@@ -78,6 +84,7 @@ export const VideoLibraryManager: React.FC = () => {
                       key={video.id}
                       video={video}
                       onManagePermissions={handleManagePermissions}
+                      onDeleteVideo={handleDeleteVideo}
                       showManagement
                     />
                   ))}
@@ -157,6 +164,15 @@ export const VideoLibraryManager: React.FC = () => {
           videoId={selectedVideo}
           open={!!selectedVideo}
           onOpenChange={(open) => !open && setSelectedVideo(null)}
+        />
+      )}
+
+      {videoToDelete && (
+        <DeleteVideoDialog
+          videoId={videoToDelete.id}
+          videoTitle={videoToDelete.title}
+          open={!!videoToDelete}
+          onOpenChange={(open) => !open && setVideoToDelete(null)}
         />
       )}
     </div>
