@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface TransactionDetail {
+  id: string;
+  time: string;
+  reference_number: string | null;
+  item_name: string;
+  quantity: number;
+  unit_cost: number;
+  sale_price: number;
+  revenue: number;
+  profit: number;
+  processed_by: string | null;
+}
+
 export interface DailyFinancialMetrics {
   // Revenue metrics
   totalRevenue: number;
@@ -40,6 +53,9 @@ export interface DailyFinancialMetrics {
     profit: number;
     transactions: number;
   };
+  
+  // Raw transaction data for reporting
+  transactions: TransactionDetail[];
 }
 
 interface Transaction {
@@ -52,6 +68,9 @@ interface Transaction {
   cost_of_goods: number | null;
   profit: number | null;
   transaction_date: string;
+  reference_number: string | null;
+  notes: string | null;
+  processed_by: string | null;
   inventory_items: {
     name: string;
   } | null;
@@ -74,7 +93,8 @@ export const useDailyFinancialAnalytics = (
     netChange: 0,
     topSellingItems: [],
     hourlyRevenue: [],
-    vsYesterday: { revenue: 0, profit: 0, transactions: 0 }
+    vsYesterday: { revenue: 0, profit: 0, transactions: 0 },
+    transactions: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -96,7 +116,7 @@ export const useDailyFinancialAnalytics = (
         const prevDayEnd = new Date(endOfDay);
         prevDayEnd.setDate(prevDayEnd.getDate() - 1);
 
-        // Fetch today's transactions
+        // Fetch today's transactions with full details
         let todayQuery = supabase
           .from('inventory_transactions')
           .select(`
@@ -109,6 +129,9 @@ export const useDailyFinancialAnalytics = (
             cost_of_goods,
             profit,
             transaction_date,
+            reference_number,
+            notes,
+            processed_by,
             inventory_items(name)
           `)
           .gte('transaction_date', startOfDay.toISOString())
@@ -200,6 +223,48 @@ export const useDailyFinancialAnalytics = (
           }))
           .sort((a, b) => parseInt(a.hour) - parseInt(b.hour));
 
+        // Fetch user information for transactions with processed_by
+        const userIds = [...new Set(outTransactions.map(t => t.processed_by).filter(Boolean))];
+        let usersMap = new Map<string, { name: string; email: string }>();
+        
+        if (userIds.length > 0) {
+          const { data: usersData } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .in('id', userIds);
+          
+          if (usersData) {
+            usersData.forEach(u => usersMap.set(u.id, { name: u.name || '', email: u.email || '' }));
+          }
+        }
+
+        // Format transaction details for reporting
+        const transactionDetails: TransactionDetail[] = outTransactions
+          .map(t => {
+            const user = t.processed_by ? usersMap.get(t.processed_by) : null;
+            return {
+              id: t.id,
+              time: new Date(t.transaction_date).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+              }),
+              reference_number: t.reference_number || 'N/A',
+              item_name: t.inventory_items?.name || 'Unknown Item',
+              quantity: Math.abs(t.quantity),
+              unit_cost: t.unit_cost || 0,
+              sale_price: t.sale_price || 0,
+              revenue: t.revenue || 0,
+              profit: t.profit || 0,
+              processed_by: user?.name || user?.email || 'System'
+            };
+          })
+          .sort((a, b) => {
+            const [aHour, aMin] = a.time.split(':');
+            const [bHour, bMin] = b.time.split(':');
+            return (parseInt(aHour) * 60 + parseInt(aMin)) - (parseInt(bHour) * 60 + parseInt(bMin));
+          });
+
         setMetrics({
           totalRevenue,
           totalTransactions: outTransactions.length,
@@ -212,7 +277,8 @@ export const useDailyFinancialAnalytics = (
           netChange: totalIncoming - totalOutgoing,
           topSellingItems,
           hourlyRevenue,
-          vsYesterday
+          vsYesterday,
+          transactions: transactionDetails
         });
       } catch (error) {
         console.error('Error fetching financial analytics:', error);

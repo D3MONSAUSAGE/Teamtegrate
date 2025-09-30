@@ -43,6 +43,7 @@ import { useTZ } from '@/lib/dates/useTZ';
 import { CountApprovalDialog } from '@/components/inventory/approval/CountApprovalDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { inventoryCountsApi } from '@/contexts/inventory/api';
+import { generateDailyReportPDF } from '@/utils/generateDailyReportPDF';
 
 export const EnhancedInventoryRecordsTab: React.FC = () => {
   const { counts, alerts, items, transactions, voidInventoryCount } = useInventory();
@@ -414,13 +415,24 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
             variant="outline" 
             size="sm"
             onClick={() => {
-              setExportCountId(undefined);
-              setExportTeamId(selectedTeam || undefined);
-              setShowInventoryExport(true);
+              if (activeTab === 'daily') {
+                // Generate PDF report for daily view
+                generateDailyReportPDF({
+                  metrics: financialMetrics,
+                  date: selectedDate,
+                  teamName: selectedDailyTeam ? getTeamDisplayName(selectedDailyTeam) : undefined,
+                  timezone: tz
+                });
+              } else {
+                // Open export dialog for other tabs
+                setExportCountId(undefined);
+                setExportTeamId(selectedTeam || undefined);
+                setShowInventoryExport(true);
+              }
             }}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export Inventory Report
+            {activeTab === 'daily' ? 'Print Daily Report' : 'Export Inventory Report'}
           </Button>
         </div>
       </div>
