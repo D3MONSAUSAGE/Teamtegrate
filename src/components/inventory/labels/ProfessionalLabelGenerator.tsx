@@ -99,11 +99,13 @@ interface BatchData {
 interface ProfessionalLabelGeneratorProps {
   preSelectedItemId?: string;
   batchData?: BatchData;
+  inModal?: boolean;
 }
 
 const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({ 
   preSelectedItemId, 
-  batchData 
+  batchData,
+  inModal = false
 }) => {
   const inventoryContext = useInventory();
   const { user } = useAuth();
@@ -1823,6 +1825,15 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       </Dialog>
     </div>
   );
+
+  // If used inside a modal, skip the wrapper and drawer logic
+  if (inModal) {
+    return (
+      <div className="space-y-4">
+        {renderLabelForm()}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

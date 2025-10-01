@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ProfessionalLabelGenerator } from './ProfessionalLabelGenerator';
 import { Package, Factory } from 'lucide-react';
@@ -47,16 +47,19 @@ export const UnifiedLabelModal: React.FC<UnifiedLabelModalProps> = ({
               </>
             )}
           </DialogTitle>
-          {batchData?.itemName && (
-            <p className="text-sm text-muted-foreground">
-              {batchData.itemName} • {batchData.maxQuantity} units remaining
-            </p>
-          )}
+          <DialogDescription>
+            {batchData ? (
+              `Print labels for ${batchData.itemName || 'batch'} • ${batchData.maxQuantity} units remaining`
+            ) : (
+              'Generate professional labels with barcodes, nutrition facts, and company branding'
+            )}
+          </DialogDescription>
         </DialogHeader>
         
         <ProfessionalLabelGenerator 
           preSelectedItemId={preSelectedItemId || batchData?.itemId}
           batchData={batchData}
+          inModal={true}
         />
       </DialogContent>
     </Dialog>
