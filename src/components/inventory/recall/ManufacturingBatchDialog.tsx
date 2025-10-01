@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useBatchAutoGeneration } from '@/hooks/useBatchAutoGeneration';
 
 const formSchema = z.object({
   lot_id: z.string().optional(),
@@ -36,8 +37,22 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
   defaultLotId,
 }) => {
   const { user } = useAuth();
+  const { generateBatchNumber, getCurrentShift } = useBatchAutoGeneration();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [lots, setLots] = React.useState<any[]>([]);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      lot_id: '',
+      batch_number: '',
+      total_quantity_manufactured: 0,
+      manufacturing_date: new Date().toISOString().split('T')[0],
+      manufacturing_shift: '',
+      production_line: '',
+      production_notes: '',
+    },
+  });
 
   React.useEffect(() => {
     const loadLots = async () => {
@@ -58,23 +73,28 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
       }
     };
 
-    if (open) {
-      loadLots();
-    }
-  }, [open]);
+    const initializeForm = async () => {
+      if (open) {
+        await loadLots();
+        
+        // Auto-generate batch number
+        const batchNumber = await generateBatchNumber();
+        const shift = getCurrentShift();
+        
+        form.reset({
+          lot_id: defaultLotId || '',
+          batch_number: batchNumber,
+          total_quantity_manufactured: 0,
+          manufacturing_date: new Date().toISOString().split('T')[0],
+          manufacturing_shift: shift,
+          production_line: '',
+          production_notes: '',
+        });
+      }
+    };
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      lot_id: defaultLotId || '',
-      batch_number: '',
-      total_quantity_manufactured: 0,
-      manufacturing_date: new Date().toISOString().split('T')[0],
-      manufacturing_shift: '',
-      production_line: '',
-      production_notes: '',
-    },
-  });
+    initializeForm();
+  }, [open, defaultLotId, generateBatchNumber, getCurrentShift, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user?.organizationId) return;
@@ -130,10 +150,15 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
               name="batch_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Batch Number *</FormLabel>
+                  <FormLabel>Batch Number * (Auto-generated)</FormLabel>
                   <FormControl>
-                    <Input placeholder="BATCH-2025-001" {...field} />
+                    <Input 
+                      placeholder="BATCH-2025-001" 
+                      {...field}
+                      className="bg-muted/50"
+                    />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">Auto-generated, editable if needed</p>
                   <FormMessage />
                 </FormItem>
               )}
