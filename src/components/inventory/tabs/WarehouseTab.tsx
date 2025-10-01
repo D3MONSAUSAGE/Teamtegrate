@@ -3,6 +3,7 @@ import { WarehouseStock } from '../warehouse/WarehouseStock';
 import { NotConfigured } from '../warehouse/NotConfigured';
 import { SimpleCheckout } from '../warehouse/SimpleCheckout';
 import { ReceiveStockDialog } from '../warehouse/ReceiveStockDialog';
+import { ProductionReceiveDialog } from '../warehouse/ProductionReceiveDialog';
 import { WarehouseSettingsTab } from '../warehouse/WarehouseSettingsTab';
 
 import { ProcessingTab } from '../warehouse/ProcessingTab';
@@ -11,7 +12,7 @@ import { ReportsTab } from '../warehouse/ReportsTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Minus, ShoppingCart, Plus, Settings } from 'lucide-react';
+import { Package, Minus, ShoppingCart, Plus, Settings, Factory } from 'lucide-react';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,7 @@ export const WarehouseTab: React.FC = () => {
   const [showOverview, setShowOverview] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isReceiveOpen, setIsReceiveOpen] = useState(false);
+  const [isProductionReceiveOpen, setIsProductionReceiveOpen] = useState(false);
 
   // For admins, show overview by default unless team is selected
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
@@ -349,6 +351,10 @@ export const WarehouseTab: React.FC = () => {
                 <Package className="h-4 w-4" />
                 Receive Stock
               </Button>
+              <Button variant="outline" onClick={() => setIsProductionReceiveOpen(true)} className="flex items-center gap-2">
+                <Factory className="h-4 w-4" />
+                Production Receive
+              </Button>
               <Button onClick={() => setIsCheckoutOpen(true)} className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
                 Start Checkout
@@ -409,6 +415,16 @@ export const WarehouseTab: React.FC = () => {
             open={isReceiveOpen}
             onOpenChange={setIsReceiveOpen}
             warehouseId={warehouse.id}
+          />
+
+          {/* Production Receive Dialog */}
+          <ProductionReceiveDialog
+            open={isProductionReceiveOpen}
+            onOpenChange={setIsProductionReceiveOpen}
+            warehouseId={warehouse.id}
+            onSuccess={() => {
+              handleRefresh();
+            }}
           />
         </WarehouseProvider>
       ) : (showOverview || shouldShowOverview) && selectedTeamId === null ? (

@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertTriangle, Package, Truck } from 'lucide-react';
+import { Plus, AlertTriangle, Package, Truck, Factory } from 'lucide-react';
 import { ManufacturingBatchDialog } from './ManufacturingBatchDialog';
 import { BatchManagementTable } from './BatchManagementTable';
+import { ProductionWorkflowGuide } from './ProductionWorkflowGuide';
 import { ManufacturingBatch } from '@/contexts/inventory/api';
 import { toast } from 'sonner';
 
@@ -52,6 +53,10 @@ export const RecallManagementPage: React.FC = () => {
             <Package className="h-4 w-4" />
             Manufacturing Batches
           </TabsTrigger>
+          <TabsTrigger value="workflow" className="flex items-center gap-2">
+            <Factory className="h-4 w-4" />
+            Production Workflow
+          </TabsTrigger>
           <TabsTrigger value="distributions" className="flex items-center gap-2">
             <Truck className="h-4 w-4" />
             Product Distributions
@@ -82,6 +87,10 @@ export const RecallManagementPage: React.FC = () => {
               <BatchManagementTable key={refreshKey} onPrintLabels={handlePrintLabels} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="workflow" className="space-y-4">
+          <ProductionWorkflowGuide />
         </TabsContent>
 
         <TabsContent value="distributions" className="space-y-4">
