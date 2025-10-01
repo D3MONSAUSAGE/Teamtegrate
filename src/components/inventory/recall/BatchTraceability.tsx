@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Package, Truck, Tag, AlertCircle } from 'lucide-react';
+import { Search, Package, Truck, Tag, AlertCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,9 +15,44 @@ export const BatchTraceability: React.FC = () => {
   const [itemData, setItemData] = useState<any>(null);
   const [distributions, setDistributions] = useState<any[]>([]);
   const [labels, setLabels] = useState<any[]>([]);
+  const [recentBatches, setRecentBatches] = useState<any[]>([]);
+  const [loadingBatches, setLoadingBatches] = useState(true);
 
-  const searchBatch = async () => {
-    if (!searchQuery.trim()) {
+  useEffect(() => {
+    fetchRecentBatches();
+  }, []);
+
+  const fetchRecentBatches = async () => {
+    setLoadingBatches(true);
+    try {
+      const { data, error } = await supabase
+        .from('manufacturing_batches')
+        .select(`
+          *,
+          inventory_lots (
+            lot_number,
+            item_id,
+            inventory_items (
+              name,
+              sku
+            )
+          )
+        `)
+        .order('manufacturing_date', { ascending: false })
+        .limit(15);
+
+      if (error) throw error;
+      setRecentBatches(data || []);
+    } catch (error) {
+      console.error('Failed to fetch recent batches:', error);
+    } finally {
+      setLoadingBatches(false);
+    }
+  };
+
+  const searchBatch = async (batchNumber?: string) => {
+    const query = batchNumber || searchQuery;
+    if (!query.trim()) {
       toast.error('Please enter a batch number');
       return;
     }
@@ -34,7 +69,7 @@ export const BatchTraceability: React.FC = () => {
       const { data: batch, error: batchError } = await supabase
         .from('manufacturing_batches')
         .select('*')
-        .eq('batch_number', searchQuery.trim())
+        .eq('batch_number', query.trim())
         .single();
 
       if (batchError || !batch) {
@@ -100,19 +135,73 @@ export const BatchTraceability: React.FC = () => {
             Track complete supply chain from raw materials to distribution
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="flex gap-2">
             <Input
-              placeholder="Enter batch number (e.g., BATCH-2025-001)"
+              placeholder="Enter batch number (e.g., 51651)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && searchBatch()}
             />
-            <Button onClick={searchBatch} disabled={loading}>
+            <Button onClick={() => searchBatch()} disabled={loading}>
               <Search className="h-4 w-4 mr-2" />
               {loading ? 'Searching...' : 'Search'}
             </Button>
           </div>
+
+          {/* Recent Batches Section */}
+          {!hasData && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-semibold">Recent Batches</h3>
+                </div>
+                {!loadingBatches && (
+                  <Badge variant="secondary">{recentBatches.length} tracked</Badge>
+                )}
+              </div>
+
+              {loadingBatches ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Loading batches...</p>
+                </div>
+              ) : recentBatches.length > 0 ? (
+                <div className="grid gap-2">
+                  {recentBatches.slice(0, 10).map((batch) => (
+                    <button
+                      key={batch.id}
+                      onClick={() => {
+                        setSearchQuery(batch.batch_number);
+                        searchBatch(batch.batch_number);
+                      }}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors text-left"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{batch.batch_number}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {batch.quantity_labeled} labeled
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {batch.inventory_lots?.inventory_items?.name || 'Unknown Item'} • 
+                          {new Date(batch.manufacturing_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm font-medium">No batches found</p>
+                  <p className="text-xs mt-1">Create manufacturing batches to track them here</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
