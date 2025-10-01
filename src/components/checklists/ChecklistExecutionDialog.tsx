@@ -34,6 +34,7 @@ import ChecklistCountdownTimer from './ChecklistCountdownTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { canStartChecklistExecution, formatTimeWindow } from '@/utils/checklistTimeUtils';
 import { useChecklistTimeWindow } from '@/hooks/useChecklistTimeWindow';
+import { useScrollToBottom } from '@/hooks/useScrollToBottom';
 
 interface ChecklistExecutionDialogProps {
   execution: ChecklistExecution | null;
@@ -66,6 +67,12 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
   const completeExecution = useCompleteChecklistExecution();
   const managerCompleteAndVerify = useManagerCompleteAndVerify();
   const verifyItem = useVerifyChecklistItem();
+  
+  // Scroll to bottom hook for better UX
+  const { scrollRef, forceScrollToBottom } = useScrollToBottom({
+    dependency: [items],
+    behavior: 'smooth'
+  });
 
   useEffect(() => {
     if (execution?.notes) {
@@ -233,8 +240,8 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] md:h-[90vh] flex flex-col animate-scale-in p-4 md:p-6">
-        <DialogHeader className="shrink-0 space-y-2 md:space-y-3 pb-3 md:pb-4">
+      <DialogContent className="max-w-4xl h-[90dvh] sm:h-[85dvh] flex flex-col animate-scale-in p-0">
+        <DialogHeader className="shrink-0 space-y-2 md:space-y-3 px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 border-b">
           <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
@@ -272,8 +279,8 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-0.5 md:px-1">
-            <div className="space-y-4 md:space-y-6">
+        <ScrollArea ref={scrollRef} className="flex-1 min-h-0">
+            <div className="space-y-4 md:space-y-6 px-4 md:px-6 py-4">
               {/* Error State */}
               {error && (
                 <Alert variant="destructive" className="animate-fade-in">
