@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ResponsiveTabs, ResponsiveTabsList, ResponsiveTabsTrigger } from "@/components/ui/ResponsiveTabs";
 import { AlertCircle, Loader2, GraduationCap, Settings, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -233,23 +234,23 @@ const TrainingPage = () => {
     <TrainingErrorBoundary>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-          <Tabs defaultValue="my-training" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
-            <TabsTrigger value="my-training" className="flex items-center gap-2">
+          <ResponsiveTabs defaultValue="my-training" className="space-y-6">
+          <ResponsiveTabsList className="w-full max-w-2xl mx-auto">
+            <ResponsiveTabsTrigger value="my-training" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               My Training
-            </TabsTrigger>
-            <TabsTrigger value="video-library" className="flex items-center gap-2">
+            </ResponsiveTabsTrigger>
+            <ResponsiveTabsTrigger value="video-library" className="flex items-center gap-2">
               <Video className="h-4 w-4" />
               Video Library
-            </TabsTrigger>
+            </ResponsiveTabsTrigger>
             {canManageContent && (
-              <TabsTrigger value="management" className="flex items-center gap-2">
+              <ResponsiveTabsTrigger value="management" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Management
-              </TabsTrigger>
+              </ResponsiveTabsTrigger>
             )}
-          </TabsList>
+          </ResponsiveTabsList>
 
           <TabsContent value="my-training" className="space-y-8">
             <MyTrainingTab
@@ -265,11 +266,11 @@ const TrainingPage = () => {
 
           {canManageContent && (
             <TabsContent value="management" className="space-y-8">
-              <Tabs defaultValue="content" className="space-y-6">
-                <TabsList>
-                  <TabsTrigger value="content">Training Content</TabsTrigger>
-                  <TabsTrigger value="video-library">Video Library</TabsTrigger>
-                </TabsList>
+              <ResponsiveTabs defaultValue="content" className="space-y-6">
+                <ResponsiveTabsList>
+                  <ResponsiveTabsTrigger value="content">Training Content</ResponsiveTabsTrigger>
+                  <ResponsiveTabsTrigger value="video-library">Video Library</ResponsiveTabsTrigger>
+                </ResponsiveTabsList>
 
                 <TabsContent value="content">
                   <TrainingManagementTab
@@ -293,10 +294,10 @@ const TrainingPage = () => {
                 <TabsContent value="video-library">
                   <VideoLibraryManager />
                 </TabsContent>
-              </Tabs>
+              </ResponsiveTabs>
             </TabsContent>
           )}
-        </Tabs>
+        </ResponsiveTabs>
       </div>
 
       {/* Dialogs */}

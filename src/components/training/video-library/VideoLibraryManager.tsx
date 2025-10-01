@@ -36,21 +36,21 @@ export const VideoLibraryManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Video Library Management</h2>
           <p className="text-muted-foreground">
             Manage training videos and assign permissions to teams and users
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button onClick={() => setShowAddCategory(true)} variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={() => setShowAddCategory(true)} variant="outline" className="w-full sm:w-auto">
             <FolderOpen className="h-4 w-4 mr-2" />
-            Add Category
+            <span className="sm:inline">Add Category</span>
           </Button>
-          <Button onClick={() => setShowAddVideo(true)}>
+          <Button onClick={() => setShowAddVideo(true)} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Add Video
+            <span className="sm:inline">Add Video</span>
           </Button>
         </div>
       </div>

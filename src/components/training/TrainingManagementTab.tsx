@@ -5,7 +5,7 @@ import ManagementPanel from './ManagementPanel';
 import ContentGrid from './ContentGrid';
 import EmbeddedEmployeeRecords from './EmbeddedEmployeeRecords';
 import AssignmentManagementDialog from './AssignmentManagementDialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from "@/components/ui/ScrollableTabs";
 import { 
   Settings, 
   BookOpen, 
@@ -67,6 +67,7 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
 }) => {
   const { user } = useAuth();
   const [assignmentManagementOpen, setAssignmentManagementOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('management');
 
   return (
     <div className="space-y-8">
@@ -79,82 +80,98 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
       </div>
 
       {/* Management Overview */}
-      <Tabs defaultValue="management" className="space-y-6">
-        <TabsList className="grid w-full max-w-4xl grid-cols-3">
-          <TabsTrigger value="management" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Management
-          </TabsTrigger>
-          <TabsTrigger value="content" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Content Library
-          </TabsTrigger>
-          <TabsTrigger value="records" className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4" />
-            Employee Records
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <ScrollableTabs>
+          <ScrollableTabsList>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'management'}
+              onClick={() => setActiveTab('management')}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Management</span>
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'content'}
+              onClick={() => setActiveTab('content')}
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span>Content Library</span>
+            </ScrollableTabsTrigger>
+            <ScrollableTabsTrigger 
+              isActive={activeTab === 'records'}
+              onClick={() => setActiveTab('records')}
+              className="flex items-center gap-2"
+            >
+              <UserCheck className="h-4 w-4" />
+              <span>Employee Records</span>
+            </ScrollableTabsTrigger>
+          </ScrollableTabsList>
+        </ScrollableTabs>
 
         {/* Management Center Tab */}
-        <TabsContent value="management" className="space-y-6">
-          <div className="animate-fade-in">
-            <ManagementPanel
-              onCreateCourse={onCreateCourse}
-              onCreateQuiz={onCreateQuiz}
-              onAssignContent={onAssignContent}
-              onViewAnalytics={onViewAnalytics}
-              onRetrainingSettings={onRetrainingSettings}
-              onCertificateReview={onCertificateReview}
-              onManageAssignments={() => setAssignmentManagementOpen(true)}
-              userRole={user?.role || 'user'}
-            />
-          </div>
+        {activeTab === 'management' && (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <ManagementPanel
+                onCreateCourse={onCreateCourse}
+                onCreateQuiz={onCreateQuiz}
+                onAssignContent={onAssignContent}
+                onViewAnalytics={onViewAnalytics}
+                onRetrainingSettings={onRetrainingSettings}
+                onCertificateReview={onCertificateReview}
+                onManageAssignments={() => setAssignmentManagementOpen(true)}
+                userRole={user?.role || 'user'}
+              />
+            </div>
 
-          {/* Quick Stats for Managers */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary text-primary-foreground">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">{courses.length}</div>
-                  <div className="text-sm text-muted-foreground">Active Courses</div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-gradient-to-br from-accent/10 to-accent/5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-accent text-accent-foreground">
-                  <Shield className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">{quizzes.length}</div>
-                  <div className="text-sm text-muted-foreground">Assessment Quizzes</div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500 text-white">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">
-                    {courses.reduce((acc, course) => acc + (course.training_modules?.length || 0), 0)}
+            {/* Quick Stats for Managers */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary text-primary-foreground">
+                    <BookOpen className="h-5 w-5" />
                   </div>
-                  <div className="text-sm text-muted-foreground">Training Modules</div>
+                  <div>
+                    <div className="text-2xl font-bold">{courses.length}</div>
+                    <div className="text-sm text-muted-foreground">Active Courses</div>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+
+              <Card className="p-4 bg-gradient-to-br from-accent/10 to-accent/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-accent text-accent-foreground">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{quizzes.length}</div>
+                    <div className="text-sm text-muted-foreground">Assessment Quizzes</div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500 text-white">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {courses.reduce((acc, course) => acc + (course.training_modules?.length || 0), 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Training Modules</div>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
-        </TabsContent>
+        )}
 
         {/* Content Library Tab */}
-        <TabsContent value="content" className="space-y-6">
-          <div className="animate-fade-in">
+        {activeTab === 'content' && (
+          <div className="space-y-6 animate-fade-in">
             <ContentGrid
               courses={courses}
               quizzes={quizzes}
@@ -166,16 +183,16 @@ const TrainingManagementTab: React.FC<TrainingManagementTabProps> = ({
               onViewResults={onViewResults}
             />
           </div>
-        </TabsContent>
+        )}
 
         {/* Employee Records Tab */}
-        <TabsContent value="records" className="space-y-6">
-          <div className="animate-fade-in">
+        {activeTab === 'records' && (
+          <div className="space-y-6 animate-fade-in">
             <EmbeddedEmployeeRecords />
           </div>
-        </TabsContent>
+        )}
 
-      </Tabs>
+      </div>
 
       {/* Assignment Management Dialog */}
       <AssignmentManagementDialog
