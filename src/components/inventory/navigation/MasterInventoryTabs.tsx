@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
-import { LayoutDashboard, Package, FileText, Warehouse, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, FileText, Warehouse, Settings, AlertTriangle } from 'lucide-react';
 
 interface MasterInventoryTabsProps {
   className?: string;
@@ -16,6 +16,7 @@ export const MasterInventoryTabs: React.FC<MasterInventoryTabsProps> = ({ classN
     { id: 'count', label: 'Count', icon: Package, path: '/dashboard/inventory/count' },
     { id: 'records', label: 'Records', icon: FileText, path: '/dashboard/inventory/records' },
     { id: 'warehouse', label: 'Warehouse', icon: Warehouse, path: '/dashboard/inventory/warehouse' },
+    { id: 'recall', label: 'Recall & Tracking', icon: AlertTriangle, path: '/dashboard/inventory/recall' },
     { id: 'management', label: 'Management', icon: Settings, path: '/dashboard/inventory/management' },
   ];
 

@@ -64,6 +64,7 @@ import InventoryCountPage from "@/pages/inventory/InventoryCountPage";
 import InventoryRecordsPage from "@/pages/inventory/InventoryRecordsPage";
 import InventoryWarehousePage from "@/pages/inventory/InventoryWarehousePage";
 import InventoryManagementPage from "@/pages/inventory/InventoryManagementPage";
+import InventoryRecallPage from "@/pages/inventory/InventoryRecallPage";
 import WarehouseStockPage from "@/pages/inventory/warehouse/WarehouseStockPage";
 import WarehouseProcessingPage from "@/pages/inventory/warehouse/WarehouseProcessingPage";
 import WarehouseOutgoingPage from "@/pages/inventory/warehouse/WarehouseOutgoingPage";
@@ -155,6 +156,7 @@ function App() {
                     <Route path="inventory/warehouse/outgoing" element={<WarehouseOutgoingPage />} />
                     <Route path="inventory/warehouse/reports" element={<WarehouseReportsPage />} />
                     <Route path="inventory/management" element={<InventoryManagementPage />} />
+                    <Route path="inventory/recall" element={<InventoryRecallPage />} />
                      <Route path="meetings" element={<MeetingsPage />} />
                      
                      {/* Training Routes - Keep original + add new nested routes */}

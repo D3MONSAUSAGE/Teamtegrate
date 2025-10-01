@@ -3786,6 +3786,68 @@ export type Database = {
         }
         Relationships: []
       }
+      manufacturing_batches: {
+        Row: {
+          batch_number: string
+          created_at: string
+          created_by: string
+          id: string
+          lot_id: string | null
+          manufacturing_date: string
+          manufacturing_shift: string | null
+          organization_id: string
+          production_line: string | null
+          production_notes: string | null
+          quantity_distributed: number
+          quantity_labeled: number
+          quantity_remaining: number
+          total_quantity_manufactured: number
+          updated_at: string
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string
+          created_by: string
+          id?: string
+          lot_id?: string | null
+          manufacturing_date: string
+          manufacturing_shift?: string | null
+          organization_id: string
+          production_line?: string | null
+          production_notes?: string | null
+          quantity_distributed?: number
+          quantity_labeled?: number
+          quantity_remaining?: number
+          total_quantity_manufactured?: number
+          updated_at?: string
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          lot_id?: string | null
+          manufacturing_date?: string
+          manufacturing_shift?: string | null
+          organization_id?: string
+          production_line?: string | null
+          production_notes?: string | null
+          quantity_distributed?: number
+          quantity_labeled?: number
+          quantity_remaining?: number
+          total_quantity_manufactured?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manufacturing_batches_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_action_items: {
         Row: {
           assigned_to_id: string | null
@@ -5709,6 +5771,72 @@ export type Database = {
           },
         ]
       }
+      product_distributions: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          created_by: string
+          customer_name: string
+          delivery_status: string | null
+          destination_location: string | null
+          id: string
+          lot_id: string | null
+          notes: string | null
+          organization_id: string
+          quantity_shipped: number
+          sales_order_reference: string | null
+          shipment_date: string
+          tracking_number: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          created_by: string
+          customer_name: string
+          delivery_status?: string | null
+          destination_location?: string | null
+          id?: string
+          lot_id?: string | null
+          notes?: string | null
+          organization_id: string
+          quantity_shipped: number
+          sales_order_reference?: string | null
+          shipment_date: string
+          tracking_number?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string
+          customer_name?: string
+          delivery_status?: string | null
+          destination_location?: string | null
+          id?: string
+          lot_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          quantity_shipped?: number
+          sales_order_reference?: string | null
+          shipment_date?: string
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_distributions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "manufacturing_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_distributions_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_team_members: {
         Row: {
           created_at: string | null
@@ -6074,6 +6202,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recall_notices: {
+        Row: {
+          action_required: string
+          affected_quantity: number
+          batch_ids: string[] | null
+          contact_instructions: string | null
+          created_at: string
+          created_by: string
+          date_completed: string | null
+          date_initiated: string
+          id: string
+          lot_ids: string[]
+          notes: string | null
+          organization_id: string
+          reason: string
+          recall_number: string
+          regulatory_agency: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_required: string
+          affected_quantity?: number
+          batch_ids?: string[] | null
+          contact_instructions?: string | null
+          created_at?: string
+          created_by: string
+          date_completed?: string | null
+          date_initiated?: string
+          id?: string
+          lot_ids: string[]
+          notes?: string | null
+          organization_id: string
+          reason: string
+          recall_number: string
+          regulatory_agency?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_required?: string
+          affected_quantity?: number
+          batch_ids?: string[] | null
+          contact_instructions?: string | null
+          created_at?: string
+          created_by?: string
+          date_completed?: string | null
+          date_initiated?: string
+          id?: string
+          lot_ids?: string[]
+          notes?: string | null
+          organization_id?: string
+          reason?: string
+          recall_number?: string
+          regulatory_agency?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       recurring_transactions: {
         Row: {

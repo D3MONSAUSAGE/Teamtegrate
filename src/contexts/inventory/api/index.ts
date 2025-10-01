@@ -11,3 +11,6 @@ export * from './nutritionalInfo';
 export * from './labelTemplates';
 export * from './generatedLabels';
 export * from './shipments';
+export * from './manufacturingBatches';
+export * from './productDistributions';
+export * from './recallNotices';
