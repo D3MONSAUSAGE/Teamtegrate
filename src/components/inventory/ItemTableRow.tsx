@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { formatCurrency } from '@/utils/formatters';
-import { Trash2, MoreHorizontal, Globe, Users } from 'lucide-react';
+import { Trash2, MoreHorizontal } from 'lucide-react';
 
 interface ItemTableRowProps {
   item: InventoryItem;
@@ -25,20 +25,7 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
       onClick={() => onClick(item.id)}
     >
       <TableCell className="font-medium">
-        <div className="flex items-center gap-2">
-          <span>{item.name}</span>
-          {!item.team_id ? (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Globe className="h-3 w-3" />
-              Global
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              Team-Specific
-            </Badge>
-          )}
-        </div>
+        {item.name}
       </TableCell>
       <TableCell>{item.sku || 'N/A'}</TableCell>
       <TableCell className="max-w-xs truncate">{item.description || 'N/A'}</TableCell>
