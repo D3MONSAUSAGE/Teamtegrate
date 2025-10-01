@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAdvancedChecklistHistory } from '@/hooks/useAdvancedChecklistHistory';
 import { ChecklistHistoryFilters } from './ChecklistHistoryFilters';
 import { ChecklistExecutionDetailDialog } from './ChecklistExecutionDetailDialog';
+import { MobileChecklistHistoryCard } from './MobileChecklistHistoryCard';
 import { Calendar, Clock, CheckCircle, AlertCircle, Eye, User, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { useIsMobile } from '@/hooks/use-mobile';
+import PullToRefresh from '@/components/mobile/PullToRefresh';
 
 export const ChecklistHistoryTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,12 +22,18 @@ export const ChecklistHistoryTab: React.FC = () => {
   const [selectedExecution, setSelectedExecution] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
-  const { data: executions, isLoading } = useAdvancedChecklistHistory({
+  const isMobile = useIsMobile();
+  
+  const { data: executions, isLoading, refetch } = useAdvancedChecklistHistory({
     dateRange,
     teamId: selectedTeam === 'all' ? undefined : selectedTeam,
     searchTerm,
     status: statusFilter,
   }, limit);
+
+  const handleRefresh = async () => {
+    await refetch();
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -88,8 +98,8 @@ export const ChecklistHistoryTab: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
+  const content = (
+    <>
       {/* Enhanced Filters */}
       <ChecklistHistoryFilters
         searchTerm={searchTerm}
@@ -105,7 +115,7 @@ export const ChecklistHistoryTab: React.FC = () => {
       />
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground px-1">
         Showing {executions?.length || 0} executions
         {dateRange?.from && (
           <span className="ml-2">
@@ -118,121 +128,7 @@ export const ChecklistHistoryTab: React.FC = () => {
         )}
       </div>
 
-      {/* History List */}
-      <div className="space-y-4">
-        {executions?.map((execution) => {
-          const executorTeams = getUserTeams(execution.assigned_user);
-          
-          return (
-            <Card key={execution.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-semibold text-lg">{execution.checklist?.name}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{format(new Date(execution.execution_date), 'MMM d, yyyy')}</span>
-                        <span>•</span>
-                        <span>by {execution.assigned_user?.name}</span>
-                      </div>
-                      {executorTeams.length > 0 && (
-                        <div className="flex gap-1 mt-1">
-                          {executorTeams.map((team: any) => (
-                            <Badge key={team.id} variant="secondary" className="text-xs">
-                              {team.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDetails(execution)}
-                      className="flex items-center gap-1"
-                    >
-                      <Eye className="h-4 w-4" />
-                      View Details
-                    </Button>
-                    <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
-                      {execution.checklist?.priority}
-                    </Badge>
-                    <Badge className={getStatusColor(execution.status)}>
-                      {getStatusIcon(execution.status)}
-                      <span className="ml-1 capitalize">{execution.status.replace('_', ' ')}</span>
-                    </Badge>
-                  </div>
-                </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Execution Score:</span>
-                  <div className="font-semibold">{execution.execution_score}%</div>
-                </div>
-
-                {execution.status === 'verified' && (
-                  <>
-                    <div>
-                      <span className="text-muted-foreground">Verification Score:</span>
-                      <div className="font-semibold text-blue-600">{execution.verification_score}%</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Total Score:</span>
-                      <div className="font-semibold text-green-600">{execution.total_score}%</div>
-                    </div>
-                  </>
-                )}
-
-                {execution.status !== 'verified' && (
-                  <>
-                    <div>
-                      <span className="text-muted-foreground">Started:</span>
-                      <div>
-                        {execution.started_at 
-                          ? format(new Date(execution.started_at), 'h:mm a')
-                          : 'Not started'
-                        }
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Completed:</span>
-                      <div>
-                        {execution.completed_at 
-                          ? format(new Date(execution.completed_at), 'h:mm a')
-                          : 'Not completed'
-                        }
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {execution.notes && (
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <span className="text-sm font-medium text-muted-foreground">Notes:</span>
-                  <p className="text-sm mt-1">{execution.notes}</p>
-                </div>
-              )}
-
-                {execution.status === 'verified' && execution.verifier && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-4 w-4 text-blue-500" />
-                    <span>
-                      Verified by {execution.verifier.name} on{' '}
-                      {format(new Date(execution.verified_at!), 'MMM d, yyyy h:mm a')}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
+      {/* Empty State */}
       {executions?.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
@@ -246,6 +142,152 @@ export const ChecklistHistoryTab: React.FC = () => {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* History List - Mobile */}
+      {isMobile && executions && executions.length > 0 && (
+        <div className="space-y-3">
+          {executions.map((execution) => (
+            <MobileChecklistHistoryCard
+              key={execution.id}
+              execution={execution}
+              onViewDetails={handleViewDetails}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* History List - Desktop */}
+      {!isMobile && executions && executions.length > 0 && (
+        <div className="space-y-4">
+          {executions?.map((execution) => {
+            const executorTeams = getUserTeams(execution.assigned_user);
+            
+            return (
+              <Card key={execution.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <h3 className="font-semibold text-lg">{execution.checklist?.name}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{format(new Date(execution.execution_date), 'MMM d, yyyy')}</span>
+                          <span>•</span>
+                          <span>by {execution.assigned_user?.name}</span>
+                        </div>
+                        {executorTeams.length > 0 && (
+                          <div className="flex gap-1 mt-1">
+                            {executorTeams.map((team: any) => (
+                              <Badge key={team.id} variant="secondary" className="text-xs">
+                                {team.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(execution)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View Details
+                      </Button>
+                      <Badge className={getPriorityColor(execution.checklist?.priority || 'medium')}>
+                        {execution.checklist?.priority}
+                      </Badge>
+                      <Badge className={getStatusColor(execution.status)}>
+                        {getStatusIcon(execution.status)}
+                        <span className="ml-1 capitalize">{execution.status.replace('_', ' ')}</span>
+                      </Badge>
+                    </div>
+                  </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Execution Score:</span>
+                    <div className="font-semibold">{execution.execution_score}%</div>
+                  </div>
+
+                  {execution.status === 'verified' && (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground">Verification Score:</span>
+                        <div className="font-semibold text-blue-600">{execution.verification_score}%</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Total Score:</span>
+                        <div className="font-semibold text-green-600">{execution.total_score}%</div>
+                      </div>
+                    </>
+                  )}
+
+                  {execution.status !== 'verified' && (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground">Started:</span>
+                        <div>
+                          {execution.started_at 
+                            ? format(new Date(execution.started_at), 'h:mm a')
+                            : 'Not started'
+                          }
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Completed:</span>
+                        <div>
+                          {execution.completed_at 
+                            ? format(new Date(execution.completed_at), 'h:mm a')
+                            : 'Not completed'
+                          }
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {execution.notes && (
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium text-muted-foreground">Notes:</span>
+                    <p className="text-sm mt-1">{execution.notes}</p>
+                  </div>
+                )}
+
+                  {execution.status === 'verified' && execution.verifier && (
+                    <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle className="h-4 w-4 text-blue-500" />
+                      <span>
+                        Verified by {execution.verifier.name} on{' '}
+                        {format(new Date(execution.verified_at!), 'MMM d, yyyy h:mm a')}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      {isMobile ? (
+        <PullToRefresh onRefresh={handleRefresh}>
+          <ScrollArea className="h-[calc(100vh-16rem)]">
+            <div className="space-y-6 pb-4">
+              {content}
+            </div>
+          </ScrollArea>
+        </PullToRefresh>
+      ) : (
+        content
       )}
 
       {/* Detail Dialog */}

@@ -2,9 +2,12 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { Search, Filter, Calendar, Users } from 'lucide-react';
+import { Search, Filter, Calendar, Users, SlidersHorizontal } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 interface ChecklistHistoryFiltersProps {
   searchTerm: string;
@@ -32,73 +35,139 @@ export const ChecklistHistoryFilters: React.FC<ChecklistHistoryFiltersProps> = (
   onLimitChange,
 }) => {
   const { teams } = useTeamQueries();
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = React.useState(!isMobile);
 
   return (
     <div className="space-y-4">
-      {/* Search and Status */}
-      <div className="flex gap-4 items-center flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search checklists, users, or verifiers..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={statusFilter} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="completed_verified">Completed & Verified</SelectItem>
-            <SelectItem value="completed">Completed Only</SelectItem>
-            <SelectItem value="verified">Verified Only</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={limit.toString()} onValueChange={(value) => onLimitChange(parseInt(value))}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="25">25 items</SelectItem>
-            <SelectItem value="50">50 items</SelectItem>
-            <SelectItem value="100">100 items</SelectItem>
-            <SelectItem value="200">200 items</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Search - Always Visible */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search checklists, users, or verifiers..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10 h-11"
+        />
       </div>
 
-      {/* Date Range and Team */}
-      <div className="flex gap-4 items-center flex-wrap">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <DatePickerWithRange
-            date={dateRange}
-            onDateChange={onDateRangeChange}
-            className="w-auto"
-          />
-        </div>
+      {/* Mobile: Collapsible Filters */}
+      {isMobile ? (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full h-11">
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              {isOpen ? 'Hide' : 'Show'} Filters
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3 mt-3">
+            <Select value={statusFilter} onValueChange={onStatusChange}>
+              <SelectTrigger className="w-full h-11">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="completed_verified">Completed & Verified</SelectItem>
+                <SelectItem value="completed">Completed Only</SelectItem>
+                <SelectItem value="verified">Verified Only</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <Select value={selectedTeam} onValueChange={onTeamChange}>
-          <SelectTrigger className="w-48">
-            <Users className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by team" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Teams</SelectItem>
-            {teams?.map((team) => (
-              <SelectItem key={team.id} value={team.id}>
-                {team.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={limit.toString()} onValueChange={(val) => onLimitChange(Number(val))}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Items" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25 items</SelectItem>
+                  <SelectItem value="50">50 items</SelectItem>
+                  <SelectItem value="100">100 items</SelectItem>
+                  <SelectItem value="200">200 items</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedTeam} onValueChange={onTeamChange}>
+                <SelectTrigger className="h-11">
+                  <Users className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Team" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {teams?.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+              <DatePickerWithRange
+                date={dateRange}
+                onDateChange={onDateRangeChange}
+                className="w-full"
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        /* Desktop: All Filters Visible */
+        <>
+          <div className="flex gap-4 items-center flex-wrap">
+            <Select value={statusFilter} onValueChange={onStatusChange}>
+              <SelectTrigger className="w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="completed_verified">Completed & Verified</SelectItem>
+                <SelectItem value="completed">Completed Only</SelectItem>
+                <SelectItem value="verified">Verified Only</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={limit.toString()} onValueChange={(value) => onLimitChange(parseInt(value))}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25 items</SelectItem>
+                <SelectItem value="50">50 items</SelectItem>
+                <SelectItem value="100">100 items</SelectItem>
+                <SelectItem value="200">200 items</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <DatePickerWithRange
+                date={dateRange}
+                onDateChange={onDateRangeChange}
+                className="w-auto"
+              />
+            </div>
+
+            <Select value={selectedTeam} onValueChange={onTeamChange}>
+              <SelectTrigger className="w-48">
+                <Users className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams?.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
     </div>
   );
 };
