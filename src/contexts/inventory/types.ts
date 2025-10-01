@@ -48,6 +48,18 @@ export interface TeamItemPricing {
   created_by?: string;
 }
 
+export interface TeamItemVisibility {
+  id: string;
+  organization_id: string;
+  team_id: string;
+  item_id: string;
+  is_hidden: boolean;
+  hidden_at?: string;
+  hidden_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface InventoryItem {
   id: string;
   organization_id: string;
@@ -328,4 +340,10 @@ export interface InventoryContextType {
   refreshVendors: () => Promise<void>;
   refreshTemplateItems: () => Promise<void>;
   refreshData: () => Promise<void>;
+  
+  // Team-isolated item management
+  makeTeamSpecificCopy: (item: InventoryItem, teamId: string) => Promise<InventoryItem | null>;
+  hideItemFromTeam: (itemId: string, teamId: string) => Promise<void>;
+  showItemForTeam: (itemId: string, teamId: string) => Promise<void>;
+  revertToGlobalItem: (itemId: string) => Promise<void>;
 }

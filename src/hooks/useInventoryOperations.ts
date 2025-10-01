@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@/lib/notifications';
+import { toast } from '@/hooks/use-toast';
 import { useUserTimezone } from '@/hooks/useUserTimezone';
 // Removed broken createTimestampInTZ import - use new Date().toISOString() directly
 import { 
@@ -12,7 +13,8 @@ import {
   inventoryTemplatesApi,
   inventoryCategoriesApi,
   inventoryUnitsApi,
-  vendorsApi
+  vendorsApi,
+  teamItemVisibilityApi
 } from '@/contexts/inventory/api';
 import { 
   InventoryItem, 
@@ -679,6 +681,104 @@ export const useInventoryOperations = ({
     await refreshCounts();
   }, [handleAsyncOperation, refreshCounts]);
 
+  // Team-isolated item management operations
+  const makeTeamSpecificCopy = useCallback(async (item: InventoryItem, teamId: string): Promise<InventoryItem | null> => {
+    if (item.team_id === teamId) {
+      toast({
+        title: 'Already Team-Specific',
+        description: 'This item is already specific to your team',
+      });
+      return null;
+    }
+
+    const teamCopy: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by'> = {
+      ...item,
+      team_id: teamId,
+      name: item.name, // Keep same name
+      description: item.description,
+      category_id: item.category_id,
+      base_unit_id: item.base_unit_id,
+      vendor_id: item.vendor_id,
+      purchase_unit: item.purchase_unit,
+      conversion_factor: item.conversion_factor,
+      purchase_price: item.purchase_price,
+      current_stock: item.current_stock,
+      minimum_threshold: item.minimum_threshold,
+      maximum_threshold: item.maximum_threshold,
+      reorder_point: item.reorder_point,
+      unit_cost: item.unit_cost,
+      sale_price: item.sale_price,
+      supplier_info: item.supplier_info,
+      barcode: item.barcode,
+      sku: item.sku ? `${item.sku}-${teamId.substring(0, 8)}` : undefined, // Unique SKU for team copy
+      location: item.location,
+      image_url: item.image_url,
+      shelf_life_days: item.shelf_life_days,
+      is_active: true,
+      is_template: false,
+      sort_order: item.sort_order,
+    };
+
+    const result = await handleAsyncOperation(
+      () => createItem(teamCopy),
+      'Create Team Copy',
+      'Team-specific copy created successfully'
+    );
+
+    return result;
+  }, [createItem, handleAsyncOperation]);
+
+  const hideItemFromTeam = useCallback(async (itemId: string, teamId: string): Promise<void> => {
+    if (!user?.organizationId) {
+      toast({
+        title: 'Error',
+        description: 'Organization context not available',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    await handleAsyncOperation(
+      () => teamItemVisibilityApi.hideItem(teamId, itemId, user.organizationId!, user.id),
+      'Hide Item',
+      'Item hidden from team catalog'
+    );
+    
+    await refreshItems();
+  }, [user, handleAsyncOperation, refreshItems]);
+
+  const showItemForTeam = useCallback(async (itemId: string, teamId: string): Promise<void> => {
+    if (!user?.organizationId) {
+      toast({
+        title: 'Error',
+        description: 'Organization context not available',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    await handleAsyncOperation(
+      () => teamItemVisibilityApi.showItem(teamId, itemId, user.organizationId!),
+      'Show Item',
+      'Item restored to team catalog'
+    );
+    
+    await refreshItems();
+  }, [user, handleAsyncOperation, refreshItems]);
+
+  const revertToGlobalItem = useCallback(async (itemId: string): Promise<void> => {
+    await handleAsyncOperation(
+      async () => {
+        // Delete the team-specific copy
+        await inventoryItemsApi.delete(itemId);
+      },
+      'Revert to Global',
+      'Reverted to global item successfully'
+    );
+    
+    await refreshItems();
+  }, [handleAsyncOperation, refreshItems]);
+
   return {
     // Item operations
     createItem,
@@ -727,5 +827,11 @@ export const useInventoryOperations = ({
     removeItemFromTemplate,
     updateTemplateItem,
     duplicateTemplate,
+    
+    // Team-isolated item management
+    makeTeamSpecificCopy,
+    hideItemFromTeam,
+    showItemForTeam,
+    revertToGlobalItem,
   };
 };

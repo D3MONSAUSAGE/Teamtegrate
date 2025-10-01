@@ -8213,6 +8213,64 @@ export type Database = {
           },
         ]
       }
+      team_item_visibility: {
+        Row: {
+          created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          is_hidden: boolean
+          item_id: string
+          organization_id: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          item_id: string
+          organization_id: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          is_hidden?: boolean
+          item_id?: string
+          organization_id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_item_visibility_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_item_visibility_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_item_visibility_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_job_roles: {
         Row: {
           created_at: string
