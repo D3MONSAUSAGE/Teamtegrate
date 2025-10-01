@@ -33,8 +33,11 @@ export const manufacturingBatchesApi = {
       .from('manufacturing_batches')
       .select(`
         *,
-        inventory_lots!inventory_lots_id_fkey(lot_number, item_id),
-        inventory_items!inventory_lots_item_id_fkey(name, sku)
+        inventory_lots!lot_id(
+          lot_number,
+          item_id,
+          inventory_items!item_id(name, sku)
+        )
       `)
       .order('manufacturing_date', { ascending: false });
 
@@ -47,8 +50,11 @@ export const manufacturingBatchesApi = {
       .from('manufacturing_batches')
       .select(`
         *,
-        inventory_lots!inventory_lots_id_fkey(lot_number, item_id),
-        inventory_items!inventory_lots_item_id_fkey(name, sku)
+        inventory_lots!lot_id(
+          lot_number,
+          item_id,
+          inventory_items!item_id(name, sku)
+        )
       `)
       .eq('lot_id', lotId)
       .order('manufacturing_date', { ascending: false });
@@ -94,8 +100,11 @@ export const manufacturingBatchesApi = {
       .from('manufacturing_batches')
       .select(`
         *,
-        inventory_lots!inventory_lots_id_fkey(lot_number, item_id),
-        inventory_items!inventory_lots_item_id_fkey(name, sku)
+        inventory_lots!lot_id(
+          lot_number,
+          item_id,
+          inventory_items!item_id(name, sku)
+        )
       `)
       .gte('manufacturing_date', startDate)
       .lte('manufacturing_date', endDate)

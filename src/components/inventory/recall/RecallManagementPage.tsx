@@ -8,6 +8,9 @@ import { ManufacturingBatchDialog } from './ManufacturingBatchDialog';
 import { BatchManagementTable } from './BatchManagementTable';
 import { ProductionWorkflowGuide } from './ProductionWorkflowGuide';
 import { BulkBatchOperations } from './BulkBatchOperations';
+import { ProductionEventLog } from './ProductionEventLog';
+import { BatchTraceability } from './BatchTraceability';
+import { BatchAnalytics } from './BatchAnalytics';
 import { ManufacturingBatch } from '@/contexts/inventory/api';
 import { toast } from 'sonner';
 
@@ -62,19 +65,31 @@ export const RecallManagementPage: React.FC = () => {
         <TabsList>
           <TabsTrigger value="batches" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Manufacturing Batches
+            Batches
           </TabsTrigger>
           <TabsTrigger value="workflow" className="flex items-center gap-2">
             <Factory className="h-4 w-4" />
-            Production Workflow
+            Workflow
+          </TabsTrigger>
+          <TabsTrigger value="events" className="flex items-center gap-2">
+            <Factory className="h-4 w-4" />
+            Events
+          </TabsTrigger>
+          <TabsTrigger value="traceability" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Traceability
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="distributions" className="flex items-center gap-2">
             <Truck className="h-4 w-4" />
-            Product Distributions
+            Distributions
           </TabsTrigger>
           <TabsTrigger value="recalls" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
-            Recall Notices
+            Recalls
           </TabsTrigger>
         </TabsList>
 
@@ -110,6 +125,18 @@ export const RecallManagementPage: React.FC = () => {
 
         <TabsContent value="workflow" className="space-y-4">
           <ProductionWorkflowGuide />
+        </TabsContent>
+
+        <TabsContent value="events" className="space-y-4">
+          <ProductionEventLog />
+        </TabsContent>
+
+        <TabsContent value="traceability" className="space-y-4">
+          <BatchTraceability />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <BatchAnalytics />
         </TabsContent>
 
         <TabsContent value="distributions" className="space-y-4">
