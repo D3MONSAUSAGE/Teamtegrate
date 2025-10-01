@@ -74,16 +74,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   batchData,
   inModal = false
 }) => {
-  const inventoryContext = useInventory();
-  const { user } = useAuth();
-  const { recordLabelGeneration, saving: savingLabelToDb } = useLabelGeneration();
-  
-  const items = inventoryContext.items || [];
-
   const location = useLocation();
   const { items, loading: inventoryLoading } = useInventory();
   const { user } = useAuth();
-  const { generateLabels } = useLabelGeneration();
+  const { recordLabelGeneration, saving: savingLabelToDb } = useLabelGeneration();
   const { 
     templates: savedTemplates, 
     loading: templatesLoading,
@@ -93,7 +87,12 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   } = useLabelTemplates();
   
   const [isMobile, setIsMobile] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string>(
+    preSelectedItemId || batchData?.itemId || ''
+  );
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('food');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [quantityToPrint, setQuantityToPrint] = useState<number>(1);
 
