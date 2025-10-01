@@ -2824,7 +2824,7 @@ export type Database = {
           sku: string | null
           sort_order: number | null
           supplier_info: Json | null
-          team_id: string | null
+          team_id: string
           template_name: string | null
           unit_cost: number | null
           unit_of_measure: string
@@ -2860,7 +2860,7 @@ export type Database = {
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
-          team_id?: string | null
+          team_id: string
           template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string
@@ -2896,7 +2896,7 @@ export type Database = {
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
-          team_id?: string | null
+          team_id?: string
           template_name?: string | null
           unit_cost?: number | null
           unit_of_measure?: string

@@ -3,19 +3,9 @@ import { InventoryItem } from '../types';
 
 export const inventoryItemsApi = {
   async getAll(): Promise<InventoryItem[]> {
-    const { data: user, error: userError } = await supabase.auth.getUser();
-    if (userError || !user.user) throw new Error('Not authenticated');
-
-    // Get user's organization and role for team-based filtering
-    const { data: userData, error: userDataError } = await supabase
-      .from('users')
-      .select('organization_id, role')
-      .eq('id', user.user.id)
-      .single();
-
-    if (userDataError || !userData) throw new Error('Could not get user data');
-
-    let query = supabase
+    // RLS policies now handle all filtering automatically
+    // Users see only their team's items, admins see all items
+    const { data, error } = await supabase
       .from('inventory_items')
       .select(`
         *,
@@ -25,43 +15,10 @@ export const inventoryItemsApi = {
         teams:team_id(name)
       `)
       .eq('is_active', true)
-      .eq('organization_id', userData.organization_id);
-
-    // Apply team-based filtering based on user role
-    if (userData.role === 'admin' || userData.role === 'superadmin') {
-      // Admins see all items in their organization (no additional filter needed)
-    } else if (userData.role === 'manager') {
-      // Managers see items from their managed teams + items available to all teams (team_id = null)
-      const { data: managedTeams } = await supabase
-        .from('teams')
-        .select('id')
-        .eq('manager_id', user.user.id)
-        .eq('organization_id', userData.organization_id);
-
-      const teamIds = managedTeams?.map(t => t.id) || [];
-      if (teamIds.length > 0) {
-        query = query.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
-      } else {
-        query = query.is('team_id', null);
-      }
-    } else {
-      // Other users see items from teams they belong to + items available to all teams
-      const { data: userTeams } = await supabase
-        .from('team_memberships')
-        .select('team_id')
-        .eq('user_id', user.user.id);
-
-      const teamIds = userTeams?.map(tm => tm.team_id) || [];
-      if (teamIds.length > 0) {
-        query = query.or(`team_id.is.null,team_id.in.(${teamIds.join(',')})`);
-      } else {
-        query = query.is('team_id', null);
-      }
-    }
-
-    const { data, error } = await query.order('name');
+      .order('name');
 
     if (error) throw error;
+    console.log(`Loaded ${data?.length || 0} inventory items`);
     return (data || []) as any;
   },
 

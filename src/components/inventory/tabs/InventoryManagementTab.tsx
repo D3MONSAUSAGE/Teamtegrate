@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { InventoryItemDialog } from '../InventoryItemDialog';
-import { TeamItemActionDialog } from '../TeamItemActionDialog';
+
 
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
@@ -48,17 +48,11 @@ export const InventoryManagementTab: React.FC = () => {
     deleteItem,
     createCategory, 
     createUnit,
-    makeTeamSpecificCopy,
-    hideItemFromTeam,
-    revertToGlobalItem,
     refreshItems
   } = useInventory();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [isTeamActionDialogOpen, setIsTeamActionDialogOpen] = useState(false);
-  const [itemForTeamAction, setItemForTeamAction] = useState<any | null>(null);
-  const [userCurrentTeamId, setUserCurrentTeamId] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -158,88 +152,6 @@ export const InventoryManagementTab: React.FC = () => {
   };
 
   const handleEditItem = async (itemId: string) => {
-    console.log('🎯 handleEditItem called:', { itemId, userRole: user?.role, userId: user?.id });
-    
-    const item = items.find(i => i.id === itemId);
-    if (!item) {
-      console.error('❌ Item not found:', itemId);
-      return;
-    }
-
-    console.log('📦 Item to edit:', { 
-      id: item.id, 
-      name: item.name, 
-      team_id: item.team_id,
-      isGlobal: !item.team_id 
-    });
-
-    // Check if user is a superadmin - they can edit anything
-    const isSuperAdmin = user?.role === 'superadmin';
-    console.log('👤 User check:', { isSuperAdmin, role: user?.role });
-    
-    // CRITICAL: If item is global (team_id is null) and user is not superadmin
-    if (!item.team_id && !isSuperAdmin) {
-      console.log('🚫 Global item detected, non-superadmin user - showing team action dialog');
-      
-      // Get user's team from team memberships
-      try {
-        const { data: memberships, error: membershipError } = await supabase
-          .from('team_memberships')
-          .select('team_id, teams(name)')
-          .eq('user_id', user?.id)
-          .limit(1);
-        
-        console.log('👥 Team membership query result:', { memberships, error: membershipError });
-        
-        if (memberships && memberships.length > 0) {
-          const teamId = memberships[0].team_id;
-          console.log('✅ User has team membership:', teamId);
-          setUserCurrentTeamId(teamId);
-          setItemForTeamAction(item);
-          setIsTeamActionDialogOpen(true);
-          return; // STOP HERE - don't allow direct edit
-        } else {
-          console.warn('⚠️ User has no team membership');
-          toast.error('You must be assigned to a team to manage inventory items');
-          return;
-        }
-      } catch (error) {
-        console.error('❌ Error fetching team membership:', error);
-        toast.error('Failed to verify team membership');
-        return;
-      }
-    }
-
-    // If item is team-specific, check if user belongs to that team
-    if (item.team_id && !isSuperAdmin) {
-      console.log('🔍 Checking team membership for team-specific item:', item.team_id);
-      
-      try {
-        const { data: membership, error: membershipError } = await supabase
-          .from('team_memberships')
-          .select('id')
-          .eq('user_id', user?.id)
-          .eq('team_id', item.team_id)
-          .maybeSingle();
-        
-        console.log('👥 Team membership check:', { membership, error: membershipError });
-        
-        if (!membership) {
-          console.error('🚫 User not member of item team');
-          toast.error('You can only edit items from your own team');
-          return;
-        }
-        
-        console.log('✅ Team membership verified');
-      } catch (error) {
-        console.error('❌ Error checking team membership:', error);
-        toast.error('Failed to verify team membership');
-        return;
-      }
-    }
-
-    // Allow edit
-    console.log('✅ All checks passed, opening edit dialog');
     setSelectedItemId(itemId);
     setIsDialogOpen(true);
   };
@@ -754,134 +666,6 @@ export const InventoryManagementTab: React.FC = () => {
         onOpenChange={setIsDialogOpen}
         itemId={selectedItemId}
       />
-
-      <TeamItemActionDialog
-        open={isTeamActionDialogOpen}
-        onOpenChange={setIsTeamActionDialogOpen}
-        item={itemForTeamAction}
-        teamId={userCurrentTeamId || ''}
-        onMakeTeamCopy={async (item) => {
-          if (!userCurrentTeamId) {
-            console.error('❌ No team ID available');
-            toast.error('Team context not available');
-            return;
-          }
-          
-          console.log('🔄 Creating team-specific copy:', {
-            itemId: item.id,
-            itemName: item.name,
-            teamId: userCurrentTeamId
-          });
-          
-          try {
-            const result = await makeTeamSpecificCopy(item, userCurrentTeamId);
-            
-            if (result) {
-              console.log('✅ Team copy created successfully:', result.id);
-              toast.success(`Team-specific copy created for ${item.name}`);
-              
-              // Force refresh the items list to show the new team-specific copy
-              console.log('🔄 Refreshing items list...');
-              await refreshItems();
-              
-              setIsTeamActionDialogOpen(false);
-              setItemForTeamAction(null);
-            } else {
-              console.warn('⚠️ makeTeamSpecificCopy returned null');
-            }
-          } catch (error) {
-            console.error('❌ Failed to create team copy:', error);
-            toast.error('Failed to create team copy');
-          }
-        }}
-        onHideFromTeam={async (itemId) => {
-          if (!userCurrentTeamId) return;
-          try {
-            console.log('🔄 Hiding item from team:', { itemId, teamId: userCurrentTeamId });
-            await hideItemFromTeam(itemId, userCurrentTeamId);
-            toast.success('Item hidden from team catalog');
-            await refreshItems();
-            setIsTeamActionDialogOpen(false);
-            setItemForTeamAction(null);
-          } catch (error) {
-            console.error('❌ Failed to hide item:', error);
-            toast.error('Failed to hide item');
-          }
-        }}
-        onRevertToGlobal={async (itemId) => {
-          try {
-            console.log('🔄 Reverting to global item:', itemId);
-            await revertToGlobalItem(itemId);
-            toast.success('Reverted to global item');
-            await refreshItems();
-            setIsTeamActionDialogOpen(false);
-            setItemForTeamAction(null);
-          } catch (error) {
-            console.error('❌ Failed to revert item:', error);
-            toast.error('Failed to revert item');
-          }
-        }}
-      />
-
-      <InventoryCategoryDialog
-        open={isCategoryDialogOpen}
-        onOpenChange={setIsCategoryDialogOpen}
-        categoryId={selectedCategoryId}
-      />
-
-      <InventoryUnitDialog
-        open={isUnitDialogOpen}
-        onOpenChange={setIsUnitDialogOpen}
-        unitId={selectedUnitId}
-      />
-
-      <VendorDialog
-        open={isVendorDialogOpen}
-        onOpenChange={setIsVendorDialogOpen}
-        vendor={selectedVendor}
-        onSave={handleSaveVendor}
-      />
-
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Item</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteItem}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Item
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={!!vendorToDelete} onOpenChange={(open) => !open && setVendorToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{vendorToDelete?.name}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteVendor}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Vendor
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

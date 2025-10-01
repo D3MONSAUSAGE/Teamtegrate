@@ -23,24 +23,21 @@ export const TeamInventorySelector: React.FC<TeamInventorySelectorProps> = ({
   const { availableTeams, isAdmin, isManager } = useTeamAccess();
 
   const handleValueChange = (newValue: string) => {
-    onChange(newValue === 'all' ? null : newValue);
+    onChange(newValue);
   };
 
   return (
     <div className={className}>
       {label && <Label>{label}</Label>}
       <Select 
-        value={value || 'all'} 
+        value={value || ''} 
         onValueChange={handleValueChange}
-        disabled={disabled}
+        disabled={disabled || availableTeams.length === 0}
       >
         <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={availableTeams.length === 0 ? "No teams available" : placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">
-            All Teams (Available to everyone)
-          </SelectItem>
           {availableTeams.map((team) => (
             <SelectItem key={team.id} value={team.id}>
               {team.name}
@@ -51,18 +48,10 @@ export const TeamInventorySelector: React.FC<TeamInventorySelectorProps> = ({
               )}
             </SelectItem>
           ))}
-          {availableTeams.length === 0 && !isAdmin && (
-            <SelectItem value="no-teams" disabled>
-              No teams available
-            </SelectItem>
-          )}
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground mt-1">
-        {value === null || value === 'all'
-          ? "This item will be available to all teams in your organization"
-          : `This item will only be available to the selected team${isAdmin ? ' and admins' : ''}`
-        }
+        This item will only be visible to members of the selected team{isAdmin ? ' (Admins can see all teams)' : ''}.
       </p>
     </div>
   );

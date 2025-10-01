@@ -340,10 +340,4 @@ export interface InventoryContextType {
   refreshVendors: () => Promise<void>;
   refreshTemplateItems: () => Promise<void>;
   refreshData: () => Promise<void>;
-  
-  // Team-isolated item management
-  makeTeamSpecificCopy: (item: InventoryItem, teamId: string) => Promise<InventoryItem | null>;
-  hideItemFromTeam: (itemId: string, teamId: string) => Promise<void>;
-  showItemForTeam: (itemId: string, teamId: string) => Promise<void>;
-  revertToGlobalItem: (itemId: string) => Promise<void>;
 }
