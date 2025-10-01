@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertTriangle, Package, Truck, Factory, Merge } from 'lucide-react';
@@ -21,6 +21,7 @@ export const RecallManagementPage: React.FC = () => {
   const [selectedBatch, setSelectedBatch] = useState<ManufacturingBatch | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [batches, setBatches] = useState<ManufacturingBatch[]>([]);
+  const [activeTab, setActiveTab] = useState('batches');
 
   const handlePrintLabels = (batch: ManufacturingBatch) => {
     setSelectedBatch(batch);
@@ -53,39 +54,61 @@ export const RecallManagementPage: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="batches" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="batches" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
+      <ScrollableTabs className="space-y-4">
+        <ScrollableTabsList>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'batches'}
+            onClick={() => setActiveTab('batches')}
+          >
+            <Package className="h-4 w-4 mr-2" />
             Batches
-          </TabsTrigger>
-          <TabsTrigger value="workflow" className="flex items-center gap-2">
-            <Factory className="h-4 w-4" />
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'workflow'}
+            onClick={() => setActiveTab('workflow')}
+          >
+            <Factory className="h-4 w-4 mr-2" />
             Workflow
-          </TabsTrigger>
-          <TabsTrigger value="events" className="flex items-center gap-2">
-            <Factory className="h-4 w-4" />
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'events'}
+            onClick={() => setActiveTab('events')}
+          >
+            <Factory className="h-4 w-4 mr-2" />
             Events
-          </TabsTrigger>
-          <TabsTrigger value="traceability" className="flex items-center gap-2">
-            <Truck className="h-4 w-4" />
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'traceability'}
+            onClick={() => setActiveTab('traceability')}
+          >
+            <Truck className="h-4 w-4 mr-2" />
             Traceability
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'analytics'}
+            onClick={() => setActiveTab('analytics')}
+          >
+            <Package className="h-4 w-4 mr-2" />
             Analytics
-          </TabsTrigger>
-          <TabsTrigger value="distributions" className="flex items-center gap-2">
-            <Truck className="h-4 w-4" />
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'distributions'}
+            onClick={() => setActiveTab('distributions')}
+          >
+            <Truck className="h-4 w-4 mr-2" />
             Distributions
-          </TabsTrigger>
-          <TabsTrigger value="recalls" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeTab === 'recalls'}
+            onClick={() => setActiveTab('recalls')}
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" />
             Recalls
-          </TabsTrigger>
-        </TabsList>
+          </ScrollableTabsTrigger>
+        </ScrollableTabsList>
 
-        <TabsContent value="batches" className="space-y-4">
+        {activeTab === 'batches' && (
+          <div className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -113,78 +136,91 @@ export const RecallManagementPage: React.FC = () => {
               />
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="workflow" className="space-y-4">
-          <ProductionWorkflowGuide />
-        </TabsContent>
+        {activeTab === 'workflow' && (
+          <div className="space-y-4">
+            <ProductionWorkflowGuide />
+          </div>
+        )}
 
-        <TabsContent value="events" className="space-y-4">
-          <ProductionEventLog />
-        </TabsContent>
+        {activeTab === 'events' && (
+          <div className="space-y-4">
+            <ProductionEventLog />
+          </div>
+        )}
 
-        <TabsContent value="traceability" className="space-y-4">
-          <BatchTraceability />
-        </TabsContent>
+        {activeTab === 'traceability' && (
+          <div className="space-y-4">
+            <BatchTraceability />
+          </div>
+        )}
 
-        <TabsContent value="analytics" className="space-y-4">
-          <BatchAnalytics />
-        </TabsContent>
+        {activeTab === 'analytics' && (
+          <div className="space-y-4">
+            <BatchAnalytics />
+          </div>
+        )}
 
-        <TabsContent value="distributions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Distributions</CardTitle>
-              <CardDescription>
-                Track outbound shipments, customers, and delivery status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Distribution tracking coming soon. Record where products go, which customers receive them,
-                and maintain complete delivery records for recall management.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {activeTab === 'distributions' && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Distributions</CardTitle>
+                <CardDescription>
+                  Track outbound shipments, customers, and delivery status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Distribution tracking coming soon. Record where products go, which customers receive them,
+                  and maintain complete delivery records for recall management.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        <TabsContent value="recalls" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recall Notices</CardTitle>
-              <CardDescription>
-                Manage product recalls with full impact analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <div className="flex gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-amber-900">Recall Management</h4>
-                      <p className="text-sm text-amber-800 mt-1">
-                        When a recall is initiated, the system will:
-                      </p>
-                      <ul className="text-sm text-amber-800 mt-2 space-y-1 list-disc list-inside">
-                        <li>Identify all affected batches and lots</li>
-                        <li>Calculate total affected quantities</li>
-                        <li>Track which customers received affected products</li>
-                        <li>Provide distribution details with tracking numbers</li>
-                        <li>Generate reports for regulatory compliance</li>
-                      </ul>
+        {activeTab === 'recalls' && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recall Notices</CardTitle>
+                <CardDescription>
+                  Manage product recalls with full impact analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-amber-900">Recall Management</h4>
+                        <p className="text-sm text-amber-800 mt-1">
+                          When a recall is initiated, the system will:
+                        </p>
+                        <ul className="text-sm text-amber-800 mt-2 space-y-1 list-disc list-inside">
+                          <li>Identify all affected batches and lots</li>
+                          <li>Calculate total affected quantities</li>
+                          <li>Track which customers received affected products</li>
+                          <li>Provide distribution details with tracking numbers</li>
+                          <li>Generate reports for regulatory compliance</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <p className="text-sm text-muted-foreground">
-                  No active recalls at this time. Full recall management interface coming soon.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <p className="text-sm text-muted-foreground">
+                    No active recalls at this time. Full recall management interface coming soon.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </ScrollableTabs>
 
       <ManufacturingBatchDialog
         open={batchDialogOpen}

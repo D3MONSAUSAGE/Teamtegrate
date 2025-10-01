@@ -23,10 +23,10 @@ export const useLabelGeneration = () => {
 
     setSaving(true);
     try {
-      // Save the generated label record
+      // Save the generated label record (template_id is optional, use null if not provided)
       const labelRecord = await generatedLabelsApi.create({
         organization_id: user.organizationId,
-        template_id: data.labelData.templateId || 'default',
+        template_id: data.labelData.templateId || null,
         item_id: data.itemId,
         lot_id: data.lotId,
         label_data: data.labelData,

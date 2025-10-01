@@ -77,47 +77,51 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({
         
         return (
           <Card key={batch.id}>
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="space-y-3 flex-1">
-                  <div className="flex items-center gap-3">
-                    <Package className="h-5 w-5 text-primary" />
-                    <div>
-                      <h3 className="font-semibold text-lg">{batch.batch_number}</h3>
-                      <p className="text-sm text-muted-foreground">{itemName}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      <Package className="h-5 w-5 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-base md:text-lg truncate">{batch.batch_number}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{itemName}</p>
+                      </div>
                     </div>
-                    <Badge variant={status.variant}>{status.text}</Badge>
+                    <Badge variant={status.variant} className="self-start sm:self-center whitespace-nowrap">
+                      {status.text}
+                    </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Lot Number</p>
+                      <p className="text-muted-foreground text-xs mb-1">Lot Number</p>
                       <p className="font-medium flex items-center gap-1">
-                        <Hash className="h-3 w-3" />
-                        {lotNumber}
+                        <Hash className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{lotNumber}</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Manufacturing Date</p>
+                      <p className="text-muted-foreground text-xs mb-1">Mfg Date</p>
                       <p className="font-medium flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(batch.manufacturing_date), 'MMM dd, yyyy')}
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{format(new Date(batch.manufacturing_date), 'MMM dd, yyyy')}</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Total Manufactured</p>
-                      <p className="font-medium text-lg">{batch.total_quantity_manufactured}</p>
+                      <p className="text-muted-foreground text-xs mb-1">Total Mfg</p>
+                      <p className="font-medium text-base md:text-lg">{batch.total_quantity_manufactured}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Labels Printed</p>
-                      <p className="font-medium text-lg">{batch.quantity_labeled}</p>
+                      <p className="text-muted-foreground text-xs mb-1">Labels Printed</p>
+                      <p className="font-medium text-base md:text-lg">{batch.quantity_labeled}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Remaining Unlabeled</span>
+                        <span className="text-muted-foreground">Remaining</span>
                         <span className="font-medium">{batch.quantity_remaining} units</span>
                       </div>
                       <div className="w-full bg-secondary rounded-full h-2">
@@ -132,7 +136,7 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({
                   </div>
 
                   {batch.production_notes && (
-                    <div className="text-xs text-muted-foreground border-l-2 border-border pl-3">
+                    <div className="text-xs text-muted-foreground border-l-2 border-border pl-3 py-1">
                       {batch.production_notes}
                     </div>
                   )}
@@ -141,7 +145,8 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({
                 <Button
                   onClick={() => onPrintLabels(batch)}
                   disabled={batch.quantity_remaining === 0}
-                  className="ml-4"
+                  className="w-full md:w-auto md:ml-4"
+                  size="default"
                 >
                   <Printer className="mr-2 h-4 w-4" />
                   Print Labels
