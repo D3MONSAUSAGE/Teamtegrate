@@ -137,6 +137,11 @@ export const inventoryItemsApi = {
     if (error) {
       console.error('❌ Database error during item update:', error);
       
+      // Handle SKU immutability - SKUs cannot be changed once assigned
+      if (error.message?.includes('SKU cannot be modified')) {
+        throw new Error('SKU cannot be changed once assigned to a product. SKUs are permanent identifiers.');
+      }
+      
       // Handle SKU uniqueness constraint
       if (error.code === '23505' && (error.message?.includes('sku') || error.message?.includes('ux_inventory_items_sku'))) {
         throw new Error(`SKU "${updates.sku}" is already used by another item`);

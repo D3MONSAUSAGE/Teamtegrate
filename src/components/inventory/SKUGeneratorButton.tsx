@@ -33,7 +33,7 @@ export const SKUGeneratorButton: React.FC<SKUGeneratorButtonProps> = ({
     setIsGenerating(true);
     
     try {
-      const newSKU = await generateSKU(categoryId, categories, excludeId);
+      const newSKU = await generateSKU(categoryId, categories);
       onSKUGenerated(newSKU);
       toast.success('SKU generated successfully');
     } catch (error) {

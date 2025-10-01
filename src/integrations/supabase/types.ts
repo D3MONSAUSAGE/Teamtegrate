@@ -3099,6 +3099,50 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_sku_audit: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          item_id: string
+          metadata: Json | null
+          new_sku: string | null
+          old_sku: string | null
+          organization_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          item_id: string
+          metadata?: Json | null
+          new_sku?: string | null
+          old_sku?: string | null
+          organization_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          metadata?: Json | null
+          new_sku?: string | null
+          old_sku?: string | null
+          organization_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sku_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_template_items: {
         Row: {
           created_at: string
@@ -10558,6 +10602,10 @@ export type Database = {
       }
       generate_invoice_number: {
         Args: { org_id: string }
+        Returns: string
+      }
+      generate_next_sku: {
+        Args: { p_category_prefix?: string; p_organization_id: string }
         Returns: string
       }
       generate_recurring_task_occurrence: {
