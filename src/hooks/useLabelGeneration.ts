@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { generatedLabelsApi, manufacturingBatchesApi, labelTemplatesApi } from '@/contexts/inventory/api';
+import { validateUUID } from '@/utils/uuidValidation';
 
 interface LabelGenerationData {
   itemId: string;
@@ -23,31 +24,61 @@ export const useLabelGeneration = () => {
 
     setSaving(true);
     try {
-      // Resolve template_id - fetch default if not provided
+      // Validate and resolve all UUID fields
+      const validatedItemId = validateUUID(data.itemId);
+      if (!validatedItemId) {
+        throw new Error('Invalid item ID provided');
+      }
+
+      const validatedLotId = data.lotId ? validateUUID(data.lotId) : null;
+      const validatedOrgId = validateUUID(user.organizationId);
+      const validatedUserId = validateUUID(user.id);
+
+      if (!validatedOrgId || !validatedUserId) {
+        throw new Error('Invalid user or organization ID');
+      }
+
+      // Resolve template_id - handle string categories or fetch default
       let templateId = data.labelData.templateId;
       
-      if (!templateId) {
-        console.log('No template ID provided, fetching default template...');
+      // Check if templateId is a valid UUID
+      const validatedTemplateId = templateId ? validateUUID(templateId) : null;
+      
+      if (!validatedTemplateId) {
+        console.log('No valid template ID provided, fetching templates...');
         const templates = await labelTemplatesApi.getAll();
         
         if (templates.length === 0) {
           throw new Error('No label templates found. Please create a template first.');
         }
         
-        templateId = templates[0].id;
-        console.log('Using default template:', templateId);
+        // If templateId is a category string (like "food"), try to find matching template
+        if (templateId && typeof templateId === 'string') {
+          const matchingTemplate = templates.find(
+            t => t.category?.toLowerCase() === templateId.toLowerCase() || 
+                 t.name?.toLowerCase().includes(templateId.toLowerCase())
+          );
+          templateId = matchingTemplate?.id || templates[0].id;
+          console.log(`Mapped category "${data.labelData.templateId}" to template:`, templateId);
+        } else {
+          // Use first available template
+          templateId = templates[0].id;
+          console.log('Using first available template:', templateId);
+        }
+      } else {
+        templateId = validatedTemplateId;
       }
 
-      // Save the generated label record
+      // Save the generated label record with validated UUIDs
       const labelRecord = await generatedLabelsApi.create({
-        organization_id: user.organizationId,
+        organization_id: validatedOrgId,
         template_id: templateId,
-        item_id: data.itemId,
-        lot_id: data.lotId,
+        item_id: validatedItemId,
+        lot_id: validatedLotId,
         label_data: data.labelData,
         print_format: data.printFormat,
         quantity_printed: data.quantityPrinted,
-        printed_by: user.id,
+        printed_by: validatedUserId,
       });
 
       // If batch is linked, update the batch quantities
