@@ -9,9 +9,13 @@ import { format } from 'date-fns';
 
 interface BatchManagementTableProps {
   onPrintLabels: (batch: ManufacturingBatch) => void;
+  onBatchesLoad?: (batches: ManufacturingBatch[]) => void;
 }
 
-export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({ onPrintLabels }) => {
+export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({ 
+  onPrintLabels,
+  onBatchesLoad 
+}) => {
   const [batches, setBatches] = useState<ManufacturingBatch[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,6 +28,7 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({ onPr
       setLoading(true);
       const data = await manufacturingBatchesApi.getAll();
       setBatches(data);
+      onBatchesLoad?.(data);
     } catch (error) {
       console.error('Failed to load batches:', error);
       toast.error('Failed to load manufacturing batches');

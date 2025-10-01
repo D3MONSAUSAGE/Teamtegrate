@@ -3,16 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertTriangle, Package, Truck, Factory } from 'lucide-react';
+import { Plus, AlertTriangle, Package, Truck, Factory, Merge } from 'lucide-react';
 import { ManufacturingBatchDialog } from './ManufacturingBatchDialog';
 import { BatchManagementTable } from './BatchManagementTable';
 import { ProductionWorkflowGuide } from './ProductionWorkflowGuide';
+import { BulkBatchOperations } from './BulkBatchOperations';
 import { ManufacturingBatch } from '@/contexts/inventory/api';
 import { toast } from 'sonner';
 
 export const RecallManagementPage: React.FC = () => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+  const [bulkOpsOpen, setBulkOpsOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [batches, setBatches] = useState<ManufacturingBatch[]>([]);
   const navigate = useNavigate();
 
   const handlePrintLabels = (batch: ManufacturingBatch) => {
@@ -34,6 +37,14 @@ export const RecallManagementPage: React.FC = () => {
     setBatchDialogOpen(false);
     setRefreshKey(prev => prev + 1);
     toast.success('Manufacturing batch created successfully!');
+  };
+
+  const handleBatchesLoaded = (loadedBatches: ManufacturingBatch[]) => {
+    setBatches(loadedBatches);
+  };
+
+  const handleBulkOpsSuccess = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -77,14 +88,22 @@ export const RecallManagementPage: React.FC = () => {
                     Track production runs, quantities, and lot associations
                   </CardDescription>
                 </div>
-                <Button onClick={() => setBatchDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Batch
-                </Button>
+                  <Button onClick={() => setBatchDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Batch
+                  </Button>
+                  <Button variant="outline" onClick={() => setBulkOpsOpen(true)}>
+                    <Merge className="mr-2 h-4 w-4" />
+                    Bulk Operations
+                  </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <BatchManagementTable key={refreshKey} onPrintLabels={handlePrintLabels} />
+              <BatchManagementTable 
+                key={refreshKey} 
+                onPrintLabels={handlePrintLabels}
+                onBatchesLoad={handleBatchesLoaded}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -152,6 +171,13 @@ export const RecallManagementPage: React.FC = () => {
         open={batchDialogOpen}
         onOpenChange={setBatchDialogOpen}
         onSuccess={handleBatchCreated}
+      />
+
+      <BulkBatchOperations
+        open={bulkOpsOpen}
+        onOpenChange={setBulkOpsOpen}
+        batches={batches}
+        onSuccess={handleBulkOpsSuccess}
       />
     </div>
   );
