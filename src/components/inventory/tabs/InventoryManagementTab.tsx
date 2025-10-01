@@ -666,6 +666,65 @@ export const InventoryManagementTab: React.FC = () => {
         onOpenChange={setIsDialogOpen}
         itemId={selectedItemId}
       />
+
+      <InventoryCategoryDialog
+        open={isCategoryDialogOpen}
+        onOpenChange={setIsCategoryDialogOpen}
+        categoryId={selectedCategoryId}
+      />
+
+      <InventoryUnitDialog
+        open={isUnitDialogOpen}
+        onOpenChange={setIsUnitDialogOpen}
+        unitId={selectedUnitId}
+      />
+
+      <VendorDialog
+        open={isVendorDialogOpen}
+        onOpenChange={setIsVendorDialogOpen}
+        vendor={selectedVendor}
+        onSave={handleSaveVendor}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteItem}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!vendorToDelete} onOpenChange={(open) => !open && setVendorToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{vendorToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteVendor}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Vendor
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
