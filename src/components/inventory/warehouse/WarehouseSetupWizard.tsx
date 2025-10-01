@@ -39,19 +39,35 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
     try {
       setLoading(true);
       
+      console.log('📦 Creating warehouse with teamId:', selectedTeamId, 'name:', warehouseName);
+      
       // Create team-specific warehouse instead of primary warehouse
       let warehouse;
       if (selectedTeamId) {
+        console.log('✅ Creating team warehouse for team:', selectedTeamId);
         warehouse = await warehouseApi.createTeamWarehouse(warehouseName, selectedTeamId);
+        console.log('✅ Created team warehouse:', warehouse);
       } else {
+        console.log('⚠️ No team ID provided - creating primary warehouse');
         warehouse = await warehouseApi.ensurePrimaryWarehouse(warehouseName);
       }
       
+      // Verify warehouse was created with correct team_id
+      if (selectedTeamId && warehouse.team_id !== selectedTeamId) {
+        console.error('❌ WAREHOUSE TEAM MISMATCH:', {
+          expected: selectedTeamId,
+          actual: warehouse.team_id,
+          warehouse
+        });
+        throw new Error('Warehouse was created but team association failed. Please try again.');
+      }
+      
+      console.log('✅ Warehouse created successfully:', warehouse);
       setCreatedWarehouse(warehouse);
       toast.success(`${warehouseName} created successfully`);
       setCurrentStep('inventory');
     } catch (error: any) {
-      console.error('Error creating warehouse:', error);
+      console.error('❌ Error creating warehouse:', error);
       toast.error(error?.message || 'Failed to create warehouse');
     } finally {
       setLoading(false);
@@ -89,9 +105,10 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
   };
 
   const handleComplete = async () => {
+    console.log('✅ Warehouse setup complete, transitioning back to main view');
     toast.success('Warehouse setup completed successfully!');
     // Add a brief delay to ensure database consistency before transitioning
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
     onComplete();
   };
 

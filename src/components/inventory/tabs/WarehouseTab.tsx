@@ -179,14 +179,19 @@ export const WarehouseTab: React.FC = () => {
   // Initial load for non-admin users and admin overview
   useEffect(() => {
     if (!isAdmin && !isSuperAdmin) {
-      // Non-admin users always load their warehouse
+      // Non-admin users: auto-select their team if they have one
+      if (availableTeams.length > 0 && selectedTeamId === null) {
+        console.log('Auto-selecting team for non-admin user:', availableTeams[0].id);
+        setSelectedTeamId(availableTeams[0].id);
+      }
+      // Load their warehouse
       loadWarehouse();
     } else {
       // Admin users show overview initially
       setShowOverview(true);
       setLoading(false);
     }
-  }, [isAdmin, isSuperAdmin, loadWarehouse]);
+  }, [isAdmin, isSuperAdmin, availableTeams, selectedTeamId, loadWarehouse]);
 
   const handleRefresh = useCallback(() => {
     console.log('🔄 Refreshing warehouse data...');
@@ -442,7 +447,14 @@ export const WarehouseTab: React.FC = () => {
           <WarehouseOverviewDashboard onSelectWarehouse={handleSelectWarehouse} />
         </React.Suspense>
       ) : !warehouse ? (
-        <NotConfigured onConfigured={loadWarehouse} selectedTeamId={selectedTeamId} />
+        <NotConfigured 
+          onConfigured={() => {
+            console.log('Warehouse configured - reloading');
+            // Reload warehouse after short delay to ensure DB consistency
+            setTimeout(() => loadWarehouse(), 500);
+          }}
+          selectedTeamId={selectedTeamId || (availableTeams.length > 0 ? availableTeams[0].id : null)}
+        />
       ) : (
         <ScrollableTabs>
           <ScrollableTabsList>

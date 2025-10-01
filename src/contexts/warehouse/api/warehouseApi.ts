@@ -413,10 +413,17 @@ export const warehouseApi = {
 
   // Create a team-specific warehouse (non-primary)
   async createTeamWarehouse(name: string, teamId: string): Promise<Warehouse> {
+    console.log('🏭 createTeamWarehouse called with:', { name, teamId });
+    
     // Must be authenticated
     const { data: authRes } = await supabase.auth.getUser();
     const uid = authRes?.user?.id;
-    if (!uid) throw new Error('You must be signed in to set up a warehouse.');
+    if (!uid) {
+      console.error('❌ No authenticated user');
+      throw new Error('You must be signed in to set up a warehouse.');
+    }
+
+    console.log('✅ Authenticated user:', uid);
 
     // Fetch user's organization (required for RLS policy)
     const { data: userData, error: userError } = await supabase
@@ -426,14 +433,45 @@ export const warehouseApi = {
       .single();
 
     if (userError || !userData?.organization_id) {
+      console.error('❌ Could not get user organization:', userError);
       throw new Error('Could not determine your organization.');
     }
+
+    console.log('✅ User data:', userData);
+
+    // Validate team exists and belongs to organization
+    const { data: teamData, error: teamError } = await supabase
+      .from('teams')
+      .select('id, name, organization_id')
+      .eq('id', teamId)
+      .single();
+
+    if (teamError || !teamData) {
+      console.error('❌ Team not found:', teamError);
+      throw new Error('Team not found');
+    }
+
+    if (teamData.organization_id !== userData.organization_id) {
+      console.error('❌ Team organization mismatch');
+      throw new Error('Team does not belong to your organization');
+    }
+
+    console.log('✅ Team validated:', teamData);
 
     // Check if team warehouse already exists
     const existing = await this.getWarehouseByTeam(teamId);
     if (existing) {
+      console.log('✅ Warehouse already exists for team:', existing);
       return existing;
     }
+
+    console.log('📦 Creating new warehouse with:', {
+      name,
+      is_primary: false,
+      organization_id: userData.organization_id,
+      team_id: teamId,
+      created_by: uid
+    });
 
     // Insert with is_primary: false for team warehouses
     const { data, error } = await supabase
@@ -442,7 +480,7 @@ export const warehouseApi = {
         name,
         is_primary: false, // Team warehouses are NOT primary
         organization_id: userData.organization_id,
-        team_id: teamId,
+        team_id: teamId, // Explicitly set team_id
         created_by: uid,
       })
       .select(`
@@ -451,7 +489,23 @@ export const warehouseApi = {
       `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error creating warehouse:', error);
+      throw error;
+    }
+
+    console.log('✅ Warehouse created successfully:', data);
+
+    // Verify team_id was set correctly
+    if (data.team_id !== teamId) {
+      console.error('❌ CRITICAL: Warehouse created but team_id mismatch!', {
+        expected: teamId,
+        actual: data.team_id,
+        warehouse: data
+      });
+      throw new Error('Warehouse created but team association failed');
+    }
+
     return data;
   },
 
