@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Building2, Plus } from 'lucide-react';
 import { Vendor } from '@/contexts/inventory/types';
 
@@ -28,8 +29,10 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
   disabled = false
 }) => {
   return (
-    <div className="flex gap-2">
-      <Select 
+    <div className="space-y-2">
+      <Label>Vendor</Label>
+      <div className="flex gap-2">
+        <Select
         value={value || 'none'} 
         onValueChange={(val) => onValueChange(val === 'none' ? undefined : val)}
         disabled={disabled}
@@ -67,6 +70,7 @@ export const VendorSelector: React.FC<VendorSelectorProps> = ({
           <Plus className="h-4 w-4" />
         </Button>
       )}
+      </div>
     </div>
   );
 };
