@@ -30,6 +30,7 @@ import OrganizationDashboard from "@/pages/OrganizationDashboard";
 import FocusZonePage from "@/pages/FocusZonePage";
 import ReportsDashboard from "@/pages/ReportsDashboard";
 import TaskReportsPage from "@/pages/TaskReportsPage";
+import ChecklistReportsPage from "@/pages/ChecklistReportsPage";
 import FinancePage from "@/pages/FinancePage";
 import MeetingsPage from "@/pages/MeetingsPage";
 import TrainingPage from "@/pages/TrainingPage";
@@ -131,6 +132,7 @@ function App() {
                   <Route path="focus" element={<FocusZonePage />} />
                    <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
                    <Route path="reports/tasks" element={<RoleProtectedRoute requiredRole="manager"><TaskReportsPage /></RoleProtectedRoute>} />
+                   <Route path="reports/checklists" element={<RoleProtectedRoute requiredRole="manager"><ChecklistReportsPage /></RoleProtectedRoute>} />
                     
                     {/* Finance Routes - Keep original + add new nested routes */}
                     <Route path="finance" element={<FinancePage />} />

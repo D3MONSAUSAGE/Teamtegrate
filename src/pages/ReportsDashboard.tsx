@@ -116,7 +116,7 @@ const ReportsDashboard: React.FC = () => {
       description: 'Monitor checklist execution, verification scores, and compliance trends',
       icon: ClipboardList,
       href: '/dashboard/reports/checklists',
-      isComingSoon: true
+      badge: 'New'
     },
     {
       title: 'Request Analytics',

@@ -10770,6 +10770,63 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      rpc_checklist_report_daily_scores: {
+        Args: { p_date?: string; p_org: string; p_team?: string; p_tz?: string }
+        Returns: {
+          approved_checklists: number
+          avg_execution_score: number
+          avg_verification_score: number
+          completed_checklists: number
+          completion_rate: number
+          execution_score: number
+          pending_checklists: number
+          rejected_checklists: number
+          submitted_checklists: number
+          team_id: string
+          team_name: string
+          total_checklists: number
+          user_id: string
+          user_name: string
+          verification_score: number
+        }[]
+      }
+      rpc_checklist_report_team_comparison: {
+        Args: { p_org: string; p_tz?: string; p_week_start?: string }
+        Returns: {
+          completion_rate: number
+          execution_score: number
+          on_time_rate: number
+          team_id: string
+          team_name: string
+          team_rank: number
+          total_score: number
+          verification_score: number
+          week_over_week_change: number
+        }[]
+      }
+      rpc_checklist_report_weekly_summary: {
+        Args: {
+          p_org: string
+          p_team?: string
+          p_tz?: string
+          p_week_start?: string
+        }
+        Returns: {
+          approved_checklists: number
+          avg_execution_score: number
+          avg_verification_score: number
+          completed_checklists: number
+          completion_rate: number
+          daily_breakdown: Json
+          on_time_rate: number
+          pending_checklists: number
+          rejected_checklists: number
+          team_id: string
+          team_name: string
+          total_checklists: number
+          week_start: string
+        }[]
+      }
       rpc_task_report_user_day_lists: {
         Args: {
           p_day: string
