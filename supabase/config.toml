@@ -98,6 +98,9 @@ verify_jwt = true
 [functions.send-meeting-notifications]
 verify_jwt = true
 
+[functions.validate-checklist-time]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325

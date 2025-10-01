@@ -233,45 +233,47 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col animate-scale-in">
-        <DialogHeader className="shrink-0 space-y-3 pb-4">
-          <DialogTitle className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              {execution.checklist?.name}
+      <DialogContent className="max-w-4xl max-h-[95vh] md:h-[90vh] flex flex-col animate-scale-in p-4 md:p-6">
+        <DialogHeader className="shrink-0 space-y-2 md:space-y-3 pb-3 md:pb-4">
+          <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
+              <span className="truncate text-base md:text-lg">{execution.checklist?.name}</span>
             </div>
-            <Badge variant="outline" className="ml-auto">
-              {format(new Date(execution.execution_date), 'MMM d, yyyy')}
-            </Badge>
-            {isManager && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                Manager View
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                {format(new Date(execution.execution_date), 'MMM d, yyyy')}
               </Badge>
-            )}
+              {isManager && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                  Manager
+                </Badge>
+              )}
+            </div>
           </DialogTitle>
           {execution.checklist?.description && (
-            <DialogDescription className="text-base leading-relaxed">
+            <DialogDescription className="text-sm md:text-base leading-relaxed">
               {execution.checklist?.description}
             </DialogDescription>
           )}
           
-          {/* Progress Indicator */}
-          <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-muted-foreground">
+          {/* Progress Indicator - Mobile optimized */}
+          <div className="bg-muted/30 rounded-lg p-3 md:p-4 space-y-2 md:space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs md:text-sm font-medium">Overall Progress</span>
+              <span className="text-xs md:text-sm text-muted-foreground">
                 {isManager ? `${completedItemsCount}/${totalItemsCount} executed, ${verifiedItemsCount}/${totalItemsCount} verified` : `${completedItemsCount}/${totalItemsCount} completed`}
               </span>
             </div>
             <Progress 
               value={isManager ? (verifiedItemsCount / Math.max(totalItemsCount, 1)) * 100 : (completedItemsCount / Math.max(totalItemsCount, 1)) * 100} 
-              className="h-2 transition-all duration-500 ease-out"
+              className="h-2.5 md:h-2 transition-all duration-500 ease-out touch-none"
             />
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-1">
-            <div className="space-y-6">
+        <ScrollArea className="flex-1 px-0.5 md:px-1">
+            <div className="space-y-4 md:space-y-6">
               {/* Error State */}
               {error && (
                 <Alert variant="destructive" className="animate-fade-in">
@@ -292,8 +294,8 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
                 </Alert>
               )}
 
-              {/* Status Info */}
-              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-4 space-y-3 animate-fade-in">
+              {/* Status Info - Mobile optimized */}
+              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-3 md:p-4 space-y-2 md:space-y-3 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" />
@@ -376,7 +378,7 @@ export const ChecklistExecutionDialog: React.FC<ChecklistExecutionDialogProps> =
 
                   <Button
                     onClick={handleStartExecution}
-                    className="w-full group hover-scale animate-fade-in"
+                    className="w-full group hover-scale animate-fade-in touch-manipulation h-12 md:h-11 text-base md:text-sm"
                     disabled={startExecution.isPending || (!timeWindowStatus.isInWindow && !isManager)}
                     size="lg"
                     variant={!timeWindowStatus.isInWindow && !isManager ? "outline" : "default"}
