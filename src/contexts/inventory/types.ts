@@ -35,6 +35,19 @@ export interface Vendor {
   updated_at: string;
 }
 
+export interface TeamItemPricing {
+  id: string;
+  organization_id: string;
+  team_id: string;
+  item_id: string;
+  purchase_price?: number;
+  sale_price?: number;
+  unit_cost?: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
 export interface InventoryItem {
   id: string;
   organization_id: string;
@@ -46,14 +59,14 @@ export interface InventoryItem {
   vendor_id?: string;
   purchase_unit?: string;
   conversion_factor?: number;
-  purchase_price?: number;
+  purchase_price?: number; // Global default price
   calculated_unit_price?: number;
   current_stock: number;
   minimum_threshold?: number;
   maximum_threshold?: number;
   reorder_point?: number;
-  unit_cost?: number;
-  sale_price?: number; // Optional sale price for profit calculation
+  unit_cost?: number; // Global default cost
+  sale_price?: number; // Global default sale price
   supplier_info?: Record<string, any>;
   barcode?: string;
   sku?: string;
@@ -72,6 +85,8 @@ export interface InventoryItem {
   category?: InventoryCategory;
   base_unit?: InventoryUnit;
   vendor?: Vendor;
+  // Team-specific pricing (if viewing from a specific team context)
+  team_pricing?: TeamItemPricing;
 }
 
 export interface InventoryTransaction {
@@ -231,6 +246,7 @@ export interface InventoryContextType {
   categories: InventoryCategory[];
   units: InventoryUnit[];
   vendors: Vendor[];
+  teamPricing: TeamItemPricing[];
   
   // Team-based data
   templates: InventoryTemplate[];

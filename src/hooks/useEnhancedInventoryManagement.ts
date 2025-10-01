@@ -21,6 +21,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     categories,
     units,
     vendors,
+    teamPricing,
     loading,
     itemsLoading,
     transactionsLoading,
@@ -40,6 +41,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     refreshUnits,
     refreshVendors,
     refreshTemplateItems,
+    refreshTeamPricing,
     refreshAll,
   } = useInventoryData();
 
@@ -76,6 +78,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     categories,
     units,
     vendors,
+    teamPricing,
     
     // Loading states
     loading,
@@ -119,6 +122,7 @@ export const useEnhancedInventoryManagement = (): InventoryContextType => {
     categories,
     units,
     vendors,
+    teamPricing,
     
     // Loading dependencies
     loading,

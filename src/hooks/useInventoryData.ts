@@ -8,7 +8,8 @@ import {
   inventoryTemplatesApi,
   inventoryCategoriesApi,
   inventoryUnitsApi,
-  vendorsApi
+  vendorsApi,
+  teamItemPricingApi
 } from '@/contexts/inventory/api';
 import { 
   InventoryItem, 
@@ -20,7 +21,8 @@ import {
   TeamInventoryAssignment,
   InventoryCategory,
   InventoryUnit,
-  Vendor
+  Vendor,
+  TeamItemPricing
 } from '@/contexts/inventory/types';
 import { useInventoryErrorHandler } from './useInventoryErrorHandler';
 
@@ -36,6 +38,7 @@ interface UseInventoryDataReturn {
   categories: InventoryCategory[];
   units: InventoryUnit[];
   vendors: Vendor[];
+  teamPricing: TeamItemPricing[];
   
   // Loading states
   loading: boolean;
@@ -59,6 +62,7 @@ interface UseInventoryDataReturn {
   refreshUnits: () => Promise<void>;
   refreshVendors: () => Promise<void>;
   refreshTemplateItems: () => Promise<void>;
+  refreshTeamPricing: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -77,6 +81,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [units, setUnits] = useState<InventoryUnit[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [teamPricing, setTeamPricing] = useState<TeamItemPricing[]>([]);
   
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -231,6 +236,19 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     }
   }, [user?.organizationId, handleAsyncOperation]);
 
+  const refreshTeamPricing = useCallback(async () => {
+    if (!user?.organizationId) return;
+    try {
+      const data = await handleAsyncOperation(
+        () => teamItemPricingApi.getAll(),
+        'Load Team Pricing'
+      );
+      if (data) setTeamPricing(data);
+    } catch (error) {
+      console.error('Error refreshing team pricing:', error);
+    }
+  }, [user?.organizationId, handleAsyncOperation]);
+
   const refreshAll = useCallback(async () => {
     if (!user?.organizationId) return;
     
@@ -244,7 +262,8 @@ export const useInventoryData = (): UseInventoryDataReturn => {
       refreshCategories,
       refreshUnits,
       refreshVendors,
-      refreshTemplateItems, // Load template items in parallel
+      refreshTemplateItems,
+      refreshTeamPricing,
     ];
     
     await Promise.allSettled(refreshFunctions.map(fn => fn()));
@@ -260,6 +279,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshUnits,
     refreshVendors,
     refreshTemplateItems,
+    refreshTeamPricing,
   ]);
 
   // Load template items independently - no dependency on templates
@@ -322,6 +342,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     categories,
     units,
     vendors,
+    teamPricing,
     
     // Loading states
     loading,
@@ -345,6 +366,7 @@ export const useInventoryData = (): UseInventoryDataReturn => {
     refreshUnits,
     refreshVendors,
     refreshTemplateItems,
+    refreshTeamPricing,
     refreshAll,
   };
 };

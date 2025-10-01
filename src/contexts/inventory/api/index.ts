@@ -15,3 +15,4 @@ export * from './manufacturingBatches';
 export * from './productDistributions';
 export * from './recallNotices';
 export * from './skuGenerator';
+export * from './teamItemPricing';
