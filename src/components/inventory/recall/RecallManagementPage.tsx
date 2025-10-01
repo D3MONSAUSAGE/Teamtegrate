@@ -102,19 +102,19 @@ export const RecallManagementPage: React.FC = () => {
           <div className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
+              <div className="flex flex-col items-center gap-4">
+                <div className="text-center">
                   <CardTitle>Manufacturing Batches</CardTitle>
                   <CardDescription>
                     Track production runs, quantities, and lot associations
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2 justify-center md:justify-end">
-                  <Button onClick={() => setBatchDialogOpen(true)}>
+                <div className="flex flex-col items-center gap-2 w-full sm:w-auto">
+                  <Button onClick={() => setBatchDialogOpen(true)} className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     New Batch
                   </Button>
-                  <Button variant="outline" onClick={() => setBulkOpsOpen(true)}>
+                  <Button variant="outline" onClick={() => setBulkOpsOpen(true)} className="w-full sm:w-auto">
                     <Merge className="mr-2 h-4 w-4" />
                     Bulk Operations
                   </Button>
