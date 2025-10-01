@@ -50,7 +50,8 @@ export const InventoryManagementTab: React.FC = () => {
     createUnit,
     makeTeamSpecificCopy,
     hideItemFromTeam,
-    revertToGlobalItem
+    revertToGlobalItem,
+    refreshItems
   } = useInventory();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -759,33 +760,64 @@ export const InventoryManagementTab: React.FC = () => {
         onOpenChange={setIsTeamActionDialogOpen}
         item={itemForTeamAction}
         teamId={userCurrentTeamId || ''}
-        onMakeTeamCopy={async () => {
-          if (!itemForTeamAction || !userCurrentTeamId) return;
+        onMakeTeamCopy={async (item) => {
+          if (!userCurrentTeamId) {
+            console.error('❌ No team ID available');
+            toast.error('Team context not available');
+            return;
+          }
+          
+          console.log('🔄 Creating team-specific copy:', {
+            itemId: item.id,
+            itemName: item.name,
+            teamId: userCurrentTeamId
+          });
+          
           try {
-            await makeTeamSpecificCopy(itemForTeamAction.id, userCurrentTeamId);
-            toast.success('Team-specific copy created');
-            setIsTeamActionDialogOpen(false);
+            const result = await makeTeamSpecificCopy(item, userCurrentTeamId);
+            
+            if (result) {
+              console.log('✅ Team copy created successfully:', result.id);
+              toast.success(`Team-specific copy created for ${item.name}`);
+              
+              // Force refresh the items list to show the new team-specific copy
+              console.log('🔄 Refreshing items list...');
+              await refreshItems();
+              
+              setIsTeamActionDialogOpen(false);
+              setItemForTeamAction(null);
+            } else {
+              console.warn('⚠️ makeTeamSpecificCopy returned null');
+            }
           } catch (error) {
+            console.error('❌ Failed to create team copy:', error);
             toast.error('Failed to create team copy');
           }
         }}
-        onHideFromTeam={async () => {
-          if (!itemForTeamAction || !userCurrentTeamId) return;
+        onHideFromTeam={async (itemId) => {
+          if (!userCurrentTeamId) return;
           try {
-            await hideItemFromTeam(itemForTeamAction.id, userCurrentTeamId);
+            console.log('🔄 Hiding item from team:', { itemId, teamId: userCurrentTeamId });
+            await hideItemFromTeam(itemId, userCurrentTeamId);
             toast.success('Item hidden from team catalog');
+            await refreshItems();
             setIsTeamActionDialogOpen(false);
+            setItemForTeamAction(null);
           } catch (error) {
+            console.error('❌ Failed to hide item:', error);
             toast.error('Failed to hide item');
           }
         }}
-        onRevertToGlobal={async () => {
-          if (!itemForTeamAction) return;
+        onRevertToGlobal={async (itemId) => {
           try {
-            await revertToGlobalItem(itemForTeamAction.id);
+            console.log('🔄 Reverting to global item:', itemId);
+            await revertToGlobalItem(itemId);
             toast.success('Reverted to global item');
+            await refreshItems();
             setIsTeamActionDialogOpen(false);
+            setItemForTeamAction(null);
           } catch (error) {
+            console.error('❌ Failed to revert item:', error);
             toast.error('Failed to revert item');
           }
         }}

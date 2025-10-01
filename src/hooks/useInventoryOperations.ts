@@ -739,13 +739,29 @@ export const useInventoryOperations = ({
 
   // Team-isolated item management operations
   const makeTeamSpecificCopy = useCallback(async (item: InventoryItem, teamId: string): Promise<InventoryItem | null> => {
+    console.log('🔄 makeTeamSpecificCopy called:', {
+      itemId: item.id,
+      itemName: item.name,
+      currentTeamId: item.team_id,
+      targetTeamId: teamId
+    });
+    
     if (item.team_id === teamId) {
+      console.warn('⚠️ Item already team-specific for this team');
       toast({
         title: 'Already Team-Specific',
         description: 'This item is already specific to your team',
       });
       return null;
     }
+
+    console.log('📦 Creating team copy with data:', {
+      name: item.name,
+      teamId: teamId,
+      categoryId: item.category_id,
+      baseUnitId: item.base_unit_id,
+      vendorId: item.vendor_id
+    });
 
     const teamCopy: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'category' | 'base_unit' | 'calculated_unit_price' | 'organization_id' | 'created_by'> = {
       ...item,
@@ -778,11 +794,24 @@ export const useInventoryOperations = ({
     const result = await handleAsyncOperation(
       () => createItem(teamCopy),
       'Create Team Copy',
-      'Team-specific copy created successfully'
+      `Team-specific copy of "${item.name}" created successfully`
     );
 
+    if (result) {
+      console.log('✅ Team copy created successfully:', {
+        newItemId: result.id,
+        newItemName: result.name,
+        teamId: result.team_id
+      });
+      
+      // Force refresh items to show the new copy
+      await refreshItems();
+    } else {
+      console.error('❌ Failed to create team copy - result is null');
+    }
+
     return result;
-  }, [createItem, handleAsyncOperation]);
+  }, [createItem, handleAsyncOperation, refreshItems]);
 
   const hideItemFromTeam = useCallback(async (itemId: string, teamId: string): Promise<void> => {
     if (!user?.organizationId) {
