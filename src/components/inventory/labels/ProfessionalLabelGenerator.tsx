@@ -1743,12 +1743,18 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
               </Label>
               <Input
                 id="quantity"
-                type="number"
-                min="1"
-                max={batchData?.maxQuantity || undefined}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder={`Enter quantity${batchData?.maxQuantity ? ` (max: ${batchData.maxQuantity})` : ''}`}
                 value={quantityToPrint}
                 onChange={(e) => {
-                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  const input = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                  if (input === '') {
+                    setQuantityToPrint(1);
+                    return;
+                  }
+                  const val = Math.max(1, parseInt(input) || 1);
                   if (batchData?.maxQuantity) {
                     setQuantityToPrint(Math.min(val, batchData.maxQuantity));
                   } else {
