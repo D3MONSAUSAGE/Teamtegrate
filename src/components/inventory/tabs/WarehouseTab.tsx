@@ -34,8 +34,9 @@ export const WarehouseTab: React.FC = () => {
   const { isAdmin, isSuperAdmin, isManager, availableTeams } = useTeamAccess();
   const { items: inventoryItems, getItemById, createTransaction, refreshTransactions } = useInventory();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [teamSwitching, setTeamSwitching] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState('stock');
@@ -54,6 +55,7 @@ export const WarehouseTab: React.FC = () => {
     if (!shouldLoadWarehouse) {
       console.log('Should not load warehouse - showing overview');
       setLoading(false);
+      setShowLoading(false);
       setWarehouse(null);
       setError(null);
       setTeamSwitching(false);
@@ -72,6 +74,9 @@ export const WarehouseTab: React.FC = () => {
       setShowOverview(false); // Hide overview when loading specific warehouse
       // SECURITY: Immediately clear warehouse data to prevent cross-team data leakage
       setWarehouse(null);
+      
+      // Delay showing loading indicator to prevent flash for fast operations
+      const loadingTimer = setTimeout(() => setShowLoading(true), 200);
       
       let data: Warehouse | null = null;
       
@@ -98,6 +103,7 @@ export const WarehouseTab: React.FC = () => {
           toast.error('Security error: Warehouse team mismatch');
           setError('Access denied: Invalid warehouse access');
           setWarehouse(null);
+          clearTimeout(loadingTimer);
           return;
         }
         
@@ -109,6 +115,9 @@ export const WarehouseTab: React.FC = () => {
         console.log('No warehouse found - showing setup screen');
         setWarehouse(null);
       }
+      
+      // Clear loading timer on success
+      clearTimeout(loadingTimer);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
@@ -138,6 +147,7 @@ export const WarehouseTab: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      setShowLoading(false);
       setTeamSwitching(false);
     }
   }, [shouldLoadWarehouse, selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, user?.id]);
@@ -365,7 +375,7 @@ export const WarehouseTab: React.FC = () => {
       </div>
 
       {/* Content based on state */}
-      {loading || teamSwitching ? (
+      {showLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-muted-foreground">
             {teamSwitching ? 'Switching teams...' : 'Loading warehouse...'}
