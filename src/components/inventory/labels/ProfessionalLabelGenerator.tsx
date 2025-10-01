@@ -165,7 +165,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
     loadSavedTemplates();
   }, []);
 
-  // Handle item selection
+  // Handle item selection and auto-calculate expiration date
   useEffect(() => {
     if (!selectedItemId) {
       setSelectedItem(null);
@@ -178,9 +178,23 @@ const ProfessionalLabelGenerator: React.FC = () => {
       setSelectedItem(selectedItemFromList);
       
       if (selectedItemFromList) {
+        // Generate lot number
         const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
         const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
         setLotCode(lotNumber);
+        
+        // Auto-calculate expiration date if shelf life is set
+        if (selectedItemFromList.shelf_life_days && selectedItemFromList.shelf_life_days > 0) {
+          const today = new Date();
+          const expiryDate = new Date(today);
+          expiryDate.setDate(today.getDate() + selectedItemFromList.shelf_life_days);
+          
+          // Format as YYYY-MM-DD for input field
+          const formattedDate = expiryDate.toISOString().split('T')[0];
+          setExpirationDate(formattedDate);
+          
+          toast.success(`Expiration date set to ${expiryDate.toLocaleDateString()} (${selectedItemFromList.shelf_life_days} days from today)`);
+        }
       }
     }
   }, [selectedItemId, items, selectedItem?.id, companyName]);
@@ -924,12 +938,12 @@ const ProfessionalLabelGenerator: React.FC = () => {
   const renderLabelForm = () => (
     <div className="space-y-6">
       {/* Success Message */}
-      <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-        <div className="flex items-center justify-center gap-2 text-green-700">
+      <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
           <Utensils className="h-5 w-5" />
           <span className="font-medium">FDA-Compliant Food Label Generator Ready!</span>
         </div>
-        <p className="text-sm text-green-600 mt-1">
+        <p className="text-sm text-green-600 dark:text-green-500 mt-1">
           Now supports professional nutrition facts tables, company addresses, and thermal printer optimization.
         </p>
       </div>
@@ -947,7 +961,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
             <SelectTrigger>
               <SelectValue placeholder="Choose a product..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background">
               {items.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   <div className="flex items-center justify-between w-full">
@@ -960,8 +974,115 @@ const ProfessionalLabelGenerator: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          {selectedItem?.shelf_life_days && (
+            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-700 dark:text-blue-400">
+              ℹ️ This product has a shelf life of {selectedItem.shelf_life_days} days - expiration date will be calculated automatically
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Template Management - MOVED TO TOP */}
+      {selectedItem && (
+        <Card className="border-primary/50 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FolderOpen className="h-5 w-5 text-primary" />
+              Label Templates
+            </CardTitle>
+            <CardDescription>
+              Save and load label configurations for faster generation
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {savedTemplates.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium">Load Saved Template</Label>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-1">
+                    <Select value={selectedSavedTemplate} onValueChange={setSelectedSavedTemplate}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Choose a template..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        {savedTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{template.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">
+                                {new Date(template.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => loadTemplate(selectedSavedTemplate)}
+                        disabled={!selectedSavedTemplate}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 sm:flex-none"
+                      >
+                        <FolderOpen className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Load</span>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            disabled={!selectedSavedTemplate}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this template? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteTemplate(selectedSavedTemplate)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-sm font-medium">Save Current Configuration</Label>
+                <div className="flex flex-col sm:flex-row gap-2 mt-1">
+                  <Input
+                    value={templateName}
+                    onChange={handleTemplateNameChange}
+                    placeholder="Template name (e.g., 'Organic Products')"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={saveTemplate}
+                    disabled={!templateName.trim() || !companyName.trim()}
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Template Selection */}
       {selectedItem && (
@@ -1168,108 +1289,16 @@ const ProfessionalLabelGenerator: React.FC = () => {
                   placeholder="MM/DD/YYYY"
                   className="mt-1"
                 />
+                {selectedItem?.shelf_life_days && expirationDate && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ✓ Auto-calculated based on {selectedItem.shelf_life_days}-day shelf life (you can adjust if needed)
+                  </p>
+                )}
               </div>
               <div className="col-span-full">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
                   Generated on {new Date().toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Template Management */}
-      {selectedItem && (
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FolderOpen className="h-5 w-5 text-primary" />
-              Label Templates
-            </CardTitle>
-            <CardDescription>
-              Save and reuse label configurations for faster generation
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {savedTemplates.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium">Load Saved Template</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Select value={selectedSavedTemplate} onValueChange={setSelectedSavedTemplate}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Choose a template..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {savedTemplates.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{template.name}</span>
-                              <span className="text-xs text-muted-foreground ml-2">
-                                {new Date(template.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={() => loadTemplate(selectedSavedTemplate)}
-                      disabled={!selectedSavedTemplate}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Load
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          disabled={!selectedSavedTemplate}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this template? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteTemplate(selectedSavedTemplate)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <Label className="text-sm font-medium">Save Current Configuration</Label>
-                <div className="flex gap-2 mt-1">
-                  <Input
-                    value={templateName}
-                    onChange={handleTemplateNameChange}
-                    placeholder="Template name (e.g., 'Organic Products')"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={saveTemplate}
-                    disabled={!templateName.trim() || !companyName.trim()}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    Save
-                  </Button>
                 </div>
               </div>
             </div>

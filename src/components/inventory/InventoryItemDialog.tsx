@@ -41,6 +41,7 @@ const inventoryItemSchema = z.object({
   location: z.string().optional(),
   team_id: z.string().nullable().optional(),
   image_url: z.string().nullable().optional(),
+  shelf_life_days: z.coerce.number().positive('Shelf life must be greater than 0').optional(),
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
@@ -83,6 +84,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       team_id: null,
       vendor_id: null,
       image_url: null,
+      shelf_life_days: undefined,
     },
   });
 
@@ -144,6 +146,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           team_id: item.team_id || null,
           vendor_id: item.vendor_id || null,
           image_url: item.image_url || null,
+          shelf_life_days: item.shelf_life_days || undefined,
         });
       }
     } catch (error) {
@@ -202,6 +205,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         team_id: values.team_id || null,
         vendor_id: values.vendor_id || null,
         image_url: values.image_url || null,
+        shelf_life_days: values.shelf_life_days || null,
       };
 
       let result;
@@ -552,6 +556,28 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                       <FormControl>
                         <Input placeholder="Storage location or area" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Shelf Life */}
+                <FormField
+                  control={form.control}
+                  name="shelf_life_days"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shelf Life (Days)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="e.g., 30 days until expiration"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Number of days until product expires/spoils (used for automatic expiration date calculation in labels)
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

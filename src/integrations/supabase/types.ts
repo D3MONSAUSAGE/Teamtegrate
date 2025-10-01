@@ -2820,6 +2820,7 @@ export type Database = {
           purchase_unit: string | null
           reorder_point: number | null
           sale_price: number | null
+          shelf_life_days: number | null
           sku: string | null
           sort_order: number | null
           supplier_info: Json | null
@@ -2855,6 +2856,7 @@ export type Database = {
           purchase_unit?: string | null
           reorder_point?: number | null
           sale_price?: number | null
+          shelf_life_days?: number | null
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null
@@ -2890,6 +2892,7 @@ export type Database = {
           purchase_unit?: string | null
           reorder_point?: number | null
           sale_price?: number | null
+          shelf_life_days?: number | null
           sku?: string | null
           sort_order?: number | null
           supplier_info?: Json | null

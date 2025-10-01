@@ -59,6 +59,7 @@ export interface InventoryItem {
   sku?: string;
   location?: string;
   image_url?: string;
+  shelf_life_days?: number; // Days until product expires/spoils
   created_by: string;
   created_at: string;
   updated_at: string;
