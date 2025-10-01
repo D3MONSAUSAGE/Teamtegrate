@@ -15,7 +15,7 @@ import { InventoryItem } from '@/contexts/inventory/types';
 interface TeamItemActionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  item: InventoryItem;
+  item: InventoryItem | null;
   teamId?: string;
   onMakeTeamCopy: (item: InventoryItem) => Promise<void>;
   onHideFromTeam: (itemId: string) => Promise<void>;
@@ -32,6 +32,12 @@ export const TeamItemActionDialog: React.FC<TeamItemActionDialogProps> = ({
   onRevertToGlobal,
 }) => {
   const [loading, setLoading] = useState(false);
+  
+  // Early return if item is null
+  if (!item) {
+    return null;
+  }
+  
   const isGlobalItem = !item.team_id;
   const isTeamSpecific = !!item.team_id;
 
