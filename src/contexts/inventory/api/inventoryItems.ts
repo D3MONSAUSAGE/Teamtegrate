@@ -115,6 +115,69 @@ export const inventoryItemsApi = {
   },
 
   async update(id: string, updates: Partial<Omit<InventoryItem, 'category' | 'base_unit' | 'calculated_unit_price'>>): Promise<InventoryItem> {
+    console.log('🔄 inventoryItemsApi.update called:', { id, updates });
+    
+    // SERVER-SIDE PROTECTION: Get current item and user info
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    if (userError || !user.user) throw new Error('Not authenticated');
+
+    const { data: userData, error: userDataError } = await supabase
+      .from('users')
+      .select('organization_id, role')
+      .eq('id', user.user.id)
+      .single();
+
+    if (userDataError || !userData) throw new Error('Could not get user data');
+
+    // Get current item
+    const { data: currentItem, error: itemError } = await supabase
+      .from('inventory_items')
+      .select('id, team_id, organization_id, name')
+      .eq('id', id)
+      .single();
+
+    if (itemError || !currentItem) throw new Error('Item not found');
+
+    console.log('🔒 Server-side security check:', {
+      itemTeamId: currentItem.team_id,
+      userRole: userData.role,
+      userId: user.user.id
+    });
+
+    // CRITICAL: Prevent non-superadmins from updating global items
+    const isGlobalItem = !currentItem.team_id;
+    const isSuperAdmin = userData.role === 'superadmin';
+
+    if (isGlobalItem && !isSuperAdmin) {
+      console.error('🚫 SERVER SECURITY: Non-superadmin attempted to update global item', {
+        userId: user.user.id,
+        userRole: userData.role,
+        itemId: id,
+        itemName: currentItem.name
+      });
+      throw new Error('Access Denied: Global items can only be edited by superadmins');
+    }
+
+    // If item is team-specific, verify user belongs to that team
+    if (currentItem.team_id && !isSuperAdmin) {
+      const { data: membership } = await supabase
+        .from('team_memberships')
+        .select('id')
+        .eq('user_id', user.user.id)
+        .eq('team_id', currentItem.team_id)
+        .maybeSingle();
+
+      if (!membership) {
+        console.error('🚫 SERVER SECURITY: User not member of item team', {
+          userId: user.user.id,
+          itemTeamId: currentItem.team_id
+        });
+        throw new Error('Access Denied: You can only edit items from your own team');
+      }
+    }
+
+    console.log('✅ Server-side security checks passed');
+    
     const normalizedUpdates = {
       ...updates,
       ...(updates.barcode !== undefined && { barcode: updates.barcode?.trim() || null }),
@@ -159,6 +222,8 @@ export const inventoryItemsApi = {
       
       throw error;
     }
+    
+    console.log('✅ Item updated successfully:', data.name);
     return data as any;
   },
 

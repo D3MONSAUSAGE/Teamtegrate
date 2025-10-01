@@ -81,6 +81,62 @@ export const useInventoryOperations = ({
   }, [user?.organizationId, user?.id, handleAsyncOperation, refreshItems]);
 
   const updateItem = useCallback(async (id: string, updates: Partial<InventoryItem>): Promise<InventoryItem | null> => {
+    console.log('🔄 updateItem called:', { id, updates, userRole: user?.role });
+    
+    // Get the current item to check its team_id
+    const currentItem = await inventoryItemsApi.getById(id);
+    if (!currentItem) {
+      console.error('❌ Item not found:', id);
+      toast({ title: 'Error', description: 'Item not found', variant: 'destructive' });
+      return null;
+    }
+    
+    console.log('📦 Current item:', { id: currentItem.id, name: currentItem.name, team_id: currentItem.team_id });
+    
+    // CRITICAL: Prevent non-superadmins from directly updating global items
+    const isGlobalItem = !currentItem.team_id;
+    const isSuperAdmin = user?.role === 'superadmin';
+    
+    if (isGlobalItem && !isSuperAdmin) {
+      console.error('🚫 Security: Non-superadmin attempting to update global item', {
+        userId: user?.id,
+        userRole: user?.role,
+        itemId: id,
+        itemName: currentItem.name
+      });
+      toast({ 
+        title: 'Access Denied', 
+        description: 'Global items can only be edited by superadmins. Please create a team-specific copy instead.',
+        variant: 'destructive' 
+      });
+      return null;
+    }
+    
+    // If item is team-specific, verify user belongs to that team
+    if (currentItem.team_id && !isSuperAdmin) {
+      const { data: membership } = await supabase
+        .from('team_memberships')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('team_id', currentItem.team_id)
+        .maybeSingle();
+      
+      if (!membership) {
+        console.error('🚫 Security: User not member of item team', {
+          userId: user?.id,
+          itemTeamId: currentItem.team_id
+        });
+        toast({ 
+          title: 'Access Denied', 
+          description: 'You can only edit items from your own team',
+          variant: 'destructive' 
+        });
+        return null;
+      }
+    }
+    
+    console.log('✅ Security checks passed, proceeding with update');
+    
     const result = await handleAsyncOperation(
       () => inventoryItemsApi.update(id, updates),
       'Update Item',
@@ -92,7 +148,7 @@ export const useInventoryOperations = ({
       return result;
     }
     return null;
-  }, [handleAsyncOperation, refreshItems]);
+  }, [user, handleAsyncOperation, refreshItems]);
 
   const deleteItem = useCallback(async (id: string): Promise<void> => {
     const result = await handleAsyncOperation(

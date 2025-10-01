@@ -157,55 +157,88 @@ export const InventoryManagementTab: React.FC = () => {
   };
 
   const handleEditItem = async (itemId: string) => {
+    console.log('🎯 handleEditItem called:', { itemId, userRole: user?.role, userId: user?.id });
+    
     const item = items.find(i => i.id === itemId);
-    if (!item) return;
+    if (!item) {
+      console.error('❌ Item not found:', itemId);
+      return;
+    }
+
+    console.log('📦 Item to edit:', { 
+      id: item.id, 
+      name: item.name, 
+      team_id: item.team_id,
+      isGlobal: !item.team_id 
+    });
 
     // Check if user is a superadmin - they can edit anything
     const isSuperAdmin = user?.role === 'superadmin';
+    console.log('👤 User check:', { isSuperAdmin, role: user?.role });
     
-    // If item is global (team_id is null) and user is not superadmin
+    // CRITICAL: If item is global (team_id is null) and user is not superadmin
     if (!item.team_id && !isSuperAdmin) {
+      console.log('🚫 Global item detected, non-superadmin user - showing team action dialog');
+      
       // Get user's team from team memberships
       try {
-        const { data: memberships } = await supabase
+        const { data: memberships, error: membershipError } = await supabase
           .from('team_memberships')
-          .select('team_id')
+          .select('team_id, teams(name)')
           .eq('user_id', user?.id)
           .limit(1);
         
+        console.log('👥 Team membership query result:', { memberships, error: membershipError });
+        
         if (memberships && memberships.length > 0) {
-          setUserCurrentTeamId(memberships[0].team_id);
+          const teamId = memberships[0].team_id;
+          console.log('✅ User has team membership:', teamId);
+          setUserCurrentTeamId(teamId);
           setItemForTeamAction(item);
           setIsTeamActionDialogOpen(true);
+          return; // STOP HERE - don't allow direct edit
+        } else {
+          console.warn('⚠️ User has no team membership');
+          toast.error('You must be assigned to a team to manage inventory items');
           return;
         }
       } catch (error) {
-        console.error('Error fetching team membership:', error);
+        console.error('❌ Error fetching team membership:', error);
+        toast.error('Failed to verify team membership');
+        return;
       }
     }
 
     // If item is team-specific, check if user belongs to that team
     if (item.team_id && !isSuperAdmin) {
+      console.log('🔍 Checking team membership for team-specific item:', item.team_id);
+      
       try {
-        const { data: membership } = await supabase
+        const { data: membership, error: membershipError } = await supabase
           .from('team_memberships')
           .select('id')
           .eq('user_id', user?.id)
           .eq('team_id', item.team_id)
           .maybeSingle();
         
+        console.log('👥 Team membership check:', { membership, error: membershipError });
+        
         if (!membership) {
+          console.error('🚫 User not member of item team');
           toast.error('You can only edit items from your own team');
           return;
         }
+        
+        console.log('✅ Team membership verified');
       } catch (error) {
-        console.error('Error checking team membership:', error);
+        console.error('❌ Error checking team membership:', error);
         toast.error('Failed to verify team membership');
         return;
       }
     }
 
     // Allow edit
+    console.log('✅ All checks passed, opening edit dialog');
     setSelectedItemId(itemId);
     setIsDialogOpen(true);
   };
