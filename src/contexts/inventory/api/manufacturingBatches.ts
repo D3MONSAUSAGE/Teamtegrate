@@ -31,31 +31,47 @@ export const manufacturingBatchesApi = {
   async getAll(): Promise<ManufacturingBatch[]> {
     const { data, error } = await supabase
       .from('manufacturing_batches')
-      .select(`
-        *,
-        inventory_lots!lot_id(
-          lot_number,
-          item_id,
-          inventory_items!item_id(name, sku)
-        )
-      `)
+      .select('*')
       .order('manufacturing_date', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Manually fetch related data if lot_id exists
+    const batches = data || [];
+    const enrichedBatches = await Promise.all(
+      batches.map(async (batch) => {
+        if (batch.lot_id) {
+          const { data: lot } = await supabase
+            .from('inventory_lots')
+            .select('lot_number, item_id')
+            .eq('id', batch.lot_id)
+            .maybeSingle();
+          
+          if (lot) {
+            const { data: item } = await supabase
+              .from('inventory_items')
+              .select('name, sku')
+              .eq('id', lot.item_id)
+              .maybeSingle();
+            
+            return {
+              ...batch,
+              inventory_lot: lot,
+              inventory_item: item || undefined
+            };
+          }
+        }
+        return batch;
+      })
+    );
+    
+    return enrichedBatches;
   },
 
   async getByLotId(lotId: string): Promise<ManufacturingBatch[]> {
     const { data, error } = await supabase
       .from('manufacturing_batches')
-      .select(`
-        *,
-        inventory_lots!lot_id(
-          lot_number,
-          item_id,
-          inventory_items!item_id(name, sku)
-        )
-      `)
+      .select('*')
       .eq('lot_id', lotId)
       .order('manufacturing_date', { ascending: false });
 
@@ -98,14 +114,7 @@ export const manufacturingBatchesApi = {
   async getByDateRange(startDate: string, endDate: string): Promise<ManufacturingBatch[]> {
     const { data, error } = await supabase
       .from('manufacturing_batches')
-      .select(`
-        *,
-        inventory_lots!lot_id(
-          lot_number,
-          item_id,
-          inventory_items!item_id(name, sku)
-        )
-      `)
+      .select('*')
       .gte('manufacturing_date', startDate)
       .lte('manufacturing_date', endDate)
       .order('manufacturing_date', { ascending: false });
