@@ -6,7 +6,7 @@ import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { WarehouseSetupWizard } from './WarehouseSetupWizard';
 
 interface NotConfiguredProps {
-  onConfigured: () => void;
+  onConfigured: (warehouseData?: any) => void;
   selectedTeamId?: string | null;
 }
 
@@ -21,11 +21,13 @@ export const NotConfigured: React.FC<NotConfiguredProps> = ({ onConfigured, sele
     setShowSetupWizard(true);
   };
 
-  const handleSetupComplete = async () => {
+  const handleSetupComplete = async (warehouseData?: any) => {
+    console.log('🎯 NotConfigured: Setup complete called with warehouse data:', warehouseData);
     setShowSetupWizard(false);
     // Brief delay to ensure smooth transition
     await new Promise(resolve => setTimeout(resolve, 300));
-    onConfigured();
+    // Pass warehouse data up to parent
+    onConfigured(warehouseData);
   };
 
   if (showSetupWizard) {

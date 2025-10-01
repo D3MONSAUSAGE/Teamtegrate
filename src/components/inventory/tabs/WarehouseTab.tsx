@@ -50,8 +50,27 @@ export const WarehouseTab: React.FC = () => {
   const shouldLoadWarehouse = (isAdmin || isSuperAdmin) ? selectedTeamId !== null : true;
   const shouldShowOverview = (isAdmin || isSuperAdmin) && selectedTeamId === null;
 
-  const loadWarehouse = useCallback(async (retryCount = 0) => {
-    console.log('loadWarehouse called:', { shouldLoadWarehouse, selectedTeamId, retryCount });
+  const loadWarehouse = useCallback(async (retryCount = 0, directWarehouseData?: Warehouse) => {
+    console.log('🔍 loadWarehouse called:', { 
+      shouldLoadWarehouse, 
+      selectedTeamId, 
+      retryCount,
+      hasDirectData: !!directWarehouseData 
+    });
+    
+    // If we have direct warehouse data, use it immediately
+    if (directWarehouseData) {
+      console.log('✅ Using direct warehouse data:', directWarehouseData);
+      setWarehouse(directWarehouseData);
+      setShowOverview(false);
+      setLoading(false);
+      setShowLoading(false);
+      setError(null);
+      setTeamSwitching(false);
+      toast.success('Warehouse loaded successfully!');
+      return;
+    }
+    
     if (!shouldLoadWarehouse) {
       console.log('Should not load warehouse - showing overview');
       setLoading(false);
@@ -59,42 +78,56 @@ export const WarehouseTab: React.FC = () => {
       setWarehouse(null);
       setError(null);
       setTeamSwitching(false);
-      setShowOverview(true); // Show overview when no team is selected
+      setShowOverview(true);
       return;
     }
 
     // Prevent parallel loading attempts (but allow retries)
     if (loading && retryCount === 0) {
+      console.log('⚠️ Already loading, skipping parallel attempt');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      setShowOverview(false); // Hide overview when loading specific warehouse
+      setShowOverview(false);
       // SECURITY: Immediately clear warehouse data to prevent cross-team data leakage
       setWarehouse(null);
       
       // Delay showing loading indicator to prevent flash for fast operations
       const loadingTimer = setTimeout(() => setShowLoading(true), 200);
       
+      console.log('🔍 Querying warehouse with context:', {
+        isAdmin,
+        isSuperAdmin,
+        isManager,
+        selectedTeamId,
+        availableTeams: availableTeams.map(t => ({ id: t.id, name: t.name }))
+      });
+      
       let data: Warehouse | null = null;
       
       // For admins/superadmins with team selected, get warehouse by team
       if ((isAdmin || isSuperAdmin) && selectedTeamId) {
+        console.log('📍 Admin/SuperAdmin - Loading warehouse for team:', selectedTeamId);
         data = await warehouseApi.getWarehouseByTeam(selectedTeamId);
       } else if (isManager && availableTeams.length === 1) {
         // Managers with single team - get their team's warehouse
+        console.log('📍 Manager - Loading warehouse for team:', availableTeams[0].id);
         data = await warehouseApi.getWarehouseByTeam(availableTeams[0].id);
       } else if (availableTeams.length > 0) {
         // Regular users - get their first team's warehouse
+        console.log('📍 Regular User - Loading warehouse for team:', availableTeams[0].id);
         data = await warehouseApi.getWarehouseByTeam(availableTeams[0].id);
       }
+      
+      console.log('🔍 Warehouse query result:', data);
       
       if (data) {
         // SECURITY: Validate warehouse belongs to selected team
         if ((isAdmin || isSuperAdmin) && selectedTeamId && data.team_id !== selectedTeamId) {
-          console.error('SECURITY ALERT: Warehouse team mismatch', {
+          console.error('🚨 SECURITY ALERT: Warehouse team mismatch', {
             expectedTeamId: selectedTeamId,
             actualTeamId: data.team_id,
             warehouseId: data.id,
@@ -107,12 +140,21 @@ export const WarehouseTab: React.FC = () => {
           return;
         }
         
-        console.log('Warehouse loaded successfully:', data);
+        console.log('✅ Warehouse loaded successfully:', data);
         setWarehouse(data);
-        setShowOverview(false); // Ensure overview is hidden when warehouse loads
+        setShowOverview(false);
       } else {
-        // No warehouse found - immediately show setup screen (no retries for null case)
-        console.log('No warehouse found - showing setup screen');
+        // No warehouse found - check if we should retry
+        if (retryCount < 5) {
+          console.log(`⏳ No warehouse found - retrying (${retryCount + 1}/5) after delay...`);
+          clearTimeout(loadingTimer);
+          const delay = Math.min(Math.pow(2, retryCount) * 500, 3000); // Max 3s delay
+          setTimeout(() => {
+            loadWarehouse(retryCount + 1);
+          }, delay);
+          return;
+        }
+        console.log('❌ No warehouse found after retries - showing setup screen');
         setWarehouse(null);
       }
       
@@ -120,28 +162,26 @@ export const WarehouseTab: React.FC = () => {
       clearTimeout(loadingTimer);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('❌ Error loading warehouse:', error);
       
       // Check if the error is due to missing warehouse tables
       if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
-        // Tables don't exist yet - this is a system configuration issue
         setError('Warehouse system not installed. Please contact system administrator.');
         setWarehouse(null);
       } else if (errorMessage.includes('permission') || errorMessage.includes('RLS')) {
-        // Permission/RLS issue
         setError('Access denied. You don\'t have permission to view warehouses.');
         setWarehouse(null);
       } else {
-        // General error - retry only for actual errors, not null results
-        if (retryCount < 3) {
-          console.log(`Error loading warehouse - retrying (${retryCount + 1}/3)...`);
-          const delay = Math.pow(2, retryCount) * 1000;
+        // General error - retry
+        if (retryCount < 5) {
+          console.log(`⏳ Error loading warehouse - retrying (${retryCount + 1}/5)...`);
+          const delay = Math.min(Math.pow(2, retryCount) * 500, 3000);
           setTimeout(() => {
             loadWarehouse(retryCount + 1);
           }, delay);
           return;
         }
-        // After retries, show error
-        console.error('Error persists after retries:', error);
+        console.error('❌ Error persists after retries:', error);
         setError('Failed to load warehouse. Please try again.');
         setWarehouse(null);
       }
@@ -150,7 +190,7 @@ export const WarehouseTab: React.FC = () => {
       setShowLoading(false);
       setTeamSwitching(false);
     }
-  }, [shouldLoadWarehouse, selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, user?.id]);
+  }, [shouldLoadWarehouse, selectedTeamId, isAdmin, isSuperAdmin, isManager, availableTeams, user?.id, loading]);
 
   // Handle team changes for all users
   useEffect(() => {
@@ -448,10 +488,19 @@ export const WarehouseTab: React.FC = () => {
         </React.Suspense>
       ) : !warehouse ? (
         <NotConfigured 
-          onConfigured={() => {
-            console.log('Warehouse configured - reloading');
-            // Reload warehouse after short delay to ensure DB consistency
-            setTimeout(() => loadWarehouse(), 500);
+          onConfigured={(warehouseData?: Warehouse) => {
+            console.log('🎯 WarehouseTab: onConfigured called with data:', warehouseData);
+            if (warehouseData) {
+              // Use direct warehouse data to avoid re-querying
+              console.log('✅ Using direct warehouse data from setup');
+              loadWarehouse(0, warehouseData);
+            } else {
+              // Fallback: Wait for database propagation then load
+              console.log('⏳ No direct data - waiting for DB propagation then loading...');
+              setTimeout(() => {
+                loadWarehouse(0);
+              }, 1000);
+            }
           }}
           selectedTeamId={selectedTeamId || (availableTeams.length > 0 ? availableTeams[0].id : null)}
         />

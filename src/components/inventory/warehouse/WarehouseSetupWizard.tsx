@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { WarehouseItemSelector } from './WarehouseItemSelector';
 
 interface WarehouseSetupWizardProps {
-  onComplete: () => void;
+  onComplete: (warehouseData?: any) => void;
   selectedTeamId?: string | null;
   teamName?: string;
 }
@@ -106,10 +106,10 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
 
   const handleComplete = async () => {
     console.log('✅ Warehouse setup complete, transitioning back to main view');
+    console.log('📦 Passing warehouse data:', createdWarehouse);
     toast.success('Warehouse setup completed successfully!');
-    // Add a brief delay to ensure database consistency before transitioning
-    await new Promise(resolve => setTimeout(resolve, 800));
-    onComplete();
+    // Pass the warehouse data directly instead of forcing a re-query
+    onComplete(createdWarehouse);
   };
 
   const stepNumber = currentStep === 'warehouse' ? 1 : currentStep === 'inventory' ? 2 : 3;
