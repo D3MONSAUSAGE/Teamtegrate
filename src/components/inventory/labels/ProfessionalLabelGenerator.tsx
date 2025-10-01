@@ -86,25 +86,34 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
   }
 ];
 
-const ProfessionalLabelGenerator: React.FC = () => {
+interface BatchData {
+  batchId: string;
+  batchNumber: string;
+  itemId?: string;
+  lotId?: string;
+  lotNumber?: string;
+  itemName?: string;
+  maxQuantity?: number;
+}
+
+interface ProfessionalLabelGeneratorProps {
+  preSelectedItemId?: string;
+  batchData?: BatchData;
+}
+
+const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({ 
+  preSelectedItemId, 
+  batchData 
+}) => {
   const inventoryContext = useInventory();
   const { user } = useAuth();
-  const location = useLocation();
   const { recordLabelGeneration, saving: savingToDatabase } = useLabelGeneration();
   
   const items = inventoryContext.items || [];
 
-  // Get batch data from navigation state
-  const batchData = location.state as {
-    batchId?: string;
-    itemId?: string;
-    lotId?: string;
-    lotNumber?: string;
-    itemName?: string;
-    maxQuantity?: number;
-  } | null;
-
-  const [selectedItemId, setSelectedItemId] = useState<string>(batchData?.itemId || '');
+  const [selectedItemId, setSelectedItemId] = useState<string>(
+    preSelectedItemId || batchData?.itemId || ''
+  );
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('food');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -116,9 +125,10 @@ const ProfessionalLabelGenerator: React.FC = () => {
   const [companyName, setCompanyName] = useState('Your Company Name');
   const [companyAddress, setCompanyAddress] = useState('123 Main St, City, State 12345');
   const [netWeight, setNetWeight] = useState('');
-  const [lotCode, setLotCode] = useState(batchData?.lotNumber || '');
+  const [lotCode, setLotCode] = useState(batchData?.batchNumber || batchData?.lotNumber || '');
   const [expirationDate, setExpirationDate] = useState('');
   const [servingsPerContainer, setServingsPerContainer] = useState('');
+  const [quantityMax] = useState<number>(batchData?.maxQuantity || 1000);
   
   // Logo state
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -193,10 +203,12 @@ const ProfessionalLabelGenerator: React.FC = () => {
       setSelectedItem(selectedItemFromList);
       
       if (selectedItemFromList) {
-        // Generate lot number
-        const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-        const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
-        setLotCode(lotNumber);
+        // Use batch number if available, otherwise generate lot number
+        if (!batchData?.batchNumber) {
+          const companyPrefix = companyName.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+          const lotNumber = BarcodeGenerator.generateLotNumber(companyPrefix || 'LOT');
+          setLotCode(lotNumber);
+        }
         
         // Auto-calculate expiration date if shelf life is set
         if (selectedItemFromList.shelf_life_days && selectedItemFromList.shelf_life_days > 0) {
@@ -700,11 +712,12 @@ const ProfessionalLabelGenerator: React.FC = () => {
         y += 0.2;
       }
 
-      // LOT Code (if included)
+      // LOT/BATCH Code (if included) - Show BATCH if from manufacturing batch
       if (template.fields.includes('lot') && lotCode) {
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`LOT: ${lotCode}`, 0.2, y);
+        const codeLabel = batchData?.batchNumber ? 'BATCH' : 'LOT';
+        pdf.text(`${codeLabel}: ${lotCode}`, 0.2, y);
         y += 0.25;
       }
 
@@ -951,6 +964,7 @@ const ProfessionalLabelGenerator: React.FC = () => {
             productName: selectedItem.name,
             sku: selectedItem.sku,
             lotCode: lotCode,
+            batchNumber: batchData?.batchNumber,
             companyName: companyName,
             manufacturingDate: new Date().toISOString(),
             expirationDate: expirationDate,
@@ -959,7 +973,8 @@ const ProfessionalLabelGenerator: React.FC = () => {
           quantityPrinted: quantityToPrint,
         });
         
-        toast.success(`Label generated and ${quantityToPrint} unit(s) recorded successfully!`);
+        const batchInfo = batchData?.batchNumber ? ` for Batch #${batchData.batchNumber}` : '';
+        toast.success(`Label generated and ${quantityToPrint} unit(s) recorded successfully${batchInfo}!`);
       } catch (dbError) {
         console.error('Failed to record in database:', dbError);
         toast.warning('Label generated but failed to record in tracking system');
@@ -1325,10 +1340,17 @@ const ProfessionalLabelGenerator: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium">Generated Lot Code</Label>
+                <Label className="text-sm font-medium">
+                  {batchData?.batchNumber ? 'Manufacturing Batch Number' : 'Generated Lot Code'}
+                </Label>
                 <div className="mt-1 p-2 bg-muted/50 rounded border">
                   <code className="text-sm font-mono">{lotCode}</code>
                 </div>
+                {batchData?.batchNumber && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    From Manufacturing Batch - This will appear as "BATCH:" on the label
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm font-medium">Barcode Value</Label>
@@ -1723,7 +1745,14 @@ const ProfessionalLabelGenerator: React.FC = () => {
                 min="1"
                 max={batchData?.maxQuantity || undefined}
                 value={quantityToPrint}
-                onChange={(e) => setQuantityToPrint(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  if (batchData?.maxQuantity) {
+                    setQuantityToPrint(Math.min(val, batchData.maxQuantity));
+                  } else {
+                    setQuantityToPrint(val);
+                  }
+                }}
                 className="max-w-[200px]"
               />
               <span className="text-sm text-muted-foreground">

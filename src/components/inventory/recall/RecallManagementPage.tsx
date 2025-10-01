@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,29 +10,22 @@ import { BulkBatchOperations } from './BulkBatchOperations';
 import { ProductionEventLog } from './ProductionEventLog';
 import { BatchTraceability } from './BatchTraceability';
 import { BatchAnalytics } from './BatchAnalytics';
+import { UnifiedLabelModal } from '@/components/inventory/labels/UnifiedLabelModal';
 import { ManufacturingBatch } from '@/contexts/inventory/api';
 import { toast } from 'sonner';
 
 export const RecallManagementPage: React.FC = () => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [bulkOpsOpen, setBulkOpsOpen] = useState(false);
+  const [labelModalOpen, setLabelModalOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<ManufacturingBatch | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [batches, setBatches] = useState<ManufacturingBatch[]>([]);
-  const navigate = useNavigate();
 
   const handlePrintLabels = (batch: ManufacturingBatch) => {
-    // Navigate to label generator with batch data in state
-    navigate('/dashboard/inventory/labels', {
-      state: {
-        batchId: batch.id,
-        itemId: batch.inventory_lot?.item_id,
-        lotId: batch.lot_id,
-        lotNumber: batch.inventory_lot?.lot_number,
-        itemName: batch.inventory_item?.name,
-        maxQuantity: batch.quantity_remaining,
-      }
-    });
-    toast.success('Redirecting to label generator...');
+    setSelectedBatch(batch);
+    setLabelModalOpen(true);
+    toast.success('Opening label generator...');
   };
 
   const handleBatchCreated = () => {
@@ -205,6 +197,25 @@ export const RecallManagementPage: React.FC = () => {
         onOpenChange={setBulkOpsOpen}
         batches={batches}
         onSuccess={handleBulkOpsSuccess}
+      />
+
+      <UnifiedLabelModal
+        open={labelModalOpen}
+        onOpenChange={(open) => {
+          setLabelModalOpen(open);
+          if (!open) {
+            setRefreshKey(prev => prev + 1); // Refresh batch list after printing
+          }
+        }}
+        batchData={selectedBatch ? {
+          batchId: selectedBatch.id,
+          batchNumber: selectedBatch.batch_number,
+          itemId: selectedBatch.inventory_lot?.item_id,
+          lotId: selectedBatch.lot_id,
+          lotNumber: selectedBatch.inventory_lot?.lot_number,
+          itemName: selectedBatch.inventory_item?.name,
+          maxQuantity: selectedBatch.quantity_remaining,
+        } : undefined}
       />
     </div>
   );
