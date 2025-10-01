@@ -3,12 +3,14 @@ import { Package } from 'lucide-react';
 import { InventoryCountTab } from '@/components/inventory/tabs/InventoryCountTab';
 import { InventoryProvider } from '@/contexts/inventory';
 import { InventoryBreadcrumb } from '@/components/inventory/navigation/InventoryBreadcrumb';
+import { MasterInventoryTabs } from '@/components/inventory/navigation/MasterInventoryTabs';
 
 const InventoryCountPage: React.FC = () => {
   return (
     <InventoryProvider>
       <div className="container mx-auto p-6 space-y-6">
         <InventoryBreadcrumb currentPage="Inventory Count" />
+        <MasterInventoryTabs />
         
         <div className="flex items-center space-x-2 mb-6">
           <Package className="h-8 w-8 text-primary" />

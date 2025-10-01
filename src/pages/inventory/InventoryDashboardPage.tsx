@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useInventory } from '@/contexts/inventory';
 import { InventoryProvider } from '@/contexts/inventory';
 import { InventoryBreadcrumb } from '@/components/inventory/navigation/InventoryBreadcrumb';
+import { MasterInventoryTabs } from '@/components/inventory/navigation/MasterInventoryTabs';
 import { 
   Package, 
   FileText, 
@@ -70,6 +71,7 @@ const InventoryDashboardContent: React.FC = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <InventoryBreadcrumb currentPage="Overview" />
+      <MasterInventoryTabs />
       
       <div className="flex items-center space-x-2 mb-6">
         <Package className="h-8 w-8 text-primary" />
