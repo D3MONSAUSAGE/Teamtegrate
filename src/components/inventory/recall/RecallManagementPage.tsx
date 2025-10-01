@@ -45,15 +45,6 @@ export const RecallManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Lot Tracking & Recall Management</h1>
-          <p className="text-muted-foreground">
-            Complete traceability from manufacturing to distribution
-          </p>
-        </div>
-      </div>
-
       <ScrollableTabs className="space-y-4">
         <ScrollableTabsList>
           <ScrollableTabsTrigger 
@@ -111,13 +102,14 @@ export const RecallManagementPage: React.FC = () => {
           <div className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                   <CardTitle>Manufacturing Batches</CardTitle>
                   <CardDescription>
                     Track production runs, quantities, and lot associations
                   </CardDescription>
                 </div>
+                <div className="flex items-center gap-2 justify-center md:justify-end">
                   <Button onClick={() => setBatchDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     New Batch
@@ -126,6 +118,7 @@ export const RecallManagementPage: React.FC = () => {
                     <Merge className="mr-2 h-4 w-4" />
                     Bulk Operations
                   </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
