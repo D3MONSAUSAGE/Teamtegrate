@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
 import { LabelPreview } from './LabelPreview';
+import { useLabelGeneration } from '@/hooks/useLabelGeneration';
 import jsPDF from 'jspdf';
 
 interface LabelTemplate {
@@ -87,21 +89,34 @@ const LABEL_TEMPLATES: LabelTemplate[] = [
 const ProfessionalLabelGenerator: React.FC = () => {
   const inventoryContext = useInventory();
   const { user } = useAuth();
+  const location = useLocation();
+  const { recordLabelGeneration, saving: savingToDatabase } = useLabelGeneration();
   
   const items = inventoryContext.items || [];
 
-  const [selectedItemId, setSelectedItemId] = useState<string>('');
+  // Get batch data from navigation state
+  const batchData = location.state as {
+    batchId?: string;
+    itemId?: string;
+    lotId?: string;
+    lotNumber?: string;
+    itemName?: string;
+    maxQuantity?: number;
+  } | null;
+
+  const [selectedItemId, setSelectedItemId] = useState<string>(batchData?.itemId || '');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('food');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [quantityToPrint, setQuantityToPrint] = useState<number>(1);
 
   // Company and lot code state
   const [companyName, setCompanyName] = useState('Your Company Name');
   const [companyAddress, setCompanyAddress] = useState('123 Main St, City, State 12345');
   const [netWeight, setNetWeight] = useState('');
-  const [lotCode, setLotCode] = useState('');
+  const [lotCode, setLotCode] = useState(batchData?.lotNumber || '');
   const [expirationDate, setExpirationDate] = useState('');
   const [servingsPerContainer, setServingsPerContainer] = useState('');
   
@@ -925,7 +940,30 @@ const ProfessionalLabelGenerator: React.FC = () => {
       const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
       pdf.save(filename);
       
-      toast.success('Professional FDA-compliant label generated successfully!');
+      // Record in database
+      try {
+        await recordLabelGeneration({
+          itemId: selectedItem.id,
+          lotId: batchData?.lotId,
+          batchId: batchData?.batchId,
+          labelData: {
+            templateId: selectedTemplate,
+            productName: selectedItem.name,
+            sku: selectedItem.sku,
+            lotCode: lotCode,
+            companyName: companyName,
+            manufacturingDate: new Date().toISOString(),
+            expirationDate: expirationDate,
+          },
+          printFormat: 'PDF',
+          quantityPrinted: quantityToPrint,
+        });
+        
+        toast.success(`Label generated and ${quantityToPrint} unit(s) recorded successfully!`);
+      } catch (dbError) {
+        console.error('Failed to record in database:', dbError);
+        toast.warning('Label generated but failed to record in tracking system');
+      }
       
     } catch (error) {
       console.error('Error generating label:', error);
@@ -937,6 +975,27 @@ const ProfessionalLabelGenerator: React.FC = () => {
 
   const renderLabelForm = () => (
     <div className="space-y-6">
+      {/* Batch Information Banner */}
+      {batchData && (
+        <Card className="border-primary bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Package className="h-4 w-4 text-primary" />
+              <div>
+                <span className="font-semibold">Manufacturing Batch:</span>
+                <span className="ml-2">{batchData.itemName}</span>
+                {batchData.lotNumber && (
+                  <span className="ml-2 text-muted-foreground">• Lot: {batchData.lotNumber}</span>
+                )}
+                {batchData.maxQuantity && (
+                  <span className="ml-2 text-muted-foreground">• Available: {batchData.maxQuantity} units</span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Success Message */}
       <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
         <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
@@ -1638,6 +1697,48 @@ const ProfessionalLabelGenerator: React.FC = () => {
         </Card>
       )}
 
+      {/* Quantity to Print */}
+      {selectedItem && (
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Hash className="h-5 w-5 text-primary" />
+              Quantity to Print
+            </CardTitle>
+            <CardDescription>
+              {batchData?.maxQuantity
+                ? `Up to ${batchData.maxQuantity} labels can be printed for this batch`
+                : 'Specify how many labels to generate'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Label htmlFor="quantity" className="text-sm font-medium min-w-[100px]">
+                Quantity:
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max={batchData?.maxQuantity || undefined}
+                value={quantityToPrint}
+                onChange={(e) => setQuantityToPrint(Math.max(1, parseInt(e.target.value) || 1))}
+                className="max-w-[200px]"
+              />
+              <span className="text-sm text-muted-foreground">
+                label{quantityToPrint !== 1 ? 's' : ''}
+              </span>
+            </div>
+            {batchData?.maxQuantity && quantityToPrint > batchData.maxQuantity && (
+              <p className="text-sm text-destructive mt-2">
+                Cannot print more than {batchData.maxQuantity} labels (remaining unlabeled units)
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Action Buttons */}
       {selectedItem && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1653,12 +1754,17 @@ const ProfessionalLabelGenerator: React.FC = () => {
           </Button>
           <Button 
             onClick={generateLabel}
-            disabled={isGenerating || !companyName.trim()}
+            disabled={
+              isGenerating || 
+              savingToDatabase || 
+              !companyName.trim() || 
+              (batchData?.maxQuantity ? quantityToPrint > batchData.maxQuantity : false)
+            }
             className="w-full py-6 text-lg"
             size="lg"
           >
             <Download className="mr-2 h-5 w-5" />
-            {isGenerating ? 'Generating...' : 'Generate PDF'}
+            {isGenerating || savingToDatabase ? 'Generating...' : `Generate ${quantityToPrint} Label${quantityToPrint !== 1 ? 's' : ''}`}
           </Button>
         </div>
       )}

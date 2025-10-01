@@ -1,13 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertTriangle, Package, Truck } from 'lucide-react';
 import { ManufacturingBatchDialog } from './ManufacturingBatchDialog';
-import { useState } from 'react';
+import { BatchManagementTable } from './BatchManagementTable';
+import { ManufacturingBatch } from '@/contexts/inventory/api';
+import { toast } from 'sonner';
 
 export const RecallManagementPage: React.FC = () => {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const navigate = useNavigate();
+
+  const handlePrintLabels = (batch: ManufacturingBatch) => {
+    // Navigate to label generator with batch data in state
+    navigate('/dashboard/inventory/labels', {
+      state: {
+        batchId: batch.id,
+        itemId: batch.inventory_lot?.item_id,
+        lotId: batch.lot_id,
+        lotNumber: batch.inventory_lot?.lot_number,
+        itemName: batch.inventory_item?.name,
+        maxQuantity: batch.quantity_remaining,
+      }
+    });
+    toast.success('Redirecting to label generator...');
+  };
+
+  const handleBatchCreated = () => {
+    setBatchDialogOpen(false);
+    setRefreshKey(prev => prev + 1);
+    toast.success('Manufacturing batch created successfully!');
+  };
 
   return (
     <div className="space-y-6">
@@ -53,10 +79,7 @@ export const RecallManagementPage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Manufacturing batch tracking will appear here. This provides complete traceability
-                from production to distribution, linking lot numbers with actual manufactured quantities.
-              </p>
+              <BatchManagementTable key={refreshKey} onPrintLabels={handlePrintLabels} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -119,6 +142,7 @@ export const RecallManagementPage: React.FC = () => {
       <ManufacturingBatchDialog
         open={batchDialogOpen}
         onOpenChange={setBatchDialogOpen}
+        onSuccess={handleBatchCreated}
       />
     </div>
   );
