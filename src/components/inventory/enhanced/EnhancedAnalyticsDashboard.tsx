@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   DollarSign, TrendingUp, TrendingDown, Target, Clock, AlertTriangle,
@@ -199,13 +200,36 @@ export const EnhancedAnalyticsDashboard: React.FC<EnhancedAnalyticsDashboardProp
       </div>
 
       {/* Enhanced Charts Section */}
-      <Tabs defaultValue="financial" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="financial">Financial Trends</TabsTrigger>
-          <TabsTrigger value="teams">Team Performance</TabsTrigger>
-          <TabsTrigger value="categories">Cost Analysis</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly Overview</TabsTrigger>
-        </TabsList>
+      <ScrollableTabs>
+        <ScrollableTabsList>
+          <ScrollableTabsTrigger 
+            isActive={selectedMetric === 'financial'}
+            onClick={() => setSelectedMetric('financial')}
+          >
+            Financial Trends
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={selectedMetric === 'teams'}
+            onClick={() => setSelectedMetric('teams')}
+          >
+            Team Performance
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={selectedMetric === 'categories'}
+            onClick={() => setSelectedMetric('categories')}
+          >
+            Cost Analysis
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={selectedMetric === 'monthly'}
+            onClick={() => setSelectedMetric('monthly')}
+          >
+            Monthly Overview
+          </ScrollableTabsTrigger>
+        </ScrollableTabsList>
+      </ScrollableTabs>
+      
+      <Tabs value={selectedMetric} className="space-y-6">
 
         <TabsContent value="financial" className="space-y-4">
           <Card>

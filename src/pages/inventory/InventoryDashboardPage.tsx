@@ -13,10 +13,7 @@ import {
   Warehouse, 
   Settings, 
   Play, 
-  BarChart3,
-  TrendingUp,
-  AlertTriangle,
-  Clock
+  AlertTriangle
 } from 'lucide-react';
 
 const InventoryDashboardContent: React.FC = () => {
@@ -67,33 +64,6 @@ const InventoryDashboardContent: React.FC = () => {
       icon: Settings,
       badge: null,
       requiresRole: 'manager' as const,
-    },
-  ];
-
-  const warehouseSubActions = [
-    {
-      title: 'Stock Levels',
-      description: 'Monitor warehouse stock',
-      href: '/dashboard/inventory/warehouse/stock',
-      icon: Package,
-    },
-    {
-      title: 'Processing',
-      description: 'Manage processing costs',
-      href: '/dashboard/inventory/warehouse/processing', 
-      icon: Clock,
-    },
-    {
-      title: 'Outgoing',
-      description: 'Manage shipments and sales',
-      href: '/dashboard/inventory/warehouse/outgoing',
-      icon: TrendingUp,
-    },
-    {
-      title: 'Reports',
-      description: 'Warehouse analytics',
-      href: '/dashboard/inventory/warehouse/reports',
-      icon: BarChart3,
     },
   ];
 
@@ -186,40 +156,6 @@ const InventoryDashboardContent: React.FC = () => {
         })}
       </div>
 
-      {/* Warehouse Quick Actions - Only for managers */}
-      {hasRoleAccess('manager') && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Warehouse className="h-5 w-5" />
-              Warehouse Quick Actions
-            </CardTitle>
-            <CardDescription>
-              Direct access to warehouse management functions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {warehouseSubActions.map((action) => (
-                <Button
-                  key={action.href}
-                  asChild
-                  variant="outline"
-                  className="h-auto p-4 flex flex-col items-center gap-2"
-                >
-                  <Link to={action.href}>
-                    <action.icon className="h-6 w-6" />
-                    <div className="text-center">
-                      <div className="font-medium text-sm">{action.title}</div>
-                      <div className="text-xs text-muted-foreground">{action.description}</div>
-                    </div>
-                  </Link>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

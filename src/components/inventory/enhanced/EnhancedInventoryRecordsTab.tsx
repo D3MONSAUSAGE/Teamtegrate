@@ -913,20 +913,22 @@ export const EnhancedInventoryRecordsTab: React.FC = () => {
               </p>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 <DatePicker date={selectedDate} setDate={setSelectedDate} />
               </div>
               
               {(hasRoleAccess('admin') || hasRoleAccess('manager')) && (
-                <StandardTeamSelector
-                  selectedTeamId={selectedDailyTeam || null}
-                  onTeamChange={(teamId) => setSelectedDailyTeam(teamId || '')}
-                  showAllOption={hasRoleAccess('admin')}
-                  placeholder="Filter by team"
-                  variant="simple"
-                />
+                <div className="w-full sm:w-[200px]">
+                  <StandardTeamSelector
+                    selectedTeamId={selectedDailyTeam || null}
+                    onTeamChange={(teamId) => setSelectedDailyTeam(teamId || '')}
+                    showAllOption={hasRoleAccess('admin')}
+                    placeholder="Filter by team"
+                    variant="simple"
+                  />
+                </div>
               )}
               
               <Button 
