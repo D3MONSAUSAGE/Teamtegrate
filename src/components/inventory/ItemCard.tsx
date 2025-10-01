@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package } from 'lucide-react';
+import { Package, Globe, Users } from 'lucide-react';
 import { InventoryItem } from '@/contexts/inventory/types';
 
 interface ItemCardProps {
@@ -27,6 +27,20 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onClick }) => {
           <Badge variant={isLowStock ? 'destructive' : 'secondary'}>
             {item.current_stock}
           </Badge>
+        </div>
+        
+        <div className="flex items-center gap-2 mb-2">
+          {!item.team_id ? (
+            <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+              <Globe className="h-3 w-3" />
+              Global
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="flex items-center gap-1 text-xs">
+              <Users className="h-3 w-3" />
+              Team-Specific
+            </Badge>
+          )}
         </div>
         
         <div className="space-y-1 text-sm text-muted-foreground">

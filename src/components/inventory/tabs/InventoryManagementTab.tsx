@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { InventoryItemDialog } from '../InventoryItemDialog';
+import { TeamItemActionDialog } from '../TeamItemActionDialog';
 
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
 import { TeamSelector } from '@/components/team/TeamSelector';
@@ -23,10 +24,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LabelsAndBarcodesTab } from '../labels/LabelsAndBarcodesTab';
 import { toast } from 'sonner';
 import { DEFAULT_CATEGORIES, DEFAULT_UNITS, shouldSeedDefaults } from '@/utils/inventorySeeds';
+import { supabase } from '@/integrations/supabase/client';
 
 export const InventoryManagementTab: React.FC = () => {
   console.log('InventoryManagementTab: Component rendering');
-  const { hasRoleAccess } = useAuth();
+  const { hasRoleAccess, user } = useAuth();
   console.log('InventoryManagementTab: About to call useInventory');
   const {
     items, 
@@ -45,11 +47,17 @@ export const InventoryManagementTab: React.FC = () => {
     deleteUnit, 
     deleteItem,
     createCategory, 
-    createUnit 
+    createUnit,
+    makeTeamSpecificCopy,
+    hideItemFromTeam,
+    revertToGlobalItem
   } = useInventory();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isTeamActionDialogOpen, setIsTeamActionDialogOpen] = useState(false);
+  const [itemForTeamAction, setItemForTeamAction] = useState<any | null>(null);
+  const [userCurrentTeamId, setUserCurrentTeamId] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -148,7 +156,56 @@ export const InventoryManagementTab: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEditItem = (itemId: string) => {
+  const handleEditItem = async (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    // Check if user is a superadmin - they can edit anything
+    const isSuperAdmin = user?.role === 'superadmin';
+    
+    // If item is global (team_id is null) and user is not superadmin
+    if (!item.team_id && !isSuperAdmin) {
+      // Get user's team from team memberships
+      try {
+        const { data: memberships } = await supabase
+          .from('team_memberships')
+          .select('team_id')
+          .eq('user_id', user?.id)
+          .limit(1);
+        
+        if (memberships && memberships.length > 0) {
+          setUserCurrentTeamId(memberships[0].team_id);
+          setItemForTeamAction(item);
+          setIsTeamActionDialogOpen(true);
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching team membership:', error);
+      }
+    }
+
+    // If item is team-specific, check if user belongs to that team
+    if (item.team_id && !isSuperAdmin) {
+      try {
+        const { data: membership } = await supabase
+          .from('team_memberships')
+          .select('id')
+          .eq('user_id', user?.id)
+          .eq('team_id', item.team_id)
+          .maybeSingle();
+        
+        if (!membership) {
+          toast.error('You can only edit items from your own team');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking team membership:', error);
+        toast.error('Failed to verify team membership');
+        return;
+      }
+    }
+
+    // Allow edit
     setSelectedItemId(itemId);
     setIsDialogOpen(true);
   };
@@ -662,6 +719,43 @@ export const InventoryManagementTab: React.FC = () => {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         itemId={selectedItemId}
+      />
+
+      <TeamItemActionDialog
+        open={isTeamActionDialogOpen}
+        onOpenChange={setIsTeamActionDialogOpen}
+        item={itemForTeamAction}
+        teamId={userCurrentTeamId || ''}
+        onMakeTeamCopy={async () => {
+          if (!itemForTeamAction || !userCurrentTeamId) return;
+          try {
+            await makeTeamSpecificCopy(itemForTeamAction.id, userCurrentTeamId);
+            toast.success('Team-specific copy created');
+            setIsTeamActionDialogOpen(false);
+          } catch (error) {
+            toast.error('Failed to create team copy');
+          }
+        }}
+        onHideFromTeam={async () => {
+          if (!itemForTeamAction || !userCurrentTeamId) return;
+          try {
+            await hideItemFromTeam(itemForTeamAction.id, userCurrentTeamId);
+            toast.success('Item hidden from team catalog');
+            setIsTeamActionDialogOpen(false);
+          } catch (error) {
+            toast.error('Failed to hide item');
+          }
+        }}
+        onRevertToGlobal={async () => {
+          if (!itemForTeamAction) return;
+          try {
+            await revertToGlobalItem(itemForTeamAction.id);
+            toast.success('Reverted to global item');
+            setIsTeamActionDialogOpen(false);
+          } catch (error) {
+            toast.error('Failed to revert item');
+          }
+        }}
       />
 
       <InventoryCategoryDialog
