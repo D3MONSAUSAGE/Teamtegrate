@@ -161,6 +161,15 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Auto-sync batch number when batch context changes
+  useEffect(() => {
+    if (batchData?.batchNumber) {
+      setLotCode(batchData.batchNumber);
+    } else if (batchData?.lotNumber) {
+      setLotCode(batchData.lotNumber);
+    }
+  }, [batchData?.batchNumber, batchData?.lotNumber]);
+
   // Handle item selection and auto-calculate expiration date
   useEffect(() => {
     if (!selectedItemId) {
@@ -367,6 +376,14 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     setAllergens(template.allergens);
     setExpirationDate(template.expirationDate);
     
+    // Prioritize current batch number over saved template value
+    if (batchData?.batchNumber) {
+      setLotCode(batchData.batchNumber);
+    } else if (batchData?.lotNumber) {
+      setLotCode(batchData.lotNumber);
+    }
+    // Otherwise, lotCode remains at its current value (either from batch or generated)
+    
     if (template.selectedItemId) {
       setSelectedItemId(template.selectedItemId);
     }
@@ -377,7 +394,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       toast.info(`Editing template "${template.name}"`);
     } else {
       setEditingTemplateId(null);
-      toast.success(`Template "${template.name}" loaded!`);
+      const batchMessage = batchData?.batchNumber 
+        ? ` (Batch #${batchData.batchNumber})` 
+        : '';
+      toast.success(`Template "${template.name}" loaded!${batchMessage}`);
     }
   };
 
