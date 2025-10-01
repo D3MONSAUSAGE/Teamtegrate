@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { generatedLabelsApi, manufacturingBatchesApi } from '@/contexts/inventory/api';
+import { generatedLabelsApi, manufacturingBatchesApi, labelTemplatesApi } from '@/contexts/inventory/api';
 
 interface LabelGenerationData {
   itemId: string;
@@ -23,10 +23,25 @@ export const useLabelGeneration = () => {
 
     setSaving(true);
     try {
-      // Save the generated label record (template_id is optional, use null if not provided)
+      // Resolve template_id - fetch default if not provided
+      let templateId = data.labelData.templateId;
+      
+      if (!templateId) {
+        console.log('No template ID provided, fetching default template...');
+        const templates = await labelTemplatesApi.getAll();
+        
+        if (templates.length === 0) {
+          throw new Error('No label templates found. Please create a template first.');
+        }
+        
+        templateId = templates[0].id;
+        console.log('Using default template:', templateId);
+      }
+
+      // Save the generated label record
       const labelRecord = await generatedLabelsApi.create({
         organization_id: user.organizationId,
-        template_id: data.labelData.templateId || null,
+        template_id: templateId,
         item_id: data.itemId,
         lot_id: data.lotId,
         label_data: data.labelData,
