@@ -3,7 +3,7 @@ import { SalesData, WeeklySalesData } from '@/types/sales';
 import { salesDataService, SalesDataFilters } from '@/services/SalesDataService';
 import { startOfWeek, endOfWeek, format, parseISO, isSameWeek } from 'date-fns';
 import { toast } from '@/components/ui/sonner';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useSalesChannelTransactions } from '@/hooks/useSalesChannelTransactions';
 
 interface UseSalesManagerReturn {
@@ -46,18 +46,25 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
   const [error, setError] = useState<string | null>(null);
   
   // Filtering state
-  const [selectedTeam, setSelectedTeam] = useState<string>('all');
+  const { availableTeams, isAdmin, shouldAutoSelect } = useTeamAccess();
+  const [selectedTeam, setSelectedTeam] = useState<string>(() => {
+    // Auto-select first team for managers with single team
+    if (shouldAutoSelect && availableTeams.length === 1) {
+      return availableTeams[0].id;
+    }
+    return 'all';
+  });
   const [selectedWeek, setSelectedWeek] = useState<Date>(() => new Date());
   const [filters, setFilters] = useState<SalesDataFilters>(initialFilters);
 
-  // Get teams data
-  const { teams: teamsData } = useTeams();
-
-  // Derived data
+  // Derived data - Only show "All Teams" option for admins
   const teams = useMemo(() => {
-    const allOption = { id: 'all', name: 'All Teams' };
-    return [allOption, ...(teamsData || [])];
-  }, [teamsData]);
+    if (isAdmin) {
+      const allOption = { id: 'all', name: 'All Teams' };
+      return [allOption, ...availableTeams];
+    }
+    return availableTeams;
+  }, [availableTeams, isAdmin]);
 
   const weeksWithData = useMemo(() => {
     const weeks = new Map<string, Date>();

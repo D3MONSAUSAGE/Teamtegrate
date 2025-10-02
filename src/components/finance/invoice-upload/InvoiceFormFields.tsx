@@ -10,7 +10,7 @@ import { CalendarIcon, Users, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useInvoiceTeams } from '@/hooks/useInvoiceTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface InvoiceFormFieldsProps {
@@ -34,7 +34,8 @@ const InvoiceFormFields: React.FC<InvoiceFormFieldsProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
-  const { teams, isLoading: teamsLoading, error: teamsError } = useInvoiceTeams();
+  const { availableTeams: teams, isLoading: teamsLoading, error } = useTeamAccess();
+  const teamsError = error ? 'Failed to load teams' : null;
 
   return (
     <div className={cn("grid gap-4", isMobile ? "gap-4" : "gap-6")}>
