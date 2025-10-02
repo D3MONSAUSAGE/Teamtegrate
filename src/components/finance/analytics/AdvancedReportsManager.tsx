@@ -17,12 +17,13 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subWeeks } from 'date-fns';
-import { analyticsService, LocationPerformance } from '@/services/AnalyticsService';
+import { analyticsService, LocationPerformance, ChannelTrendData, ChannelBreakdown } from '@/services/AnalyticsService';
 import { exportService } from '@/services/ExportService';
 import { salesDataService } from '@/services/SalesDataService';
 import { useTeams } from '@/hooks/useTeams';
+import { useSalesChannels } from '@/hooks/useSalesChannels';
 import { toast } from '@/components/ui/sonner';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
 
 type ReportType = 'daily' | 'weekly' | 'monthly' | 'comparative' | 'performance';
@@ -38,14 +39,18 @@ interface ComparisonData {
 const AdvancedReportsManager: React.FC = () => {
   const [selectedReportType, setSelectedReportType] = useState<ReportType>('weekly');
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
+  const [selectedChannels, setSelectedChannels] = useState<string[]>(['all']);
   const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date()));
   const [endDate, setEndDate] = useState<Date>(endOfWeek(new Date()));
   const [isLoading, setIsLoading] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
   const [comparisonData, setComparisonData] = useState<ComparisonData[]>([]);
   const [locationPerformance, setLocationPerformance] = useState<LocationPerformance[]>([]);
+  const [channelTrendData, setChannelTrendData] = useState<ChannelTrendData[]>([]);
+  const [channelBreakdown, setChannelBreakdown] = useState<ChannelBreakdown | null>(null);
 
   const { teams } = useTeams();
+  const { channels } = useSalesChannels();
 
   const teamOptions = [
     { id: 'all', name: 'All Teams' },
@@ -102,11 +107,15 @@ const AdvancedReportsManager: React.FC = () => {
         case 'daily':
         case 'weekly':
         case 'monthly':
-          const [kpiMetrics, trendData] = await Promise.all([
+          const [kpiMetrics, trendData, channelTrend, channelBreak] = await Promise.all([
             analyticsService.getKPIMetrics(dateRange, selectedTeam),
-            analyticsService.getTrendData(dateRange, selectedTeam)
+            analyticsService.getTrendData(dateRange, selectedTeam),
+            analyticsService.getChannelTrendData(dateRange, selectedTeam),
+            analyticsService.getChannelBreakdown(dateRange, selectedTeam)
           ]);
           setReportData({ kpiMetrics, trendData });
+          setChannelTrendData(channelTrend);
+          setChannelBreakdown(channelBreak);
           break;
           
         case 'comparative':
@@ -315,6 +324,31 @@ const AdvancedReportsManager: React.FC = () => {
     if (!reportData) return <div>No data available</div>;
     
     const { kpiMetrics, trendData } = reportData;
+
+    // Get unique channel names from the trend data
+    const channelNames = new Set<string>();
+    channelTrendData.forEach(item => {
+      Object.keys(item.channels).forEach(name => channelNames.add(name));
+    });
+
+    // Define colors for different channels
+    const channelColors: Record<string, string> = {
+      'UberEats': 'hsl(142, 71%, 45%)',
+      'DoorDash': 'hsl(0, 84%, 60%)',
+      'Grubhub': 'hsl(25, 95%, 53%)',
+      'Postmates': 'hsl(0, 0%, 20%)',
+      'Deliveroo': 'hsl(194, 98%, 48%)',
+    };
+    
+    // Filter channel breakdown based on selected channels
+    const filteredChannelBreakdown = channelBreakdown && selectedChannels.includes('all')
+      ? channelBreakdown
+      : channelBreakdown
+        ? {
+            ...channelBreakdown,
+            channels: channelBreakdown.channels.filter(ch => selectedChannels.includes(ch.channelId))
+          }
+        : null;
     
     return (
       <div className="space-y-6">
@@ -354,15 +388,87 @@ const AdvancedReportsManager: React.FC = () => {
           </Card>
         </div>
 
-        {/* Trend Chart */}
+        {/* Channel KPI Cards */}
+        {filteredChannelBreakdown && filteredChannelBreakdown.channels.length > 0 && (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Sales Channel Performance</h3>
+              <Badge variant="outline">
+                {filteredChannelBreakdown.channels.length} Channel{filteredChannelBreakdown.channels.length !== 1 ? 's' : ''}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filteredChannelBreakdown.channels.map((channel) => (
+                <Card key={channel.channelId} className="border-l-4" style={{ borderLeftColor: channelColors[channel.channelName] || 'hsl(var(--primary))' }}>
+                  <CardContent className="p-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium">{channel.channelName}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {channel.percentageOfTotal.toFixed(1)}%
+                        </Badge>
+                      </div>
+                      <p className="text-2xl font-bold mb-1">{formatCurrency(channel.grossSales)}</p>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Commission:</span>
+                          <span className="text-destructive font-medium">-{formatCurrency(channel.commissionFees)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Net Sales:</span>
+                          <span className="text-success font-medium">{formatCurrency(channel.netSales)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Orders:</span>
+                          <span>{channel.orderCount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Rate:</span>
+                          <span>{(channel.commissionRate * 100).toFixed(1)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Channel Totals Summary */}
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Channel Sales</p>
+                    <p className="text-xl font-bold">{formatCurrency(filteredChannelBreakdown.totalGrossSales)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Commission</p>
+                    <p className="text-xl font-bold text-destructive">-{formatCurrency(filteredChannelBreakdown.totalCommission)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Net After Commission</p>
+                    <p className="text-xl font-bold text-success">{formatCurrency(filteredChannelBreakdown.totalNetSales)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
+                    <p className="text-xl font-bold">{filteredChannelBreakdown.totalOrders.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* Multi-Channel Trend Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Sales Trend</CardTitle>
+            <CardTitle>Sales Trend by Channel</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData}>
+                <LineChart data={channelTrendData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
@@ -370,15 +476,34 @@ const AdvancedReportsManager: React.FC = () => {
                   />
                   <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                   <Tooltip 
-                    formatter={(value: number) => [formatCurrency(value), 'Sales']}
+                    formatter={(value: number, name: string) => [formatCurrency(value), name]}
                     labelFormatter={(value) => format(new Date(value), 'MMM dd, yyyy')}
                   />
+                  <Legend />
                   <Line 
                     type="monotone" 
-                    dataKey="grossSales" 
+                    dataKey="totalSales" 
                     stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    name="Total Sales"
                   />
+                  {Array.from(channelNames).map((channelName, index) => {
+                    const shouldShow = selectedChannels.includes('all') || 
+                                     filteredChannelBreakdown?.channels.some(ch => ch.channelName === channelName);
+                    if (!shouldShow) return null;
+                    
+                    return (
+                      <Line 
+                        key={channelName}
+                        type="monotone" 
+                        dataKey={`channels.${channelName}`}
+                        stroke={channelColors[channelName] || `hsl(${(index * 360) / channelNames.size}, 70%, 50%)`}
+                        strokeWidth={2}
+                        name={channelName}
+                        strokeDasharray={index % 2 === 0 ? "0" : "5 5"}
+                      />
+                    );
+                  })}
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -512,7 +637,7 @@ const AdvancedReportsManager: React.FC = () => {
       {/* Controls */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Report Type */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Report Type</label>
@@ -544,6 +669,27 @@ const AdvancedReportsManager: React.FC = () => {
                   {teamOptions.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Channel Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sales Channel</label>
+              <Select 
+                value={selectedChannels.includes('all') ? 'all' : selectedChannels[0] || 'all'} 
+                onValueChange={(value) => setSelectedChannels(value === 'all' ? ['all'] : [value])}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Channels</SelectItem>
+                  {(channels || []).filter(ch => ch.is_active).map((channel) => (
+                    <SelectItem key={channel.id} value={channel.id}>
+                      {channel.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -56,6 +56,31 @@ export interface LocationPerformance {
   ranking: number;
 }
 
+export interface ChannelTrendData {
+  date: string;
+  totalSales: number;
+  channels: Record<string, number>; // channelName -> sales amount
+}
+
+export interface ChannelKPIMetrics {
+  channelId: string;
+  channelName: string;
+  grossSales: number;
+  commissionFees: number;
+  netSales: number;
+  orderCount: number;
+  commissionRate: number;
+  percentageOfTotal: number;
+}
+
+export interface ChannelBreakdown {
+  channels: ChannelKPIMetrics[];
+  totalGrossSales: number;
+  totalCommission: number;
+  totalNetSales: number;
+  totalOrders: number;
+}
+
 class AnalyticsService {
   async getKPIMetrics(dateRange: { start: Date; end: Date }, teamId?: string): Promise<KPIMetrics> {
     try {
@@ -478,6 +503,157 @@ class AnalyticsService {
       surcharges: dbRecord.surcharges || 0,
       expenses: dbRecord.expenses || 0
     };
+  }
+
+  async getChannelTrendData(dateRange: { start: Date; end: Date }, teamId?: string): Promise<ChannelTrendData[]> {
+    try {
+      let query = supabase
+        .from('sales_channel_transactions')
+        .select(`
+          *,
+          channel:sales_channels(name)
+        `)
+        .gte('date', format(dateRange.start, 'yyyy-MM-dd'))
+        .lte('date', format(dateRange.end, 'yyyy-MM-dd'))
+        .order('date', { ascending: true });
+
+      if (teamId && teamId !== 'all') {
+        query = query.eq('team_id', teamId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Group by date and channel
+      const dateMap = new Map<string, Map<string, number>>();
+      
+      (data || []).forEach((transaction: any) => {
+        const date = transaction.date;
+        const channelName = transaction.channel?.name || 'Unknown';
+        const grossSales = transaction.gross_sales || 0;
+
+        if (!dateMap.has(date)) {
+          dateMap.set(date, new Map<string, number>());
+        }
+        
+        const channelMap = dateMap.get(date)!;
+        channelMap.set(channelName, (channelMap.get(channelName) || 0) + grossSales);
+      });
+
+      // Convert to array format
+      return Array.from(dateMap.entries()).map(([date, channelMap]) => {
+        const channels: Record<string, number> = {};
+        let totalSales = 0;
+        
+        channelMap.forEach((sales, channelName) => {
+          channels[channelName] = sales;
+          totalSales += sales;
+        });
+
+        return {
+          date,
+          totalSales,
+          channels
+        };
+      }).sort((a, b) => a.date.localeCompare(b.date));
+    } catch (error) {
+      console.error('[AnalyticsService] Error getting channel trend data:', error);
+      return [];
+    }
+  }
+
+  async getChannelBreakdown(dateRange: { start: Date; end: Date }, teamId?: string): Promise<ChannelBreakdown> {
+    try {
+      let query = supabase
+        .from('sales_channel_transactions')
+        .select(`
+          *,
+          channel:sales_channels(*)
+        `)
+        .gte('date', format(dateRange.start, 'yyyy-MM-dd'))
+        .lte('date', format(dateRange.end, 'yyyy-MM-dd'));
+
+      if (teamId && teamId !== 'all') {
+        query = query.eq('team_id', teamId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Group by channel
+      const channelMap = new Map<string, {
+        channelId: string;
+        channelName: string;
+        grossSales: number;
+        commissionFees: number;
+        netSales: number;
+        orderCount: number;
+        commissionRate: number;
+      }>();
+
+      (data || []).forEach((transaction: any) => {
+        const channelId = transaction.channel_id;
+        const channelName = transaction.channel?.name || 'Unknown';
+        const commissionRate = transaction.channel?.commission_rate || 0;
+
+        if (!channelMap.has(channelId)) {
+          channelMap.set(channelId, {
+            channelId,
+            channelName,
+            grossSales: 0,
+            commissionFees: 0,
+            netSales: 0,
+            orderCount: 0,
+            commissionRate
+          });
+        }
+
+        const channel = channelMap.get(channelId)!;
+        channel.grossSales += transaction.gross_sales || 0;
+        channel.commissionFees += transaction.commission_fee || 0;
+        channel.netSales += transaction.net_sales || 0;
+        channel.orderCount += transaction.order_count || 0;
+      });
+
+      // Calculate totals
+      let totalGrossSales = 0;
+      let totalCommission = 0;
+      let totalNetSales = 0;
+      let totalOrders = 0;
+
+      channelMap.forEach(channel => {
+        totalGrossSales += channel.grossSales;
+        totalCommission += channel.commissionFees;
+        totalNetSales += channel.netSales;
+        totalOrders += channel.orderCount;
+      });
+
+      // Add percentage of total
+      const channels: ChannelKPIMetrics[] = Array.from(channelMap.values()).map(channel => ({
+        ...channel,
+        percentageOfTotal: totalGrossSales > 0 ? (channel.grossSales / totalGrossSales) * 100 : 0
+      }));
+
+      // Sort by gross sales descending
+      channels.sort((a, b) => b.grossSales - a.grossSales);
+
+      return {
+        channels,
+        totalGrossSales,
+        totalCommission,
+        totalNetSales,
+        totalOrders
+      };
+    } catch (error) {
+      console.error('[AnalyticsService] Error getting channel breakdown:', error);
+      return {
+        channels: [],
+        totalGrossSales: 0,
+        totalCommission: 0,
+        totalNetSales: 0,
+        totalOrders: 0
+      };
+    }
   }
 
   private getEmptyKPIMetrics(): KPIMetrics {
