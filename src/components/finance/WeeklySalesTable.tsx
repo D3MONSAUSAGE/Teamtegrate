@@ -24,20 +24,10 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({
   dateRange
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  if (!weeklyData || isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
 
   // Prepare data based on display mode
   const days = useMemo(() => {
+    if (!weeklyData) return [];
     if (displayMode === 'daily' && dateRange) {
       // Generate daily breakdown for date range
       const daysArray = [];
@@ -73,6 +63,18 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({
       });
     }
   }, [displayMode, dateRange, weeklyData]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  // Early return AFTER all hooks
+  if (!weeklyData || isLoading) {
+    return <div>Loading...</div>;
+  }
 
   const handleDeleteDay = async (date: string, location: string) => {
     if (!onDeleteDay) return;
