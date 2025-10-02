@@ -48,31 +48,31 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="shadow-lg">
+      <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
         <CardTitle className="flex justify-between items-center">
-          <span>Weekly Sales Report - {weeklyData.location}</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xl font-bold">Weekly Sales Report - {weeklyData.location}</span>
+          <span className="text-sm font-medium text-muted-foreground bg-background/80 px-3 py-1.5 rounded-md border">
             {format(weeklyData.weekStart, 'MMM dd')} - {format(weeklyData.weekEnd, 'MMM dd, yyyy')}
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-md border overflow-x-auto">
+      <CardContent className="p-0">
+        <div className="rounded-md overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Day</TableHead>
-                <TableHead className="text-right">Non Cash</TableHead>
-                <TableHead className="text-right">Total Cash</TableHead>
-                <TableHead className="text-right">Gross Total</TableHead>
-                <TableHead className="text-right">Discount</TableHead>
-                <TableHead className="text-right">Tax Paid</TableHead>
-                <TableHead className="text-right">Tips</TableHead>
-                <TableHead className="text-right">Net Sales</TableHead>
-                <TableHead className="text-right">Calculated Cash</TableHead>
-                <TableHead className="text-right">Expenses</TableHead>
-                <TableHead className="text-right">Total In-House Cash</TableHead>
+              <TableRow className="bg-gradient-to-r from-muted via-muted/80 to-muted hover:from-muted hover:via-muted/80 hover:to-muted border-b-2 border-border">
+                <TableHead className="font-bold text-foreground h-12">Day</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Non Cash</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Total Cash</TableHead>
+                <TableHead className="text-right font-bold text-foreground bg-primary/5">Gross Total</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Discount</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Tax Paid</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Tips</TableHead>
+                <TableHead className="text-right font-bold text-foreground bg-primary/5">Net Sales</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Calculated Cash</TableHead>
+                <TableHead className="text-right font-bold text-foreground">Expenses</TableHead>
+                <TableHead className="text-right font-bold text-foreground bg-primary/5">In-House Cash</TableHead>
                 {onDeleteDay && <TableHead className="w-12"></TableHead>}
               </TableRow>
             </TableHeader>
@@ -84,47 +84,58 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
                 const totalInHouseCash = (dailySale?.paymentBreakdown.calculatedCash || 0) - (dailySale?.expenses || 0);
                 
                 return (
-                  <TableRow key={day} className={dailySale ? "" : "opacity-50"}>
-                    <TableCell className="font-medium">{day}</TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.paymentBreakdown.nonCash) : '-'}
+                  <TableRow 
+                    key={day} 
+                    className={`
+                      ${dailySale ? "hover:bg-muted/30 transition-colors" : "opacity-50"}
+                      ${index % 2 === 0 ? "bg-background" : "bg-muted/10"}
+                      border-b border-border/50
+                    `}
+                  >
+                    <TableCell className="font-semibold py-4">{day}</TableCell>
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-primary">{formatCurrency(dailySale.paymentBreakdown.nonCash)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.paymentBreakdown.totalCash) : '-'}
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-primary">{formatCurrency(dailySale.paymentBreakdown.totalCash)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.grossSales) : '-'}
+                    <TableCell className="text-right font-mono font-semibold bg-primary/5 py-4">
+                      {dailySale ? <span className="text-primary">{formatCurrency(dailySale.grossSales)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(totalDiscount) : '-'}
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-amber-600 dark:text-amber-500">{formatCurrency(totalDiscount)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(totalTax) : '-'}
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-muted-foreground">{formatCurrency(totalTax)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.paymentBreakdown.tips) : '-'}
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-emerald-600 dark:text-emerald-500">{formatCurrency(dailySale.paymentBreakdown.tips)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.netSales) : '-'}
+                    <TableCell className="text-right font-mono font-semibold bg-primary/5 py-4">
+                      {dailySale ? <span className="text-primary">{formatCurrency(dailySale.netSales)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.paymentBreakdown.calculatedCash) : '-'}
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-emerald-600 dark:text-emerald-500">{formatCurrency(dailySale.paymentBreakdown.calculatedCash)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(dailySale.expenses || 0) : '-'}
+                    <TableCell className="text-right font-mono text-sm py-4">
+                      {dailySale ? <span className="text-destructive">{formatCurrency(dailySale.expenses || 0)}</span> : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {dailySale ? formatCurrency(totalInHouseCash) : '-'}
+                    <TableCell className="text-right font-mono font-semibold bg-primary/5 py-4">
+                      {dailySale ? (
+                        <span className={totalInHouseCash >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-destructive"}>
+                          {formatCurrency(totalInHouseCash)}
+                        </span>
+                      ) : '-'}
                     </TableCell>
                     {onDeleteDay && (
-                      <TableCell>
+                      <TableCell className="py-4">
                         {dailySale && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive-foreground hover:bg-destructive transition-colors"
                                 disabled={isDeleting}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -160,19 +171,23 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
               })}
               
               {/* Weekly Totals Row */}
-              <TableRow className="bg-muted/30 font-semibold">
-                <TableCell>WEEK TOTAL</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.nonCash)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.totalCash)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.grossTotal)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.discount)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.taxPaid)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.tips)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.netSales)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.calculatedCash)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.expenses)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(weeklyData.totals.totalInHouseCash)}</TableCell>
-                {onDeleteDay && <TableCell></TableCell>}
+              <TableRow className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-t-2 border-primary/20 hover:from-primary/15 hover:via-primary/10 hover:to-primary/15 transition-colors">
+                <TableCell className="font-bold text-base py-5">WEEK TOTAL</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 text-primary">{formatCurrency(weeklyData.totals.nonCash)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 text-primary">{formatCurrency(weeklyData.totals.totalCash)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 bg-primary/10 text-primary text-base">{formatCurrency(weeklyData.totals.grossTotal)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 text-amber-600 dark:text-amber-500">{formatCurrency(weeklyData.totals.discount)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5">{formatCurrency(weeklyData.totals.taxPaid)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 text-emerald-600 dark:text-emerald-500">{formatCurrency(weeklyData.totals.tips)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 bg-primary/10 text-primary text-base">{formatCurrency(weeklyData.totals.netSales)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 text-emerald-600 dark:text-emerald-500">{formatCurrency(weeklyData.totals.calculatedCash)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 text-destructive">{formatCurrency(weeklyData.totals.expenses)}</TableCell>
+                <TableCell className="text-right font-mono font-bold py-5 bg-primary/10 text-base">
+                  <span className={weeklyData.totals.totalInHouseCash >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-destructive"}>
+                    {formatCurrency(weeklyData.totals.totalInHouseCash)}
+                  </span>
+                </TableCell>
+                {onDeleteDay && <TableCell className="py-5"></TableCell>}
               </TableRow>
             </TableBody>
           </Table>
