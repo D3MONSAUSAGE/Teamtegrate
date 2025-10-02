@@ -22,7 +22,8 @@ import {
   AlertTriangle,
   Eye,
   Settings,
-  Zap
+  Zap,
+  Info
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SalesData } from '@/types/sales';
@@ -33,6 +34,7 @@ import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { DataPreviewModal } from './DataPreviewModal';
 import { BatchProgressCard } from './BatchProgressCard';
+import { useBatchUpload } from '@/hooks/useBatchUpload';
 
 interface EnhancedSalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -71,6 +73,14 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
   
+  // Batch upload optimization
+  const batchUpload = useBatchUpload({
+    maxConcurrent: 3,
+    maxFileSize: 50,
+    maxTotalSize: 200,
+    chunkSize: 5
+  });
+  
   const posSystemOptions = [
     { value: 'auto', label: 'Auto Detect' },
     { value: 'brink', label: 'Brink POS' },
@@ -81,6 +91,30 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   ];
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // Validate batch before adding
+    const allFiles = [...files, ...acceptedFiles];
+    const validation = batchUpload.validateBatch(allFiles);
+    
+    if (!validation.valid) {
+      setError(validation.errors.join('. '));
+      toast({
+        title: "Batch Validation Failed",
+        description: validation.errors[0],
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Analyze files and show recommendations
+    const analysis = batchUpload.analyzeFiles(allFiles);
+    if (analysis.warningMessage) {
+      toast({
+        title: "Batch Size Recommendation",
+        description: analysis.warningMessage,
+        variant: "default",
+      });
+    }
+    
     const newFiles: FileWithPreview[] = acceptedFiles.map(file => 
       Object.assign(file, {
         preview: URL.createObjectURL(file)
@@ -100,13 +134,13 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     if (acceptedFiles.length === 1 && files.length === 0) {
       await extractDateFromPDF(newFiles[0]);
     }
-  }, [files.length]);
+  }, [files, batchUpload]);
   
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     accept: {
       'application/pdf': ['.pdf']
     },
-    maxFiles: batchMode ? 20 : 1,
+    maxFiles: 25,
     onDrop,
     onDropRejected: (fileRejections) => {
       const rejection = fileRejections[0];
@@ -115,6 +149,13 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         toast({
           title: "Invalid File Type",
           description: "Only PDF files are supported",
+          variant: "destructive",
+        });
+      } else if (rejection.errors[0]?.code === 'too-many-files') {
+        setError('Maximum 25 files allowed per batch');
+        toast({
+          title: "Too Many Files",
+          description: "Please upload a maximum of 25 files at once",
           variant: "destructive",
         });
       }
@@ -219,59 +260,64 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
       let failed = 0;
       const staged: StagedData[] = [];
       
-      for (const file of files) {
-        try {
-          setUploadProgress((processed / files.length) * 80);
-          
-          // Parse PDF with universal parser
-          const result = await parseUniversalPDF(
-            file,
-            teamId,
-            salesDate,
-            forcedPosSystem === 'auto' ? undefined : forcedPosSystem
-          );
-          
-          if (result.success && result.data) {
-            // Stage the data for review
-            // Channel transactions will be automatically created by SalesChannelService
-            const stagedId = await uploadBatchService.stageData(
-              batchId,
-              file.name,
-              result.posSystem || 'unknown',
-              result.confidenceScore || 0,
-              result.data,
-              result.validationErrors || []
+      // Process files in chunks with concurrency
+      const results = await batchUpload.processInChunks(
+        files,
+        async (file, index) => {
+          try {
+            // Parse PDF with universal parser
+            const result = await parseUniversalPDF(
+              file,
+              teamId,
+              salesDate,
+              forcedPosSystem === 'auto' ? undefined : forcedPosSystem
             );
             
-            file.stagedId = stagedId;
-            file.parseResult = result;
-            processed++;
-            
-            // Add to staged data for preview
-            staged.push({
-              id: stagedId,
-              batch_id: batchId,
-              file_name: file.name,
-              pos_system: result.posSystem || 'unknown',
-              confidence_score: result.confidenceScore || 0,
-              extracted_data: result.data,
-              validation_errors: result.validationErrors || [],
-              user_corrections: {},
-              status: 'pending',
-              created_at: new Date().toISOString()
-            });
-          } else {
-            failed++;
-            console.error('Failed to parse file:', file.name, result.error);
+            if (result.success && result.data) {
+              // Stage the data for review
+              // Channel transactions will be automatically created by SalesChannelService
+              const stagedId = await uploadBatchService.stageData(
+                batchId,
+                file.name,
+                result.posSystem || 'unknown',
+                result.confidenceScore || 0,
+                result.data,
+                result.validationErrors || []
+              );
+              
+              file.stagedId = stagedId;
+              file.parseResult = result;
+              
+              // Add to staged data for preview
+              staged.push({
+                id: stagedId,
+                batch_id: batchId,
+                file_name: file.name,
+                pos_system: result.posSystem || 'unknown',
+                confidence_score: result.confidenceScore || 0,
+                extracted_data: result.data,
+                validation_errors: result.validationErrors || [],
+                user_corrections: {},
+                status: 'pending',
+                created_at: new Date().toISOString()
+              });
+            } else {
+              throw new Error(result.error || 'Failed to parse file');
+            }
+          } catch (fileError) {
+            console.error('Error processing file:', file.name, fileError);
+            throw fileError;
           }
-        } catch (fileError) {
-          failed++;
-          console.error('Error processing file:', file.name, fileError);
+        },
+        (currentProcessed, total) => {
+          processed = currentProcessed;
+          setUploadProgress((currentProcessed / total) * 80);
+          uploadBatchService.updateBatchProgress(batchId, currentProcessed, failed);
         }
-        
-        // Update batch progress
-        await uploadBatchService.updateBatchProgress(batchId, processed, failed);
-      }
+      );
+      
+      processed = results.successful;
+      failed = results.failed;
       
       setUploadProgress(100);
       setStagedData(staged);
@@ -454,13 +500,45 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         </div>
       </div>
       
+      {/* Batch Size Recommendations */}
+      {files.length > 0 && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">Batch Upload Guidelines:</p>
+              <ul className="text-sm space-y-1 ml-4 list-disc">
+                <li><strong>Small files (&lt;2MB):</strong> Up to 15-20 files recommended</li>
+                <li><strong>Medium files (2-10MB):</strong> Up to 8-10 files recommended</li>
+                <li><strong>Large files (&gt;10MB):</strong> Up to 3-5 files recommended</li>
+                <li><strong>Total batch size:</strong> Maximum 200MB</li>
+              </ul>
+              {(() => {
+                const analysis = batchUpload.analyzeFiles(files);
+                return (
+                  <div className="mt-2 text-sm">
+                    <p>Current batch: {files.length} files ({analysis.totalSize.toFixed(1)}MB total)</p>
+                    <p>Estimated processing time: ~{analysis.estimatedTime} seconds</p>
+                    {analysis.warningMessage && (
+                      <p className="text-yellow-600 dark:text-yellow-500 mt-1">
+                        ⚠️ {analysis.warningMessage}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Upload Zone */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Upload className="h-5 w-5" />
             Enhanced PDF Upload
-            {batchMode && <Badge variant="secondary">Batch Mode</Badge>}
+            {batchMode && <Badge variant="secondary">Batch Mode (Max 25 files)</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -494,7 +572,10 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
                     or click to browse files
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Supports multiple POS systems • Batch upload • Auto-detection
+                    Supports multiple POS systems • Batch upload (max 25 files) • Auto-detection
+                  </p>
+                  <p className="text-xs text-primary mt-2 font-medium">
+                    💡 Recommended: 5-10 files per batch for optimal performance
                   </p>
                 </div>
               </div>
@@ -543,7 +624,14 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
                 {uploadStatus === 'processing' && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Processing files...</span>
+                      <span>
+                        Processing files...
+                        {batchUpload.totalChunks > 0 && (
+                          <span className="ml-2 text-muted-foreground">
+                            (Chunk {batchUpload.processingChunk}/{batchUpload.totalChunks})
+                          </span>
+                        )}
+                      </span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <Progress value={uploadProgress} className="h-2" />

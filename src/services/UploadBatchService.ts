@@ -113,6 +113,38 @@ class UploadBatchService {
     }
   }
 
+  async processBatchConcurrently<T>(
+    items: T[],
+    processor: (item: T) => Promise<void>,
+    concurrency: number = 3,
+    onProgress?: (processed: number, total: number) => void
+  ): Promise<{ successful: number; failed: number }> {
+    let successful = 0;
+    let failed = 0;
+    let processed = 0;
+    
+    // Process items in batches with concurrency limit
+    for (let i = 0; i < items.length; i += concurrency) {
+      const batch = items.slice(i, i + concurrency);
+      const results = await Promise.allSettled(
+        batch.map(item => processor(item))
+      );
+      
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          successful++;
+        } else {
+          failed++;
+        }
+      });
+      
+      processed += batch.length;
+      onProgress?.(processed, items.length);
+    }
+    
+    return { successful, failed };
+  }
+
   async completeBatch(batchId: string, status: 'completed' | 'failed' | 'cancelled'): Promise<void> {
     try {
       const { error } = await supabase
