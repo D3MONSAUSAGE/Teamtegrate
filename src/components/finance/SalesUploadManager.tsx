@@ -59,6 +59,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [existingData, setExistingData] = useState<any>(null);
   const [pendingUpload, setPendingUpload] = useState<SalesData | null>(null);
   const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
+  const [parsedDestinations, setParsedDestinations] = useState<any[]>([]);
+  const [parsedGrossSales, setParsedGrossSales] = useState<number>(0);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -113,6 +115,12 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         setSalesDate(result.extractedDate);
         setIsDateExtracted(true);
         onDateExtracted?.(result.extractedDate);
+        
+        // Store destinations and gross sales for auto-fill
+        if (result.data) {
+          setParsedDestinations(result.data.destinations || []);
+          setParsedGrossSales(result.data.grossSales || 0);
+        }
         
         toast.success(
           <div className="flex items-center gap-2">
@@ -384,7 +392,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           teamId={teamId}
           value={channelSales}
           onChange={setChannelSales}
-          grossSales={0}
+          grossSales={parsedGrossSales}
+          destinationsData={parsedDestinations}
         />
       )}
       

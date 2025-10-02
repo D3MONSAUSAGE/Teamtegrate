@@ -69,6 +69,8 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
   const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
+  const [parsedDestinations, setParsedDestinations] = useState<any[]>([]);
+  const [parsedGrossSales, setParsedGrossSales] = useState<number>(0);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -141,6 +143,12 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         file.extractedDate = result.extractedDate;
         setSalesDate(result.extractedDate);
         onDateExtracted?.(result.extractedDate);
+        
+        // Store destinations and gross sales for auto-fill
+        if (result.data) {
+          setParsedDestinations(result.data.destinations || []);
+          setParsedGrossSales(result.data.grossSales || 0);
+        }
         
         toast({
           title: "Date Auto-Detected",
@@ -474,7 +482,8 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           teamId={teamId}
           value={channelSales}
           onChange={setChannelSales}
-          grossSales={0}
+          grossSales={parsedGrossSales}
+          destinationsData={parsedDestinations}
         />
       )}
       

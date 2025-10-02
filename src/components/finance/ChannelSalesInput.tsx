@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSalesChannels } from '@/hooks/useSalesChannels';
-import { Store, X, Percent, DollarSign, Info, TrendingDown, Loader2 } from 'lucide-react';
+import { Store, X, Percent, DollarSign, Info, TrendingDown, Loader2, Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
+import { toast } from 'sonner';
 
 export interface ChannelSalesEntry {
   channelId: string;
@@ -15,30 +16,45 @@ export interface ChannelSalesEntry {
   amount: number;
 }
 
+interface DestinationData {
+  name: string;
+  total: number;
+  quantity: number;
+  percent: number;
+}
+
 interface ChannelSalesInputProps {
   teamId: string | null;
   value: ChannelSalesEntry[];
   onChange: (entries: ChannelSalesEntry[]) => void;
   grossSales?: number;
+  destinationsData?: DestinationData[];
 }
 
 const ChannelSalesInput: React.FC<ChannelSalesInputProps> = ({ 
   teamId, 
   value, 
   onChange,
-  grossSales = 0
+  grossSales = 0,
+  destinationsData = []
 }) => {
   const { channels, isLoading } = useSalesChannels();
   const [activeChannels, setActiveChannels] = useState<typeof channels>([]);
   const [inputMode, setInputMode] = useState<'amount' | 'percentage'>('amount');
   const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
+  const [showAutoFillSuggestion, setShowAutoFillSuggestion] = useState(false);
 
   useEffect(() => {
     const filtered = channels.filter(ch => 
       ch.is_active && (!ch.team_id || ch.team_id === teamId)
     );
     setActiveChannels(filtered);
-  }, [channels, teamId]);
+    
+    // Show auto-fill suggestion if destinations data is available and not already filled
+    if (destinationsData.length > 0 && value.length === 0) {
+      setShowAutoFillSuggestion(true);
+    }
+  }, [channels, teamId, destinationsData, value.length]);
 
   const handleAmountChange = (channelId: string, channelName: string, inputValue: string) => {
     const amount = parseFloat(inputValue) || 0;
@@ -115,6 +131,48 @@ const ChannelSalesInput: React.FC<ChannelSalesInputProps> = ({
     return grossSales - getTotalChannelFees();
   };
 
+  // Auto-fill from POS destinations data
+  const handleAutoFill = () => {
+    if (destinationsData.length === 0) return;
+    
+    const autoFilledEntries: ChannelSalesEntry[] = [];
+    
+    // Match destinations to channels using the same logic as SalesChannelService
+    activeChannels.forEach(channel => {
+      const channelName = channel.name.toLowerCase().trim();
+      
+      // Find matching destination
+      const matchedDestination = destinationsData.find(dest => {
+        const destName = dest.name.toLowerCase().trim();
+        return destName.includes(channelName) || channelName.includes(destName);
+      });
+      
+      if (matchedDestination && matchedDestination.total > 0) {
+        autoFilledEntries.push({
+          channelId: channel.id,
+          channelName: channel.name,
+          amount: matchedDestination.total
+        });
+      }
+    });
+    
+    onChange(autoFilledEntries);
+    setShowAutoFillSuggestion(false);
+    
+    toast.success(`Auto-filled ${autoFilledEntries.length} channels from POS data`);
+  };
+
+  const getMatchedDestinations = () => {
+    return activeChannels.map(channel => {
+      const channelName = channel.name.toLowerCase().trim();
+      const matched = destinationsData.find(dest => {
+        const destName = dest.name.toLowerCase().trim();
+        return destName.includes(channelName) || channelName.includes(destName);
+      });
+      return { channel, destination: matched };
+    }).filter(item => item.destination);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -145,18 +203,37 @@ const ChannelSalesInput: React.FC<ChannelSalesInputProps> = ({
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Store className="h-5 w-5" />
-            Manual Channel Sales Entry
+            Channel Sales
           </div>
           <Badge variant="secondary">{value.length} channels</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Enter sales for delivery channels from your POS. Fees are auto-calculated and deducted in weekly reports.
-          </AlertDescription>
-        </Alert>
+        {showAutoFillSuggestion && getMatchedDestinations().length > 0 && (
+          <Alert className="bg-primary/10 border-primary">
+            <Sparkles className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <strong>Auto-fill available!</strong> Found {getMatchedDestinations().length} matching channel{getMatchedDestinations().length !== 1 ? 's' : ''} in your POS data.
+              </div>
+              <Button onClick={handleAutoFill} variant="default" size="sm" className="ml-4">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Auto-Fill from POS
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {value.length === 0 && !showAutoFillSuggestion && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              {destinationsData.length > 0 
+                ? 'Your POS data has been loaded. Match channels below or use percentage mode.'
+                : 'Enter sales for delivery channels from your POS. Fees are auto-calculated and deducted in reports.'}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'amount' | 'percentage')}>
           <TabsList className="grid w-full grid-cols-2">
