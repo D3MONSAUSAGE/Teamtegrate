@@ -1,20 +1,34 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { WeeklySalesData } from '@/types/sales';
-import { format, addDays } from 'date-fns';
+import { format, addDays, isSameDay, parseISO } from 'date-fns';
 import { Trash2 } from 'lucide-react';
 
 interface WeeklySalesTableProps {
-  weeklyData: WeeklySalesData;
+  weeklyData: WeeklySalesData | null;
   onDeleteDay?: (date: string, location: string) => Promise<void>;
+  isLoading?: boolean;
+  displayMode?: 'weekly' | 'daily';
+  dateRange?: { start: Date; end: Date };
 }
 
-const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDeleteDay }) => {
+const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ 
+  weeklyData, 
+  onDeleteDay,
+  isLoading = false,
+  displayMode = 'weekly',
+  dateRange
+}) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  if (!weeklyData || isLoading) {
+    return <div>Loading...</div>;
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -22,17 +36,43 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
     }).format(amount);
   };
 
-  const getDailySalesForDay = (dayIndex: number) => {
-    const targetDate = addDays(weeklyData.weekStart, dayIndex);
-    const target = format(targetDate, 'yyyy-MM-dd');
-    const found = weeklyData.dailySales.find(sale => {
-      // sale.date is already in 'yyyy-MM-dd' format, no conversion needed
-      return sale.date === target;
-    });
-    return found;
-  };
-
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  // Prepare data based on display mode
+  const days = useMemo(() => {
+    if (displayMode === 'daily' && dateRange) {
+      // Generate daily breakdown for date range
+      const daysArray = [];
+      let currentDay = new Date(dateRange.start);
+      const endDay = new Date(dateRange.end);
+      
+      while (currentDay <= endDay) {
+        const salesForDay = weeklyData.dailySales.find(
+          sale => isSameDay(parseISO(sale.date), currentDay)
+        );
+        daysArray.push({
+          dayName: format(currentDay, 'EEE MMM d'),
+          date: currentDay,
+          sales: salesForDay || null,
+        });
+        currentDay = addDays(currentDay, 1);
+      }
+      return daysArray;
+    } else {
+      // Weekly mode: Monday-Sunday
+      const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      return daysOfWeek.map((dayName, index) => {
+        const dayDate = addDays(weeklyData.weekStart, index);
+        const salesForDay = weeklyData.dailySales.find(
+          sale => isSameDay(parseISO(sale.date), dayDate)
+        );
+        
+        return {
+          dayName,
+          date: dayDate,
+          sales: salesForDay || null,
+        };
+      });
+    }
+  }, [displayMode, dateRange, weeklyData]);
 
   const handleDeleteDay = async (date: string, location: string) => {
     if (!onDeleteDay) return;
@@ -51,7 +91,7 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
     <Card className="shadow-lg">
       <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
         <CardTitle className="flex justify-between items-center">
-          <span className="text-xl font-bold">Weekly Sales Report - {weeklyData.location}</span>
+          <span className="text-xl font-bold">Sales Report - {weeklyData.location}</span>
           <span className="text-sm font-medium text-muted-foreground bg-background/80 px-3 py-1.5 rounded-md border">
             {format(weeklyData.weekStart, 'MMM dd')} - {format(weeklyData.weekEnd, 'MMM dd, yyyy')}
           </span>
@@ -78,21 +118,21 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
             </TableHeader>
             <TableBody>
               {days.map((day, index) => {
-                const dailySale = getDailySalesForDay(index);
+                const dailySale = day.sales;
                 const totalDiscount = dailySale?.discounts.reduce((sum, discount) => sum + discount.total, 0) || 0;
                 const totalTax = dailySale?.taxes.reduce((sum, tax) => sum + tax.total, 0) || 0;
                 const totalInHouseCash = (dailySale?.paymentBreakdown.calculatedCash || 0) - (dailySale?.expenses || 0);
                 
                 return (
                   <TableRow 
-                    key={day} 
+                    key={`${day.dayName}-${index}`}
                     className={`
                       ${dailySale ? "hover:bg-muted/30 transition-colors" : "opacity-50"}
                       ${index % 2 === 0 ? "bg-background" : "bg-muted/10"}
                       border-b border-border/50
                     `}
                   >
-                    <TableCell className="font-semibold py-4">{day}</TableCell>
+                    <TableCell className="font-semibold py-4">{day.dayName}</TableCell>
                     <TableCell className="text-right font-mono text-sm py-4">
                       {dailySale ? <span className="text-primary">{formatCurrency(dailySale.paymentBreakdown.nonCash)}</span> : '-'}
                     </TableCell>
@@ -145,7 +185,7 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Delete Sales Data</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to delete sales data for {day} ({format(addDays(weeklyData.weekStart, index), 'MMM dd, yyyy')}) at {dailySale.location}?
+                                  Are you sure you want to delete sales data for {day.dayName} ({format(day.date, 'MMM dd, yyyy')}) at {dailySale.location}?
                                   <br /><br />
                                   <strong>Gross Sales:</strong> {formatCurrency(dailySale.grossSales)}
                                   <br />
@@ -170,9 +210,11 @@ const WeeklySalesTable: React.FC<WeeklySalesTableProps> = ({ weeklyData, onDelet
                 );
               })}
               
-              {/* Weekly Totals Row */}
+              {/* Totals Row */}
               <TableRow className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-t-2 border-primary/20 hover:from-primary/15 hover:via-primary/10 hover:to-primary/15 transition-colors">
-                <TableCell className="font-bold text-base py-5">WEEK TOTAL</TableCell>
+                <TableCell className="font-bold text-base py-5">
+                  {displayMode === 'weekly' ? 'WEEK TOTAL' : 'PERIOD TOTAL'}
+                </TableCell>
                 <TableCell className="text-right font-mono font-bold py-5 text-primary">{formatCurrency(weeklyData.totals.nonCash)}</TableCell>
                 <TableCell className="text-right font-mono font-bold py-5 text-primary">{formatCurrency(weeklyData.totals.totalCash)}</TableCell>
                 <TableCell className="text-right font-mono font-bold py-5 bg-primary/10 text-primary text-base">{formatCurrency(weeklyData.totals.grossTotal)}</TableCell>
