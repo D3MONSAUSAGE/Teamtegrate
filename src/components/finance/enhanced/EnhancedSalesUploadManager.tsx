@@ -36,6 +36,7 @@ import { DataPreviewModal } from './DataPreviewModal';
 import { BatchProgressCard } from './BatchProgressCard';
 import { useBatchUpload } from '@/hooks/useBatchUpload';
 import { FileStatusCard, FileStatus } from './FileStatusCard';
+import ChannelSalesInput, { ChannelSalesEntry } from '../ChannelSalesInput';
 
 interface EnhancedSalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -71,6 +72,8 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
   const [fileStatuses, setFileStatuses] = useState<FileStatus[]>([]);
+  const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
+  const [extractedDestinations, setExtractedDestinations] = useState<any[]>([]);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -191,6 +194,11 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         setSalesDate(result.extractedDate);
         onDateExtracted?.(result.extractedDate);
         
+        // Extract destinations for channel sales auto-fill
+        if (result.data?.destinations) {
+          setExtractedDestinations(result.data.destinations);
+        }
+        
         toast({
           title: "Date Auto-Detected",
           description: (
@@ -299,6 +307,23 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
             );
             
             if (result.success && result.data) {
+              // Merge manual channel sales into destinations for automatic processing
+              if (channelSales.length > 0) {
+                const manualDestinations = channelSales.map(cs => ({
+                  name: cs.channelName,
+                  total: cs.amount,
+                  quantity: 1,
+                  percent: result.data!.grossSales > 0 
+                    ? (cs.amount / result.data!.grossSales) * 100 
+                    : 0
+                }));
+                
+                result.data.destinations = [
+                  ...result.data.destinations,
+                  ...manualDestinations
+                ];
+              }
+              
               // Stage the data for review
               // Channel transactions will be automatically created by SalesChannelService
               const stagedId = await uploadBatchService.stageData(
@@ -461,6 +486,8 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     setSalesDate(new Date());
     setTeamId(null);
     setFileStatuses([]);
+    setChannelSales([]);
+    setExtractedDestinations([]);
   };
 
   const removeFile = (index: number) => {
@@ -736,6 +763,17 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           )}
         </CardContent>
       </Card>
+      
+      {/* Manual Channel Sales Entry */}
+      {files.length > 0 && salesDate && teamId && !batchMode && (
+        <ChannelSalesInput
+          teamId={teamId}
+          value={channelSales}
+          onChange={setChannelSales}
+          grossSales={0} // Will be calculated after PDF parsing
+          destinationsData={extractedDestinations}
+        />
+      )}
       
       {/* Action Buttons */}
       <div className="flex justify-between">

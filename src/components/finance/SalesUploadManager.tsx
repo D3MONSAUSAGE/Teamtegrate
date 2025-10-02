@@ -28,6 +28,7 @@ import { parseUniversalPDF } from '@/utils/universalPdfParser';
 import { salesDataService } from '@/services/SalesDataService';
 import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
+import ChannelSalesInput, { ChannelSalesEntry } from './ChannelSalesInput';
 
 interface SalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -57,6 +58,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
   const [pendingUpload, setPendingUpload] = useState<SalesData | null>(null);
+  const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
+  const [extractedDestinations, setExtractedDestinations] = useState<any[]>([]);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -72,6 +75,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
     setUploadStatus('idle');
     setError('');
     setIsDateExtracted(false);
+    setChannelSales([]);
+    setExtractedDestinations([]);
     
     // Auto-extract date from PDF
     if (newFiles.length > 0) {
@@ -111,6 +116,11 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         setSalesDate(result.extractedDate);
         setIsDateExtracted(true);
         onDateExtracted?.(result.extractedDate);
+        
+        // Extract destinations for channel sales auto-fill
+        if (result.data?.destinations) {
+          setExtractedDestinations(result.data.destinations);
+        }
         
         toast.success(
           <div className="flex items-center gap-2">
@@ -195,6 +205,24 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       setUploadProgress(90);
       
       if (parseResult.success && parseResult.data) {
+        // Merge manual channel sales into destinations for automatic processing
+        if (channelSales.length > 0) {
+          // Add manual channel entries to destinations so SalesChannelService picks them up
+          const manualDestinations = channelSales.map(cs => ({
+            name: cs.channelName,
+            total: cs.amount,
+            quantity: 1, // Default quantity
+            percent: parseResult.data!.grossSales > 0 
+              ? (cs.amount / parseResult.data!.grossSales) * 100 
+              : 0
+          }));
+          
+          parseResult.data.destinations = [
+            ...parseResult.data.destinations,
+            ...manualDestinations
+          ];
+        }
+        
         // Upload to database with replace flag
         // Channel transactions will be automatically created by SalesChannelService
         await onUpload(parseResult.data, replaceExisting);
@@ -207,6 +235,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           setSalesDate(new Date());
           setTeamId(null);
           setFiles([]);
+          setChannelSales([]);
+          setExtractedDestinations([]);
           setUploadProgress(0);
           setUploadStatus('idle');
           setIsDateExtracted(false);
@@ -268,6 +298,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
     setError('');
     setIsDateExtracted(false);
     setUploadProgress(0);
+    setChannelSales([]);
+    setExtractedDestinations([]);
   };
 
   const getStatusIcon = () => {
@@ -459,6 +491,17 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           )}
         </CardContent>
       </Card>
+      
+      {/* Manual Channel Sales Entry */}
+      {files.length > 0 && salesDate && teamId && (
+        <ChannelSalesInput
+          teamId={teamId}
+          value={channelSales}
+          onChange={setChannelSales}
+          grossSales={0} // Will be calculated after PDF parsing
+          destinationsData={extractedDestinations}
+        />
+      )}
       
       {/* Upload Button */}
       <div className="flex justify-end">
