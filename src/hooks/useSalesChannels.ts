@@ -67,9 +67,15 @@ export const useSalesChannels = () => {
 
   const updateChannel = async (id: string, updates: Partial<CreateSalesChannelData>): Promise<boolean> => {
     try {
+      // Convert team_id explicitly - if it's 'all' or null/undefined, set to null
+      const updateData = {
+        ...updates,
+        team_id: !updates.team_id || updates.team_id === 'all' ? null : updates.team_id,
+      };
+
       const { error } = await supabase
         .from('sales_channels')
-        .update(updates)
+        .update(updateData)
         .eq('id', id);
 
       if (error) {
