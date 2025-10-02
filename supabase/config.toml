@@ -80,6 +80,9 @@ verify_jwt = true
 [functions.process-calendar-sync-queue]
 verify_jwt = false
 
+[functions.reprocess-sales-channels]
+verify_jwt = true
+
 [functions.send-ticket-notifications]
 verify_jwt = true
 

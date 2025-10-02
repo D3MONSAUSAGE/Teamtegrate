@@ -22,6 +22,7 @@ import { useSalesChannels } from '@/hooks/useSalesChannels';
 import { useTeams } from '@/hooks/useTeams';
 import { useAuth } from '@/contexts/AuthContext';
 import { SalesChannelDialog } from './SalesChannelDialog';
+import { SalesChannelReprocessing } from '../SalesChannelReprocessing';
 import type { SalesChannel } from '@/types/salesChannels';
 
 export const SalesChannelsManager: React.FC = () => {
@@ -194,6 +195,8 @@ export const SalesChannelsManager: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {canManage && <SalesChannelReprocessing />}
 
       <SalesChannelDialog
         open={dialogOpen}
