@@ -35,6 +35,7 @@ import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { DataPreviewModal } from './DataPreviewModal';
 import { BatchProgressCard } from './BatchProgressCard';
 import { useBatchUpload } from '@/hooks/useBatchUpload';
+import { FileStatusCard, FileStatus } from './FileStatusCard';
 
 interface EnhancedSalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -69,6 +70,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   const [stagedData, setStagedData] = useState<StagedData[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
+  const [fileStatuses, setFileStatuses] = useState<FileStatus[]>([]);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -124,6 +126,14 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     setFiles(prev => [...prev, ...newFiles]);
     setUploadStatus('idle');
     setError('');
+    
+    // Initialize file statuses
+    const initialStatuses: FileStatus[] = acceptedFiles.map(file => ({
+      fileName: file.name,
+      status: 'pending',
+      size: file.size
+    }));
+    setFileStatuses(prev => [...prev, ...initialStatuses]);
     
     // Enable batch mode if multiple files
     if (acceptedFiles.length > 1 || files.length > 0) {
@@ -218,9 +228,10 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
       setError('Please select a date');
       toast({
         title: "Date Required",
-        description: "Please select a date",
+        description: "Please select a date before processing files.",
         variant: "destructive",
       });
+      setFileStatuses([]);
       return;
     }
     
@@ -228,9 +239,10 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
       setError('Please select a team');
       toast({
         title: "Team Required",
-        description: "Please select a team",
+        description: "Please select a team before processing files.",
         variant: "destructive",
       });
+      setFileStatuses([]);
       return;
     }
     
@@ -238,7 +250,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
       setError('Please select PDF files');
       toast({
         title: "Files Required",
-        description: "Please select PDF files",
+        description: "Please select PDF files to process.",
         variant: "destructive",
       });
       return;
@@ -247,6 +259,14 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     setUploadStatus('processing');
     setError('');
     setUploadProgress(0);
+    
+    // Reset file statuses for processing
+    const initialStatuses: FileStatus[] = files.map(file => ({
+      fileName: file.name,
+      status: 'pending',
+      size: file.size
+    }));
+    setFileStatuses(initialStatuses);
     
     try {
       // Create batch
@@ -264,6 +284,11 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
       const results = await batchUpload.processInChunks(
         files,
         async (file, index) => {
+          // Update status to processing
+          setFileStatuses(prev => prev.map((fs, i) => 
+            i === index ? { ...fs, status: 'processing' } : fs
+          ));
+
           try {
             // Parse PDF with universal parser
             const result = await parseUniversalPDF(
@@ -301,11 +326,31 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
                 status: 'pending',
                 created_at: new Date().toISOString()
               });
+              
+              // Update status to success
+              setFileStatuses(prev => prev.map((fs, i) => 
+                i === index ? { ...fs, status: 'success' } : fs
+              ));
             } else {
-              throw new Error(result.error || 'Failed to parse file');
+              const errorMsg = result.error || 'Failed to parse PDF - unrecognized format or invalid content';
+              console.error(`Failed to process ${file.name}:`, errorMsg);
+              
+              // Update status to error
+              setFileStatuses(prev => prev.map((fs, i) => 
+                i === index ? { ...fs, status: 'error', error: errorMsg } : fs
+              ));
+              
+              throw new Error(errorMsg);
             }
           } catch (fileError) {
+            const errorMsg = fileError instanceof Error ? fileError.message : 'Unknown error occurred';
             console.error('Error processing file:', file.name, fileError);
+            
+            // Update status to error
+            setFileStatuses(prev => prev.map((fs, i) => 
+              i === index ? { ...fs, status: 'error', error: errorMsg } : fs
+            ));
+            
             throw fileError;
           }
         },
@@ -327,13 +372,20 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         setShowPreview(true);
         
         toast({
-          title: "Files Processed",
-          description: `${processed} files processed successfully. ${failed > 0 ? `${failed} files failed.` : ''}`,
+          title: "Batch Processing Complete",
+          description: `Successfully processed ${processed} of ${files.length} files.${failed > 0 ? ` ${failed} failed.` : ''}`,
+          variant: failed > 0 ? 'default' : 'default'
         });
       } else {
         setUploadStatus('error');
-        setError('No files could be processed successfully');
+        setError('All files failed to process');
         await uploadBatchService.completeBatch(batchId, 'failed');
+        
+        toast({
+          title: "Processing Failed",
+          description: `All ${files.length} files failed to process. Common issues: invalid PDF format, unrecognized POS system, or corrupted files. Check the file status details below.`,
+          variant: "destructive",
+        });
       }
       
     } catch (error) {
@@ -408,6 +460,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     setBatchMode(false);
     setSalesDate(new Date());
     setTeamId(null);
+    setFileStatuses([]);
   };
 
   const removeFile = (index: number) => {
@@ -500,6 +553,24 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         </div>
       </div>
       
+      {/* Requirements Notice */}
+      {(!teamId || !salesDate) && (
+        <Card className="border-l-4 border-l-destructive bg-destructive/5">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-destructive">Required Before Processing</p>
+                <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                  {!teamId && <li>• Select a team from above</li>}
+                  {!salesDate && <li>• Select a sales date from above</li>}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Batch Size Recommendations */}
       {files.length > 0 && (
         <Alert>
@@ -530,6 +601,11 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
             </div>
           </AlertDescription>
         </Alert>
+      )}
+      
+      {/* File Status Display */}
+      {fileStatuses.length > 0 && (
+        <FileStatusCard files={fileStatuses} />
       )}
       
       {/* Upload Zone */}
