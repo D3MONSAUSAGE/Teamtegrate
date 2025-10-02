@@ -12,7 +12,7 @@ import { InvoiceClient } from '@/types/invoices';
 import { useToast } from '@/hooks/use-toast';
 
 interface InvoiceBuilderProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack }) => {
@@ -87,9 +87,11 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack }) => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          {onBack && (
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div>
             <h2 className="text-2xl font-bold">Create Invoice</h2>
             <p className="text-muted-foreground">Build your professional invoice</p>
