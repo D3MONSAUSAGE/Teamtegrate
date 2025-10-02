@@ -228,26 +228,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
       console.log('[useSalesManager] Fetched data count:', data.length);
       setSalesData(data);
       
-      // Auto-select most recent week with data if current selection has no data
-      if (data.length > 0) {
-        const filteredForTeam = selectedTeam !== 'all' 
-          ? data.filter(d => d.team_id === selectedTeam)
-          : data;
-        
-        // Check if current week has data for selected team
-        const currentWeekHasData = filteredForTeam.some(sale => 
-          isSameWeek(parseISO(sale.date), selectedWeek, { weekStartsOn: 1 })
-        );
-        
-        // If no data for current week, jump to most recent week with data
-        if (!currentWeekHasData && filteredForTeam.length > 0) {
-          const mostRecentData = filteredForTeam.reduce((latest, current) => {
-            return new Date(current.date) > new Date(latest.date) ? current : latest;
-          });
-          console.log('[useSalesManager] Auto-selecting week with data:', mostRecentData.date);
-          setSelectedWeek(parseISO(mostRecentData.date));
-        }
-      }
+      // Keep the current week selection - user can navigate manually to weeks with data
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch sales data';
       setError(errorMessage);
@@ -338,17 +319,7 @@ export const useSalesManager = (initialFilters: SalesDataFilters = {}): UseSales
     fetchData(false);
   }, [selectedTeam, fetchData]);
 
-  // Update selected week when weeks with data changes
-  useEffect(() => {
-    if (weeksWithData.length > 0) {
-      const currentWeekHasData = weeksWithData.some(week => 
-        isSameWeek(week, selectedWeek, { weekStartsOn: 1 })
-      );
-      if (!currentWeekHasData) {
-        setSelectedWeek(weeksWithData[0]);
-      }
-    }
-  }, [weeksWithData, selectedWeek]);
+  // Keep the current week selection - removed auto-jump to weeks with data
 
   return {
     // Data
