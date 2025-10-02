@@ -33,7 +33,6 @@ import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { DataPreviewModal } from './DataPreviewModal';
 import { BatchProgressCard } from './BatchProgressCard';
-import ChannelSalesInput, { ChannelSalesEntry } from '../ChannelSalesInput';
 
 interface EnhancedSalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -68,9 +67,6 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   const [stagedData, setStagedData] = useState<StagedData[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
-  const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
-  const [parsedDestinations, setParsedDestinations] = useState<any[]>([]);
-  const [parsedGrossSales, setParsedGrossSales] = useState<number>(0);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -143,12 +139,6 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         file.extractedDate = result.extractedDate;
         setSalesDate(result.extractedDate);
         onDateExtracted?.(result.extractedDate);
-        
-        // Store destinations and gross sales for auto-fill
-        if (result.data) {
-          setParsedDestinations(result.data.destinations || []);
-          setParsedGrossSales(result.data.grossSales || 0);
-        }
         
         toast({
           title: "Date Auto-Detected",
@@ -242,19 +232,8 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           );
           
           if (result.success && result.data) {
-            // Add manual channel sales to destinations if provided
-            if (channelSales.length > 0) {
-              const grossSales = result.data.grossSales;
-              
-              result.data.destinations = channelSales.map(ch => ({
-                name: ch.channelName,
-                quantity: 0,
-                total: ch.amount,
-                percent: grossSales > 0 ? (ch.amount / grossSales) * 100 : 0
-              }));
-            }
-            
             // Stage the data for review
+            // Channel transactions will be automatically created by SalesChannelService
             const stagedId = await uploadBatchService.stageData(
               batchId,
               file.name,
@@ -383,7 +362,6 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     setBatchMode(false);
     setSalesDate(new Date());
     setTeamId(null);
-    setChannelSales([]);
   };
 
   const removeFile = (index: number) => {
@@ -475,17 +453,6 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           </Select>
         </div>
       </div>
-      
-      {/* Channel Sales Input */}
-      {teamId && (
-        <ChannelSalesInput
-          teamId={teamId}
-          value={channelSales}
-          onChange={setChannelSales}
-          grossSales={parsedGrossSales}
-          destinationsData={parsedDestinations}
-        />
-      )}
       
       {/* Upload Zone */}
       <Card>

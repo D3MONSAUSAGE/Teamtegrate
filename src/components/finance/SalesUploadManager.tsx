@@ -28,7 +28,6 @@ import { parseUniversalPDF } from '@/utils/universalPdfParser';
 import { salesDataService } from '@/services/SalesDataService';
 import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
-import ChannelSalesInput, { ChannelSalesEntry } from './ChannelSalesInput';
 
 interface SalesUploadManagerProps {
   onUpload: (data: SalesData, replaceExisting?: boolean) => Promise<void>;
@@ -58,9 +57,6 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [existingData, setExistingData] = useState<any>(null);
   const [pendingUpload, setPendingUpload] = useState<SalesData | null>(null);
-  const [channelSales, setChannelSales] = useState<ChannelSalesEntry[]>([]);
-  const [parsedDestinations, setParsedDestinations] = useState<any[]>([]);
-  const [parsedGrossSales, setParsedGrossSales] = useState<number>(0);
   
   // Fetch teams data
   const { teams, isLoading: teamsLoading, error: teamsError } = useTeamQueries();
@@ -115,12 +111,6 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         setSalesDate(result.extractedDate);
         setIsDateExtracted(true);
         onDateExtracted?.(result.extractedDate);
-        
-        // Store destinations and gross sales for auto-fill
-        if (result.data) {
-          setParsedDestinations(result.data.destinations || []);
-          setParsedGrossSales(result.data.grossSales || 0);
-        }
         
         toast.success(
           <div className="flex items-center gap-2">
@@ -205,20 +195,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       setUploadProgress(90);
       
       if (parseResult.success && parseResult.data) {
-        // Add manual channel sales to destinations if provided
-        if (channelSales.length > 0) {
-          // Store gross sales for percentage calculation
-          const grossSales = parseResult.data.grossSales;
-          
-          parseResult.data.destinations = channelSales.map(ch => ({
-            name: ch.channelName,
-            quantity: 0,
-            total: ch.amount,
-            percent: grossSales > 0 ? (ch.amount / grossSales) * 100 : 0
-          }));
-        }
-        
         // Upload to database with replace flag
+        // Channel transactions will be automatically created by SalesChannelService
         await onUpload(parseResult.data, replaceExisting);
         
         setUploadProgress(100);
@@ -229,7 +207,6 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           setSalesDate(new Date());
           setTeamId(null);
           setFiles([]);
-          setChannelSales([]);
           setUploadProgress(0);
           setUploadStatus('idle');
           setIsDateExtracted(false);
@@ -268,7 +245,6 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         setSalesDate(new Date());
         setTeamId(null);
         setFiles([]);
-        setChannelSales([]);
         setIsDateExtracted(false);
         setExistingData(null);
         setPendingUpload(null);
@@ -385,17 +361,6 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
           )}
         </div>
       </div>
-      
-      {/* Channel Sales Input */}
-      {teamId && salesDate && (
-        <ChannelSalesInput
-          teamId={teamId}
-          value={channelSales}
-          onChange={setChannelSales}
-          grossSales={parsedGrossSales}
-          destinationsData={parsedDestinations}
-        />
-      )}
       
       {/* Upload Zone */}
       <Card>
