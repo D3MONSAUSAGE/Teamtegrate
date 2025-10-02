@@ -13,9 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface InvoiceBuilderProps {
   onBack?: () => void;
+  onInvoiceCreated?: () => void;
 }
 
-export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack }) => {
+export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoiceCreated }) => {
   const { toast } = useToast();
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -63,6 +64,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack }) => {
       title: 'Draft Saved',
       description: 'Invoice has been saved as draft'
     });
+    onInvoiceCreated?.();
   };
 
   const handleSendInvoice = async () => {
@@ -80,6 +82,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack }) => {
       title: 'Invoice Sent',
       description: 'Invoice has been sent to client'
     });
+    onInvoiceCreated?.();
   };
 
   return (

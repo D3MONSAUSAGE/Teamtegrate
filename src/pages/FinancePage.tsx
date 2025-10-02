@@ -29,12 +29,11 @@ import { PaymentSettings } from '@/components/finance/settings/PaymentSettings';
 
 type FinanceTab = 
   | 'dashboard' 
-  | 'weekly-reports' 
+  | 'daily-sales' 
   | 'advanced-reports' 
   | 'upload' 
   | 'sales-channels'
   | 'invoices'
-  | 'create-invoice'
   | 'clients'
   | 'payment-settings';
 
@@ -62,9 +61,9 @@ export default function FinancePage() {
             <LayoutDashboard className="h-4 w-4" />
             <span>Dashboard</span>
           </TabsTrigger>
-          <TabsTrigger value="weekly-reports" className="flex items-center gap-2">
+          <TabsTrigger value="daily-sales" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            <span>Weekly Reports</span>
+            <span>Daily Sales</span>
           </TabsTrigger>
           <TabsTrigger value="advanced-reports" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -83,16 +82,10 @@ export default function FinancePage() {
             <span>Invoices</span>
           </TabsTrigger>
           {canManageData && (
-            <>
-              <TabsTrigger value="create-invoice" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span>Create Invoice</span>
-              </TabsTrigger>
-              <TabsTrigger value="clients" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span>Clients</span>
-              </TabsTrigger>
-            </>
+            <TabsTrigger value="clients" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>Clients</span>
+            </TabsTrigger>
           )}
           {isAdmin && (
             <TabsTrigger value="payment-settings" className="flex items-center gap-2">
@@ -106,7 +99,7 @@ export default function FinancePage() {
           <FinanceDashboardTab />
         </TabsContent>
 
-        <TabsContent value="weekly-reports" className="space-y-6 mt-6">
+        <TabsContent value="daily-sales" className="space-y-6 mt-6">
           <WeeklyReportsTab />
         </TabsContent>
 
@@ -127,15 +120,9 @@ export default function FinancePage() {
         </TabsContent>
 
         {canManageData && (
-          <>
-            <TabsContent value="create-invoice" className="space-y-6 mt-6">
-              <InvoiceBuilder />
-            </TabsContent>
-
-            <TabsContent value="clients" className="space-y-6 mt-6">
-              <ClientsManager />
-            </TabsContent>
-          </>
+          <TabsContent value="clients" className="space-y-6 mt-6">
+            <ClientsManager />
+          </TabsContent>
         )}
 
         {isAdmin && (
