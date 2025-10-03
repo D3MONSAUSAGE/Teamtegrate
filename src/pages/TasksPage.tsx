@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { Task, TaskStatus } from '@/types';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -9,6 +10,7 @@ import EnhancedCreateTaskDialog from '@/components/task/EnhancedCreateTaskDialog
 import TasksPageLoading from '@/components/task/TasksPageLoading';
 import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { useDebounce } from '@/utils/performanceUtils';
 import { toast } from '@/components/ui/sonner';
@@ -16,6 +18,8 @@ import { useTask } from '@/contexts/task';
 
 const TasksPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   
   const location = useLocation();
@@ -61,7 +65,13 @@ const TasksPage = () => {
   const handleStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
     try {
       await updateTaskStatus(taskId, status);
-      // Force immediate refetch, ignoring cache
+      
+      // Invalidate cache first to force fresh data
+      queryClient.invalidateQueries({ 
+        queryKey: ['personal-tasks', user?.organizationId, user?.id] 
+      });
+      
+      // Then force immediate refetch
       await refetch({ cancelRefetch: true });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -69,7 +79,7 @@ const TasksPage = () => {
       }
       toast.error('Failed to update task status');
     }
-  }, [updateTaskStatus, refetch]);
+  }, [updateTaskStatus, refetch, queryClient, user?.organizationId, user?.id]);
   
   const handleTaskDialogComplete = useMemo(() => () => {
     setIsCreateTaskOpen(false);
