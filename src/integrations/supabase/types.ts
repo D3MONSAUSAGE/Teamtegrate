@@ -313,6 +313,97 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          alert_threshold: number | null
+          amount: number
+          budget_type: string
+          category_id: string | null
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          notes: string | null
+          organization_id: string
+          start_date: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          alert_threshold?: number | null
+          amount: number
+          budget_type: string
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          start_date: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alert_threshold?: number | null
+          amount?: number
+          budget_type?: string
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          start_date?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bug_reports: {
         Row: {
           actual_behavior: string | null
@@ -2299,6 +2390,182 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          budget_amount: number | null
+          color: string
+          created_at: string
+          icon: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          organization_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          budget_amount?: number | null
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          organization_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          budget_amount?: number | null
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          organization_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          invoice_number: string | null
+          is_recurring: boolean | null
+          notes: string | null
+          organization_id: string
+          payment_method: string | null
+          receipt_url: string | null
+          recurring_frequency: string | null
+          status: string
+          tags: string[] | null
+          team_id: string | null
+          updated_at: string
+          user_id: string
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id: string
+          created_at?: string
+          description: string
+          expense_date: string
+          id?: string
+          invoice_number?: string | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          organization_id: string
+          payment_method?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          status?: string
+          tags?: string[] | null
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          invoice_number?: string | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          organization_id?: string
+          payment_method?: string | null
+          receipt_url?: string | null
+          recurring_frequency?: string | null
+          status?: string
+          tags?: string[] | null
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -5877,6 +6144,88 @@ export type Database = {
             columns: ["lot_id"]
             isOneToOne: false
             referencedRelation: "inventory_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profit_loss_snapshots: {
+        Row: {
+          created_at: string
+          expense_breakdown: Json | null
+          gross_margin_percent: number | null
+          gross_profit: number
+          id: string
+          net_income: number
+          net_margin_percent: number | null
+          operating_income: number
+          operating_margin_percent: number | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          team_id: string | null
+          total_cogs: number
+          total_labor_costs: number
+          total_operating_expenses: number
+          total_revenue: number
+        }
+        Insert: {
+          created_at?: string
+          expense_breakdown?: Json | null
+          gross_margin_percent?: number | null
+          gross_profit?: number
+          id?: string
+          net_income?: number
+          net_margin_percent?: number | null
+          operating_income?: number
+          operating_margin_percent?: number | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          team_id?: string | null
+          total_cogs?: number
+          total_labor_costs?: number
+          total_operating_expenses?: number
+          total_revenue?: number
+        }
+        Update: {
+          created_at?: string
+          expense_breakdown?: Json | null
+          gross_margin_percent?: number | null
+          gross_profit?: number
+          id?: string
+          net_income?: number
+          net_margin_percent?: number | null
+          operating_income?: number
+          operating_margin_percent?: number | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          team_id?: string | null
+          total_cogs?: number
+          total_labor_costs?: number
+          total_operating_expenses?: number
+          total_revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profit_loss_snapshots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profit_loss_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profit_loss_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
