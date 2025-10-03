@@ -1,7 +1,13 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Package } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useRecipeIngredients, useDeleteIngredient } from '@/hooks/useRecipeIngredients';
 import { useInventory } from '@/contexts/inventory';
 
@@ -33,60 +39,87 @@ export const IngredientsTable: React.FC<IngredientsTableProps> = ({ recipeId }) 
   };
 
   return (
-    <div className="border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Item</TableHead>
-            <TableHead className="text-right">Quantity</TableHead>
-            <TableHead>Unit</TableHead>
-            <TableHead className="text-right">Unit Cost</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {ingredients.map((ingredient) => {
-            const unitCost = ingredient.manual_unit_cost || 0;
-            const total = ingredient.quantity_needed * unitCost;
+    <TooltipProvider>
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead>Packaging</TableHead>
+              <TableHead className="text-right">Cost/Unit</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ingredients.map((ingredient) => {
+              const unitCost = ingredient.manual_unit_cost || ingredient.cost_per_base_unit || 0;
+              const total = ingredient.quantity_needed * unitCost;
 
-            return (
-              <TableRow key={ingredient.id}>
-                <TableCell className="font-medium">
-                  {getItemName(ingredient.item_id)}
-                  {ingredient.notes && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {ingredient.notes}
-                    </p>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  {ingredient.quantity_needed}
-                </TableCell>
-                <TableCell>{ingredient.unit}</TableCell>
-                <TableCell className="text-right">
-                  ${unitCost.toFixed(2)}
-                  {ingredient.manual_unit_cost && (
-                    <span className="text-xs text-muted-foreground ml-1">(manual)</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  ${total.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteIngredient(ingredient.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+              return (
+                <TableRow key={ingredient.id}>
+                  <TableCell className="font-medium">
+                    {getItemName(ingredient.item_id)}
+                    {ingredient.notes && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {ingredient.notes}
+                      </p>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {ingredient.quantity_needed} {ingredient.unit}
+                  </TableCell>
+                  <TableCell>
+                    {ingredient.packaging_info ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-help">
+                            <Package className="h-3 w-3" />
+                            <span className="truncate max-w-[120px]">{ingredient.packaging_info}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="space-y-1 text-xs">
+                            <p><strong>Original Packaging:</strong> {ingredient.packaging_info}</p>
+                            {ingredient.purchase_price_snapshot && (
+                              <p><strong>Price at Creation:</strong> ${ingredient.purchase_price_snapshot.toFixed(2)}</p>
+                            )}
+                            {ingredient.conversion_factor_snapshot && (
+                              <p><strong>Conversion Factor:</strong> {ingredient.conversion_factor_snapshot}</p>
+                            )}
+                            <p><strong>Base Unit:</strong> {ingredient.base_unit || ingredient.unit}</p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ${unitCost.toFixed(4)}/{ingredient.unit}
+                    {ingredient.manual_unit_cost && (
+                      <span className="text-xs text-muted-foreground ml-1">(manual)</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    ${total.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteIngredient(ingredient.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </TooltipProvider>
   );
 };

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { RecipeWithCosts } from '@/hooks/useRecipes';
+import { RefreshCw } from 'lucide-react';
+import { RecipeWithCosts, useRefreshRecipePrices } from '@/hooks/useRecipes';
 
 interface RecipeDetailsDialogProps {
   recipe: RecipeWithCosts;
@@ -14,11 +16,29 @@ export const RecipeDetailsDialog: React.FC<RecipeDetailsDialogProps> = ({
   open,
   onOpenChange,
 }) => {
+  const { mutate: refreshPrices, isPending } = useRefreshRecipePrices();
+
+  const handleRefreshPrices = () => {
+    refreshPrices(recipe.id);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{recipe.name}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{recipe.name}</DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshPrices}
+              disabled={isPending}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isPending ? 'animate-spin' : ''}`} />
+              Refresh Prices
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">

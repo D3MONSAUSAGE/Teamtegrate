@@ -6759,33 +6759,48 @@ export type Database = {
       }
       recipe_ingredients: {
         Row: {
+          base_unit: string | null
+          conversion_factor_snapshot: number | null
+          cost_per_base_unit: number | null
           created_at: string
           id: string
           item_id: string
           manual_unit_cost: number | null
           notes: string | null
+          packaging_info: string | null
+          purchase_price_snapshot: number | null
           quantity_needed: number
           recipe_id: string
           sort_order: number | null
           unit: string
         }
         Insert: {
+          base_unit?: string | null
+          conversion_factor_snapshot?: number | null
+          cost_per_base_unit?: number | null
           created_at?: string
           id?: string
           item_id: string
           manual_unit_cost?: number | null
           notes?: string | null
+          packaging_info?: string | null
+          purchase_price_snapshot?: number | null
           quantity_needed: number
           recipe_id: string
           sort_order?: number | null
           unit: string
         }
         Update: {
+          base_unit?: string | null
+          conversion_factor_snapshot?: number | null
+          cost_per_base_unit?: number | null
           created_at?: string
           id?: string
           item_id?: string
           manual_unit_cost?: number | null
           notes?: string | null
+          packaging_info?: string | null
+          purchase_price_snapshot?: number | null
           quantity_needed?: number
           recipe_id?: string
           sort_order?: number | null

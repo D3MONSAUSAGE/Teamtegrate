@@ -26,7 +26,45 @@ export interface RecipeWithCosts extends ProductionRecipe {
 const RECIPES_QUERY_KEY = ['production-recipes'];
 
 /**
- * Calculate the cost for a single ingredient
+ * Get packaging info and calculate cost per base unit for an inventory item
+ */
+export async function getItemPackagingInfo(itemId: string) {
+  const { data: item } = await supabase
+    .from('inventory_items')
+    .select('name, unit_of_measure, purchase_unit, conversion_factor, purchase_price')
+    .eq('id', itemId)
+    .single();
+
+  if (!item) {
+    throw new Error('Item not found');
+  }
+
+  // Calculate cost per base unit
+  let costPerBaseUnit = 0;
+  if (item.purchase_price && item.conversion_factor && item.conversion_factor > 0) {
+    costPerBaseUnit = item.purchase_price / item.conversion_factor;
+  } else if (item.purchase_price) {
+    costPerBaseUnit = item.purchase_price; // Assume conversion = 1
+  }
+
+  // Build packaging info string
+  const packagingInfo = item.purchase_unit && item.purchase_price
+    ? `${item.purchase_unit} @ $${item.purchase_price.toFixed(2)}`
+    : null;
+
+  return {
+    name: item.name,
+    baseUnit: item.unit_of_measure,
+    purchaseUnit: item.purchase_unit,
+    conversionFactor: item.conversion_factor,
+    purchasePrice: item.purchase_price,
+    costPerBaseUnit,
+    packagingInfo,
+  };
+}
+
+/**
+ * Calculate the cost for a single ingredient using unit conversion
  */
 async function calculateIngredientCost(ingredient: any): Promise<RecipeIngredientWithCost> {
   let unitCost = 0;
@@ -34,13 +72,16 @@ async function calculateIngredientCost(ingredient: any): Promise<RecipeIngredien
   // 1. Check for manual override first
   if (ingredient.manual_unit_cost !== null && ingredient.manual_unit_cost !== undefined) {
     unitCost = ingredient.manual_unit_cost;
+  } else if (ingredient.cost_per_base_unit !== null && ingredient.cost_per_base_unit !== undefined) {
+    // 2. Use historical snapshot if available
+    unitCost = ingredient.cost_per_base_unit;
   } else {
-    // 2. Get pricing from inventory (team-specific or global)
+    // 3. Calculate from current inventory data
     try {
-      const pricing = await teamItemPricingApi.getEffectivePricing(ingredient.item_id);
-      unitCost = pricing.purchase_price || 0;
+      const packagingInfo = await getItemPackagingInfo(ingredient.item_id);
+      unitCost = packagingInfo.costPerBaseUnit;
     } catch (error) {
-      console.error('Error fetching pricing:', error);
+      console.error('Error fetching packaging info:', error);
       unitCost = 0;
     }
   }
@@ -190,6 +231,46 @@ export function useDuplicateRecipe() {
     },
     onError: (error: any) => {
       toast.error(`Failed to duplicate recipe: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Hook to refresh recipe prices from current inventory
+ */
+export function useRefreshRecipePrices() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (recipeId: string) => {
+      const recipe = await productionRecipesApi.getById(recipeId);
+      if (!recipe) throw new Error('Recipe not found');
+
+      for (const ingredient of recipe.ingredients) {
+        try {
+          const packagingInfo = await getItemPackagingInfo(ingredient.item_id);
+          
+          await supabase
+            .from('recipe_ingredients')
+            .update({
+              cost_per_base_unit: packagingInfo.costPerBaseUnit,
+              base_unit: packagingInfo.baseUnit,
+              packaging_info: packagingInfo.packagingInfo,
+              purchase_price_snapshot: packagingInfo.purchasePrice,
+              conversion_factor_snapshot: packagingInfo.conversionFactor,
+            })
+            .eq('id', ingredient.id);
+        } catch (error) {
+          console.error(`Failed to refresh price for ingredient ${ingredient.id}:`, error);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RECIPES_QUERY_KEY });
+      toast.success('Recipe prices refreshed successfully');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to refresh prices: ${error.message}`);
     },
   });
 }

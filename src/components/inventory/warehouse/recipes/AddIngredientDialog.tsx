@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Package, DollarSign } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { useAddIngredient } from '@/hooks/useRecipeIngredients';
-import { teamItemPricingApi } from '@/contexts/inventory/api/teamItemPricing';
+import { getItemPackagingInfo } from '@/hooks/useRecipes';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AddIngredientDialogProps {
   recipeId: string;
@@ -29,70 +30,82 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
   const [unit, setUnit] = useState('');
   const [manualCost, setManualCost] = useState('');
   const [notes, setNotes] = useState('');
-  const [autoCost, setAutoCost] = useState<number | null>(null);
+  const [packagingInfo, setPackagingInfo] = useState<{
+    packagingInfo: string | null;
+    costPerBaseUnit: number;
+    baseUnit: string;
+    purchasePrice: number | null;
+    conversionFactor: number | null;
+  } | null>(null);
   const [noPriceAvailable, setNoPriceAvailable] = useState(false);
 
-  // Fetch item price when item is selected
+  // Fetch item packaging info and price when item is selected
   useEffect(() => {
     if (!itemId) {
-      setAutoCost(null);
+      setPackagingInfo(null);
       setNoPriceAvailable(false);
       setManualCost('');
+      setUnit('');
       return;
     }
 
     (async () => {
       try {
-        const pricing = await teamItemPricingApi.getEffectivePricing(itemId);
-        if (pricing.purchase_price) {
-          setAutoCost(pricing.purchase_price);
+        const info = await getItemPackagingInfo(itemId);
+        setPackagingInfo(info);
+        
+        // Auto-fill unit with base unit from inventory (strict mode)
+        setUnit(info.baseUnit || '');
+        
+        if (info.costPerBaseUnit > 0) {
           setNoPriceAvailable(false);
-          setManualCost(''); // Clear manual cost when auto-cost is available
+          setManualCost('');
         } else {
-          setAutoCost(null);
           setNoPriceAvailable(true);
         }
       } catch (error) {
-        console.error('Error fetching pricing:', error);
-        setAutoCost(null);
+        console.error('Error fetching packaging info:', error);
+        setPackagingInfo(null);
         setNoPriceAvailable(true);
       }
     })();
   }, [itemId]);
 
-  const handleAdd = () => {
-    if (!itemId || !quantityNeeded || !unit) return;
+  const handleAdd = async () => {
+    if (!itemId || !quantityNeeded || !unit || !packagingInfo) return;
     if (noPriceAvailable && !manualCost) return;
 
     const finalCost = noPriceAvailable ? parseFloat(manualCost) : null;
 
-    addIngredient(
-      {
-        recipe_id: recipeId,
-        item_id: itemId,
-        quantity_needed: parseFloat(quantityNeeded),
-        unit,
-        manual_unit_cost: finalCost !== null ? finalCost : undefined,
-        sort_order: 0,
-        notes: notes || undefined,
-      },
-      {
-        onSuccess: () => {
-          setItemId('');
-          setQuantityNeeded('');
-          setUnit('');
-          setManualCost('');
-          setNotes('');
-          setAutoCost(null);
-          setNoPriceAvailable(false);
-          onOpenChange(false);
-        },
-      }
-    );
+    // Store snapshot data
+    await supabase.from('recipe_ingredients').insert({
+      recipe_id: recipeId,
+      item_id: itemId,
+      quantity_needed: parseFloat(quantityNeeded),
+      unit,
+      manual_unit_cost: finalCost !== null ? finalCost : null,
+      cost_per_base_unit: packagingInfo.costPerBaseUnit,
+      base_unit: packagingInfo.baseUnit,
+      packaging_info: packagingInfo.packagingInfo,
+      purchase_price_snapshot: packagingInfo.purchasePrice,
+      conversion_factor_snapshot: packagingInfo.conversionFactor,
+      sort_order: 0,
+      notes: notes || null,
+    });
+
+    // Reset form
+    setItemId('');
+    setQuantityNeeded('');
+    setUnit('');
+    setManualCost('');
+    setNotes('');
+    setPackagingInfo(null);
+    setNoPriceAvailable(false);
+    onOpenChange(false);
   };
 
-  const calculatedTotal = quantityNeeded && (autoCost !== null || manualCost)
-    ? parseFloat(quantityNeeded) * (autoCost !== null ? autoCost : parseFloat(manualCost))
+  const calculatedTotal = quantityNeeded && packagingInfo && (packagingInfo.costPerBaseUnit > 0 || manualCost)
+    ? parseFloat(quantityNeeded) * (packagingInfo.costPerBaseUnit > 0 ? packagingInfo.costPerBaseUnit : parseFloat(manualCost))
     : 0;
 
   const canAdd = itemId && quantityNeeded && unit && (!noPriceAvailable || manualCost);
@@ -140,8 +153,36 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="lbs"
+              readOnly
+              disabled
+              className="bg-muted"
             />
+            {packagingInfo && (
+              <p className="text-xs text-muted-foreground">
+                ✓ Unit locked to match inventory base unit
+              </p>
+            )}
           </div>
+
+          {packagingInfo && packagingInfo.packagingInfo && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md space-y-2">
+              <div className="flex items-start gap-2">
+                <Package className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-sm space-y-1">
+                  <p className="font-medium text-blue-900">Packaging Info</p>
+                  <p className="text-blue-700">{packagingInfo.packagingInfo}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <DollarSign className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900">
+                    Cost Per {packagingInfo.baseUnit}: ${packagingInfo.costPerBaseUnit.toFixed(4)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {noPriceAvailable && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -163,15 +204,6 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {autoCost !== null && (
-            <div className="p-3 bg-muted rounded-md">
-              <div className="flex justify-between text-sm">
-                <span>Unit Cost (from inventory):</span>
-                <span className="font-medium">${autoCost.toFixed(2)}</span>
               </div>
             </div>
           )}

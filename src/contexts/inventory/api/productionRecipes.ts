@@ -20,9 +20,14 @@ export interface RecipeIngredient {
   item_id: string;
   quantity_needed: number;
   unit: string;
-  manual_unit_cost?: number;
+  manual_unit_cost?: number | null;
+  cost_per_base_unit?: number | null;
+  base_unit?: string | null;
+  packaging_info?: string | null;
+  purchase_price_snapshot?: number | null;
+  conversion_factor_snapshot?: number | null;
   sort_order: number;
-  notes?: string;
+  notes?: string | null;
   created_at: string;
 }
 
