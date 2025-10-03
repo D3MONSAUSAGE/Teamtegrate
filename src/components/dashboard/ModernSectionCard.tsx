@@ -26,27 +26,27 @@ const ModernSectionCard: React.FC<ModernSectionCardProps> = ({
 }) => {
   return (
     <Card className={cn(
-      "group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.01]",
+      "group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300",
       "bg-card",
       className
     )}>
       {/* Background gradient */}
-      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50", gradient)} />
+      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-30", gradient)} />
       
-      <CardHeader className="relative pb-4">
+      <CardHeader className="relative pb-3 pt-4 px-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {Icon && (
-              <div className="p-2 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 group-hover:scale-110 transition-transform">
-                <Icon className="h-5 w-5 text-primary" />
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <Icon className="h-4 w-4 text-primary" />
               </div>
             )}
             <div>
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+              <h2 className="text-lg font-semibold text-foreground">
                 {title}
               </h2>
               {subtitle && (
-                <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
               )}
             </div>
           </div>
@@ -58,12 +58,9 @@ const ModernSectionCard: React.FC<ModernSectionCardProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className={cn("relative", noPadding && "p-0")}>
+      <CardContent className={cn("relative", noPadding && "p-0", !noPadding && "px-4 pb-4")}>
         {children}
       </CardContent>
-      
-      {/* Subtle shine effect on hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
     </Card>
   );
 };

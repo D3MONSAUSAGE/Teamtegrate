@@ -98,56 +98,43 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
-        <Badge variant="secondary" className="text-xs">
-          <Zap className="h-3 w-3 mr-1" />
-          Fast Access
-        </Badge>
-      </div>
-      
-      {/* Android App Download Button */}
-      <div className="mb-6">
+    <div className="space-y-4">
+      {/* Download Android App Button */}
+      <div className="relative">
         <Button
           onClick={handleDownloadApp}
-          className="w-full h-16 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0"
+          variant="default"
+          size="lg"
+          className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300 shadow-sm hover:shadow-md"
         >
-          <Smartphone className="h-6 w-6 mr-3" />
+          <Smartphone className="h-5 w-5 mr-2" />
           📲 Download Android App
         </Button>
       </div>
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {quickActions.map((action, index) => (
-          <div key={action.label} className="group">
+          <div key={action.label}>
             {action.href ? (
               <Link to={action.href}>
                 <Button
                   variant="outline"
-                  className={`w-full h-auto p-4 flex flex-col items-center gap-3 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br ${action.color} text-white hover:shadow-lg transition-all duration-300 hover:scale-105`}
+                  className="w-full h-20 flex flex-col items-center justify-center gap-1.5 hover:bg-accent/50 transition-colors duration-200 bg-card"
                 >
-                  <action.icon className="h-6 w-6" />
-                  <span className="text-sm font-medium">{action.label}</span>
+                  <action.icon className="h-5 w-5 text-primary" />
+                  <span className="text-xs font-medium">{action.label}</span>
                 </Button>
               </Link>
             ) : (
               <Button
                 variant="outline"
                 onClick={action.action}
-                className={`w-full h-auto p-4 flex flex-col items-center gap-3 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br ${action.color} text-white hover:shadow-lg transition-all duration-300 hover:scale-105`}
+                className="w-full h-20 flex flex-col items-center justify-center gap-1.5 hover:bg-accent/50 transition-colors duration-200 bg-card"
               >
-                <action.icon className="h-6 w-6" />
-                <span className="text-sm font-medium">{action.label}</span>
+                <action.icon className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">{action.label}</span>
               </Button>
             )}
-            
-            {/* Keyboard shortcut hint */}
-            <div className="text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                {action.shortcut}
-              </span>
-            </div>
           </div>
         ))}
       </div>

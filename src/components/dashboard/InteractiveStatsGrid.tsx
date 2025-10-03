@@ -77,51 +77,35 @@ const InteractiveStatsGrid: React.FC<InteractiveStatsGridProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
           <Card 
             key={stat.title}
-            className={`group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer ${stat.bgColor}`}
+            className="group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-card"
           >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent group-hover:scale-110 transition-transform`}>
-                      {stat.value}
-                    </span>
-                    {stat.maxValue && (
-                      <span className="text-sm text-muted-foreground">
-                        {stat.title === 'Daily Score' ? '%' : ''}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-                </div>
-                <div className={`p-2 rounded-full bg-gradient-to-r ${stat.color} group-hover:rotate-12 transition-transform`}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`p-2 rounded-lg bg-gradient-to-r ${stat.color}`}>
                   <Icon className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground truncate">{stat.title}</p>
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                 </div>
               </div>
               
               {stat.progress !== undefined && (
-                <div className="space-y-2">
-                  <Progress 
-                    value={stat.progress} 
-                    className="h-2 group-hover:h-3 transition-all duration-300" 
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Progress</span>
+                <div className="space-y-1">
+                  <Progress value={stat.progress} className="h-1.5" />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>{stat.subtitle}</span>
                     <span>{stat.progress}%</span>
                   </div>
                 </div>
               )}
             </CardContent>
-            
-            {/* Hover effect overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </Card>
         );
       })}

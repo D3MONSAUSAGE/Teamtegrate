@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { playChatNotification, markUserInteraction } from '@/utils/chatSounds';
+import { useSoundSettings } from '@/hooks/useSoundSettings';
 
 interface Notification {
   id: string;
@@ -30,6 +32,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const soundSettings = useSoundSettings();
 
   const fetchNotifications = useCallback(async (
     limit: number = 50,
@@ -71,6 +74,17 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user?.id]);
 
+  // Initialize audio on user interaction
+  useEffect(() => {
+    const enableAudio = () => markUserInteraction();
+    document.addEventListener('click', enableAudio, { once: true });
+    document.addEventListener('touchstart', enableAudio, { once: true });
+    return () => {
+      document.removeEventListener('click', enableAudio);
+      document.removeEventListener('touchstart', enableAudio);
+    };
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     if (!user?.id) return;
@@ -105,11 +119,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             description: newNotification.content,
           });
 
+          // Play notification sound using chatSounds system
           try {
-            const audio = new Audio('/notification.mp3');
-            await audio.play();
-          } catch (error) {
-            console.log('Could not play notification sound:', error);
+            await playChatNotification(soundSettings);
+          } catch (err) {
+            console.log('Notification sound failed:', err);
           }
         }
       )

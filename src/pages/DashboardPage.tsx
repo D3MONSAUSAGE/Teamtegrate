@@ -275,7 +275,7 @@ const DashboardPage = () => {
   return (
     <PullToRefresh onRefresh={handlePullToRefresh}>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/5 to-background scrollbar-hide">
-        <div className="relative pt-6 px-4 md:px-6 lg:px-8 space-y-8 scrollbar-hide">
+        <div className="relative pt-4 px-4 md:px-6 lg:px-8 space-y-4 scrollbar-hide">
           {/* Enhanced Welcome Header with proper spacing */}
           <div className="animate-fade-in">
             <ModernPageHeader
@@ -317,7 +317,7 @@ const DashboardPage = () => {
               icon={Target}
               noPadding
             >
-              <div className="p-6">
+              <div className="p-4">
                 <QuickActionsPanel
                   userRole={user?.role || 'user'}
                 />
@@ -333,7 +333,7 @@ const DashboardPage = () => {
               icon={Clock}
               noPadding
             >
-              <div className="p-6">
+              <div className="p-4">
                 <EnhancedTimeTracking />
               </div>
             </ModernSectionCard>
@@ -343,7 +343,7 @@ const DashboardPage = () => {
           {isLoading ? (
             <LoadingSkeleton />
           ) : (
-            <div className="space-y-8 animate-fade-in delay-500 stagger-fade-in">
+            <div className="space-y-4 animate-fade-in delay-500 stagger-fade-in">
               <ModernSectionCard
                 title="Today's Focus"
                 subtitle="Tasks scheduled for today"
@@ -395,7 +395,7 @@ const DashboardPage = () => {
           
           {/* Manager-only sections */}
           {user?.role === 'manager' && (
-            <div className="space-y-8 animate-fade-in delay-600">
+            <div className="space-y-4 animate-fade-in delay-600">
               <ModernSectionCard
                 title="Active Projects"
                 subtitle="Your recent projects and progress"
