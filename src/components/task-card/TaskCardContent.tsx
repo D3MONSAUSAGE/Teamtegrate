@@ -23,28 +23,26 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
 
   return (
-    <div className="flex flex-row items-center gap-3 w-full">
-      {/* Left section - Title and Description */}
-      <div className="flex-1 min-w-0 space-y-1">
-        <TaskCardHeader 
-          title={task.title}
-          priority={task.priority}
-        />
-        {task.description && (
-          <TaskCardDescription description={task.description} />
-        )}
-      </div>
+    <div className="flex flex-col gap-4 w-full">
+      {/* Title Section */}
+      <TaskCardHeader 
+        title={task.title}
+        priority={task.priority}
+      />
 
-      {/* Center section - Metadata (status, deadline, assignee) */}
-      <div className="flex-shrink-0">
-        <TaskCardMetadata 
-          task={task}
-          isOverdue={isOverdue}
-        />
-      </div>
-      
-      {/* Right section - Timer and Footer */}
-      <div className="flex-shrink-0 flex flex-col items-end gap-2">
+      {/* Description Section */}
+      {task.description && (
+        <TaskCardDescription description={task.description} />
+      )}
+
+      {/* Metadata Section (Pills) */}
+      <TaskCardMetadata 
+        task={task}
+        isOverdue={isOverdue}
+      />
+
+      {/* Footer Section */}
+      <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/30">
         <TaskTimer 
           taskId={task.id}
           taskTitle={task.title}
@@ -52,6 +50,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
           showControls={false}
           className="text-xs"
         />
+        
         <TaskCardFooter
           status={task.status}
           isOverdue={isOverdue}

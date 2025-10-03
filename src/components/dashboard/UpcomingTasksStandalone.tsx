@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TaskDetailDialog from '@/components/calendar/TaskDetailDialog';
 import { useDebounce } from '@/utils/performanceUtils';
+import { cn } from '@/lib/utils';
 
 interface UpcomingTasksStandaloneProps {
   tasks: Task[];
@@ -76,21 +77,21 @@ const UpcomingTasksStandalone: React.FC<UpcomingTasksStandaloneProps> = ({
       </div>
       
       {tasks.length > 0 ? (
-        <div className={`
-          flex flex-col gap-3
-        `}>
+        <div className={cn(
+          "grid gap-4",
+          "grid-cols-1",
+          "sm:grid-cols-2",
+          "lg:grid-cols-3",
+          "xl:grid-cols-4"
+        )}>
           {tasks.slice(0, 6).map((task) => (
-            <div key={task.id} className={`
-              group transition-all duration-200
-              ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.01]'}
-            `}>
-              <TaskCard 
-                task={task} 
-                onEdit={() => handleEditTask(task)}
-                onStatusChange={onStatusChange}
-                onClick={() => handleOpenDetails(task)} 
-              />
-            </div>
+            <TaskCard 
+              key={task.id}
+              task={task} 
+              onEdit={() => handleEditTask(task)}
+              onStatusChange={onStatusChange}
+              onClick={() => handleOpenDetails(task)} 
+            />
           ))}
         </div>
       ) : (

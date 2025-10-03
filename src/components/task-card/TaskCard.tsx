@@ -1,203 +1,154 @@
 
-import React from "react";
+import React, { useState, useCallback } from 'react';
 import { Card } from "@/components/ui/card";
 import { Task, TaskStatus } from "@/types";
+import TaskCardContent from './TaskCardContent';
 import { cn } from "@/lib/utils";
-import TaskDetailDialog from "../calendar/TaskDetailDialog";
-import TaskCardActions from "./TaskCardActions";
-import TaskCardContent from "./TaskCardContent";
-import { useTaskCard } from "./useTaskCard";
 
 interface TaskCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
-  onAssign?: (task: Task) => void;
   onStatusChange?: (taskId: string, status: TaskStatus) => Promise<void>;
   onDelete?: () => void;
   onClick?: () => void;
+  className?: string;
   showProjectInfo?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
-  task,
-  onEdit,
-  onAssign,
+const TaskCard: React.FC<TaskCardProps> = ({ 
+  task, 
+  onEdit, 
   onStatusChange,
-  onDelete,
   onClick,
-  showProjectInfo = false,
+  className,
+  showProjectInfo = true
 }) => {
-  const {
-    showDrawer,
-    setShowDrawer,
-    getPriorityBackground,
-    isTaskOverdue,
-    isTaskWarning,
-    handleStatusChange: internalHandleStatusChange,
-    handleDeleteTask,
-    commentCount,
-  } = useTaskCard(task);
+  const [commentCount] = useState(0);
+  const [showComments, setShowComments] = useState(false);
 
-  const handleCardClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      setShowDrawer(true);
-    }
-  };
-
-  const handleStatusChange = async (status: TaskStatus): Promise<void> => {
-    if (onStatusChange) {
-      await onStatusChange(task.id, status);
-    } else {
-      await internalHandleStatusChange(status);
-    }
-  };
-
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete();
-    } else {
-      handleDeleteTask(task.id);
-    }
-  };
-
-  const isOverdue = isTaskOverdue();
-  const inWarningPeriod = isTaskWarning();
+  const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
   const isCompleted = task.status === 'Completed';
 
-  const getPriorityStyles = (priority: string) => {
-    switch(priority) {
-      case 'High': 
+  // Calculate if task is due soon (within 24 hours)
+  const isDueSoon = () => {
+    if (isCompleted || isOverdue) return false;
+    const deadline = new Date(task.deadline);
+    const now = new Date();
+    const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return hoursUntilDeadline <= 24 && hoursUntilDeadline > 0;
+  };
+
+  const handleStatusChange = useCallback(async (status: TaskStatus) => {
+    if (onStatusChange) {
+      await onStatusChange(task.id, status);
+    }
+  }, [onStatusChange, task.id]);
+
+  const handleCardClick = useCallback(() => {
+    if (onClick) {
+      onClick();
+    } else if (onEdit) {
+      onEdit(task);
+    }
+  }, [onClick, onEdit, task]);
+
+  // Priority color configuration
+  const getPriorityStyles = () => {
+    if (isCompleted) {
+      return {
+        bar: 'bg-gradient-to-r from-emerald-500 to-green-500',
+        glow: 'shadow-lg shadow-emerald-500/15',
+        bgTint: 'bg-emerald-500/5'
+      };
+    }
+    
+    if (isOverdue) {
+      return {
+        bar: 'bg-gradient-to-r from-red-500 to-rose-500',
+        glow: 'shadow-lg shadow-red-500/20',
+        bgTint: 'bg-red-500/5'
+      };
+    }
+    
+    if (isDueSoon()) {
+      return {
+        bar: 'bg-gradient-to-r from-yellow-500 to-amber-500',
+        glow: 'shadow-lg shadow-yellow-500/15',
+        bgTint: 'bg-yellow-500/5'
+      };
+    }
+
+    switch(task.priority) {
+      case 'High':
         return {
-          gradient: '[background:var(--task-gradient-high)]',
-          glow: 'shadow-lg hover:shadow-xl shadow-red-500/10 hover:shadow-red-500/20',
-          border: 'border-red-200/30 dark:border-red-800/30 hover:border-red-300/50 dark:hover:border-red-700/50',
-          accent: 'from-red-500/10 to-red-600/10'
+          bar: 'bg-gradient-to-r from-red-500 to-rose-500',
+          glow: 'shadow-lg shadow-red-500/15',
+          bgTint: ''
         };
-      case 'Medium': 
+      case 'Medium':
         return {
-          gradient: '[background:var(--task-gradient-medium)]',
-          glow: 'shadow-lg hover:shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20',
-          border: 'border-amber-200/30 dark:border-amber-800/30 hover:border-amber-300/50 dark:hover:border-amber-700/50',
-          accent: 'from-blue-500/10 to-blue-600/10'
+          bar: 'bg-gradient-to-r from-amber-500 to-yellow-500',
+          glow: 'shadow-lg shadow-amber-500/15',
+          bgTint: ''
         };
-      case 'Low': 
+      case 'Low':
         return {
-          gradient: '[background:var(--task-gradient-low)]',
-          glow: 'shadow-lg hover:shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20',
-          border: 'border-blue-200/30 dark:border-blue-800/30 hover:border-blue-300/50 dark:hover:border-blue-700/50',
-          accent: 'from-blue-500/10 to-blue-600/10'
+          bar: 'bg-gradient-to-r from-blue-500 to-cyan-500',
+          glow: 'shadow-lg shadow-blue-500/15',
+          bgTint: ''
         };
-      default: 
+      default:
         return {
-          gradient: '[background:var(--task-gradient-default)]',
-          glow: 'shadow-lg hover:shadow-xl shadow-gray-500/10 hover:shadow-gray-500/20',
-          border: 'border-border/50 hover:border-border',
-          accent: 'from-muted/50 to-muted/30'
+          bar: 'bg-gradient-to-r from-gray-400 to-gray-500',
+          glow: 'shadow-lg shadow-gray-500/10',
+          bgTint: ''
         };
     }
   };
 
-  const priorityStyles = getPriorityStyles(task.priority);
-
-  // Get left border color based on priority
-  const getPriorityBorderColor = (priority: string) => {
-    switch(priority) {
-      case 'High': return 'border-l-red-500 dark:border-l-red-400';
-      case 'Medium': return 'border-l-amber-500 dark:border-l-amber-400';
-      case 'Low': return 'border-l-blue-500 dark:border-l-blue-400';
-      default: return 'border-l-border';
-    }
-  };
-
-  // Get static glow based on priority
-  const getPriorityGlow = (priority: string) => {
-    switch(priority) {
-      case 'High': return 'shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30';
-      case 'Medium': return 'shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30';
-      case 'Low': return 'shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30';
-      default: return 'shadow-lg hover:shadow-xl';
-    }
-  };
+  const priorityStyles = getPriorityStyles();
 
   return (
-    <>
-      <Card
-        className={cn(
-          "group relative cursor-pointer overflow-hidden",
-          // List-style horizontal layout
-          "flex flex-row items-center",
-          "min-h-[100px] h-auto",
-          // Left border for priority color (3px)
-          "border-l-4",
-          getPriorityBorderColor(task.priority),
-          // Base border
-          "border border-border/50 hover:border-border",
-          // Static glow effects (NO PULSE)
-          !isCompleted && !isOverdue && !inWarningPeriod && getPriorityGlow(task.priority),
-          // Smooth transitions - removed scale/transform
-          "transition-all duration-300 ease-out",
-          // Simplified hover effect
-          "hover:shadow-xl",
-          // Background
-          "bg-card/80 backdrop-blur-sm",
-          // Completed state (green glow) - STATIC
-          isCompleted && [
-            "border-l-green-500 dark:border-l-green-400",
-            "shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30",
-            "bg-green-500/5"
-          ],
-          // Overdue state (red glow) - STATIC, NO PULSE
-          !isCompleted && isOverdue && [
-            "border-l-red-500 dark:border-l-red-400",
-            "shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/35",
-            "bg-red-500/5"
-          ],
-          // Warning state (yellow glow) - STATIC, NO PULSE
-          !isCompleted && !isOverdue && inWarningPeriod && [
-            "border-l-yellow-500 dark:border-l-yellow-400",
-            "shadow-lg shadow-yellow-500/25 hover:shadow-xl hover:shadow-yellow-500/35",
-            "bg-yellow-500/5"
-          ]
-        )}
-        onClick={handleCardClick}
-        tabIndex={0}
-        aria-label={`Open details for ${task.title}`}
-        role="button"
-      >
-        {/* Floating action menu */}
-        <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <div className="bg-background/95 backdrop-blur-md rounded-lg p-1 shadow-xl border border-border/50">
-            <TaskCardActions
-              task={task}
-              onEdit={onEdit}
-              onAssign={onAssign}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-              onShowComments={() => setShowDrawer(true)}
-            />
-          </div>
-        </div>
+    <Card 
+      className={cn(
+        "group relative overflow-hidden cursor-pointer",
+        "min-h-[160px]",
+        "border border-border/40",
+        "bg-background/95 backdrop-blur-sm",
+        priorityStyles.glow,
+        priorityStyles.bgTint,
+        "transition-all duration-300",
+        "hover:shadow-xl hover:-translate-y-0.5",
+        "touch-manipulation",
+        isCompleted && "opacity-75",
+        className
+      )}
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+    >
+      {/* Top Priority Color Bar */}
+      <div className={cn(
+        "absolute top-0 left-0 right-0 h-1",
+        priorityStyles.bar
+      )} />
 
-        {/* Main content - horizontal layout */}
-        <div className="relative p-3 flex-1 z-10">          
-          <TaskCardContent
-            task={task}
-            handleStatusChange={handleStatusChange}
-            commentCount={commentCount}
-            onShowComments={() => setShowDrawer(true)}
-          />
-        </div>
-      </Card>
-      
-      <TaskDetailDialog
-        open={showDrawer}
-        onOpenChange={setShowDrawer}
-        task={task}
-        onEdit={onEdit}
-      />
-    </>
+      {/* Card Content */}
+      <div className="p-5">
+        <TaskCardContent 
+          task={task}
+          handleStatusChange={handleStatusChange}
+          commentCount={commentCount}
+          onShowComments={() => setShowComments(true)}
+        />
+      </div>
+    </Card>
   );
 };
 

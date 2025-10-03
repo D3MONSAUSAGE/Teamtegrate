@@ -35,43 +35,42 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
   };
 
   const projectName = getProjectName();
-  // Always display cost - show actual value or 0 if null/undefined
-  const displayCost = task.cost !== null && task.cost !== undefined ? task.cost : 0;
+  const shouldShowCost = task.cost !== null && task.cost !== undefined && task.cost > 0;
 
   return (
-    <div className="space-y-3">
-      {/* First row: Deadline and Cost - Always show both */}
-      <div className="grid grid-cols-2 gap-2">
+    <div className="space-y-2.5">
+      {/* Pill Row: Deadline and Cost */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Deadline Pill */}
         <div className={cn(
-          "flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md font-medium border",
-          "shadow-sm backdrop-blur-sm transition-all duration-300",
+          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
+          "border shadow-sm transition-all duration-300",
           isOverdue 
             ? "bg-red-50/80 text-red-700 border-red-200/70 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/60" 
-            : "bg-muted/40 text-muted-foreground border-border/40 hover:border-border/60"
+            : "bg-muted/60 text-muted-foreground border-border/40"
         )}>
           <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate font-medium">{formatDeadline(new Date(task.deadline))}</span>
+          <span className="font-medium">{formatDeadline(new Date(task.deadline))}</span>
         </div>
 
-        {/* Always show cost box */}
-        <div className="flex items-center gap-2 text-xs backdrop-blur-sm shadow-sm
-                        bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 
-                        px-2.5 py-1.5 rounded-md border border-emerald-200/70 dark:border-emerald-800/60 font-medium
-                        transition-all duration-300 hover:border-emerald-300/70 dark:hover:border-emerald-700/60">
-          <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate font-medium">${displayCost}</span>
-        </div>
+        {/* Cost Pill */}
+        {shouldShowCost && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                          bg-emerald-50/80 text-emerald-700 border border-emerald-200/70 
+                          dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60
+                          shadow-sm transition-all duration-300">
+            <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="font-medium">{task.cost}</span>
+          </div>
+        )}
       </div>
 
-      {/* Second row: Assignment and Project */}
-      <div className="space-y-2">
+      {/* Secondary Info Row: Assignee and Project */}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
         {(task.assignedToName || task.assignedToNames?.length) && (
-          <div className="flex items-center gap-2 text-xs backdrop-blur-sm shadow-sm
-                         bg-blue-50/80 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 
-                         px-2.5 py-1.5 rounded-md border border-blue-200/70 dark:border-blue-800/60 font-medium
-                         transition-all duration-300 hover:border-blue-300/70 dark:hover:border-blue-700/60">
+          <div className="inline-flex items-center gap-1.5">
             <User className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate font-medium">
+            <span className="font-medium">
               {task.assignedToNames?.length > 1 
                 ? `${task.assignedToNames[0]} +${task.assignedToNames.length - 1}`
                 : task.assignedToName || task.assignedToNames?.[0] || "Assigned"
@@ -81,13 +80,15 @@ const TaskCardMetadata: React.FC<TaskCardMetadataProps> = ({ task, isOverdue }) 
         )}
 
         {projectName && (
-          <div className="flex items-center gap-2 text-xs backdrop-blur-sm shadow-sm
-                         bg-purple-50/80 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 
-                         px-2.5 py-1.5 rounded-md border border-purple-200/70 dark:border-purple-800/60 font-medium
-                         transition-all duration-300 hover:border-purple-300/70 dark:hover:border-purple-700/60">
-            <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate font-medium">{projectName}</span>
-          </div>
+          <>
+            {(task.assignedToName || task.assignedToNames?.length) && (
+              <span className="text-border">•</span>
+            )}
+            <div className="inline-flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="font-medium truncate">{projectName}</span>
+            </div>
+          </>
         )}
       </div>
     </div>
