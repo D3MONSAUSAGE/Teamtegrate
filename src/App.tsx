@@ -70,6 +70,7 @@ import WarehouseStockPage from "@/pages/inventory/warehouse/WarehouseStockPage";
 import WarehouseProcessingPage from "@/pages/inventory/warehouse/WarehouseProcessingPage";
 import WarehouseOutgoingPage from "@/pages/inventory/warehouse/WarehouseOutgoingPage";
 import WarehouseReportsPage from "@/pages/inventory/warehouse/WarehouseReportsPage";
+import EmployeesPage from "@/pages/EmployeesPage";
 
 // Training Pages
 import { TrainingDashboardPage } from "@/pages/training/TrainingDashboardPage";
@@ -139,8 +140,9 @@ function App() {
                   <Route path="organization/teams/:teamId" element={<TeamDetailPage />} />
                   <Route path="admin" element={<AdminPage />} />
                   <Route path="organization" element={<OrganizationDashboard />} />
-                   <Route path="organization/roles" element={<RoleProtectedRoute requiredRole="manager"><OrganizationRolesPage /></RoleProtectedRoute>} />
+                  <Route path="organization/roles" element={<RoleProtectedRoute requiredRole="manager"><OrganizationRolesPage /></RoleProtectedRoute>} />
                    <Route path="organization/request-types" element={<RoleProtectedRoute requiredRole="admin"><RequestTypesPage /></RoleProtectedRoute>} />
+                   <Route path="employees" element={<RoleProtectedRoute requiredRole="manager"><EmployeesPage /></RoleProtectedRoute>} />
                    <Route path="employee-actions" element={<RoleProtectedRoute requiredRole="manager"><EmployeeActionsPage /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
                    <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
