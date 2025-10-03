@@ -112,7 +112,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <Card 
       className={cn(
         "group relative overflow-hidden cursor-pointer",
-        "min-h-[160px]",
+        "min-h-[220px]",
         "border border-border/40",
         "bg-background/95 backdrop-blur-sm",
         priorityStyles.glow,
@@ -140,8 +140,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
       )} />
 
       {/* Card Content */}
-      <div className="p-5">
-        <TaskCardContent 
+      <div className="p-6">
+        <TaskCardContent
           task={task}
           handleStatusChange={handleStatusChange}
           commentCount={commentCount}
