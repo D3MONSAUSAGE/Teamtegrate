@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
@@ -102,7 +103,8 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
+            <NotificationsProvider>
+              <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/landing" element={<LandingPage />} />
@@ -187,9 +189,10 @@ function App() {
                 
                 {/* Fallback for unmatched routes */}
                 <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            <NotificationBootstrap />
-            <PWAInstallPrompt />
+              </Routes>
+              <NotificationBootstrap />
+              <PWAInstallPrompt />
+            </NotificationsProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
