@@ -63,17 +63,30 @@ const TasksPage = () => {
   const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
   
   const handleStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
+    // 1. OPTIMISTIC UPDATE - Update UI immediately
+    queryClient.setQueryData(
+      ['personal-tasks', user?.organizationId, user?.id],
+      (oldData: Task[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(task =>
+          task.id === taskId
+            ? { ...task, status, updatedAt: new Date() }
+            : task
+        );
+      }
+    );
+
     try {
+      // 2. Update database in background
       await updateTaskStatus(taskId, status);
       
-      // Invalidate cache first to force fresh data
+      // 3. Revalidate to confirm
       queryClient.invalidateQueries({ 
         queryKey: ['personal-tasks', user?.organizationId, user?.id] 
       });
-      
-      // Then force immediate refetch
-      await refetch({ cancelRefetch: true });
     } catch (error) {
+      // 4. REVERT on error
+      await refetch({ cancelRefetch: true });
       if (process.env.NODE_ENV === 'development') {
         console.error('TasksPage: Error updating task status:', error);
       }
