@@ -29,6 +29,7 @@ import { toast } from '@/hooks/use-toast';
 import { SalesData } from '@/types/sales';
 import { Team } from '@/types/teams';
 import { parseUniversalPDF, ParsedPDFData } from '@/utils/universalPdfParser';
+import { parseCSVExcel } from '@/utils/csvExcelParser';
 import { uploadBatchService, StagedData } from '@/services/UploadBatchService';
 import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
@@ -151,17 +152,20 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
   
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     accept: {
-      'application/pdf': ['.pdf']
+      'application/pdf': ['.pdf'],
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
     },
     maxFiles: 25,
     onDrop,
     onDropRejected: (fileRejections) => {
       const rejection = fileRejections[0];
       if (rejection.errors[0]?.code === 'file-invalid-type') {
-        setError('Please select PDF files only');
+        setError('Please select PDF, CSV, or Excel files only');
         toast({
           title: "Invalid File Type",
-          description: "Only PDF files are supported",
+          description: "Only PDF, CSV, and Excel files are supported",
           variant: "destructive",
         });
       } else if (rejection.errors[0]?.code === 'too-many-files') {
@@ -180,12 +184,16 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
       setUploadStatus('processing');
       setUploadProgress(25);
       
-      const result = await parseUniversalPDF(
-        file, 
-        teamId || 'temp', 
-        salesDate || new Date(), 
-        forcedPosSystem === 'auto' ? undefined : forcedPosSystem
-      );
+      // Check file type and use appropriate parser
+      const isCSVOrExcel = file.name.match(/\.(csv|xls|xlsx)$/i);
+      const result = isCSVOrExcel
+        ? await parseCSVExcel(file, teamId || 'temp', salesDate || new Date())
+        : await parseUniversalPDF(
+            file, 
+            teamId || 'temp', 
+            salesDate || new Date(), 
+            forcedPosSystem === 'auto' ? undefined : forcedPosSystem
+          );
       
       setUploadProgress(100);
       
@@ -255,10 +263,10 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
     }
     
     if (files.length === 0) {
-      setError('Please select PDF files');
+      setError('Please select files');
       toast({
         title: "Files Required",
-        description: "Please select PDF files to process.",
+        description: "Please select files to process.",
         variant: "destructive",
       });
       return;
@@ -298,13 +306,16 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
           ));
 
           try {
-            // Parse PDF with universal parser
-            const result = await parseUniversalPDF(
-              file,
-              teamId,
-              salesDate,
-              forcedPosSystem === 'auto' ? undefined : forcedPosSystem
-            );
+            // Parse file with appropriate parser
+            const isCSVOrExcel = file.name.match(/\.(csv|xls|xlsx)$/i);
+            const result = isCSVOrExcel
+              ? await parseCSVExcel(file, teamId, salesDate)
+              : await parseUniversalPDF(
+                  file,
+                  teamId,
+                  salesDate,
+                  forcedPosSystem === 'auto' ? undefined : forcedPosSystem
+                );
             
             if (result.success && result.data) {
               // Merge manual channel sales into destinations for automatic processing

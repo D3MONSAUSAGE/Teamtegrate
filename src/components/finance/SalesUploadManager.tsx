@@ -25,6 +25,7 @@ import { toast } from '@/components/ui/sonner';
 import { SalesData } from '@/types/sales';
 import { Team } from '@/types/teams';
 import { parseUniversalPDF } from '@/utils/universalPdfParser';
+import { parseCSVExcel } from '@/utils/csvExcelParser';
 import { salesDataService } from '@/services/SalesDataService';
 import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
@@ -86,15 +87,18 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
   
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     accept: {
-      'application/pdf': ['.pdf']
+      'application/pdf': ['.pdf'],
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
     },
     maxFiles: 1,
     onDrop,
     onDropRejected: (fileRejections) => {
       const rejection = fileRejections[0];
       if (rejection.errors[0]?.code === 'file-invalid-type') {
-        setError('Please select a PDF file');
-        toast.error('Only PDF files are supported');
+        setError('Please select a PDF, CSV, or Excel file');
+        toast.error('Only PDF, CSV, and Excel files are supported');
       }
     }
   });
@@ -104,8 +108,11 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
       setUploadStatus('processing');
       setUploadProgress(25);
       
-      // Use universal parser for date extraction
-      const result = await parseUniversalPDF(file, 'temp', new Date());
+      // Check file type and use appropriate parser
+      const isCSVOrExcel = file.name.match(/\.(csv|xls|xlsx)$/i);
+      const result = isCSVOrExcel 
+        ? await parseCSVExcel(file, 'temp', new Date())
+        : await parseUniversalPDF(file, 'temp', new Date());
       
       setUploadProgress(50);
       
@@ -157,8 +164,8 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
     }
     
     if (files.length === 0) {
-      setError('Please select a PDF file');
-      toast.error("Please select a PDF file");
+      setError('Please select a file');
+      toast.error("Please select a file");
       return;
     }
     
@@ -175,8 +182,11 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         );
         
         if (existingCheck.exists) {
-          // Parse the PDF first to show comparison using universal parser
-          const parseResult = await parseUniversalPDF(files[0], teamId!, salesDate);
+          // Parse the file first to show comparison
+          const isCSVOrExcel = files[0].name.match(/\.(csv|xls|xlsx)$/i);
+          const parseResult = isCSVOrExcel
+            ? await parseCSVExcel(files[0], teamId!, salesDate)
+            : await parseUniversalPDF(files[0], teamId!, salesDate);
           if (parseResult.success && parseResult.data) {
             setExistingData(existingCheck.data);
             setPendingUpload(parseResult.data);
@@ -198,8 +208,11 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         });
       }, 300);
       
-      // Parse the PDF with universal parser and team ID
-      const parseResult = await parseUniversalPDF(files[0], teamId!, salesDate);
+      // Parse the file with appropriate parser and team ID
+      const isCSVOrExcel = files[0].name.match(/\.(csv|xls|xlsx)$/i);
+      const parseResult = isCSVOrExcel
+        ? await parseCSVExcel(files[0], teamId!, salesDate)
+        : await parseUniversalPDF(files[0], teamId!, salesDate);
       
       clearInterval(progressInterval);
       setUploadProgress(90);
@@ -433,7 +446,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
                     or click to browse files
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Supports Brink, Square, Toast, Lightspeed, and Clover POS systems
+                    Supports PDF, CSV, and Excel files from Toast, Brink, Square, Lightspeed, and Clover
                   </p>
                 </div>
               </div>
