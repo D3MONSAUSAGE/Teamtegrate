@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ImportFromGoogleCalendar } from '@/components/google-sync/ImportFromGoogleCalendar';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
@@ -55,26 +55,21 @@ const TasksPage = () => {
     setIsCreateTaskOpen(true);
   }, 200);
   
-  const debouncedStatusChange = useDebounce(async (taskId: string, status: TaskStatus) => {
+  // Memoized handlers
+  const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
+  
+  const handleStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
     try {
       await updateTaskStatus(taskId, status);
-      // Refresh personal tasks after status change
-      refetch();
+      // Immediately refetch to update UI
+      await refetch();
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('TasksPage: Error updating task status:', error);
       }
       toast.error('Failed to update task status');
     }
-  }, 300);
-  
-  // Memoized handlers
-  const handleEditTask = useMemo(() => debouncedEditTask, [debouncedEditTask]);
-  
-  // Fix: Return a Promise from the status change handler
-  const handleStatusChange = useMemo(() => async (taskId: string, status: TaskStatus) => {
-    return debouncedStatusChange(taskId, status);
-  }, [debouncedStatusChange]);
+  }, [updateTaskStatus, refetch]);
   
   const handleTaskDialogComplete = useMemo(() => () => {
     setIsCreateTaskOpen(false);
