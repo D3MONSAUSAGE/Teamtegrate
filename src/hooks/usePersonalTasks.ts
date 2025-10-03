@@ -260,8 +260,8 @@ export const usePersonalTasks = () => {
       });
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache data
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    refetchOnMount: false, // Prevent unnecessary refetches
     retry: (failureCount, error: any) => {
       if (failureCount >= 3) return false;
       

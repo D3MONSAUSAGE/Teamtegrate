@@ -41,8 +41,18 @@ interface FCMMessage {
   };
 }
 
+// OAuth token cache (valid for 1 hour)
+let cachedAccessToken: { token: string; expiresAt: number } | null = null;
+
 // Firebase Admin SDK functions
 async function getAccessToken(): Promise<string> {
+  // Return cached token if still valid (with 5-minute safety margin)
+  if (cachedAccessToken && cachedAccessToken.expiresAt > Date.now() + 300000) {
+    console.log('Using cached OAuth token');
+    return cachedAccessToken.token;
+  }
+
+  console.log('Generating new OAuth token');
   const serviceAccountKey = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_KEY');
   
   if (!serviceAccountKey) {
@@ -93,6 +103,13 @@ async function getAccessToken(): Promise<string> {
     }
     
     const { access_token } = await response.json();
+    
+    // Cache the token for 50 minutes (tokens are valid for 1 hour)
+    cachedAccessToken = {
+      token: access_token,
+      expiresAt: Date.now() + 3000000 // 50 minutes
+    };
+    
     return access_token;
   } catch (error) {
     console.error('Error getting access token:', error);
@@ -131,52 +148,66 @@ async function sendFCMNotification(message: FCMMessage): Promise<{ success: bool
       return { success: false, errors: ['No FCM tokens provided'] };
     }
 
+    // Get access token ONCE (outside the loop) - uses cache if available
+    const accessToken = await getAccessToken();
     const results = [];
     const errors = [];
 
-    // Send to each token individually for better error handling
-    for (const token of tokens) {
+    // Batch tokens into groups of 500 (FCM multicast limit)
+    const BATCH_SIZE = 500;
+    const batches = [];
+    for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+      batches.push(tokens.slice(i, i + BATCH_SIZE));
+    }
+
+    // Send batches in parallel for maximum speed
+    await Promise.all(batches.map(async (batchTokens) => {
       try {
-        const accessToken = await getAccessToken();
         const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
         
-        const singleMessage = {
-          token: token,
-          notification: message.notification,
-          data: message.data,
-          android: message.android,
-          apns: message.apns,
-        };
-        
-        const response = await fetch(fcmUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: singleMessage }),
+        // Send to all tokens in batch
+        const batchPromises = batchTokens.map(async (token) => {
+          try {
+            const singleMessage = {
+              token: token,
+              notification: message.notification,
+              data: message.data,
+              android: {
+                ...message.android,
+                priority: message.data?.priority === 'high' ? 'high' : 'normal' as 'high' | 'normal'
+              },
+              apns: message.apns,
+            };
+            
+            const response = await fetch(fcmUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ message: singleMessage }),
+            });
+
+            if (!response.ok) {
+              const error = await response.text();
+              console.error(`FCM error for token ${token.substring(0, 10)}...:`, error);
+              errors.push({ token: token.substring(0, 10) + '...', error });
+            } else {
+              const result = await response.json();
+              results.push({ token: token.substring(0, 10) + '...', result });
+            }
+          } catch (error) {
+            console.error(`Error sending to token ${token.substring(0, 10)}...:`, error);
+            errors.push({ token: token.substring(0, 10) + '...', error: error instanceof Error ? error.message : String(error) });
+          }
         });
 
-        if (!response.ok) {
-          const error = await response.text();
-          console.error(`FCM API error for token ${token.substring(0, 10)}...:`, error);
-          errors.push({ token: token.substring(0, 10) + '...', error });
-          
-          // If token is invalid, deactivate it
-          if (error.includes('INVALID_ARGUMENT') || error.includes('UNREGISTERED')) {
-            console.log(`Deactivating invalid FCM token: ${token.substring(0, 10)}...`);
-            // We'll handle token cleanup in the main handler
-          }
-        } else {
-          const result = await response.json();
-          console.log(`FCM notification sent successfully to token ${token.substring(0, 10)}...:`, result);
-          results.push({ token: token.substring(0, 10) + '...', result });
-        }
-      } catch (error) {
-        console.error(`Error sending to token ${token.substring(0, 10)}...:`, error);
-        errors.push({ token: token.substring(0, 10) + '...', error: error instanceof Error ? error.message : String(error) });
+        await Promise.all(batchPromises);
+      } catch (batchError) {
+        console.error('Error processing batch:', batchError);
+        errors.push({ batch: true, error: batchError instanceof Error ? batchError.message : String(batchError) });
       }
-    }
+    }));
 
     return {
       success: results.length > 0,
@@ -265,6 +296,7 @@ const handler = async (req: Request): Promise<Response> => {
             },
             data: {
               type,
+              priority: type === 'urgent' || type === 'task_assigned' ? 'high' : 'normal',
               notification_id: notification.id,
               user_id,
               ...(metadata && Object.fromEntries(

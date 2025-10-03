@@ -146,12 +146,29 @@ export function useProjects() {
         })
         .map(sanitizeProjectData);
 
+      // Batch fetch ALL comments for ALL projects (fixes N+1 problem)
+      const projectIds = validatedProjects.map(p => p.id);
+      const { data: allComments } = await supabase
+        .from('comments')
+        .select('*')
+        .in('project_id', projectIds)
+        .order('created_at', { ascending: false });
+
+      // Create a map of projectId -> comments[]
+      const commentsMap = new Map<string, any[]>();
+      (allComments || []).forEach(comment => {
+        const projectId = comment.project_id;
+        if (!commentsMap.has(projectId)) {
+          commentsMap.set(projectId, []);
+        }
+        commentsMap.get(projectId)!.push(comment);
+      });
+
       // Transform database projects to match Project type
-      const transformedProjects: Project[] = await Promise.all(
-        validatedProjects.map(async (dbProject) => {
+      const transformedProjects: Project[] = validatedProjects.map((dbProject) => {
           try {
-            // Fetch comments for this project
-            const comments = await fetchProjectComments(dbProject.id);
+            // Get comments from the map instead of fetching individually
+            const comments = commentsMap.get(dbProject.id) || [];
 
             // Fix: Use team_members from database instead of teamMemberIds
             const teamMemberIds = Array.isArray(dbProject.team_members) ? dbProject.team_members : [];
@@ -203,8 +220,7 @@ export function useProjects() {
               comments: []
             };
           }
-        })
-      );
+        });
 
       setProjects(transformedProjects);
       setError(null);
