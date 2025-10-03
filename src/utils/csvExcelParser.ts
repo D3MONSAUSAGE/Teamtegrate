@@ -75,16 +75,91 @@ const detectAndParse = (
 };
 
 const isToastFormat = (rows: string[][]): boolean => {
-  // Look for Toast-specific headers
-  const headerRow = rows.slice(0, 5).find(row => 
-    row.some(cell => 
-      cell.toLowerCase().includes('gross sales') ||
-      cell.toLowerCase().includes('net sales') ||
-      cell.toLowerCase().includes('total sales')
-    )
+  // Check for Toast signature patterns - section-based format
+  const hasSalesSummaryHeader = rows.length > 0 && 
+    rows[0].some(cell => cell.includes('SalesSummary'));
+  
+  const hasRevenueSummary = rows.some(row => 
+    row.some(cell => cell.toLowerCase() === 'revenue summary')
   );
   
-  return !!headerRow;
+  const hasNetSalesSummary = rows.some(row => 
+    row.some(cell => cell.toLowerCase() === 'net sales summary')
+  );
+  
+  const hasPaymentsSummary = rows.some(row =>
+    row.some(cell => cell.toLowerCase() === 'payments summary')
+  );
+  
+  return hasSalesSummaryHeader || hasRevenueSummary || hasNetSalesSummary || hasPaymentsSummary;
+};
+
+// Helper functions for section-based parsing
+const findSection = (rows: string[][], sectionName: string): number => {
+  return rows.findIndex(row => 
+    row.some(cell => cell.toLowerCase() === sectionName.toLowerCase())
+  );
+};
+
+const extractLabelValue = (rows: string[][], startIdx: number, label: string): string | null => {
+  for (let i = startIdx; i < Math.min(startIdx + 30, rows.length); i++) {
+    const row = rows[i];
+    const labelIdx = row.findIndex(cell => 
+      cell.toLowerCase() === label.toLowerCase()
+    );
+    if (labelIdx !== -1) {
+      // Look for value in next column
+      if (labelIdx + 1 < row.length && row[labelIdx + 1]) {
+        return row[labelIdx + 1];
+      }
+    }
+  }
+  return null;
+};
+
+const parseCurrency = (value: string | null): number => {
+  if (!value) return 0;
+  const cleaned = value.replace(/[$,]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+const parseInteger = (value: string | null): number => {
+  if (!value) return 0;
+  const parsed = parseInt(value.replace(/,/g, ''), 10);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+const parseTableSection = (
+  rows: string[][],
+  startIdx: number
+): { headers: string[], data: string[][] } => {
+  // Find header row (first non-empty row with multiple columns after section title)
+  let headerIdx = startIdx + 1;
+  while (headerIdx < rows.length && rows[headerIdx].filter(c => c).length < 2) {
+    headerIdx++;
+  }
+  
+  if (headerIdx >= rows.length) {
+    return { headers: [], data: [] };
+  }
+  
+  const headers = rows[headerIdx];
+  const data: string[][] = [];
+  
+  // Parse data rows until we hit empty row or next section
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const row = rows[i];
+    // Stop if we hit an empty row or another section header
+    if (row.every(cell => !cell) || (row.some(cell => cell.toLowerCase().includes('summary')) && row.filter(c => c).length < 3)) {
+      break;
+    }
+    if (row.some(cell => cell)) {
+      data.push(row);
+    }
+  }
+  
+  return { headers, data };
 };
 
 const parseToastFormat = (
@@ -95,75 +170,271 @@ const parseToastFormat = (
 ): ParsedCSVExcelData => {
   try {
     const validationErrors: ValidationError[] = [];
+    let sectionsFound = 0;
     
-    // Find date in first few rows
+    // Extract date from first row: "SalesSummary_2025-10-01_2025-10-01"
     let extractedDate: Date | undefined;
-    for (let i = 0; i < Math.min(10, rows.length); i++) {
-      const dateMatch = rows[i].join(' ').match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+    if (rows.length > 0 && rows[0][0]) {
+      const dateMatch = rows[0][0].match(/SalesSummary_(\d{4}-\d{2}-\d{2})/);
       if (dateMatch) {
-        const parsedDate = new Date(dateMatch[1]);
-        if (!isNaN(parsedDate.getTime())) {
-          extractedDate = parsedDate;
-          break;
+        extractedDate = new Date(dateMatch[1]);
+        if (isNaN(extractedDate.getTime())) {
+          extractedDate = undefined;
         }
       }
     }
-
-    // Find header row
-    const headerRowIndex = rows.findIndex(row => 
-      row.some(cell => cell.toLowerCase().includes('gross sales'))
-    );
-
-    if (headerRowIndex === -1) {
-      return { success: false, error: 'Could not find sales data headers' };
-    }
-
-    const headers = rows[headerRowIndex].map(h => h.toLowerCase());
     
-    // Find key column indices
-    const grossSalesIdx = headers.findIndex(h => h.includes('gross sales') || h.includes('total sales'));
-    const netSalesIdx = headers.findIndex(h => h.includes('net sales'));
-    const taxIdx = headers.findIndex(h => h.includes('tax'));
-    const discountsIdx = headers.findIndex(h => h.includes('discount'));
-    const tipsIdx = headers.findIndex(h => h.includes('tip') || h.includes('gratuity'));
-
-    // Parse data rows (typically 1-2 rows after headers)
-    const dataRowIndex = headerRowIndex + 1;
-    if (dataRowIndex >= rows.length) {
-      return { success: false, error: 'No data rows found after headers' };
+    // Extract location from second row: "-Palmdale-Guanatos Tacos & Bar"
+    let location = '';
+    if (rows.length > 1 && rows[1][0]) {
+      location = rows[1][0].replace(/^-+/, '').trim();
     }
-
-    const dataRow = rows[dataRowIndex];
     
-    const parseAmount = (value: string): number => {
-      const cleaned = value.replace(/[$,]/g, '');
-      const parsed = parseFloat(cleaned);
-      return isNaN(parsed) ? 0 : parsed;
-    };
-
-    const grossSales = grossSalesIdx !== -1 ? parseAmount(dataRow[grossSalesIdx]) : 0;
-    const netSales = netSalesIdx !== -1 ? parseAmount(dataRow[netSalesIdx]) : grossSales;
-    const tax = taxIdx !== -1 ? parseAmount(dataRow[taxIdx]) : 0;
-    const discounts = discountsIdx !== -1 ? parseAmount(dataRow[discountsIdx]) : 0;
-    const tips = tipsIdx !== -1 ? parseAmount(dataRow[tipsIdx]) : 0;
-
+    // Find sections
+    const revenueSummaryIdx = findSection(rows, 'revenue summary');
+    const netSalesSummaryIdx = findSection(rows, 'net sales summary');
+    const serviceModeIdx = findSection(rows, 'service mode summary');
+    const paymentsSummaryIdx = findSection(rows, 'payments summary');
+    const voidSummaryIdx = findSection(rows, 'void summary');
+    const cashActivityIdx = findSection(rows, 'cash activity');
+    const discountSummaryIdx = findSection(rows, 'check discounts');
+    const taxSummaryIdx = findSection(rows, 'tax summary');
+    
+    // Extract data from Revenue summary
+    let netSales = 0;
+    let taxAmount = 0;
+    let tips = 0;
+    let gratuity = 0;
+    
+    if (revenueSummaryIdx !== -1) {
+      sectionsFound++;
+      netSales = parseCurrency(extractLabelValue(rows, revenueSummaryIdx, 'net sales'));
+      taxAmount = parseCurrency(extractLabelValue(rows, revenueSummaryIdx, 'tax amount'));
+      tips = parseCurrency(extractLabelValue(rows, revenueSummaryIdx, 'tips'));
+      gratuity = parseCurrency(extractLabelValue(rows, revenueSummaryIdx, 'gratuity'));
+    }
+    
+    // Extract data from Net sales summary
+    let grossSales = 0;
+    let salesDiscounts = 0;
+    let salesRefunds = 0;
+    
+    if (netSalesSummaryIdx !== -1) {
+      sectionsFound++;
+      grossSales = parseCurrency(extractLabelValue(rows, netSalesSummaryIdx, 'gross sales'));
+      salesDiscounts = parseCurrency(extractLabelValue(rows, netSalesSummaryIdx, 'sales discounts'));
+      salesRefunds = parseCurrency(extractLabelValue(rows, netSalesSummaryIdx, 'sales refunds'));
+    }
+    
+    // Extract data from Service mode summary table
+    let orderCount = 0;
+    let orderAverage = 0;
+    
+    if (serviceModeIdx !== -1) {
+      sectionsFound++;
+      const serviceTable = parseTableSection(rows, serviceModeIdx);
+      if (serviceTable.headers.length > 0) {
+        // Find "Total" row and extract data
+        const totalRow = serviceTable.data.find(row => 
+          row[0] && row[0].toLowerCase() === 'total'
+        );
+        if (totalRow) {
+          // Find column indices
+          const ordersColIdx = serviceTable.headers.findIndex(h => 
+            h.toLowerCase().includes('orders')
+          );
+          const avgPaymentColIdx = serviceTable.headers.findIndex(h => 
+            h.toLowerCase().includes('avg') && h.toLowerCase().includes('payment')
+          );
+          
+          if (ordersColIdx !== -1) {
+            orderCount = parseInteger(totalRow[ordersColIdx]);
+          }
+          if (avgPaymentColIdx !== -1) {
+            orderAverage = parseCurrency(totalRow[avgPaymentColIdx]);
+          }
+        }
+      }
+    }
+    
+    // Extract data from Payments summary table
+    const tenders: any[] = [];
+    let totalCash = 0;
+    let nonCash = 0;
+    
+    if (paymentsSummaryIdx !== -1) {
+      sectionsFound++;
+      const paymentsTable = parseTableSection(rows, paymentsSummaryIdx);
+      if (paymentsTable.headers.length > 0) {
+        // Find column indices
+        const typeIdx = paymentsTable.headers.findIndex(h => 
+          h.toLowerCase().includes('payment type')
+        );
+        const countIdx = paymentsTable.headers.findIndex(h => 
+          h.toLowerCase() === 'count'
+        );
+        const amountIdx = paymentsTable.headers.findIndex(h => 
+          h.toLowerCase() === 'amount'
+        );
+        const tipsIdx = paymentsTable.headers.findIndex(h => 
+          h.toLowerCase() === 'tips'
+        );
+        const totalIdx = paymentsTable.headers.findIndex(h => 
+          h.toLowerCase() === 'total'
+        );
+        
+        // Parse payment rows
+        for (const row of paymentsTable.data) {
+          if (!row[typeIdx] || row[typeIdx].toLowerCase() === 'total') continue;
+          
+          const paymentType = row[typeIdx];
+          const count = countIdx !== -1 ? parseInteger(row[countIdx]) : 0;
+          const amount = amountIdx !== -1 ? parseCurrency(row[amountIdx]) : 0;
+          const paymentTips = tipsIdx !== -1 ? parseCurrency(row[tipsIdx]) : 0;
+          const total = totalIdx !== -1 ? parseCurrency(row[totalIdx]) : 0;
+          
+          tenders.push({
+            name: paymentType,
+            quantity: count,
+            payments: amount,
+            tips: paymentTips,
+            total: total,
+            percent: grossSales > 0 ? (total / grossSales) * 100 : 0
+          });
+          
+          // Categorize cash vs non-cash
+          if (paymentType.toLowerCase().includes('cash')) {
+            totalCash += total;
+          } else {
+            nonCash += total;
+          }
+        }
+      }
+    }
+    
+    // Extract void data
+    let voids = 0;
+    if (voidSummaryIdx !== -1) {
+      sectionsFound++;
+      voids = parseCurrency(extractLabelValue(rows, voidSummaryIdx, 'void amount'));
+    }
+    
+    // Extract discounts
+    const discounts: any[] = [];
+    if (salesDiscounts > 0) {
+      discounts.push({
+        name: 'Sales discounts',
+        quantity: 1,
+        total: Math.abs(salesDiscounts),
+        percent: grossSales > 0 ? (Math.abs(salesDiscounts) / grossSales) * 100 : 0
+      });
+    }
+    
+    // Parse detailed discounts if available
+    if (discountSummaryIdx !== -1) {
+      sectionsFound++;
+      const discountTable = parseTableSection(rows, discountSummaryIdx);
+      if (discountTable.headers.length > 0) {
+        const nameIdx = discountTable.headers.findIndex(h => 
+          h.toLowerCase().includes('discount')
+        );
+        const countIdx = discountTable.headers.findIndex(h => 
+          h.toLowerCase() === 'count'
+        );
+        const amountIdx = discountTable.headers.findIndex(h => 
+          h.toLowerCase().includes('amount')
+        );
+        
+        for (const row of discountTable.data) {
+          if (!row[nameIdx] || row[nameIdx].toLowerCase() === 'total') continue;
+          
+          const name = row[nameIdx];
+          const count = countIdx !== -1 ? parseInteger(row[countIdx]) : 0;
+          const amount = amountIdx !== -1 ? parseCurrency(row[amountIdx]) : 0;
+          
+          // Only add if not already added as "Sales discounts"
+          if (amount > 0 && name.toLowerCase() !== 'sales discounts') {
+            discounts.push({
+              name,
+              quantity: count,
+              total: amount,
+              percent: grossSales > 0 ? (amount / grossSales) * 100 : 0
+            });
+          }
+        }
+      }
+    }
+    
+    // Extract taxes
+    const taxes: any[] = [];
+    if (taxAmount > 0) {
+      taxes.push({
+        name: 'Tax',
+        quantity: 1,
+        total: taxAmount,
+        percent: grossSales > 0 ? (taxAmount / grossSales) * 100 : 0
+      });
+    }
+    
+    // Parse detailed taxes if available
+    if (taxSummaryIdx !== -1) {
+      sectionsFound++;
+      const taxTable = parseTableSection(rows, taxSummaryIdx);
+      if (taxTable.headers.length > 0) {
+        const rateIdx = taxTable.headers.findIndex(h => 
+          h.toLowerCase().includes('tax rate')
+        );
+        const amountIdx = taxTable.headers.findIndex(h => 
+          h.toLowerCase().includes('tax amount')
+        );
+        
+        for (const row of taxTable.data) {
+          if (!row[rateIdx]) continue;
+          
+          const name = row[rateIdx];
+          const amount = amountIdx !== -1 ? parseCurrency(row[amountIdx]) : 0;
+          
+          if (amount > 0 && name.toLowerCase() !== 'tax') {
+            taxes.push({
+              name,
+              quantity: 1,
+              total: amount,
+              percent: grossSales > 0 ? (amount / grossSales) * 100 : 0
+            });
+          }
+        }
+      }
+    }
+    
+    // Validation
     if (grossSales === 0) {
       validationErrors.push({
         field: 'grossSales',
         message: 'Gross sales is 0 or could not be parsed',
+        severity: 'error'
+      });
+    }
+    
+    if (sectionsFound < 3) {
+      validationErrors.push({
+        field: 'format',
+        message: `Only found ${sectionsFound} sections. Some data may be missing.`,
         severity: 'warning'
       });
     }
-
+    
+    // Calculate confidence score
+    const confidenceScore = Math.min(100, 50 + (sectionsFound * 8));
+    
     const salesData: SalesData = {
       id: '',
       date: (extractedDate || fallbackDate).toISOString().split('T')[0],
-      location: '',
+      location: location || 'Unknown Location',
       team_id: teamId,
       grossSales,
       netSales,
-      orderCount: 0,
-      orderAverage: grossSales > 0 ? netSales / Math.max(1, 0) : 0,
+      orderCount,
+      orderAverage,
       labor: {
         cost: 0,
         hours: 0,
@@ -183,29 +454,19 @@ const parseToastFormat = (
         reloadCount: 0
       },
       paymentBreakdown: {
-        nonCash: netSales,
-        totalCash: 0,
-        calculatedCash: 0,
+        totalCash,
+        nonCash,
+        calculatedCash: totalCash - tips,
         tips
       },
       destinations: [],
       revenueItems: [],
-      tenders: [],
-      discounts: discounts > 0 ? [{
-        name: 'Discounts',
-        quantity: 1,
-        total: discounts,
-        percent: grossSales > 0 ? (discounts / grossSales) * 100 : 0
-      }] : [],
+      tenders,
+      discounts,
       promotions: [],
-      taxes: tax > 0 ? [{
-        name: 'Tax',
-        quantity: 1,
-        total: tax,
-        percent: grossSales > 0 ? (tax / grossSales) * 100 : 0
-      }] : [],
-      voids: 0,
-      refunds: 0
+      taxes,
+      voids,
+      refunds: Math.abs(salesRefunds)
     };
 
     return {
@@ -213,7 +474,7 @@ const parseToastFormat = (
       data: salesData,
       extractedDate,
       posSystem: 'toast',
-      confidenceScore: 85,
+      confidenceScore,
       validationErrors: validationErrors.length > 0 ? validationErrors : undefined
     };
   } catch (error) {
