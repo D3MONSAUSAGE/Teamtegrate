@@ -260,7 +260,7 @@ export const usePersonalTasks = () => {
       });
     },
     enabled: !!user?.organizationId && !!user?.id,
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    staleTime: 5000, // Cache for 5 seconds for faster UI updates
     refetchOnMount: false, // Prevent unnecessary refetches
     retry: (failureCount, error: any) => {
       if (failureCount >= 3) return false;

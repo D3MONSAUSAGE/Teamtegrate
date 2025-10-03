@@ -61,8 +61,8 @@ const TasksPage = () => {
   const handleStatusChange = useCallback(async (taskId: string, status: TaskStatus) => {
     try {
       await updateTaskStatus(taskId, status);
-      // Immediately refetch to update UI
-      await refetch();
+      // Force immediate refetch, ignoring cache
+      await refetch({ cancelRefetch: true });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('TasksPage: Error updating task status:', error);
