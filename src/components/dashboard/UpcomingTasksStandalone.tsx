@@ -77,11 +77,9 @@ const UpcomingTasksStandalone: React.FC<UpcomingTasksStandaloneProps> = ({
       
       {tasks.length > 0 ? (
         <div className={`
-          grid gap-4
-          ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}
-          ${isMobile ? 'md:gap-4' : 'md:gap-6'}
+          flex flex-col gap-3
         `}>
-          {tasks.slice(0, isMobile ? 2 : 3).map((task) => (
+          {tasks.slice(0, 6).map((task) => (
             <div key={task.id} className={`
               group transition-all duration-200
               ${isMobile ? 'active:scale-[0.98]' : 'hover:scale-[1.01]'}

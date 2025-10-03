@@ -23,45 +23,35 @@ const TaskCardContent: React.FC<TaskCardContentProps> = ({
   const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'Completed';
 
   return (
-    <div className="flex flex-col h-full min-h-[280px]">
-      {/* Header with title and priority */}
-      <div className="flex-shrink-0 mb-3">
+    <div className="flex flex-row items-center gap-3 w-full">
+      {/* Left section - Title and Description */}
+      <div className="flex-1 min-w-0 space-y-1">
         <TaskCardHeader 
           title={task.title}
           priority={task.priority}
         />
-      </div>
-
-      {/* Description section - always reserve space */}
-      <div className="flex-shrink-0 mb-3 min-h-[40px]">
-        {task.description ? (
+        {task.description && (
           <TaskCardDescription description={task.description} />
-        ) : (
-          <div className="text-xs text-muted-foreground/50 italic">No description</div>
         )}
       </div>
 
-      {/* Metadata section - takes available space */}
-      <div className="flex-1 mb-4">
+      {/* Center section - Metadata (status, deadline, assignee) */}
+      <div className="flex-shrink-0">
         <TaskCardMetadata 
           task={task}
           isOverdue={isOverdue}
         />
       </div>
       
-      {/* Enhanced Timer integration - more prominent display */}
-      <div className="flex-shrink-0 mb-4">
+      {/* Right section - Timer and Footer */}
+      <div className="flex-shrink-0 flex flex-col items-end gap-2">
         <TaskTimer 
           taskId={task.id}
           taskTitle={task.title}
           compact={true}
-          showControls={true}
-          className="w-full"
+          showControls={false}
+          className="text-xs"
         />
-      </div>
-
-      {/* Footer with status and comments */}
-      <div className="flex-shrink-0 pt-2 border-t border-border/30">
         <TaskCardFooter
           status={task.status}
           isOverdue={isOverdue}

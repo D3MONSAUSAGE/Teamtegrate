@@ -101,42 +101,64 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const priorityStyles = getPriorityStyles(task.priority);
 
+  // Get left border color based on priority
+  const getPriorityBorderColor = (priority: string) => {
+    switch(priority) {
+      case 'High': return 'border-l-red-500 dark:border-l-red-400';
+      case 'Medium': return 'border-l-amber-500 dark:border-l-amber-400';
+      case 'Low': return 'border-l-blue-500 dark:border-l-blue-400';
+      default: return 'border-l-border';
+    }
+  };
+
+  // Get static glow based on priority
+  const getPriorityGlow = (priority: string) => {
+    switch(priority) {
+      case 'High': return 'shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30';
+      case 'Medium': return 'shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30';
+      case 'Low': return 'shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30';
+      default: return 'shadow-lg hover:shadow-xl';
+    }
+  };
+
   return (
     <>
       <Card
         className={cn(
-          "group relative cursor-pointer overflow-hidden h-full flex flex-col",
-          // Gradient background based on priority or warning/overdue/completed state
-          !isCompleted && !isOverdue && !inWarningPeriod && priorityStyles.gradient,
-          // Border styling
-          "border",
-          !isCompleted && !isOverdue && !inWarningPeriod && priorityStyles.border,
-          // Shadow and glow effects
-          !isCompleted && !isOverdue && !inWarningPeriod && priorityStyles.glow,
-          // Smooth transitions with enhanced effects
+          "group relative cursor-pointer overflow-hidden",
+          // List-style horizontal layout
+          "flex flex-row items-center",
+          "min-h-[100px] h-auto",
+          // Left border for priority color (3px)
+          "border-l-4",
+          getPriorityBorderColor(task.priority),
+          // Base border
+          "border border-border/50 hover:border-border",
+          // Static glow effects (NO PULSE)
+          !isCompleted && !isOverdue && !inWarningPeriod && getPriorityGlow(task.priority),
+          // Smooth transitions - removed scale/transform
           "transition-all duration-300 ease-out",
-          "hover:scale-[1.02] hover:-translate-y-1",
-          // Backdrop blur for glass effect
-          "backdrop-blur-sm",
-          // Completed state (green glow) - takes precedence over all other states
+          // Simplified hover effect
+          "hover:shadow-xl",
+          // Background
+          "bg-card/80 backdrop-blur-sm",
+          // Completed state (green glow) - STATIC
           isCompleted && [
-            "ring-2 ring-green-500/40 shadow-2xl shadow-green-500/25",
-            "[background:linear-gradient(135deg,hsl(142_76%_36%/0.1),hsl(142_69%_58%/0.15),hsl(142_76%_36%/0.08))]",
-            "border-green-400/60 dark:border-green-500/50"
+            "border-l-green-500 dark:border-l-green-400",
+            "shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30",
+            "bg-green-500/5"
           ],
-          // Overdue state (red glow) - takes precedence over everything except completed
+          // Overdue state (red glow) - STATIC, NO PULSE
           !isCompleted && isOverdue && [
-            "ring-2 ring-red-500/40 shadow-2xl shadow-red-500/25",
-            "[background:linear-gradient(135deg,hsl(0_84%_60%/0.1),hsl(15_78%_65%/0.15),hsl(0_84%_60%/0.08))]",
-            "border-red-400/60 dark:border-red-500/50",
-            "animate-pulse"
+            "border-l-red-500 dark:border-l-red-400",
+            "shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/35",
+            "bg-red-500/5"
           ],
-          // Warning state (yellow glow) - only if not overdue and not completed
+          // Warning state (yellow glow) - STATIC, NO PULSE
           !isCompleted && !isOverdue && inWarningPeriod && [
-            "ring-2 ring-yellow-500/40 shadow-2xl shadow-yellow-500/25",
-            "[background:linear-gradient(135deg,hsl(45_93%_47%/0.1),hsl(48_89%_50%/0.15),hsl(45_93%_47%/0.08))]",
-            "border-yellow-400/60 dark:border-yellow-500/50",
-            "animate-pulse"
+            "border-l-yellow-500 dark:border-l-yellow-400",
+            "shadow-lg shadow-yellow-500/25 hover:shadow-xl hover:shadow-yellow-500/35",
+            "bg-yellow-500/5"
           ]
         )}
         onClick={handleCardClick}
@@ -144,16 +166,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
         aria-label={`Open details for ${task.title}`}
         role="button"
       >
-        {/* Subtle gradient overlay */}
-        <div className={cn(
-          "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-          `bg-gradient-to-br ${priorityStyles.accent}`,
-          "pointer-events-none"
-        )} />
-        
         {/* Floating action menu */}
-        <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
-          <div className="bg-background/95 backdrop-blur-md rounded-xl p-1.5 shadow-2xl border border-border/50 ring-1 ring-white/10">
+        <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <div className="bg-background/95 backdrop-blur-md rounded-lg p-1 shadow-xl border border-border/50">
             <TaskCardActions
               task={task}
               onEdit={onEdit}
@@ -165,8 +180,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </div>
         </div>
 
-        {/* Main content with enhanced padding and spacing */}
-        <div className="relative p-5 flex-1 flex flex-col justify-between min-h-0 z-10">          
+        {/* Main content - horizontal layout */}
+        <div className="relative p-3 flex-1 z-10">          
           <TaskCardContent
             task={task}
             handleStatusChange={handleStatusChange}
