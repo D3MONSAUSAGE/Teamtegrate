@@ -3366,6 +3366,54 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_price_history: {
+        Row: {
+          change_source: string | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          item_id: string
+          new_purchase_price: number | null
+          old_purchase_price: number | null
+          organization_id: string
+        }
+        Insert: {
+          change_source?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          item_id: string
+          new_purchase_price?: number | null
+          old_purchase_price?: number | null
+          organization_id: string
+        }
+        Update: {
+          change_source?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          item_id?: string
+          new_purchase_price?: number | null
+          old_purchase_price?: number | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_price_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_price_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_sku_audit: {
         Row: {
           action: string
@@ -6148,6 +6196,56 @@ export type Database = {
           },
         ]
       }
+      production_recipes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          organization_id: string
+          output_quantity: number
+          output_unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          output_quantity: number
+          output_unit: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          output_quantity?: number
+          output_unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_recipes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profit_loss_snapshots: {
         Row: {
           created_at: string
@@ -6658,6 +6756,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          manual_unit_cost: number | null
+          notes: string | null
+          quantity_needed: number
+          recipe_id: string
+          sort_order: number | null
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          manual_unit_cost?: number | null
+          notes?: string | null
+          quantity_needed: number
+          recipe_id: string
+          sort_order?: number | null
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          manual_unit_cost?: number | null
+          notes?: string | null
+          quantity_needed?: number
+          recipe_id?: string
+          sort_order?: number | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "production_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_transactions: {
         Row: {
