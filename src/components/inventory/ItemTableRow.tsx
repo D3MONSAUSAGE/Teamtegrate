@@ -47,9 +47,9 @@ export const ItemTableRow: React.FC<ItemTableRowProps> = ({ item, onClick, onDel
           <div className="font-medium">
             {item.sale_price ? formatCurrency(item.sale_price) : 'N/A'}
           </div>
-          {item.sale_price && item.unit_cost && (
+          {item.sale_price && item.purchase_price && (
             <div className="text-xs text-muted-foreground">
-              Profit: {formatCurrency(item.sale_price - item.unit_cost)}
+              Profit: {formatCurrency(item.sale_price - item.purchase_price)}
             </div>
           )}
         </div>
