@@ -20,6 +20,8 @@ import TimeEntryRow from './TimeEntryRow';
 import { TimeEntryCorrectionRequestForm } from '@/components/time-entries/TimeEntryCorrectionRequestForm';
 import { MissingDayTimeEntryForm } from './MissingDayTimeEntryForm';
 import { useTimeEntryCorrectionRequests, CreateCorrectionRequest } from '@/hooks/useTimeEntryCorrectionRequests';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileTimeEntriesDay } from './MobileTimeEntriesDay';
 
 interface WeeklyTimeEntriesCardProps {
   entries: TimeEntry[];
@@ -37,6 +39,7 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
   const [showMissingDayForm, setShowMissingDayForm] = useState(false);
   const [selectedMissingDate, setSelectedMissingDate] = useState<Date | null>(null);
   const { createCorrectionRequest, myRequests, isLoading } = useTimeEntryCorrectionRequests();
+  const isMobile = useIsMobile();
 
   // Separate completed and active entries
   const completedEntries = entries.filter(entry => entry.clock_out);
@@ -187,8 +190,23 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
             </div>
           )}
 
-          {/* Monday-Sunday Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+          {/* Mobile: Show only today, Desktop: Monday-Sunday Grid Layout */}
+          {isMobile ? (
+            // Mobile view: show only today
+            <MobileTimeEntriesDay
+              day={weekDays.find(day => isToday(day)) || new Date()}
+              entries={getDayEntries(weekDays.find(day => isToday(day)) || new Date())}
+              activeEntries={activeEntries.filter(entry => 
+                format(new Date(entry.clock_in), 'yyyy-MM-dd') === format(weekDays.find(day => isToday(day)) || new Date(), 'yyyy-MM-dd')
+              )}
+              selectedEntries={selectedEntries}
+              onEntrySelection={handleEntrySelection}
+              onRequestEntry={handleMissingDayRequest}
+              isPastDay={(weekDays.find(day => isToday(day)) || new Date()) <= new Date()}
+            />
+          ) : (
+            // Desktop view: show all 7 days
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
             {weekDays.map((day) => {
               const dayEntries = getDayEntries(day);
               const isDayToday = isToday(day);
@@ -288,7 +306,8 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
                 </Card>
               );
             })}
-          </div>
+            </div>
+          )}
 
           {/* Pending Correction Requests */}
           {existingRequests.length > 0 && (

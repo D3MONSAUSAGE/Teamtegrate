@@ -10,8 +10,6 @@ import {
   Timer, 
   ChevronLeft, 
   ChevronRight,
-  Play,
-  Pause,
   QrCode,
   CalendarClock,
   FileText,
@@ -26,8 +24,11 @@ import { EmployeeTimeStatusBadge } from '@/components/employee/EmployeeTimeStatu
 import { WeeklyTimeEntriesCard } from './WeeklyTimeEntriesCard';
 import { TimeEntryCorrectionManager } from './TimeEntryCorrectionManager';
 import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileScheduleDay } from './MobileScheduleDay';
 
 export const MyScheduleView: React.FC = () => {
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { employeeSchedules, fetchEmployeeSchedules, isLoading } = useScheduleManagement();
   const { 
@@ -105,9 +106,26 @@ export const MyScheduleView: React.FC = () => {
   };
 
   const renderWeeklySchedule = () => {
-    // Ensure Monday is the first day of the week
     const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+    // Mobile: show only today's schedule
+    if (isMobile) {
+      const today = new Date();
+      const currentDay = days.find(day => isToday(day)) || today;
+      const daySchedules = mySchedules.filter(schedule =>
+        format(new Date(schedule.scheduled_date), 'yyyy-MM-dd') === format(currentDay, 'yyyy-MM-dd')
+      );
+      
+      return (
+        <MobileScheduleDay
+          day={currentDay}
+          schedules={daySchedules}
+          getStatusBadge={getStatusBadge}
+          getStatusColor={getStatusColor}
+        />
+      );
+    }
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
@@ -193,30 +211,6 @@ export const MyScheduleView: React.FC = () => {
     );
   };
 
-  // Format elapsed time for display
-  const formatElapsedTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
-
-  // Quick clock actions
-  const handleQuickClockIn = async () => {
-    await clockIn('Work session');
-  };
-
-  const handleQuickClockOut = async () => {
-    await clockOut();
-  };
-
-  const handleQuickBreak = async (breakType: 'Coffee' | 'Lunch' | 'Rest') => {
-    if (currentSession.isOnBreak) {
-      await endBreak();
-    } else {
-      await startBreak(breakType);
-    }
-  };
-
   const handleOpenQRDialog = (type: 'clock_in' | 'clock_out') => {
     setQrTokenType(type);
     setQrDialogOpen(true);
@@ -225,7 +219,7 @@ export const MyScheduleView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
         <Card 
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent"
           onClick={() => handleOpenQRDialog(currentSession.isActive ? 'clock_out' : 'clock_in')}
@@ -299,103 +293,8 @@ export const MyScheduleView: React.FC = () => {
         tokenType={qrTokenType}
       />
 
-      {/* Current Status Card */}
-      <Card className="border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Timer className="h-5 w-5 text-primary" />
-            Current Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {currentSession.isActive ? (
-                currentSession.isOnBreak ? (
-                  <div className="flex items-center gap-2">
-                    <Pause className="h-5 w-5 text-orange-500" />
-                    <div>
-                      <div className="font-semibold text-orange-600">On {currentSession.breakType} Break</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatElapsedTime(currentSession.breakElapsedMinutes)}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Play className="h-5 w-5 text-green-500" />
-                    <div>
-                      <div className="font-semibold text-green-600">Currently Working</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatElapsedTime(currentSession.elapsedMinutes)}
-                      </div>
-                    </div>
-                  </div>
-                )
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <div className="font-semibold">Not Clocked In</div>
-                    <div className="text-sm text-muted-foreground">Ready to start your day</div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {currentSession.isActive ? (
-                <>
-                  {currentSession.isOnBreak ? (
-                    <Button 
-                      onClick={() => handleQuickBreak('Coffee')}
-                      disabled={timeTrackingLoading}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Resume Work
-                    </Button>
-                  ) : (
-                    <>
-                      <Button 
-                        onClick={() => handleQuickBreak('Coffee')}
-                        disabled={timeTrackingLoading}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Pause className="h-4 w-4 mr-2" />
-                        Take Break
-                      </Button>
-                      <Button 
-                        onClick={handleQuickClockOut}
-                        disabled={timeTrackingLoading}
-                        size="sm"
-                        variant="destructive"
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Clock Out
-                      </Button>
-                    </>
-                  )}
-                </>
-              ) : (
-                <Button 
-                  onClick={handleQuickClockIn}
-                  disabled={timeTrackingLoading}
-                  size="sm"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Clock In
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className={`grid gap-6 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-4'}`}>
         <ModernMetricCard
           title="Upcoming Shifts"
           value={upcomingShifts.length}
@@ -440,37 +339,39 @@ export const MyScheduleView: React.FC = () => {
       {/* Weekly Schedule */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Weekly Schedule
+                {isMobile ? 'Today\'s Schedule' : 'Weekly Schedule'}
               </CardTitle>
               <CardDescription>
-                Your scheduled shifts for the selected week
+                {isMobile ? 'Your shift for today' : 'Your scheduled shifts for the selected week'}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
-              <div className="text-sm font-medium px-4 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
-                {format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}
+            {!isMobile && (
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedWeek(addDays(selectedWeek, -7))}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+                <div className="text-sm font-medium px-4 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
+                  {format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedWeek(addDays(selectedWeek, 7))}
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
