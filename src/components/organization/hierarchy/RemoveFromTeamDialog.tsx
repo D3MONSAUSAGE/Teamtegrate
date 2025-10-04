@@ -40,8 +40,8 @@ const RemoveFromTeamDialog: React.FC<RemoveFromTeamDialogProps> = ({
     setIsRemoving(true);
     try {
       await removeTeamMember(teamId, userId);
-      onSuccess();
-      onOpenChange(false);
+      onOpenChange(false); // Close this dialog first
+      onSuccess(); // Then trigger parent close
     } catch (error) {
       console.error('Error removing team member:', error);
     } finally {

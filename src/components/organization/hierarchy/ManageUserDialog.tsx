@@ -35,12 +35,15 @@ export const ManageUserDialog: React.FC<ManageUserDialogProps> = ({
   open,
   onOpenChange
 }) => {
-  const { teamMembers } = useRealTeamMembers();
+  const { teamMembers, isLoading } = useRealTeamMembers();
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   if (!user) return null;
+  
+  // Prevent rendering with stale data during refetch
+  if (isLoading) return null;
 
   // Get user's team memberships
   const userTeamMemberships = teamMembers.filter(
@@ -175,6 +178,7 @@ export const ManageUserDialog: React.FC<ManageUserDialogProps> = ({
         onSuccess={() => {
           setRemoveDialogOpen(false);
           setSelectedTeamId(null);
+          onOpenChange(false); // Close parent dialog immediately
         }}
       />
 
