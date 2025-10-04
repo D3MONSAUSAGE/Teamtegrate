@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -146,28 +147,48 @@ export const TeamManagementView: React.FC = () => {
 
       {/* Management Tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
-          <TabsTrigger value="create-schedule" className="flex items-center gap-2">
+        <ScrollableTabsList className="md:grid md:grid-cols-5">
+          <ScrollableTabsTrigger 
+            isActive={activeSubTab === 'create-schedule'}
+            onClick={() => setActiveSubTab('create-schedule')}
+            className="flex items-center gap-2"
+          >
             <Calendar className="h-4 w-4" />
             Create Schedule
-          </TabsTrigger>
-          <TabsTrigger value="schedules" className="flex items-center gap-2">
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeSubTab === 'schedules'}
+            onClick={() => setActiveSubTab('schedules')}
+            className="flex items-center gap-2"
+          >
             <Calendar className="h-4 w-4" />
             Team Schedule
-          </TabsTrigger>
-          <TabsTrigger value="approvals" className="flex items-center gap-2">
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeSubTab === 'approvals'}
+            onClick={() => setActiveSubTab('approvals')}
+            className="flex items-center gap-2"
+          >
             <CheckCircle className="h-4 w-4" />
             Approvals
-          </TabsTrigger>
-          <TabsTrigger value="scanners" className="flex items-center gap-2">
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeSubTab === 'scanners'}
+            onClick={() => setActiveSubTab('scanners')}
+            className="flex items-center gap-2"
+          >
             <Monitor className="h-4 w-4" />
             Scanners
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger 
+            isActive={activeSubTab === 'analytics'}
+            onClick={() => setActiveSubTab('analytics')}
+            className="flex items-center gap-2"
+          >
             <BarChart3 className="h-4 w-4" />
             Analytics
-          </TabsTrigger>
-        </TabsList>
+          </ScrollableTabsTrigger>
+        </ScrollableTabsList>
 
         <TabsContent value="create-schedule" className="space-y-6">
           <WeeklyScheduleCreator selectedTeamId={selectedTeamId} />
