@@ -32,6 +32,9 @@ interface ShiftData {
   employeeId: string;
   notes?: string;
   area?: string;
+  scheduleId?: string;
+  isExisting?: boolean;
+  isModified?: boolean;
 }
 
 interface WeeklyScheduleData {
@@ -64,6 +67,8 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [scheduleData, setScheduleData] = useState<WeeklyScheduleData>({});
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Calculate week dates - memoized to prevent unnecessary recalculations
   const weekStart = useMemo(() => startOfWeek(selectedWeek, { weekStartsOn: 1 }), [selectedWeek]);
@@ -72,27 +77,85 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
     return eachDayOfInterval({ start: weekStart, end: weekEnd });
   }, [weekStart, weekEnd]);
   
-  // Initialize schedule data when week or team changes
+  // Fetch existing schedules for the selected week and team
+  const fetchExistingSchedules = async () => {
+    if (!selectedTeamId || teamMembers.length === 0) return;
+    
+    setIsLoadingExisting(true);
+    try {
+      const { data: existingSchedules, error } = await supabase
+        .from('employee_schedules')
+        .select('id, employee_id, scheduled_date, scheduled_start_time, scheduled_end_time, notes, area')
+        .eq('team_id', selectedTeamId)
+        .gte('scheduled_date', format(weekStart, 'yyyy-MM-dd'))
+        .lte('scheduled_date', format(weekEnd, 'yyyy-MM-dd'));
+
+      if (error) {
+        console.error('Error fetching existing schedules:', error);
+        toast.error('Failed to load existing schedules');
+        return;
+      }
+
+      if (existingSchedules && existingSchedules.length > 0) {
+        const newScheduleData: WeeklyScheduleData = {};
+        
+        // Initialize empty structure
+        weekDays.forEach(day => {
+          const dateKey = format(day, 'yyyy-MM-dd');
+          newScheduleData[dateKey] = {};
+          teamMembers.forEach(member => {
+            newScheduleData[dateKey][member.id] = null;
+          });
+        });
+        
+        // Fill in existing schedules
+        existingSchedules.forEach((schedule) => {
+          const dateKey = schedule.scheduled_date;
+          const startTime = schedule.scheduled_start_time.substring(11, 16);
+          const endTime = schedule.scheduled_end_time.substring(11, 16);
+          
+          if (newScheduleData[dateKey]) {
+            newScheduleData[dateKey][schedule.employee_id] = {
+              startTime,
+              endTime,
+              employeeId: schedule.employee_id,
+              notes: schedule.notes || '',
+              area: schedule.area || '',
+              scheduleId: schedule.id,
+              isExisting: true,
+              isModified: false
+            };
+          }
+        });
+        
+        setScheduleData(newScheduleData);
+        toast.success(`Loaded ${existingSchedules.length} existing schedules`);
+      } else {
+        // Initialize empty structure if no existing schedules
+        const initialData: WeeklyScheduleData = {};
+        weekDays.forEach(day => {
+          const dateKey = format(day, 'yyyy-MM-dd');
+          initialData[dateKey] = {};
+          teamMembers.forEach(member => {
+            initialData[dateKey][member.id] = null;
+          });
+        });
+        setScheduleData(initialData);
+      }
+    } catch (error) {
+      console.error('Error fetching existing schedules:', error);
+      toast.error('Failed to load existing schedules');
+    } finally {
+      setIsLoadingExisting(false);
+    }
+  };
+
+  // Load existing schedules when team or week changes
   useEffect(() => {
-    // Only initialize if we have team members and they've changed
-    if (teamMembers.length === 0) return;
-    
-    const initialData: WeeklyScheduleData = {};
-    weekDays.forEach(day => {
-      const dateKey = format(day, 'yyyy-MM-dd');
-      initialData[dateKey] = {};
-      teamMembers.forEach(member => {
-        initialData[dateKey][member.id] = null;
-      });
-    });
-    
-    // Only update if the structure actually changed
-    setScheduleData(prev => {
-      const hasChanged = Object.keys(prev).length !== weekDays.length || 
-                        teamMembers.some(member => !prev[Object.keys(prev)[0]]?.[member.id] === undefined);
-      return hasChanged ? initialData : prev;
-    });
-  }, [selectedWeek, teamMembers.length, weekDays]);
+    if (selectedTeamId && teamMembers.length > 0) {
+      fetchExistingSchedules();
+    }
+  }, [selectedTeamId, selectedWeek, teamMembers.length]);
 
   // Calculate total hours for each employee
   const employeeHours = useMemo(() => {
@@ -132,17 +195,24 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
   }, [employeeHours]);
 
   const updateShift = (dateKey: string, employeeId: string, field: keyof ShiftData, value: string) => {
-    setScheduleData(prev => ({
-      ...prev,
-      [dateKey]: {
-        ...prev[dateKey],
-        [employeeId]: {
-          ...prev[dateKey]?.[employeeId],
-          [field]: value,
-          employeeId
-        } as ShiftData
-      }
-    }));
+    setScheduleData(prev => {
+      const existingShift = prev[dateKey]?.[employeeId];
+      const isExisting = existingShift?.isExisting || false;
+      
+      return {
+        ...prev,
+        [dateKey]: {
+          ...prev[dateKey],
+          [employeeId]: {
+            ...existingShift,
+            [field]: value,
+            employeeId,
+            isModified: isExisting // Mark as modified if it was existing
+          } as ShiftData
+        }
+      };
+    });
+    setHasUnsavedChanges(true);
   };
 
   const copyPreviousWeekSchedule = () => {
@@ -219,10 +289,11 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
     }
 
     try {
-      const schedules = [];
+      const newSchedules = [];
+      const existingSchedules = [];
       const validationErrors = [];
 
-      // Step 1: Collect and validate all shifts
+      // Step 1: Separate new schedules from existing ones
       for (const [dateKey, daySchedule] of Object.entries(scheduleData)) {
         for (const [employeeId, shift] of Object.entries(daySchedule)) {
           if (shift?.startTime && shift?.endTime) {
@@ -235,7 +306,7 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
               continue;
             }
 
-            schedules.push({
+            const scheduleEntry = {
               employee_id: employeeId,
               team_id: selectedTeamId,
               scheduled_date: dateKey,
@@ -246,7 +317,13 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
               area: shift.area || null,
               organization_id: user.organizationId,
               created_by: user.id
-            });
+            };
+
+            if (shift.scheduleId && shift.isExisting) {
+              existingSchedules.push({ ...scheduleEntry, id: shift.scheduleId });
+            } else {
+              newSchedules.push(scheduleEntry);
+            }
           }
         }
       }
@@ -256,58 +333,78 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
         return;
       }
 
-      if (schedules.length === 0) {
+      if (newSchedules.length === 0 && existingSchedules.length === 0) {
         toast.error('No shifts to save');
         return;
       }
 
-      // Step 2: Check for duplicates
-      const uniqueSchedules = await checkForDuplicates(schedules);
-      const duplicateCount = schedules.length - uniqueSchedules.length;
+      let insertSuccessCount = 0;
+      let insertErrorCount = 0;
+      let updateSuccessCount = 0;
+      let updateErrorCount = 0;
 
-      if (duplicateCount > 0) {
-        toast.warning(`${duplicateCount} duplicate shift${duplicateCount > 1 ? 's' : ''} skipped`);
-      }
-
-      if (uniqueSchedules.length === 0) {
-        toast.error('All shifts already exist');
-        return;
-      }
-
-      // Step 3: Bulk insert with batching
-      const batchSize = 20;
-      let successCount = 0;
-      let failureCount = 0;
-      const errors = [];
-
-      for (let i = 0; i < uniqueSchedules.length; i += batchSize) {
-        const batch = uniqueSchedules.slice(i, i + batchSize);
+      // Step 2: Handle new schedules (INSERT)
+      if (newSchedules.length > 0) {
+        const uniqueSchedules = await checkForDuplicates(newSchedules);
+        const duplicateCount = newSchedules.length - uniqueSchedules.length;
         
-        const { data, error } = await supabase
-          .from('employee_schedules')
-          .insert(batch)
-          .select();
+        if (duplicateCount > 0) {
+          toast.info(`${duplicateCount} duplicate(s) skipped`);
+        }
 
-        if (error) {
-          console.error('Batch insert error:', error);
-          errors.push(error.message);
-          failureCount += batch.length;
-        } else {
-          successCount += data?.length || 0;
+        const batchSize = 20;
+        for (let i = 0; i < uniqueSchedules.length; i += batchSize) {
+          const batch = uniqueSchedules.slice(i, i + batchSize);
+          
+          const { data, error } = await supabase
+            .from('employee_schedules')
+            .insert(batch)
+            .select();
+
+          if (error) {
+            console.error('Batch insert error:', error);
+            insertErrorCount += batch.length;
+          } else {
+            insertSuccessCount += data?.length || 0;
+          }
         }
       }
 
-      // Step 4: Show detailed results
-      if (successCount > 0) {
-        toast.success(`Created ${successCount} shift${successCount > 1 ? 's' : ''} successfully`);
-        
-        // Clear form on success
-        setScheduleData({});
-        setSelectedEmployees([]);
+      // Step 3: Handle existing schedules (UPDATE)
+      if (existingSchedules.length > 0) {
+        for (const schedule of existingSchedules) {
+          const { error } = await supabase
+            .from('employee_schedules')
+            .update({
+              scheduled_start_time: schedule.scheduled_start_time,
+              scheduled_end_time: schedule.scheduled_end_time,
+              notes: schedule.notes,
+              area: schedule.area
+            })
+            .eq('id', schedule.id);
+
+          if (error) {
+            console.error('Update error:', error);
+            updateErrorCount++;
+          } else {
+            updateSuccessCount++;
+          }
+        }
+      }
+
+      // Step 4: Show results
+      const messages = [];
+      if (insertSuccessCount > 0) messages.push(`Created ${insertSuccessCount} new`);
+      if (updateSuccessCount > 0) messages.push(`Updated ${updateSuccessCount} existing`);
+      
+      if (messages.length > 0) {
+        toast.success(`Schedules saved: ${messages.join(', ')}`);
+        setHasUnsavedChanges(false);
+        await fetchExistingSchedules(); // Reload to show updated state
       }
       
-      if (failureCount > 0) {
-        toast.error(`Failed to create ${failureCount} shift${failureCount > 1 ? 's' : ''}: ${errors.join(', ')}`);
+      if (insertErrorCount > 0 || updateErrorCount > 0) {
+        toast.error(`Failed: ${insertErrorCount} inserts, ${updateErrorCount} updates`);
       }
       
     } catch (error) {
@@ -368,12 +465,18 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
                 <Copy className="h-4 w-4 mr-2" />
                 Copy Previous Week
               </Button>
-              <Button onClick={saveWeeklySchedule} disabled={isLoading} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
+              <Button onClick={saveWeeklySchedule} disabled={isLoading || isLoadingExisting} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
                 <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Saving...' : 'Save Schedule'}
+                {isLoading ? 'Saving...' : isLoadingExisting ? 'Loading...' : 'Save Schedule'}
               </Button>
             </div>
           </div>
+          {hasUnsavedChanges && (
+            <div className="mt-4 text-sm text-warning flex items-center gap-2 bg-warning/10 p-3 rounded-lg border border-warning/20">
+              <AlertTriangle className="h-4 w-4" />
+              <span>You have unsaved changes</span>
+            </div>
+          )}
         </CardHeader>
       </Card>
 
@@ -542,28 +645,52 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
                     {weekDays.map(day => {
                       const dateKey = format(day, 'yyyy-MM-dd');
                       const shift = scheduleData[dateKey]?.[member.id];
+                      const isExisting = shift?.isExisting;
+                      const isModified = shift?.isModified;
+                      const hasData = shift?.startTime || shift?.endTime;
+                      
                       return (
                         <td key={day.toISOString()} className="p-1">
-                          <div className="space-y-1">
+                          <div className="space-y-1 relative">
+                            {/* Status Badge */}
+                            {isExisting && (
+                              <div className="absolute -top-1 -right-1 z-10">
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  isModified 
+                                    ? 'bg-warning/20 text-warning border border-warning/40' 
+                                    : 'bg-success/20 text-success border border-success/40'
+                                }`}>
+                                  {isModified ? '✎ Modified' : '✓ Saved'}
+                                </span>
+                              </div>
+                            )}
+                            {!isExisting && hasData && (
+                              <div className="absolute -top-1 -right-1 z-10">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-primary/20 text-primary border border-primary/40">
+                                  ⊕ New
+                                </span>
+                              </div>
+                            )}
+                            
                             <Input
                               type="time"
                               placeholder="Start"
                               value={shift?.startTime || ''}
                               onChange={(e) => updateShift(dateKey, member.id, 'startTime', e.target.value)}
-                              className="text-xs h-8"
+                              className={`text-xs h-8 ${isExisting ? 'border-success/50 bg-success/5' : ''}`}
                             />
                             <Input
                               type="time"
                               placeholder="End"
                               value={shift?.endTime || ''}
                               onChange={(e) => updateShift(dateKey, member.id, 'endTime', e.target.value)}
-                              className="text-xs h-8"
+                              className={`text-xs h-8 ${isExisting ? 'border-success/50 bg-success/5' : ''}`}
                             />
                             <Select
                               value={shift?.area || ''}
                               onValueChange={(value) => updateShift(dateKey, member.id, 'area', value)}
                             >
-                              <SelectTrigger className="text-xs h-8">
+                              <SelectTrigger className={`text-xs h-8 ${isExisting ? 'border-success/50 bg-success/5' : ''}`}>
                                 <SelectValue placeholder="Select area" />
                               </SelectTrigger>
                               <SelectContent>
@@ -579,7 +706,7 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
                               placeholder="Notes (optional)"
                               value={shift?.notes || ''}
                               onChange={(e) => updateShift(dateKey, member.id, 'notes', e.target.value)}
-                              className="text-xs h-8"
+                              className={`text-xs h-8 ${isExisting ? 'border-success/50 bg-success/5' : ''}`}
                             />
                           </div>
                         </td>
