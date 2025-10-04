@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     // Get current user's data for authorization
     const { data: currentUserData, error: currentUserError } = await supabaseUserClient
       .from('users')
-      .select('organization_id, name, role')
+      .select('id, organization_id, name, role')
       .eq('id', user.id)
       .single();
 
