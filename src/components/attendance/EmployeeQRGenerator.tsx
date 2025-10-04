@@ -36,7 +36,12 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
         body: { tokenType, expirationSeconds: 45 }
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        // Parse detailed error from edge function
+        const errorMessage = functionError.message || 'Unknown error';
+        const errorDetails = data?.error || data?.details || errorMessage;
+        throw new Error(errorDetails);
+      }
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to generate QR code');

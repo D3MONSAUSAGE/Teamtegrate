@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -97,6 +97,18 @@ Deno.serve(async (req) => {
     }
 
     const userData = targetUser;
+
+    // Validate organization_id exists
+    if (!userData.organization_id) {
+      console.error('Missing organization_id for user:', userData.id);
+      return new Response(
+        JSON.stringify({ 
+          error: 'User configuration error',
+          details: 'User missing organization assignment. Please contact support.'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Fetch attendance settings for organization
     const { data: attendanceSettings } = await supabaseClient
