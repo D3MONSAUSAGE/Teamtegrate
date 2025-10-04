@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Clock, Plus, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Clock, Plus, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { TimeEntry } from '@/hooks/useEmployeeTimeTracking';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MobileTimeEntriesDayProps {
   day: Date;
@@ -27,12 +29,18 @@ export const MobileTimeEntriesDay: React.FC<MobileTimeEntriesDayProps> = ({
   isPastDay,
 }) => {
   const isDayToday = isToday(day);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const COLLAPSED_LIMIT = 5;
+  
+  const visibleEntries = isExpanded ? entries : entries.slice(0, COLLAPSED_LIMIT);
+  const hasMoreEntries = entries.length > COLLAPSED_LIMIT;
   
   const getApprovalStatusBadge = (entry: TimeEntry) => {
+    // Only show badges for non-pending statuses to reduce clutter
     switch (entry.approval_status) {
       case 'approved':
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800">
+          <Badge variant="default" className="bg-success/10 text-success border-success/20">
             <CheckCircle2 className="w-3 h-3 mr-1" />
             Approved
           </Badge>
@@ -46,18 +54,14 @@ export const MobileTimeEntriesDay: React.FC<MobileTimeEntriesDayProps> = ({
         );
       case 'pending':
       default:
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800">
-            <AlertCircle className="w-3 h-3 mr-1" />
-            Pending
-          </Badge>
-        );
+        // Don't show pending badge - it's the default state
+        return null;
     }
   };
   
   return (
     <Card 
-      className={`min-h-[280px] transition-all duration-200 ${
+      className={`transition-all duration-200 ${
         isDayToday 
           ? 'ring-2 ring-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-md' 
           : ''
@@ -98,26 +102,51 @@ export const MobileTimeEntriesDay: React.FC<MobileTimeEntriesDayProps> = ({
         {/* Completed entries */}
         {entries.length > 0 ? (
           <div className="space-y-2">
-            {entries.map((entry) => (
-              <div key={entry.id} className="flex items-start gap-3 py-3 border-b border-border/30 last:border-b-0 hover:bg-accent/30 transition-colors rounded px-2">
-                <Checkbox
-                  checked={selectedEntries.has(entry.id)}
-                  onCheckedChange={(checked) => onEntrySelection(entry.id, checked as boolean)}
-                  className="mt-1"
-                />
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium">
-                      {format(new Date(entry.clock_in), 'HH:mm')} - {format(new Date(entry.clock_out || ''), 'HH:mm')}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {entry.duration_minutes ? `${Math.round(entry.duration_minutes / 60 * 10) / 10}h` : ''}
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2 pr-3">
+                {visibleEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-start gap-3 py-3 border-b border-border/30 last:border-b-0 hover:bg-accent/30 transition-colors rounded px-2">
+                    <Checkbox
+                      checked={selectedEntries.has(entry.id)}
+                      onCheckedChange={(checked) => onEntrySelection(entry.id, checked as boolean)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-medium">
+                          {format(new Date(entry.clock_in), 'HH:mm')} - {format(new Date(entry.clock_out || ''), 'HH:mm')}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {entry.duration_minutes ? `${Math.round(entry.duration_minutes / 60 * 10) / 10}h` : ''}
+                        </div>
+                      </div>
+                      {getApprovalStatusBadge(entry)}
                     </div>
                   </div>
-                  {getApprovalStatusBadge(entry)}
-                </div>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
+            
+            {hasMoreEntries && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full text-xs mt-2"
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className="w-3 h-3 mr-1" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3 h-3 mr-1" />
+                    View {entries.length - COLLAPSED_LIMIT} More {entries.length - COLLAPSED_LIMIT === 1 ? 'Entry' : 'Entries'}
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         ) : (
           activeEntries.length === 0 && (
