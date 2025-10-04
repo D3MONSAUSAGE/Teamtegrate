@@ -144,49 +144,6 @@ export const TeamManagementView: React.FC = () => {
         </CardHeader>
       </Card>
 
-      {/* Team Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <ModernMetricCard
-          title="Total Shifts"
-          value={teamMetrics.totalShifts}
-          change={{ value: '+5', trend: 'up' }}
-          icon={Calendar}
-          progress={75}
-          description="This week"
-          gradient="from-primary/10 to-primary/5"
-        />
-        
-        <ModernMetricCard
-          title="Active Members"
-          value={teamMetrics.activeMembers}
-          change={{ value: '+2', trend: 'up' }}
-          icon={Users}
-          progress={85}
-          description="Team members"
-          gradient="from-accent/10 to-accent/5"
-        />
-        
-        <ModernMetricCard
-          title="Total Hours"
-          value={`${teamMetrics.totalHours}h`}
-          change={{ value: '+12h', trend: 'up' }}
-          icon={Clock}
-          progress={90}
-          description="Scheduled"
-          gradient="from-success/10 to-success/5"
-        />
-        
-        <ModernMetricCard
-          title="Coverage"
-          value={`${teamMetrics.coverage}%`}
-          change={{ value: '+5%', trend: 'up' }}
-          icon={BarChart3}
-          progress={teamMetrics.coverage}
-          description="Shift coverage"
-          gradient="from-warning/10 to-warning/5"
-        />
-      </div>
-
       {/* Management Tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
