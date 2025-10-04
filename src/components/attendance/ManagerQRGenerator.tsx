@@ -287,7 +287,7 @@ export const ManagerQRGenerator: React.FC<ManagerQRGeneratorProps> = ({ open, on
           {!qrCodeUrl && (
             <Button
               onClick={generateQR}
-              disabled={isGenerating || !selectedEmployeeId || 
+              disabled={!selectedEmployeeId || isGenerating || 
                 (tokenType === 'clock_in' && !canGenerateClockIn) ||
                 (tokenType === 'clock_out' && !canGenerateClockOut)}
               className="w-full"
