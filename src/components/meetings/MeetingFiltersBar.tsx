@@ -3,7 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { 
   Search, 
   SortAsc, 
@@ -44,48 +45,54 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
   return (
     <div className="space-y-4">
       {/* Search and Sort Controls */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative w-full md:max-w-md md:flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search meetings, participants, or content..."
             value={filters.search}
             onChange={(e) => onFiltersChange({ search: e.target.value })}
-            className="pl-10"
+            className="pl-10 min-h-[44px]"
           />
         </div>
 
-        <Select value={filters.sortBy} onValueChange={(value: any) => onFiltersChange({ sortBy: value })}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="date">Date</SelectItem>
-            <SelectItem value="title">Title</SelectItem>
-            <SelectItem value="participants">Participants</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={filters.sortBy} onValueChange={(value: any) => onFiltersChange({ sortBy: value })}>
+            <SelectTrigger className="w-[140px] min-h-[44px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="title">Title</SelectItem>
+              <SelectItem value="participants">Participants</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onFiltersChange({ sortOrder: filters.sortOrder === 'asc' ? 'desc' : 'asc' })}
-        >
-          {filters.sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-        </Button>
-
-        {hasActiveFilters && (
-          <Button variant="outline" size="sm" onClick={onResetFilters}>
-            <X className="h-4 w-4 mr-2" />
-            Clear
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onFiltersChange({ sortOrder: filters.sortOrder === 'asc' ? 'desc' : 'asc' })}
+            className="min-h-[44px]"
+          >
+            {filters.sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
           </Button>
-        )}
+
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" onClick={onResetFilters} className="min-h-[44px]">
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Status Filter Tabs */}
       <Tabs value={filters.status} onValueChange={(value: any) => onFiltersChange({ status: value })}>
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="all" className="flex items-center gap-2">
+        <ScrollableTabsList className="md:grid md:grid-cols-7">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'all'}
+            onClick={() => onFiltersChange({ status: 'all' })}
+          >
             <Calendar className="h-4 w-4" />
             All
             {counts.all > 0 && (
@@ -93,9 +100,12 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.all}
               </Badge>
             )}
-          </TabsTrigger>
+          </ScrollableTabsTrigger>
           
-          <TabsTrigger value="upcoming" className="flex items-center gap-2">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'upcoming'}
+            onClick={() => onFiltersChange({ status: 'upcoming' })}
+          >
             <Clock className="h-4 w-4" />
             Upcoming
             {counts.upcoming > 0 && (
@@ -103,9 +113,12 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.upcoming}
               </Badge>
             )}
-          </TabsTrigger>
+          </ScrollableTabsTrigger>
           
-          <TabsTrigger value="needsResponse" className="flex items-center gap-2">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'needsResponse'}
+            onClick={() => onFiltersChange({ status: 'needsResponse' })}
+          >
             <Clock3 className="h-4 w-4" />
             Needs Response
             {(counts.needsResponse || 0) > 0 && (
@@ -113,9 +126,12 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.needsResponse}
               </Badge>
             )}
-          </TabsTrigger>
+          </ScrollableTabsTrigger>
           
-          <TabsTrigger value="fullyConfirmed" className="flex items-center gap-2">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'fullyConfirmed'}
+            onClick={() => onFiltersChange({ status: 'fullyConfirmed' })}
+          >
             <CheckCircle className="h-4 w-4" />
             Confirmed
             {(counts.fullyConfirmed || 0) > 0 && (
@@ -123,9 +139,12 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.fullyConfirmed}
               </Badge>
             )}
-          </TabsTrigger>
+          </ScrollableTabsTrigger>
           
-          <TabsTrigger value="pending" className="flex items-center gap-2">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'pending'}
+            onClick={() => onFiltersChange({ status: 'pending' })}
+          >
             <Clock3 className="h-4 w-4" />
             Pending
             {counts.pending > 0 && (
@@ -133,9 +152,12 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.pending}
               </Badge>
             )}
-          </TabsTrigger>
+          </ScrollableTabsTrigger>
           
-          <TabsTrigger value="my_meetings" className="flex items-center gap-2">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'my_meetings'}
+            onClick={() => onFiltersChange({ status: 'my_meetings' })}
+          >
             <User className="h-4 w-4" />
             My Meetings
             {counts.myMeetings > 0 && (
@@ -143,9 +165,12 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.myMeetings}
               </Badge>
             )}
-          </TabsTrigger>
+          </ScrollableTabsTrigger>
           
-          <TabsTrigger value="past" className="flex items-center gap-2">
+          <ScrollableTabsTrigger 
+            isActive={filters.status === 'past'}
+            onClick={() => onFiltersChange({ status: 'past' })}
+          >
             <CheckCircle className="h-4 w-4" />
             Past
             {counts.past > 0 && (
@@ -153,8 +178,8 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
                 {counts.past}
               </Badge>
             )}
-          </TabsTrigger>
-        </TabsList>
+          </ScrollableTabsTrigger>
+        </ScrollableTabsList>
       </Tabs>
     </div>
   );
