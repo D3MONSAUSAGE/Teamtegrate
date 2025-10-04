@@ -11,6 +11,7 @@ import TasksPageLoading from '@/components/task/TasksPageLoading';
 import TasksPageError from '@/components/task/TasksPageError';
 import TasksPageContent from '@/components/task/TasksPageContent';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTaskRealtime } from '@/hooks/useTaskRealtime';
 
 import { useDebounce } from '@/utils/performanceUtils';
 import { toast } from '@/components/ui/sonner';
@@ -30,6 +31,9 @@ const TasksPage = () => {
     }
   }, [location.pathname]);
 
+  // Setup real-time subscription for immediate updates
+  useTaskRealtime();
+  
   // Use new personal tasks hook for refined filtering
   const { tasks, isLoading, error, refetch } = usePersonalTasks();
   
@@ -77,15 +81,12 @@ const TasksPage = () => {
     );
 
     try {
-      // 2. Update database in background
+      // 2. Update database (TaskContext handles cache invalidation)
       await updateTaskStatus(taskId, status);
-      
-      // 3. Revalidate to confirm
-      queryClient.invalidateQueries({ 
-        queryKey: ['personal-tasks', user?.organizationId, user?.id] 
-      });
+      // TaskContext.updateTaskStatus already calls invalidateAllTaskCaches()
+      // so no need to invalidate again here
     } catch (error) {
-      // 4. REVERT on error
+      // 3. REVERT on error
       await refetch({ cancelRefetch: true });
       if (process.env.NODE_ENV === 'development') {
         console.error('TasksPage: Error updating task status:', error);
