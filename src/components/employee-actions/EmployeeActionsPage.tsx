@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, AlertTriangle, CheckCircle, Clock, TrendingUp, UserPlus, Users, Settings } from 'lucide-react';
+import { Plus, AlertTriangle, CheckCircle, Clock, TrendingUp, UserPlus, Users, Settings, UserCheck } from 'lucide-react';
 import { CreateActionDialog } from './CreateActionDialog';
 import { ActionsList } from './ActionsList';
 import { OnboardingDashboard } from '@/components/training/OnboardingDashboard';
 import { ActionStatsCards } from './ActionStatsCards';
+import { RecruitmentDashboard } from '@/pages/RecruitmentDashboard';
 
 export const EmployeeActionsPage: React.FC = () => {
   const { user } = useAuth();
@@ -57,7 +58,7 @@ export const EmployeeActionsPage: React.FC = () => {
 
       <div className="mt-8">
         <Tabs defaultValue={canManageActions ? "all" : "my-actions"} className="w-full">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             {canManageActions && (
               <TabsTrigger value="all">
                 All Actions ({stats.total_actions})
@@ -70,6 +71,12 @@ export const EmployeeActionsPage: React.FC = () => {
               <TabsTrigger value="onboarding" className="flex items-center gap-2">
                 <UserPlus className="h-4 w-4" />
                 Onboarding
+              </TabsTrigger>
+            )}
+            {canManageActions && (
+              <TabsTrigger value="recruitment" className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4" />
+                Recruitment
               </TabsTrigger>
             )}
           </TabsList>
@@ -125,6 +132,12 @@ export const EmployeeActionsPage: React.FC = () => {
                   <OnboardingDashboard />
                 </CardContent>
               </Card>
+            </TabsContent>
+          )}
+
+          {canManageActions && (
+            <TabsContent value="recruitment" className="space-y-4">
+              <RecruitmentDashboard />
             </TabsContent>
           )}
         </Tabs>
