@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,8 +145,12 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="upcoming" className="flex items-center gap-2">
+            <ScrollableTabsList className="md:grid md:grid-cols-4">
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'upcoming'}
+                onClick={() => setActiveTab('upcoming')}
+                className="flex items-center gap-2"
+              >
                 <Clock className="h-4 w-4" />
                 Upcoming
                 {counts.upcoming > 0 && (
@@ -153,8 +158,12 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
                     {counts.upcoming}
                   </Badge>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="pending" className="flex items-center gap-2">
+              </ScrollableTabsTrigger>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'pending'}
+                onClick={() => setActiveTab('pending')}
+                className="flex items-center gap-2"
+              >
                 <Clock3 className="h-4 w-4" />
                 Pending
                 {counts.pending > 0 && (
@@ -162,8 +171,12 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
                     {counts.pending}
                   </Badge>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="organized" className="flex items-center gap-2">
+              </ScrollableTabsTrigger>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'organized'}
+                onClick={() => setActiveTab('organized')}
+                className="flex items-center gap-2"
+              >
                 <User className="h-4 w-4" />
                 My Meetings
                 {counts.organized > 0 && (
@@ -171,8 +184,12 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
                     {counts.organized}
                   </Badge>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="past" className="flex items-center gap-2">
+              </ScrollableTabsTrigger>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'past'}
+                onClick={() => setActiveTab('past')}
+                className="flex items-center gap-2"
+              >
                 <CheckCircle className="h-4 w-4" />
                 Past
                 {counts.past > 0 && (
@@ -180,8 +197,8 @@ export const MeetingManagementModal: React.FC<MeetingManagementModalProps> = ({
                     {counts.past}
                   </Badge>
                 )}
-              </TabsTrigger>
-            </TabsList>
+              </ScrollableTabsTrigger>
+            </ScrollableTabsList>
 
             <TabsContent value="upcoming" className="mt-4">
               <MeetingList 

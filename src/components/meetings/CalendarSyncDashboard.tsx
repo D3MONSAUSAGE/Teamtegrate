@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,6 +33,7 @@ const CalendarSyncDashboard: React.FC = () => {
   const [stats, setStats] = useState<SyncStats>({ pending: 0, success: 0, failed: 0, total: 0 });
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     if (user) {
@@ -270,13 +272,33 @@ const CalendarSyncDashboard: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
-              <TabsTrigger value="success">Success ({stats.success})</TabsTrigger>
-              <TabsTrigger value="failed">Failed ({stats.failed})</TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <ScrollableTabsList className="md:grid md:grid-cols-4">
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'all'}
+                onClick={() => setActiveTab('all')}
+              >
+                All ({stats.total})
+              </ScrollableTabsTrigger>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'pending'}
+                onClick={() => setActiveTab('pending')}
+              >
+                Pending ({stats.pending})
+              </ScrollableTabsTrigger>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'success'}
+                onClick={() => setActiveTab('success')}
+              >
+                Success ({stats.success})
+              </ScrollableTabsTrigger>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'failed'}
+                onClick={() => setActiveTab('failed')}
+              >
+                Failed ({stats.failed})
+              </ScrollableTabsTrigger>
+            </ScrollableTabsList>
             
             <TabsContent value="all" className="mt-4">
               <SyncLogList logs={syncLogs} />
