@@ -381,11 +381,12 @@ const DashboardPage = () => {
                       ))}
                     </div>
                   ) : (
-                    <DailyTasksSection 
-                      tasks={todaysTasks}
-                      onCreateTask={() => handleCreateTask()}
-                      onEditTask={handleEditTask}
-                    />
+            <DailyTasksSection 
+              tasks={todaysTasks}
+              onCreateTask={() => handleCreateTask()}
+              onEditTask={handleEditTask}
+              onStatusChange={onStatusChange}
+            />
                   )}
                 </div>
               </ModernSectionCard>

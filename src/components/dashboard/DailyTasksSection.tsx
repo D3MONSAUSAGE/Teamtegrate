@@ -14,12 +14,14 @@ interface DailyTasksSectionProps {
   tasks: Task[];
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
+  onStatusChange?: (taskId: string, status: string) => Promise<void>;
 }
 
 const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
   tasks,
   onCreateTask,
-  onEditTask
+  onEditTask,
+  onStatusChange
 }) => {
   const isMobile = useIsMobile();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -87,6 +89,7 @@ const DailyTasksSection: React.FC<DailyTasksSectionProps> = ({
               key={task.id}
               task={task} 
               onEdit={() => handleEditTask(task)}
+              onStatusChange={onStatusChange}
               onClick={() => handleOpenDetails(task)} 
             />
           ))}
