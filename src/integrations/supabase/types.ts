@@ -11412,6 +11412,25 @@ export type Database = {
         Args: { p_receipt_line_id: string }
         Returns: undefined
       }
+      create_qr_attendance_token: {
+        Args: {
+          p_expires_at: string
+          p_organization_id: string
+          p_token: string
+          p_token_type: string
+          p_user_id: string
+        }
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          organization_id: string
+          token: string
+          token_type: string
+          user_id: string
+        }[]
+      }
       create_user_admin: {
         Args: {
           email: string
