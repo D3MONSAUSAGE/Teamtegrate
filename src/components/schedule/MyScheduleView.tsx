@@ -228,7 +228,7 @@ export const MyScheduleView: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card 
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent"
-          onClick={() => handleOpenQRDialog((currentSession.isActive || currentSession.isOnBreak) ? 'clock_out' : 'clock_in')}
+          onClick={() => handleOpenQRDialog(currentSession.isActive ? 'clock_out' : 'clock_in')}
         >
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -236,7 +236,7 @@ export const MyScheduleView: React.FC = () => {
                 <QrCode className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">QR Clock {(currentSession.isActive || currentSession.isOnBreak) ? 'Out' : 'In'}</h3>
+                <h3 className="font-semibold text-sm">QR Clock {currentSession.isActive ? 'Out' : 'In'}</h3>
                 <p className="text-xs text-muted-foreground">Generate code to scan</p>
               </div>
             </div>

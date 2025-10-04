@@ -98,9 +98,9 @@ export const useEmployeeTimeTracking = () => {
         const isBreakSession = entry.notes?.toLowerCase().includes('break');
         
         setCurrentSession({
-          isActive: !isBreakSession,
+          isActive: true,
           sessionId: entry.id,
-          clockInTime,
+          clockInTime: isBreakSession ? undefined : clockInTime,
           elapsedMinutes: isBreakSession ? 0 : elapsedMinutes,
           isOnBreak: isBreakSession || false,
           breakType: isBreakSession ? entry.notes?.split(' ')[0] : undefined,
