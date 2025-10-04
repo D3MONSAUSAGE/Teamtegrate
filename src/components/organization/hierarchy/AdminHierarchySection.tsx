@@ -9,6 +9,7 @@ import { UserCard } from './UserCard';
 import { Team } from '@/types/teams';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 import AddAdminToTeamsDialog from './AddAdminToTeamsDialog';
+import { ManageUserDialog } from './ManageUserDialog';
 
 interface OrganizationUser {
   id: string;
@@ -57,6 +58,7 @@ export const AdminHierarchySection: React.FC<AdminHierarchySectionProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [addToTeamsDialogOpen, setAddToTeamsDialogOpen] = useState(false);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<OrganizationUser | null>(null);
 
   if (adminUsers.length === 0 && searchTerm) {
@@ -110,6 +112,10 @@ export const AdminHierarchySection: React.FC<AdminHierarchySectionProps> = ({
                         setSelectedAdmin(admin);
                         setAddToTeamsDialogOpen(true);
                       }}
+                      onManage={(admin) => {
+                        setSelectedAdmin(admin);
+                        setManageDialogOpen(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -125,10 +131,17 @@ export const AdminHierarchySection: React.FC<AdminHierarchySectionProps> = ({
         open={addToTeamsDialogOpen}
         onOpenChange={setAddToTeamsDialogOpen}
         onAdminAdded={() => {
-          // Refresh could be handled by parent component if needed
           setAddToTeamsDialogOpen(false);
           setSelectedAdmin(null);
         }}
+      />
+
+      {/* Manage User Dialog */}
+      <ManageUserDialog
+        user={selectedAdmin}
+        teams={teams}
+        open={manageDialogOpen}
+        onOpenChange={setManageDialogOpen}
       />
     </div>
   );
@@ -138,9 +151,10 @@ interface AdminUserCardProps {
   admin: OrganizationUser;
   teams: Team[];
   onAddToTeams: (admin: OrganizationUser) => void;
+  onManage: (admin: OrganizationUser) => void;
 }
 
-const AdminUserCard: React.FC<AdminUserCardProps> = ({ admin, teams, onAddToTeams }) => {
+const AdminUserCard: React.FC<AdminUserCardProps> = ({ admin, teams, onAddToTeams, onManage }) => {
   const { teamMembers } = useRealTeamMembers();
   
   // Find teams where this admin is a member
@@ -210,7 +224,12 @@ const AdminUserCard: React.FC<AdminUserCardProps> = ({ admin, teams, onAddToTeam
           >
             Add to Team
           </Button>
-          <Button variant="ghost" size="sm" className="text-xs">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs"
+            onClick={() => onManage(admin)}
+          >
             Manage
           </Button>
         </div>
