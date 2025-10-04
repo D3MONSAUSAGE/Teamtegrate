@@ -17,9 +17,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    // User client for authentication and data retrieval
+    const supabaseUserClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -27,7 +28,13 @@ Deno.serve(async (req) => {
       }
     );
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Service role client for privileged operations (bypasses RLS)
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
     
     if (authError || !user) {
       console.error('Authentication error:', authError);
@@ -40,7 +47,7 @@ Deno.serve(async (req) => {
     const { tokenType, expirationSeconds = 45, targetUserId }: QRGenerateRequest = await req.json();
 
     // Get current user's data for authorization
-    const { data: currentUserData, error: currentUserError } = await supabaseClient
+    const { data: currentUserData, error: currentUserError } = await supabaseUserClient
       .from('users')
       .select('organization_id, name, role')
       .eq('id', user.id)
@@ -71,7 +78,7 @@ Deno.serve(async (req) => {
       }
 
       // Get target user's data
-      const { data: targetUserData, error: targetUserError } = await supabaseClient
+      const { data: targetUserData, error: targetUserError } = await supabaseUserClient
         .from('users')
         .select('id, organization_id, name')
         .eq('id', targetUserId)
@@ -111,7 +118,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch attendance settings for organization
-    const { data: attendanceSettings } = await supabaseClient
+    const { data: attendanceSettings } = await supabaseUserClient
       .from('organization_attendance_settings')
       .select('require_schedule_for_clock_in, allow_early_clock_in_minutes, allow_late_clock_in_minutes')
       .eq('organization_id', userData.organization_id)
@@ -121,7 +128,7 @@ Deno.serve(async (req) => {
 
     // Check if user belongs to a team and get team settings
     let teamRequiresSchedule: boolean | null = null;
-    const { data: userTeams } = await supabaseClient
+    const { data: userTeams } = await supabaseUserClient
       .from('team_memberships')
       .select('teams(require_schedule_for_clock_in)')
       .eq('user_id', userData.id)
@@ -142,7 +149,7 @@ Deno.serve(async (req) => {
     // Check if user has an active schedule for today (only if required)
     if (tokenType === 'clock_in' && requireScheduleForClockIn) {
       const today = new Date().toISOString().split('T')[0];
-      const { data: schedules } = await supabaseClient
+      const { data: schedules } = await supabaseUserClient
         .from('employee_schedules')
         .select('id, status')
         .eq('employee_id', userData.id)
@@ -162,7 +169,7 @@ Deno.serve(async (req) => {
 
     // Check for existing active time entry (for clock_in)
     if (tokenType === 'clock_in') {
-      const { data: activeEntry } = await supabaseClient
+      const { data: activeEntry } = await supabaseUserClient
         .from('time_entries')
         .select('id')
         .eq('user_id', userData.id)
@@ -182,7 +189,7 @@ Deno.serve(async (req) => {
 
     // Check for active time entry (for clock_out)
     if (tokenType === 'clock_out') {
-      const { data: activeEntry } = await supabaseClient
+      const { data: activeEntry } = await supabaseUserClient
         .from('time_entries')
         .select('id')
         .eq('user_id', userData.id)
@@ -213,8 +220,8 @@ Deno.serve(async (req) => {
     const token = btoa(JSON.stringify(tokenPayload));
     const expiresAt = new Date(Date.now() + expirationSeconds * 1000);
 
-    // Store token in database
-    const { data: tokenData, error: tokenError } = await supabaseClient
+    // Store token in database using service role client (bypasses RLS)
+    const { data: tokenData, error: tokenError } = await supabaseServiceClient
       .from('qr_attendance_tokens')
       .insert({
         organization_id: userData.organization_id,
