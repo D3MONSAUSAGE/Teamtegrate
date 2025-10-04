@@ -52,7 +52,24 @@ export const useTeamWeeklySchedules = (
       setIsLoading(true);
       setError(null);
 
-      // Fetch schedules with user and team information
+      // First, fetch team members for the selected team
+      const { data: teamMembers, error: teamMembersError } = await supabase
+        .from('team_memberships')
+        .select('user_id')
+        .eq('team_id', teamId);
+
+      if (teamMembersError) throw teamMembersError;
+
+      if (!teamMembers || teamMembers.length === 0) {
+        setTeamSchedules([]);
+        setTeamMetrics(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const memberIds = teamMembers.map(tm => tm.user_id);
+
+      // Fetch schedules for team members, regardless of schedule's team_id
       const { data: schedules, error: schedulesError } = await supabase
         .from('employee_schedules')
         .select(`
@@ -69,7 +86,7 @@ export const useTeamWeeklySchedules = (
             email
           )
         `)
-        .eq('team_id', teamId)
+        .in('employee_id', memberIds)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate)
         .order('scheduled_date');
