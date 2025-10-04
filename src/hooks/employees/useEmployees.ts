@@ -1,7 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { EmployeeFilters } from '@/pages/EmployeesPage';
+
+export interface EmployeeFilters {
+  search?: string;
+  teamId?: string;
+  role?: string;
+  department?: string;
+  status?: string;
+}
 
 export interface Employee {
   id: string;

@@ -30,7 +30,7 @@ export default function CreateEmployeeDialog({ open, onOpenChange }: CreateEmplo
       // TODO: Implement employee creation via edge function
       toast({
         title: 'Feature coming soon',
-        description: 'Employee creation will be available soon.',
+        description: 'Team member creation will be available soon.',
       });
       onOpenChange(false);
     } catch (error: any) {
@@ -48,7 +48,7 @@ export default function CreateEmployeeDialog({ open, onOpenChange }: CreateEmplo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Employee</DialogTitle>
+          <DialogTitle>Add New Team Member</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,7 +110,7 @@ export default function CreateEmployeeDialog({ open, onOpenChange }: CreateEmplo
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Employee
+              Create Team Member
             </Button>
           </div>
         </form>

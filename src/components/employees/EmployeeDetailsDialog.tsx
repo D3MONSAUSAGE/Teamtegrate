@@ -49,7 +49,7 @@ export default function EmployeeDetailsDialog({ open, onOpenChange, employeeId }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Employee Details</DialogTitle>
+          <DialogTitle>Team Member Details</DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
@@ -169,7 +169,7 @@ export default function EmployeeDetailsDialog({ open, onOpenChange, employeeId }
             )}
           </div>
         ) : (
-          <p className="text-center text-muted-foreground py-8">Employee not found</p>
+          <p className="text-center text-muted-foreground py-8">Team member not found</p>
         )}
       </DialogContent>
     </Dialog>

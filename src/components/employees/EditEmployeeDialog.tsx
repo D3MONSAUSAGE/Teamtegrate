@@ -48,7 +48,7 @@ export default function EditEmployeeDialog({ open, onOpenChange, employeeId }: E
       // TODO: Implement employee update
       toast({
         title: 'Feature coming soon',
-        description: 'Employee editing will be available soon.',
+        description: 'Team member editing will be available soon.',
       });
       onOpenChange(false);
     } catch (error: any) {
@@ -66,7 +66,7 @@ export default function EditEmployeeDialog({ open, onOpenChange, employeeId }: E
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Employee</DialogTitle>
+          <DialogTitle>Edit Team Member</DialogTitle>
         </DialogHeader>
 
         {isLoading ? (

@@ -8,7 +8,7 @@ import { Shield, AlertCircle, Loader2, BarChart3, Users, Settings, Activity, Bri
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import ProfessionalOrganizationHeader from '@/components/organization/professional/ProfessionalOrganizationHeader';
-import SuperadminUserManagement from '@/components/organization/SuperadminUserManagement';
+import TeamMembersManagement from '@/components/organization/user-management/TeamMembersManagement';
 import OrganizationStatsCards from '@/components/organization/OrganizationStatsCards';
 import RoleDistributionChart from '@/components/organization/RoleDistributionChart';
 import OrganizationQuickActions from '@/components/organization/OrganizationQuickActions';
@@ -237,7 +237,7 @@ const OrganizationDashboard = () => {
 
               {/* User Management Tab */}
               <TabsContent value="users" className="space-y-6">
-                <SuperadminUserManagement />
+                <TeamMembersManagement />
               </TabsContent>
 
               {/* Team Management Tab */}

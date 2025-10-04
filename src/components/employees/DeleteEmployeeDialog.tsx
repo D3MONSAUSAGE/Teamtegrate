@@ -46,7 +46,7 @@ export default function DeleteEmployeeDialog({ open, onOpenChange, employeeId }:
       // TODO: Implement safe employee deletion with impact analysis
       toast({
         title: 'Feature coming soon',
-        description: 'Employee deletion will be available soon with proper safeguards.',
+        description: 'Team member deletion will be available soon with proper safeguards.',
       });
       onOpenChange(false);
     } catch (error: any) {
@@ -64,7 +64,7 @@ export default function DeleteEmployeeDialog({ open, onOpenChange, employeeId }:
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+          <AlertDialogTitle>Delete Team Member</AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
             <p>
               Are you sure you want to delete <strong>{employee?.name}</strong> ({employee?.email})?
@@ -73,7 +73,7 @@ export default function DeleteEmployeeDialog({ open, onOpenChange, employeeId }:
               This action cannot be undone and will:
             </p>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Remove the employee from all teams</li>
+              <li>Remove the team member from all teams</li>
               <li>Unassign all their tasks</li>
               <li>Delete their account permanently</li>
             </ul>
@@ -87,7 +87,7 @@ export default function DeleteEmployeeDialog({ open, onOpenChange, employeeId }:
             className="bg-destructive hover:bg-destructive/90"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Delete Employee
+            Delete Team Member
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
