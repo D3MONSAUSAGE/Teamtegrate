@@ -1,15 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRecruitmentPipeline } from '@/hooks/recruitment/useRecruitmentPipeline';
 import { useRecruitmentCandidates } from '@/hooks/recruitment/useRecruitmentCandidates';
 import { useRecruitmentPositions } from '@/hooks/recruitment/useRecruitmentPositions';
+import { CreatePositionDialog } from '@/components/recruitment/CreatePositionDialog';
+import { CreateCandidateDialog } from '@/components/recruitment/CreateCandidateDialog';
+import { RecruitmentKanbanBoard } from '@/components/recruitment/RecruitmentKanbanBoard';
+import { PositionsList } from '@/components/recruitment/PositionsList';
 import { Button } from '@/components/ui/button';
-import { Plus, Briefcase, Users, Calendar, CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Briefcase, Users, Calendar, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const RecruitmentDashboard = () => {
+  const [selectedPosition, setSelectedPosition] = useState<string | undefined>();
   const { stages, isLoading: stagesLoading, initializeDefaultStages, isInitializing } = useRecruitmentPipeline();
-  const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates();
+  const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates({ positionId: selectedPosition });
   const { positions, isLoading: positionsLoading } = useRecruitmentPositions();
 
   // Initialize pipeline stages if none exist
@@ -63,14 +69,8 @@ export const RecruitmentDashboard = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Candidate
-          </Button>
-          <Button variant="outline">
-            <Briefcase className="mr-2 h-4 w-4" />
-            Create Position
-          </Button>
+          <CreateCandidateDialog positionId={selectedPosition} />
+          <CreatePositionDialog />
         </div>
       </div>
 
@@ -129,70 +129,32 @@ export const RecruitmentDashboard = () => {
         </Card>
       </div>
 
-      {/* Kanban Board Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pipeline Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {stages.map(stage => (
-              <div
-                key={stage.id}
-                className="flex-shrink-0 w-80 rounded-lg border bg-card p-4"
-                style={{ borderTopColor: stage.color_code, borderTopWidth: '3px' }}
-              >
-                <div className="mb-4">
-                  <h3 className="font-semibold">{stage.stage_name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {candidates.filter(c => c.current_stage_id === stage.id).length} candidates
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  {candidates
-                    .filter(c => c.current_stage_id === stage.id)
-                    .slice(0, 3)
-                    .map(candidate => (
-                      <Card key={candidate.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                        <CardContent className="p-3">
-                          <p className="font-medium text-sm">
-                            {candidate.first_name} {candidate.last_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {candidate.position?.job_title || 'Unknown Position'}
-                          </p>
-                          {candidate.overall_rating && (
-                            <div className="mt-1 flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <span
-                                  key={i}
-                                  className={`text-xs ${
-                                    i < candidate.overall_rating! 
-                                      ? 'text-yellow-500' 
-                                      : 'text-gray-300'
-                                  }`}
-                                >
-                                  ★
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  
-                  {candidates.filter(c => c.current_stage_id === stage.id).length === 0 && (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      No candidates in this stage
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Main Content */}
+      <Tabs defaultValue="pipeline" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="positions">Positions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pipeline" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pipeline Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RecruitmentKanbanBoard positionId={selectedPosition} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="positions" className="space-y-4">
+          <PositionsList onViewCandidates={(positionId) => {
+            setSelectedPosition(positionId);
+            // Switch to pipeline tab
+            document.querySelector('[value="pipeline"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          }} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
