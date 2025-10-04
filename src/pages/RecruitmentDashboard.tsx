@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRecruitmentPipeline } from '@/hooks/recruitment/useRecruitmentPipeline';
 import { useRecruitmentCandidates } from '@/hooks/recruitment/useRecruitmentCandidates';
 import { useRecruitmentPositions } from '@/hooks/recruitment/useRecruitmentPositions';
@@ -13,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const RecruitmentDashboard = () => {
+  const navigate = useNavigate();
   const [selectedPosition, setSelectedPosition] = useState<string | undefined>();
   const { stages, isLoading: stagesLoading, initializeDefaultStages, isInitializing } = useRecruitmentPipeline();
   const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates({ positionId: selectedPosition });
@@ -142,7 +144,10 @@ export const RecruitmentDashboard = () => {
               <CardTitle>Pipeline Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <RecruitmentKanbanBoard positionId={selectedPosition} />
+              <RecruitmentKanbanBoard 
+                positionId={selectedPosition}
+                onCandidateClick={(candidateId) => navigate(`/dashboard/recruitment/candidate/${candidateId}`)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
