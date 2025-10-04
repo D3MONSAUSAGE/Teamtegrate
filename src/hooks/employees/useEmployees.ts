@@ -35,42 +35,47 @@ export function useEmployees(filters?: EmployeeFilters) {
 
   return useQuery({
     queryKey: ['employees', user?.organizationId, filters],
-    queryFn: async () => {
-      let query = supabase
-        .from('users')
-        .select(`
-          *,
-          manager:users!manager_id(id, name),
-          teams:team_memberships(
-            team:teams!inner(id, name, manager_id)
-          )
-        `)
+    queryFn: async (): Promise<Employee[]> => {
+      const selectQuery = `
+        *,
+        manager:users!manager_id(id, name),
+        teams:team_memberships(
+          team:teams!inner(id, name, manager_id)
+        )
+      `;
+      
+      // Build query with early type assertion to avoid deep type instantiation
+      const baseQuery = (supabase.from('users') as any)
+        .select(selectQuery)
         .eq('organization_id', user!.organizationId);
+
+      // Apply filters dynamically
+      let queryBuilder: any = baseQuery;
 
       // Manager restriction: only see employees in teams they manage
       if (!isAdmin) {
-        query = query.filter('teams.team.manager_id', 'eq', user!.id);
+        queryBuilder = queryBuilder.filter('teams.team.manager_id', 'eq', user!.id);
       }
 
       // Apply filters
       if (filters?.teamId) {
-        query = query.filter('teams.team.id', 'eq', filters.teamId);
+        queryBuilder = queryBuilder.filter('teams.team.id', 'eq', filters.teamId);
       }
 
       if (filters?.role) {
-        query = query.eq('role', filters.role);
+        queryBuilder = queryBuilder.eq('role', filters.role);
       }
 
       if (filters?.search) {
         const searchTerm = `%${filters.search}%`;
-        query = query.or(
+        queryBuilder = queryBuilder.or(
           `name.ilike.${searchTerm},email.ilike.${searchTerm},employee_id.ilike.${searchTerm}`
         );
       }
 
-      query = query.order('name');
+      queryBuilder = queryBuilder.order('name');
 
-      const { data, error } = await query;
+      const { data, error } = await queryBuilder;
       if (error) throw error;
 
       // Transform and deduplicate if an employee is in multiple teams
