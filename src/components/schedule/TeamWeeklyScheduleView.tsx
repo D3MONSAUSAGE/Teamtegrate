@@ -72,8 +72,8 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
   };
 
   const getShiftDisplay = (shift: any) => {
-    const startTime = format(new Date(`2000-01-01T${shift.scheduled_start_time}`), 'HH:mm');
-    const endTime = format(new Date(`2000-01-01T${shift.scheduled_end_time}`), 'HH:mm');
+    const startTime = format(new Date(shift.scheduled_start_time), 'HH:mm');
+    const endTime = format(new Date(shift.scheduled_end_time), 'HH:mm');
     const duration = shift.duration_hours || 0;
     
     return {
