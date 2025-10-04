@@ -10,6 +10,12 @@ export const isAndroidDevice = (): boolean => {
   return /Android/.test(navigator.userAgent);
 };
 
+export const isTabletDevice = (): boolean => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/.test(userAgent);
+  return isTablet;
+};
+
 export const checkCameraPermission = async (): Promise<PermissionState | 'unsupported'> => {
   try {
     if ('permissions' in navigator && 'query' in navigator.permissions) {
@@ -27,9 +33,12 @@ export const requestCameraAccess = async (): Promise<{ success: boolean; stream?
   try {
     console.log('🎥 Requesting camera access...');
     
+    const isTablet = isTabletDevice();
+    const facingMode = isTablet ? 'user' : 'environment';
+    
     const constraints = {
       video: {
-        facingMode: 'environment',
+        facingMode: facingMode,
         width: { ideal: 1280 },
         height: { ideal: 720 }
       }

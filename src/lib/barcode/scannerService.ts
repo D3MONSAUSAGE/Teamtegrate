@@ -79,12 +79,16 @@ export async function startQuagga(opts: StartQuaggaOpts): Promise<() => Promise<
   (Quagga as any).config.locateFile = (file: string) =>
     new URL(`../../node_modules/quagga/dist/${file}`, import.meta.url).toString();
 
+  // Detect if tablet - use front camera for tablets, back camera for phones
+  const isTablet = /(ipad|tablet|(android(?!.*mobile)))/.test(navigator.userAgent.toLowerCase());
+  const facingMode = isTablet ? 'user' : 'environment';
+
   const config = {
     inputStream: {
       type: 'LiveStream',
       target: mountEl,
       constraints: {
-        facingMode: { ideal: 'environment' },
+        facingMode: { ideal: facingMode },
         aspectRatio: { ideal: 1.777 },
         focusMode: 'continuous',
       }
@@ -149,11 +153,15 @@ export async function toggleTorch(videoEl: HTMLVideoElement, on: boolean): Promi
 }
 
 export async function getCameraStream(constraints?: MediaStreamConstraints): Promise<MediaStream> {
+  // Detect if tablet - use front camera for tablets, back camera for phones
+  const isTablet = /(ipad|tablet|(android(?!.*mobile)))/.test(navigator.userAgent.toLowerCase());
+  const facingMode = isTablet ? 'user' : 'environment';
+  
   // Progressive constraint degradation
   const attempts = [
     {
       video: {
-        facingMode: { ideal: 'environment' },
+        facingMode: { ideal: facingMode },
         width: { ideal: 1280 },
         height: { ideal: 720 },
         focusMode: 'continuous'
@@ -162,13 +170,13 @@ export async function getCameraStream(constraints?: MediaStreamConstraints): Pro
     },
     {
       video: {
-        facingMode: { ideal: 'environment' },
+        facingMode: { ideal: facingMode },
         focusMode: 'continuous'
       },
       audio: false
     },
     {
-      video: { facingMode: { ideal: 'environment' } },
+      video: { facingMode: { ideal: facingMode } },
       audio: false
     },
     {
