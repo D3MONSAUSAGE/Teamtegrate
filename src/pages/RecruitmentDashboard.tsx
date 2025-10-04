@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export const RecruitmentDashboard = () => {
   const navigate = useNavigate();
   const [selectedPosition, setSelectedPosition] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState('pipeline');
   const { stages, isLoading: stagesLoading, initializeDefaultStages, isInitializing } = useRecruitmentPipeline();
   const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates({ positionId: selectedPosition });
   const { positions, isLoading: positionsLoading } = useRecruitmentPositions();
@@ -132,7 +133,7 @@ export const RecruitmentDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="pipeline" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="positions">Positions</TabsTrigger>
@@ -155,8 +156,7 @@ export const RecruitmentDashboard = () => {
         <TabsContent value="positions" className="space-y-4">
           <PositionsList onViewCandidates={(positionId) => {
             setSelectedPosition(positionId);
-            // Switch to pipeline tab
-            document.querySelector('[value="pipeline"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            setActiveTab('pipeline');
           }} />
         </TabsContent>
       </Tabs>
