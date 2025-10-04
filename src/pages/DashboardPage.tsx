@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { usePersonalTasks } from '@/hooks/usePersonalTasks';
 import { useProjects } from '@/hooks/useProjects';
@@ -33,12 +34,13 @@ import { toast } from 'sonner';
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   // Add real-time subscription for immediate updates
   useTaskRealtime();
   
   // Use personal tasks hook for refined personal task filtering
-  const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError } = usePersonalTasks();
+  const { tasks: personalTasks, isLoading: tasksLoading, error: tasksError, refetch } = usePersonalTasks();
   const { projects, isLoading: projectsLoading, refreshProjects, error: projectsError } = useProjects();
   
   // Get task context for status updates - with error handling
@@ -231,29 +233,42 @@ const DashboardPage = () => {
     }
   }, [refreshProjects]);
 
-  // Fixed task status change handler
+  // Fixed task status change handler with optimistic updates
   const onStatusChange = async (taskId: string, status: string): Promise<void> => {
     if (!updateTaskStatus) {
       toast.error('Task operations are not available. Please refresh the page.');
       return;
     }
     
-    try {
-      setIsUpdatingStatus(taskId);
-      console.log(`Changing task ${taskId} status to ${status}`);
-      
-      // Validate status
-      const validStatuses = ['To Do', 'In Progress', 'Completed'];
-      if (!validStatuses.includes(status)) {
-        toast.error('Invalid status selected');
-        return;
+    // Validate status
+    const validStatuses = ['To Do', 'In Progress', 'Completed'];
+    if (!validStatuses.includes(status)) {
+      toast.error('Invalid status selected');
+      return;
+    }
+    
+    setIsUpdatingStatus(taskId);
+    
+    // 1. OPTIMISTIC UPDATE - Update UI immediately
+    queryClient.setQueryData(
+      ['personal-tasks', user?.organizationId, user?.id],
+      (oldData: Task[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(task =>
+          task.id === taskId
+            ? { ...task, status: status as Task['status'], updatedAt: new Date() }
+            : task
+        );
       }
-
-      // Update task status using the task context
+    );
+    
+    try {
+      // 2. Update database (TaskContext handles cache invalidation)
       await updateTaskStatus(taskId, status as Task['status']);
-      
-      toast.success(`Task status updated to ${status}`);
+      // TaskContext.updateTaskStatus already calls invalidateAllTaskCaches()
     } catch (error) {
+      // 3. REVERT on error
+      await refetch({ cancelRefetch: true });
       console.error('Failed to update task status:', error);
       toast.error('Failed to update task status. Please try again.');
     } finally {
