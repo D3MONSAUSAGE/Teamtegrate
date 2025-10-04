@@ -88,7 +88,8 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
 
       {/* Status Filter Tabs */}
       <Tabs value={filters.status} onValueChange={(value: any) => onFiltersChange({ status: value })}>
-        <ScrollableTabsList className="md:grid md:grid-cols-7">
+        <ScrollableTabs>
+          <ScrollableTabsList className="md:grid md:grid-cols-7">
           <ScrollableTabsTrigger 
             isActive={filters.status === 'all'}
             onClick={() => onFiltersChange({ status: 'all' })}
@@ -180,6 +181,7 @@ export const MeetingFiltersBar: React.FC<MeetingFiltersBarProps> = ({
             )}
           </ScrollableTabsTrigger>
         </ScrollableTabsList>
+        </ScrollableTabs>
       </Tabs>
     </div>
   );
