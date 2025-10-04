@@ -31,6 +31,7 @@ export interface EmployeeSchedule {
   actual_end_time?: string | null;
   status: string;
   notes?: string | null;
+  area?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;

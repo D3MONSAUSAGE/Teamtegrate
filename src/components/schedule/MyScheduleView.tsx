@@ -181,6 +181,12 @@ export const MyScheduleView: React.FC = () => {
                         {format(new Date(schedule.scheduled_end_time), 'HH:mm')}
                       </div>
                       
+                      {schedule.area && (
+                        <Badge variant="secondary" className="text-xs">
+                          {schedule.area}
+                        </Badge>
+                      )}
+                      
                       <div className="flex items-center justify-between">
                         {getStatusBadge(schedule.status)}
                       </div>

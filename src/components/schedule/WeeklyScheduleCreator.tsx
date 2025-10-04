@@ -30,6 +30,7 @@ interface ShiftData {
   endTime: string;
   employeeId: string;
   notes?: string;
+  area?: string;
 }
 
 interface WeeklyScheduleData {
@@ -170,10 +171,11 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
               employee_id: employeeId,
               team_id: selectedTeamId,
               scheduled_date: dateKey,
-              scheduled_start_time: shift.startTime,
-              scheduled_end_time: shift.endTime,
+              scheduled_start_time: `${dateKey}T${shift.startTime}:00`,
+              scheduled_end_time: `${dateKey}T${shift.endTime}:00`,
               status: 'scheduled',
               notes: shift.notes || null,
+              area: shift.area || null,
               organization_id: user.organizationId,
               created_by: user.id
             });
@@ -444,6 +446,20 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
                               placeholder="End"
                               value={shift?.endTime || ''}
                               onChange={(e) => updateShift(dateKey, member.id, 'endTime', e.target.value)}
+                              className="text-xs h-8"
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Area (e.g., Kitchen)"
+                              value={shift?.area || ''}
+                              onChange={(e) => updateShift(dateKey, member.id, 'area', e.target.value)}
+                              className="text-xs h-8"
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Notes (optional)"
+                              value={shift?.notes || ''}
+                              onChange={(e) => updateShift(dateKey, member.id, 'notes', e.target.value)}
                               className="text-xs h-8"
                             />
                           </div>

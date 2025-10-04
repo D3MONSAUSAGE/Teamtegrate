@@ -2319,6 +2319,7 @@ export type Database = {
         Row: {
           actual_end_time: string | null
           actual_start_time: string | null
+          area: string | null
           created_at: string
           created_by: string
           employee_id: string
@@ -2336,6 +2337,7 @@ export type Database = {
         Insert: {
           actual_end_time?: string | null
           actual_start_time?: string | null
+          area?: string | null
           created_at?: string
           created_by: string
           employee_id: string
@@ -2353,6 +2355,7 @@ export type Database = {
         Update: {
           actual_end_time?: string | null
           actual_start_time?: string | null
+          area?: string | null
           created_at?: string
           created_by?: string
           employee_id?: string
