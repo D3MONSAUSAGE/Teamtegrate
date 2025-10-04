@@ -18,6 +18,7 @@ import {
   Zap
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
@@ -166,6 +167,51 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
     toast.success(`Applied ${startTime}-${endTime} shift to ${selectedEmployees.length} employees`);
   };
 
+  // Validate individual shift
+  const validateShift = (shift: ShiftData, dateKey: string, employeeName: string) => {
+    const start = new Date(`2000-01-01T${shift.startTime}`);
+    const end = new Date(`2000-01-01T${shift.endTime}`);
+    
+    if (end <= start) {
+      return { 
+        valid: false, 
+        error: `${employeeName} on ${dateKey}: End time must be after start time` 
+      };
+    }
+    
+    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (hours > 16) {
+      return { 
+        valid: false, 
+        error: `${employeeName} on ${dateKey}: Shift cannot be longer than 16 hours` 
+      };
+    }
+    
+    return { valid: true };
+  };
+
+  // Check for duplicate schedules in database
+  const checkForDuplicates = async (schedules: any[]) => {
+    if (schedules.length === 0) return schedules;
+    
+    const { data: existing } = await supabase
+      .from('employee_schedules')
+      .select('employee_id, scheduled_date, scheduled_start_time')
+      .in('employee_id', [...new Set(schedules.map(s => s.employee_id))])
+      .gte('scheduled_date', format(weekStart, 'yyyy-MM-dd'))
+      .lte('scheduled_date', format(weekEnd, 'yyyy-MM-dd'));
+    
+    if (!existing) return schedules;
+    
+    return schedules.filter(schedule => 
+      !existing.some(ex => 
+        ex.employee_id === schedule.employee_id &&
+        ex.scheduled_date === schedule.scheduled_date &&
+        ex.scheduled_start_time === schedule.scheduled_start_time
+      )
+    );
+  };
+
   const saveWeeklySchedule = async () => {
     if (!selectedTeamId || !user) {
       toast.error('Please select a team');
@@ -174,11 +220,21 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
 
     try {
       const schedules = [];
+      const validationErrors = [];
 
-      // Collect all non-empty shifts
+      // Step 1: Collect and validate all shifts
       for (const [dateKey, daySchedule] of Object.entries(scheduleData)) {
         for (const [employeeId, shift] of Object.entries(daySchedule)) {
           if (shift?.startTime && shift?.endTime) {
+            const employee = teamMembers.find(m => m.id === employeeId);
+            const employeeName = employee?.name || 'Unknown';
+            
+            const validation = validateShift(shift, dateKey, employeeName);
+            if (!validation.valid) {
+              validationErrors.push(validation.error);
+              continue;
+            }
+
             schedules.push({
               employee_id: employeeId,
               team_id: selectedTeamId,
@@ -195,21 +251,64 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
         }
       }
 
+      if (validationErrors.length > 0) {
+        toast.error(`Validation errors: ${validationErrors.join(', ')}`);
+        return;
+      }
+
       if (schedules.length === 0) {
         toast.error('No shifts to save');
         return;
       }
 
-      // Create schedules one by one (could be optimized with bulk insert)
-      for (const schedule of schedules) {
-        await createEmployeeSchedule(schedule);
+      // Step 2: Check for duplicates
+      const uniqueSchedules = await checkForDuplicates(schedules);
+      const duplicateCount = schedules.length - uniqueSchedules.length;
+
+      if (duplicateCount > 0) {
+        toast.warning(`${duplicateCount} duplicate shift${duplicateCount > 1 ? 's' : ''} skipped`);
       }
 
-      toast.success(`Successfully created ${schedules.length} shifts for the week`);
+      if (uniqueSchedules.length === 0) {
+        toast.error('All shifts already exist');
+        return;
+      }
+
+      // Step 3: Bulk insert with batching
+      const batchSize = 20;
+      let successCount = 0;
+      let failureCount = 0;
+      const errors = [];
+
+      for (let i = 0; i < uniqueSchedules.length; i += batchSize) {
+        const batch = uniqueSchedules.slice(i, i + batchSize);
+        
+        const { data, error } = await supabase
+          .from('employee_schedules')
+          .insert(batch)
+          .select();
+
+        if (error) {
+          console.error('Batch insert error:', error);
+          errors.push(error.message);
+          failureCount += batch.length;
+        } else {
+          successCount += data?.length || 0;
+        }
+      }
+
+      // Step 4: Show detailed results
+      if (successCount > 0) {
+        toast.success(`Created ${successCount} shift${successCount > 1 ? 's' : ''} successfully`);
+        
+        // Clear form on success
+        setScheduleData({});
+        setSelectedEmployees([]);
+      }
       
-      // Clear the form
-      setScheduleData({});
-      setSelectedEmployees([]);
+      if (failureCount > 0) {
+        toast.error(`Failed to create ${failureCount} shift${failureCount > 1 ? 's' : ''}: ${errors.join(', ')}`);
+      }
       
     } catch (error) {
       console.error('Error saving weekly schedule:', error);

@@ -12,12 +12,14 @@ import {
   AlertTriangle,
   CheckCircle,
   Calendar,
-  CalendarDays
+  CalendarDays,
+  Edit
 } from 'lucide-react';
 import { useTeamWeeklySchedules } from '@/hooks/useTeamWeeklySchedules';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ModernTableCard } from './modern/ModernTableCard';
+import { ScheduleEditModal } from './ScheduleEditModal';
 
 interface TeamWeeklyScheduleViewProps {
   selectedTeamId: string | null;
@@ -28,6 +30,8 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
 }) => {
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingSchedule, setEditingSchedule] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
@@ -69,6 +73,16 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
     } catch (error) {
       console.error('Export failed:', error);
     }
+  };
+
+  const handleEditSchedule = (shift: any) => {
+    setEditingSchedule(shift);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    // Trigger refresh of schedules
+    setSelectedWeek(new Date(selectedWeek));
   };
 
   const getShiftDisplay = (shift: any) => {
@@ -274,20 +288,36 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
                             {daySchedules.length === 0 ? (
                               <div className="text-muted-foreground text-xs">-</div>
                             ) : (
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 {daySchedules.map((shift, index) => {
                                   const display = getShiftDisplay(shift);
                                   return (
-                                    <div key={index} className="text-xs">
-                                      <Badge 
-                                        variant="outline" 
-                                        className={cn("text-xs", getStatusColor(shift.status))}
-                                      >
-                                        {display.timeRange}
-                                      </Badge>
+                                    <div key={index} className="text-xs group relative">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <Badge 
+                                          variant="outline" 
+                                          className={cn("text-xs cursor-pointer hover:opacity-80", getStatusColor(shift.status))}
+                                          onClick={() => handleEditSchedule(shift)}
+                                        >
+                                          {display.timeRange}
+                                        </Badge>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={() => handleEditSchedule(shift)}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                      </div>
                                       <div className="text-muted-foreground mt-1">
                                         {display.duration}
                                       </div>
+                                      {shift?.area && (
+                                        <div className="text-muted-foreground/70 text-xs mt-0.5">
+                                          {shift.area}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
@@ -337,6 +367,14 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
             </div>
           )}
       </ModernTableCard>
+
+      {/* Edit Modal */}
+      <ScheduleEditModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        schedule={editingSchedule}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 };

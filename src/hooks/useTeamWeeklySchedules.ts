@@ -16,6 +16,7 @@ export interface TeamMemberSchedule {
     status: string;
     duration_hours: number;
     notes?: string;
+    area?: string;
   }[];
   totalHours: number;
   overtimeHours: number;
@@ -80,6 +81,7 @@ export const useTeamWeeklySchedules = (
           scheduled_end_time,
           status,
           notes,
+          area,
           users!employee_id (
             id,
             name,
@@ -115,6 +117,7 @@ export const useTeamWeeklySchedules = (
           status: schedule.status,
           duration_hours: duration,
           notes: schedule.notes,
+          area: schedule.area,
         };
 
         if (!employeeScheduleMap.has(employeeId)) {
