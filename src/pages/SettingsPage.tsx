@@ -12,6 +12,8 @@ import NotificationTester from '@/components/NotificationTester';
 import GoogleCalendarSyncPreferences from '@/components/meetings/GoogleCalendarSyncPreferences';
 import GoogleTasksSyncButtons from '@/components/task/GoogleTasksSyncButtons';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { AttendanceSettings } from '@/components/attendance/AttendanceSettings';
+import { hasRoleAccess } from '@/contexts/auth';
 
 const SettingsPage = () => {
   const { user, isLoading } = useAuth();
@@ -74,6 +76,17 @@ const SettingsPage = () => {
             </div>
           )}
         </div>
+
+        {/* Attendance Settings - Admin Only */}
+        {hasRoleAccess(user.role, 'admin') && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Attendance Settings</h2>
+            <p className="text-muted-foreground mb-6">
+              Configure QR code attendance policies for your organization.
+            </p>
+            <AttendanceSettings />
+          </div>
+        )}
         
         <NotificationSettings />
         <SoundSettings />

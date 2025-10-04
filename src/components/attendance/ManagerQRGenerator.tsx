@@ -161,9 +161,20 @@ export const ManagerQRGenerator: React.FC<ManagerQRGeneratorProps> = ({ open, on
       });
     } catch (error: any) {
       console.error('Error generating QR:', error);
+      
+      let userMessage = error.message || 'Failed to generate QR code';
+      
+      if (error.message?.includes('No active schedule')) {
+        userMessage = 'Employee has no schedule for today. Add them to a shift or adjust attendance settings.';
+      } else if (error.message?.includes('Already clocked in')) {
+        userMessage = 'Employee is already clocked in. Generate a clock-out QR instead.';
+      } else if (error.message?.includes('No active time entry')) {
+        userMessage = 'Employee is not clocked in. Generate a clock-in QR instead.';
+      }
+      
       toast({
         title: 'Error',
-        description: error.message || 'Failed to generate QR code',
+        description: userMessage,
         variant: 'destructive',
       });
     } finally {

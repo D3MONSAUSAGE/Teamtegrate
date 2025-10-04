@@ -5564,6 +5564,59 @@ export type Database = {
           },
         ]
       }
+      organization_attendance_settings: {
+        Row: {
+          allow_early_clock_in_minutes: number | null
+          allow_late_clock_in_minutes: number | null
+          allow_manager_assisted: boolean | null
+          created_at: string | null
+          id: string
+          max_daily_clock_ins: number | null
+          organization_id: string
+          qr_expiration_seconds: number | null
+          require_geofencing: boolean | null
+          require_photo_capture: boolean | null
+          require_schedule_for_clock_in: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_early_clock_in_minutes?: number | null
+          allow_late_clock_in_minutes?: number | null
+          allow_manager_assisted?: boolean | null
+          created_at?: string | null
+          id?: string
+          max_daily_clock_ins?: number | null
+          organization_id: string
+          qr_expiration_seconds?: number | null
+          require_geofencing?: boolean | null
+          require_photo_capture?: boolean | null
+          require_schedule_for_clock_in?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_early_clock_in_minutes?: number | null
+          allow_late_clock_in_minutes?: number | null
+          allow_manager_assisted?: boolean | null
+          created_at?: string | null
+          id?: string
+          max_daily_clock_ins?: number | null
+          organization_id?: string
+          qr_expiration_seconds?: number | null
+          require_geofencing?: boolean | null
+          require_photo_capture?: boolean | null
+          require_schedule_for_clock_in?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_attendance_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_checklist_settings: {
         Row: {
           allow_self_verify: boolean | null

@@ -58,8 +58,19 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
 
     } catch (err: any) {
       console.error('QR generation error:', err);
-      setError(err.message || 'Failed to generate QR code');
-      toast.error(err.details || err.message || 'Failed to generate QR code');
+      
+      let userMessage = err.message || 'Failed to generate QR code';
+      
+      if (err.message?.includes('No active schedule')) {
+        userMessage = 'No schedule for today. Contact your manager or check attendance settings.';
+      } else if (err.message?.includes('Already clocked in')) {
+        userMessage = 'You are already clocked in. Please clock out first.';
+      } else if (err.message?.includes('No active time entry')) {
+        userMessage = 'You are not clocked in. Please clock in first.';
+      }
+      
+      setError(userMessage);
+      toast.error(userMessage);
     } finally {
       setLoading(false);
     }

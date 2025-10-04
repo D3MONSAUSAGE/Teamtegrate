@@ -98,8 +98,18 @@ Deno.serve(async (req) => {
 
     const userData = targetUser;
 
-    // Check if user has an active schedule for today (for clock_in)
-    if (tokenType === 'clock_in') {
+    // Fetch attendance settings for organization
+    const { data: attendanceSettings } = await supabaseClient
+      .from('organization_attendance_settings')
+      .select('require_schedule_for_clock_in, allow_early_clock_in_minutes, allow_late_clock_in_minutes')
+      .eq('organization_id', userData.organization_id)
+      .maybeSingle();
+
+    // Default to not requiring schedule if settings don't exist
+    const requireSchedule = attendanceSettings?.require_schedule_for_clock_in ?? false;
+
+    // Check if user has an active schedule for today (only if required)
+    if (tokenType === 'clock_in' && requireSchedule) {
       const today = new Date().toISOString().split('T')[0];
       const { data: schedules } = await supabaseClient
         .from('employee_schedules')
@@ -112,7 +122,7 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             error: 'No active schedule found for today',
-            details: 'You must have a scheduled shift to clock in'
+            details: 'Your organization requires an active schedule to clock in. Please contact your manager.'
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
