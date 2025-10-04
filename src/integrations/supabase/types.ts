@@ -313,6 +313,78 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_scan_logs: {
+        Row: {
+          error_message: string | null
+          id: string
+          organization_id: string
+          scan_status: string
+          scan_type: string
+          scanned_at: string | null
+          station_id: string | null
+          token_id: string | null
+          user_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          scan_status: string
+          scan_type: string
+          scanned_at?: string | null
+          station_id?: string | null
+          token_id?: string | null
+          user_id: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          scan_status?: string
+          scan_type?: string
+          scanned_at?: string | null
+          station_id?: string | null
+          token_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_scan_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_scan_logs_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "qr_scanner_stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_scan_logs_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "qr_attendance_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_scan_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_scan_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           alert_threshold: number | null
@@ -6496,6 +6568,111 @@ export type Database = {
           },
         ]
       }
+      qr_attendance_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          is_used: boolean | null
+          organization_id: string
+          token: string
+          token_type: string
+          used_at: string | null
+          used_at_location: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          is_used?: boolean | null
+          organization_id: string
+          token: string
+          token_type: string
+          used_at?: string | null
+          used_at_location?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          is_used?: boolean | null
+          organization_id?: string
+          token?: string
+          token_type?: string
+          used_at?: string | null
+          used_at_location?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_attendance_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_attendance_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_attendance_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qr_scanner_stations: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          last_scan_at: string | null
+          location: string
+          organization_id: string
+          station_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_scan_at?: string | null
+          location: string
+          organization_id: string
+          station_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_scan_at?: string | null
+          location?: string
+          organization_id?: string
+          station_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_scanner_stations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_answer_overrides: {
         Row: {
           created_at: string | null
@@ -11160,6 +11337,10 @@ export type Database = {
         Returns: boolean
       }
       check_and_create_retraining_assignments: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_qr_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

@@ -2,10 +2,10 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ErrorBoundary from '@/components/ui/error-boundary';
-import { Calendar, Users, Zap } from 'lucide-react';
+import { Calendar, Users } from 'lucide-react';
 import { MyScheduleView } from '@/components/schedule/MyScheduleView';
 import { TeamManagementView } from '@/components/schedule/TeamManagementView';
-import { QuickActionsView } from '@/components/schedule/QuickActionsView';
+import ModernScheduleHeader from '@/components/schedule/modern/ModernScheduleHeader';
 
 const SchedulePage: React.FC = () => {
   const { hasRoleAccess, user, loading } = useAuth();
@@ -37,35 +37,26 @@ const SchedulePage: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Schedule Management</h1>
-          <p className="text-muted-foreground">
-            {isManager 
-              ? "Manage schedules, assignments, and team operations" 
-              : "View your schedule and track your time"
-            }
-          </p>
-        </div>
+        <ModernScheduleHeader
+          title="Schedule Management"
+          subtitle={isManager 
+            ? "Manage schedules, assignments, and team operations" 
+            : "View your schedule and track your time"
+          }
+        />
         
         <Tabs defaultValue="my-schedule" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isManager ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <TabsTrigger value="my-schedule" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               My Schedule
             </TabsTrigger>
             
             {isManager && (
-              <>
-                <TabsTrigger value="team-management" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Team Management
-                </TabsTrigger>
-                
-                <TabsTrigger value="quick-actions" className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Quick Actions
-                </TabsTrigger>
-              </>
+              <TabsTrigger value="team-management" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Team Management
+              </TabsTrigger>
             )}
           </TabsList>
           
@@ -74,15 +65,9 @@ const SchedulePage: React.FC = () => {
           </TabsContent>
           
           {isManager && (
-            <>
-              <TabsContent value="team-management" className="space-y-6">
-                <TeamManagementView />
-              </TabsContent>
-              
-              <TabsContent value="quick-actions" className="space-y-6">
-                <QuickActionsView />
-              </TabsContent>
-            </>
+            <TabsContent value="team-management" className="space-y-6">
+              <TeamManagementView />
+            </TabsContent>
           )}
         </Tabs>
       </div>

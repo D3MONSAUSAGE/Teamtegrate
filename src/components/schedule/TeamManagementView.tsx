@@ -30,6 +30,8 @@ import { TeamWeeklyScheduleView } from './TeamWeeklyScheduleView';
 import { WeeklyScheduleCreator } from './WeeklyScheduleCreator';
 import { Input } from '@/components/ui/input';
 import ModernMetricCard from './modern/ModernMetricCard';
+import { ScannerStationManagement } from '@/components/attendance/ScannerStationManagement';
+import { Monitor } from 'lucide-react';
 
 export const TeamManagementView: React.FC = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -169,7 +171,7 @@ export const TeamManagementView: React.FC = () => {
 
       {/* Management Tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="create-schedule" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Create Schedule
@@ -181,6 +183,10 @@ export const TeamManagementView: React.FC = () => {
           <TabsTrigger value="approvals" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Approvals
+          </TabsTrigger>
+          <TabsTrigger value="scanners" className="flex items-center gap-2">
+            <Monitor className="h-4 w-4" />
+            Scanners
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -198,6 +204,10 @@ export const TeamManagementView: React.FC = () => {
 
         <TabsContent value="approvals" className="space-y-6">
           <TimeEntryApprovalList selectedTeamId={selectedTeamId} />
+        </TabsContent>
+
+        <TabsContent value="scanners" className="space-y-6">
+          <ScannerStationManagement />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">

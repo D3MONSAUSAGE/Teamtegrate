@@ -11,7 +11,11 @@ import {
   ChevronLeft, 
   ChevronRight,
   Play,
-  Pause
+  Pause,
+  QrCode,
+  CalendarClock,
+  FileText,
+  Repeat
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useScheduleManagement, EmployeeSchedule } from '@/hooks/useScheduleManagement';
@@ -21,6 +25,7 @@ import ModernMetricCard from './modern/ModernMetricCard';
 import { EmployeeTimeStatusBadge } from '@/components/employee/EmployeeTimeStatusBadge';
 import { WeeklyTimeEntriesCard } from './WeeklyTimeEntriesCard';
 import { TimeEntryCorrectionManager } from './TimeEntryCorrectionManager';
+import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
 
 export const MyScheduleView: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +41,8 @@ export const MyScheduleView: React.FC = () => {
     isLoading: timeTrackingLoading
   } = useEmployeeTimeTracking();
   const [selectedWeek, setSelectedWeek] = useState(new Date());
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrTokenType, setQrTokenType] = useState<'clock_in' | 'clock_out'>('clock_in');
 
   useEffect(() => {
     if (user) {
@@ -210,8 +217,88 @@ export const MyScheduleView: React.FC = () => {
     }
   };
 
+  const handleOpenQRDialog = (type: 'clock_in' | 'clock_out') => {
+    setQrTokenType(type);
+    setQrDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Quick Action Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent"
+          onClick={() => handleOpenQRDialog(currentSession.isActive ? 'clock_out' : 'clock_in')}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
+                <QrCode className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">QR Clock {currentSession.isActive ? 'Out' : 'In'}</h3>
+                <p className="text-xs text-muted-foreground">Generate code to scan</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-accent/20 to-primary/20">
+                <CalendarClock className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">Time Off Request</h3>
+                <p className="text-xs text-muted-foreground">Request leave or PTO</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-success bg-gradient-to-br from-success/5 to-transparent"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-success/20 to-accent/20">
+                <FileText className="h-6 w-6 text-success" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">View Time Entries</h3>
+                <p className="text-xs text-muted-foreground">Check your hours</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-warning bg-gradient-to-br from-warning/5 to-transparent"
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-warning/20 to-accent/20">
+                <Repeat className="h-6 w-6 text-warning" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">Swap Shift</h3>
+                <p className="text-xs text-muted-foreground">Trade with teammate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* QR Generator Dialog */}
+      <EmployeeQRGenerator 
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+        tokenType={qrTokenType}
+      />
+
       {/* Current Status Card */}
       <Card className="border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
         <CardHeader>

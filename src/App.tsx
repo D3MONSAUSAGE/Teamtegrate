@@ -54,6 +54,7 @@ import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
 import EmployeeActionsPage from "@/pages/EmployeeActionsPage";
 import RequestTypesPage from "@/pages/RequestTypesPage";
 import SchedulePage from "@/pages/SchedulePage";
+import ScannerStationPage from "@/pages/ScannerStationPage";
 import GoogleCalendarCallback from "@/components/auth/GoogleCalendarCallback";
 import PrivacyPage from "@/pages/PrivacyPage";
 import TermsPage from "@/pages/TermsPage";
@@ -115,6 +116,7 @@ function App() {
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/cookies" element={<CookiePolicyPage />} />
                 <Route path="/security" element={<SecurityPage />} />
+                <Route path="/scanner-station" element={<ScannerStationPage />} />
                 
                 {/* Protected Dashboard Routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
