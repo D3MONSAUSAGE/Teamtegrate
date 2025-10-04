@@ -54,14 +54,15 @@ const RemoveFromTeamDialog: React.FC<RemoveFromTeamDialogProps> = ({
           </AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to remove <strong>{userName}</strong> from <strong>{teamName}</strong>?
-            <br /><br />
-            This will:
-            <ul className="list-disc list-inside mt-2 space-y-1">
+          </AlertDialogDescription>
+          <div className="mt-3 text-sm text-muted-foreground">
+            <p className="mb-2">This will:</p>
+            <ul className="list-disc list-inside space-y-1">
               <li>Remove their access to team-specific resources</li>
               <li>Unassign them from team tasks</li>
               <li>Remove them from team communications</li>
             </ul>
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
