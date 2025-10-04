@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,13 +13,17 @@ import {
   Copy,
   AlertTriangle,
   CheckCircle,
-  Save
+  Save,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 import { toast } from 'sonner';
+import { ModernTableCard } from './modern/ModernTableCard';
+import { ModernActionCard } from './modern/ModernActionCard';
 
 interface ShiftData {
   startTime: string;
@@ -226,147 +230,156 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
 
   return (
     <div className="space-y-6">
-      {/* Week Selection and Quick Actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedWeek(prev => subWeeks(prev, 1))}
-            >
-              ←
-            </Button>
-            <div className="text-center">
-              <div className="font-semibold">
-                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
-              </div>
-              <div className="text-sm text-muted-foreground">Week Schedule</div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedWeek(prev => addWeeks(prev, 1))}
-            >
-              →
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={copyPreviousWeekSchedule}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Previous Week
-          </Button>
-          <Button onClick={saveWeeklySchedule} disabled={isLoading}>
-            <Save className="h-4 w-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save Schedule'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Team Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Hours</p>
-                <p className="text-2xl font-bold">{teamTotals.totalHours}h</p>
-              </div>
-              <Clock className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Scheduled</p>
-                <p className="text-2xl font-bold">{teamTotals.scheduledEmployees}</p>
-              </div>
-              <Users className="h-8 w-8 text-success" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Hours</p>
-                <p className="text-2xl font-bold">{teamTotals.averageHours}h</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-info" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Overtime</p>
-                <p className="text-2xl font-bold text-warning">{teamTotals.overtimeEmployees}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-warning" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Templates */}
-      <Card>
+      {/* Modern Header Card with Gradient */}
+      <Card className="rounded-2xl bg-gradient-to-br from-primary/10 via-background to-accent/5 border-border/50 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Quick Templates
-          </CardTitle>
-          <div className="text-sm text-muted-foreground">
-            Select employees below, then apply a template to all selected employees for the entire week
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 shadow-inner">
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                  Create Weekly Schedule
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  {selectedTeamId 
+                    ? `Building schedule for ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`
+                    : 'Select a team to create schedules'
+                  }
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={copyPreviousWeekSchedule} className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Previous Week
+              </Button>
+              <Button onClick={saveWeeklySchedule} disabled={isLoading} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
+                <Save className="h-4 w-4 mr-2" />
+                {isLoading ? 'Saving...' : 'Save Schedule'}
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyShiftTemplate('09:00', '17:00')}
-            >
-              9 AM - 5 PM (8h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyShiftTemplate('08:00', '16:00')}
-            >
-              8 AM - 4 PM (8h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyShiftTemplate('10:00', '18:00')}
-            >
-              10 AM - 6 PM (8h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyShiftTemplate('06:00', '14:00')}
-            >
-              6 AM - 2 PM (8h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyShiftTemplate('14:00', '22:00')}
-            >
-              2 PM - 10 PM (8h)
-            </Button>
-          </div>
-        </CardContent>
       </Card>
+
+      {/* Modern Team Summary Cards with Gradients */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Total Hours</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  {teamTotals.totalHours}h
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-inner">
+                <Clock className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl bg-gradient-to-br from-success/5 to-success/10 border-success/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Scheduled</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-success to-success/70 bg-clip-text text-transparent">
+                  {teamTotals.scheduledEmployees}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-success/20 to-success/30 shadow-inner">
+                <Users className="h-6 w-6 text-success" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Avg Hours</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">
+                  {teamTotals.averageHours}h
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-accent/20 to-accent/30 shadow-inner">
+                <CheckCircle className="h-6 w-6 text-accent" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Overtime</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-warning to-warning/70 bg-clip-text text-transparent">
+                  {teamTotals.overtimeEmployees}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-warning/20 to-warning/30 shadow-inner">
+                <AlertTriangle className="h-6 w-6 text-warning" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modern Quick Templates Section */}
+      <ModernActionCard
+        title="Quick Templates"
+        description="Select employees below, then apply a template to all selected employees for the entire week"
+        icon={Sparkles}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Button
+            variant="outline"
+            className="hover:bg-primary/10 hover:border-primary/30 hover:scale-105 transition-all duration-300"
+            onClick={() => applyShiftTemplate('09:00', '17:00')}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            9 AM - 5 PM
+          </Button>
+          <Button
+            variant="outline"
+            className="hover:bg-accent/10 hover:border-accent/30 hover:scale-105 transition-all duration-300"
+            onClick={() => applyShiftTemplate('08:00', '16:00')}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            8 AM - 4 PM
+          </Button>
+          <Button
+            variant="outline"
+            className="hover:bg-success/10 hover:border-success/30 hover:scale-105 transition-all duration-300"
+            onClick={() => applyShiftTemplate('10:00', '18:00')}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            10 AM - 6 PM
+          </Button>
+          <Button
+            variant="outline"
+            className="hover:bg-warning/10 hover:border-warning/30 hover:scale-105 transition-all duration-300"
+            onClick={() => applyShiftTemplate('06:00', '14:00')}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            6 AM - 2 PM
+          </Button>
+          <Button
+            variant="outline"
+            className="hover:bg-primary/10 hover:border-primary/30 hover:scale-105 transition-all duration-300"
+            onClick={() => applyShiftTemplate('14:00', '22:00')}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            2 PM - 10 PM
+          </Button>
+        </div>
+      </ModernActionCard>
 
       {/* Weekly Schedule Grid */}
       <Card>

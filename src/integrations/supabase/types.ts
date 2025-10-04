@@ -9177,6 +9177,7 @@ export type Database = {
           manager_id: string | null
           name: string
           organization_id: string
+          require_schedule_for_clock_in: boolean | null
           updated_at: string
         }
         Insert: {
@@ -9187,6 +9188,7 @@ export type Database = {
           manager_id?: string | null
           name: string
           organization_id: string
+          require_schedule_for_clock_in?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -9197,6 +9199,7 @@ export type Database = {
           manager_id?: string | null
           name?: string
           organization_id?: string
+          require_schedule_for_clock_in?: boolean | null
           updated_at?: string
         }
         Relationships: [

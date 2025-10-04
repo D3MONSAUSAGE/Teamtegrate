@@ -11,6 +11,7 @@ export interface Team {
   manager_name?: string;
   manager_email?: string;
   member_count: number;
+  require_schedule_for_clock_in?: boolean | null;
 }
 
 export interface TeamMembership {
@@ -32,4 +33,5 @@ export interface CreateTeamData {
   name: string;
   description?: string;
   manager_id?: string;
+  require_schedule_for_clock_in?: boolean | null;
 }

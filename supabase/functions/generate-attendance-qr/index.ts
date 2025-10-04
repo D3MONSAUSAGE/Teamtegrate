@@ -117,11 +117,30 @@ Deno.serve(async (req) => {
       .eq('organization_id', userData.organization_id)
       .maybeSingle();
 
-    // Default to not requiring schedule if settings don't exist
-    const requireSchedule = attendanceSettings?.require_schedule_for_clock_in ?? false;
+    console.log('Attendance settings:', attendanceSettings);
+
+    // Check if user belongs to a team and get team settings
+    let teamRequiresSchedule: boolean | null = null;
+    const { data: userTeams } = await supabaseClient
+      .from('team_memberships')
+      .select('teams(require_schedule_for_clock_in)')
+      .eq('user_id', userData.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (userTeams?.teams) {
+      teamRequiresSchedule = (userTeams.teams as any).require_schedule_for_clock_in;
+    }
+
+    // Determine if schedule is required (team setting overrides org setting)
+    const requireScheduleForClockIn = teamRequiresSchedule !== null 
+      ? teamRequiresSchedule 
+      : (attendanceSettings?.require_schedule_for_clock_in ?? false);
+
+    console.log('Require schedule for clock-in:', { teamRequiresSchedule, orgSetting: attendanceSettings?.require_schedule_for_clock_in, effective: requireScheduleForClockIn });
 
     // Check if user has an active schedule for today (only if required)
-    if (tokenType === 'clock_in' && requireSchedule) {
+    if (tokenType === 'clock_in' && requireScheduleForClockIn) {
       const today = new Date().toISOString().split('T')[0];
       const { data: schedules } = await supabaseClient
         .from('employee_schedules')

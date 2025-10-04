@@ -10,7 +10,8 @@ import {
   BarChart3, 
   CheckCircle,
   Filter,
-  Search
+  Search,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 interface Team {
@@ -33,6 +34,7 @@ import ModernMetricCard from './modern/ModernMetricCard';
 import { ScannerStationManagement } from '@/components/attendance/ScannerStationManagement';
 import { ManagerQRGenerator } from '@/components/attendance/ManagerQRGenerator';
 import { Monitor, QrCode } from 'lucide-react';
+import { TeamSettingsDialog } from './TeamSettingsDialog';
 
 export const TeamManagementView: React.FC = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -47,6 +49,7 @@ export const TeamManagementView: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState('create-schedule');
   const [searchQuery, setSearchQuery] = useState('');
   const [showManagerQR, setShowManagerQR] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
   // Calculate team-specific metrics
   const getTeamMetrics = () => {
@@ -123,6 +126,16 @@ export const TeamManagementView: React.FC = () => {
                 disabled={teamsLoading}
                 showAllOption={hasRoleAccess('admin')}
               />
+              {selectedTeamId && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSettingsDialogOpen(true)}
+                  className="shrink-0"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -258,6 +271,14 @@ export const TeamManagementView: React.FC = () => {
       <ManagerQRGenerator 
         open={showManagerQR}
         onOpenChange={setShowManagerQR}
+      />
+
+      {/* Team Settings Dialog */}
+      <TeamSettingsDialog
+        open={settingsDialogOpen}
+        onOpenChange={setSettingsDialogOpen}
+        team={teams.find(t => t.id === selectedTeamId) as any || null}
+        organizationRequiresSchedule={false}
       />
     </div>
   );

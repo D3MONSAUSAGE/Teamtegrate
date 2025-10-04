@@ -11,11 +11,13 @@ import {
   Search,
   AlertTriangle,
   CheckCircle,
-  Calendar
+  Calendar,
+  CalendarDays
 } from 'lucide-react';
 import { useTeamWeeklySchedules } from '@/hooks/useTeamWeeklySchedules';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ModernTableCard } from './modern/ModernTableCard';
 
 interface TeamWeeklyScheduleViewProps {
   selectedTeamId: string | null;
@@ -136,69 +138,84 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
         </div>
       </div>
 
-      {/* Team Metrics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
+      {/* Modern Team Metrics Summary with Gradients */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Hours</p>
-                <p className="text-2xl font-bold">{teamMetrics?.totalHours || 0}h</p>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Total Hours</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  {teamMetrics?.totalHours || 0}h
+                </p>
               </div>
-              <Clock className="h-8 w-8 text-primary" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-inner">
+                <Clock className="h-6 w-6 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
+        <Card className="rounded-xl bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Members</p>
-                <p className="text-2xl font-bold">{teamMetrics?.activeMembers || 0}</p>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Active Members</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">
+                  {teamMetrics?.activeMembers || 0}
+                </p>
               </div>
-              <Users className="h-8 w-8 text-accent" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-accent/20 to-accent/30 shadow-inner">
+                <Users className="h-6 w-6 text-accent" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
+        <Card className="rounded-xl bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Coverage Gaps</p>
-                <p className="text-2xl font-bold text-warning">{teamMetrics?.coverageGaps || 0}</p>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Coverage Gaps</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-warning to-warning/70 bg-clip-text text-transparent">
+                  {teamMetrics?.coverageGaps || 0}
+                </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-warning" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-warning/20 to-warning/30 shadow-inner">
+                <AlertTriangle className="h-6 w-6 text-warning" />
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
+        <Card className="rounded-xl bg-gradient-to-br from-success/5 to-success/10 border-success/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Completion Rate</p>
-                <p className="text-2xl font-bold text-success">{teamMetrics?.completionRate || 0}%</p>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Completion Rate</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-success to-success/70 bg-clip-text text-transparent">
+                  {teamMetrics?.completionRate || 0}%
+                </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-success" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-success/20 to-success/30 shadow-inner">
+                <CheckCircle className="h-6 w-6 text-success" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Team Schedule Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Team Weekly Schedule
-          </CardTitle>
-          <CardDescription>
-            Complete overview of team member schedules and projected hours
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <ModernTableCard
+        title="Team Weekly Schedule"
+        icon={CalendarDays}
+        actions={
+          <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        }
+      >
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
@@ -319,8 +336,7 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </ModernTableCard>
     </div>
   );
 };
