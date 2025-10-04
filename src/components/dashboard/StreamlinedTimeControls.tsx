@@ -151,13 +151,13 @@ const StreamlinedTimeControls: React.FC = () => {
               </Button>
             ) : isOnBreak ? (
               <Button
-                onClick={resumeWork}
+                onClick={() => openQRDialog('clock_in')}
                 disabled={isLoading}
                 size="lg"
                 className="gap-2 bg-primary hover:bg-primary/90 min-w-[180px]"
               >
-                <Play className="h-4 w-4" />
-                Resume Work
+                <QrCode className="h-4 w-4" />
+                Generate Clock In QR
               </Button>
             ) : (
               <Button

@@ -144,17 +144,13 @@ const EnhancedTimeTracking: React.FC = () => {
             <div className="flex flex-col gap-3">
               {sessionState.isOnBreak ? (
                 <Button
-                  onClick={resumeWork}
+                  onClick={() => openQRDialog('clock_in')}
                   disabled={isLoading}
                   className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
                   size="lg"
                 >
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Play className="mr-2 h-4 w-4" />
-                  )}
-                  Resume Work
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Generate Clock In QR
                 </Button>
               ) : sessionState.isActive ? (
                 <Button
