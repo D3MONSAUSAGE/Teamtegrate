@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,15 +32,20 @@ const RemoveFromTeamDialog: React.FC<RemoveFromTeamDialogProps> = ({
   onSuccess
 }) => {
   const { removeTeamMember } = useTeamMemberOperations();
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const handleRemove = async () => {
     if (!teamId) return;
 
+    setIsRemoving(true);
     try {
       await removeTeamMember(teamId, userId);
       onSuccess();
+      onOpenChange(false);
     } catch (error) {
       console.error('Error removing team member:', error);
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -65,9 +70,20 @@ const RemoveFromTeamDialog: React.FC<RemoveFromTeamDialogProps> = ({
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleRemove} className="bg-destructive hover:bg-destructive/90">
-            Remove from Team
+          <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={handleRemove} 
+            disabled={isRemoving}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            {isRemoving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Removing...
+              </>
+            ) : (
+              'Remove from Team'
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
