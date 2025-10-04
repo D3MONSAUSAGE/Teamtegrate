@@ -43,6 +43,18 @@ interface WeeklyScheduleCreatorProps {
   selectedTeamId: string | null;
 }
 
+const SCHEDULE_AREAS = [
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'dining', label: 'Dining Area' },
+  { value: 'bar', label: 'Bar' },
+  { value: 'front_desk', label: 'Front Desk' },
+  { value: 'back_office', label: 'Back Office' },
+  { value: 'storage', label: 'Storage' },
+  { value: 'drive_thru', label: 'Drive-Thru' },
+  { value: 'prep', label: 'Prep Area' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ selectedTeamId }) => {
   const { user } = useAuth();
   const { createEmployeeSchedule, isLoading } = useScheduleManagement();
@@ -448,13 +460,21 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
                               onChange={(e) => updateShift(dateKey, member.id, 'endTime', e.target.value)}
                               className="text-xs h-8"
                             />
-                            <Input
-                              type="text"
-                              placeholder="Area (e.g., Kitchen)"
+                            <Select
                               value={shift?.area || ''}
-                              onChange={(e) => updateShift(dateKey, member.id, 'area', e.target.value)}
-                              className="text-xs h-8"
-                            />
+                              onValueChange={(value) => updateShift(dateKey, member.id, 'area', value)}
+                            >
+                              <SelectTrigger className="text-xs h-8">
+                                <SelectValue placeholder="Select area" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SCHEDULE_AREAS.map((area) => (
+                                  <SelectItem key={area.value} value={area.value}>
+                                    {area.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <Input
                               type="text"
                               placeholder="Notes (optional)"
