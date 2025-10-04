@@ -7056,6 +7056,948 @@ export type Database = {
           },
         ]
       }
+      recruitment_candidate_stages: {
+        Row: {
+          candidate_id: string
+          completed_date: string | null
+          created_at: string
+          entered_date: string
+          id: string
+          moved_by: string | null
+          notes: string | null
+          organization_id: string
+          stage_id: string
+          status: string
+        }
+        Insert: {
+          candidate_id: string
+          completed_date?: string | null
+          created_at?: string
+          entered_date?: string
+          id?: string
+          moved_by?: string | null
+          notes?: string | null
+          organization_id: string
+          stage_id: string
+          status?: string
+        }
+        Update: {
+          candidate_id?: string
+          completed_date?: string | null
+          created_at?: string
+          entered_date?: string
+          id?: string
+          moved_by?: string | null
+          notes?: string | null
+          organization_id?: string
+          stage_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_candidate_stages_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidate_stages_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidate_stages_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidate_stages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidate_stages_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_candidates: {
+        Row: {
+          applied_date: string
+          cover_letter_url: string | null
+          created_at: string
+          created_by: string | null
+          current_stage_id: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          organization_id: string
+          overall_rating: number | null
+          phone: string | null
+          position_id: string
+          resume_url: string | null
+          source: Database["public"]["Enums"]["candidate_source"]
+          source_details: string | null
+          status: Database["public"]["Enums"]["candidate_status"]
+          updated_at: string
+        }
+        Insert: {
+          applied_date?: string
+          cover_letter_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage_id?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          organization_id: string
+          overall_rating?: number | null
+          phone?: string | null
+          position_id: string
+          resume_url?: string | null
+          source?: Database["public"]["Enums"]["candidate_source"]
+          source_details?: string | null
+          status?: Database["public"]["Enums"]["candidate_status"]
+          updated_at?: string
+        }
+        Update: {
+          applied_date?: string
+          cover_letter_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage_id?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          organization_id?: string
+          overall_rating?: number | null
+          phone?: string | null
+          position_id?: string
+          resume_url?: string | null
+          source?: Database["public"]["Enums"]["candidate_source"]
+          source_details?: string | null
+          status?: Database["public"]["Enums"]["candidate_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_candidates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_documents: {
+        Row: {
+          candidate_id: string
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          organization_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          candidate_id: string
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          organization_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name?: string
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          organization_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_documents_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_email_log: {
+        Row: {
+          candidate_id: string | null
+          email_type: Database["public"]["Enums"]["email_type"]
+          error_message: string | null
+          id: string
+          organization_id: string
+          recipient_email: string
+          resend_email_id: string | null
+          sent_at: string
+          status: Database["public"]["Enums"]["email_status"]
+        }
+        Insert: {
+          candidate_id?: string | null
+          email_type: Database["public"]["Enums"]["email_type"]
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          recipient_email: string
+          resend_email_id?: string | null
+          sent_at?: string
+          status?: Database["public"]["Enums"]["email_status"]
+        }
+        Update: {
+          candidate_id?: string | null
+          email_type?: Database["public"]["Enums"]["email_type"]
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          recipient_email?: string
+          resend_email_id?: string | null
+          sent_at?: string
+          status?: Database["public"]["Enums"]["email_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_email_log_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_email_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_interview_feedback: {
+        Row: {
+          candidate_id: string
+          communication_score: number | null
+          concerns: string[] | null
+          created_at: string
+          cultural_fit_score: number | null
+          id: string
+          interview_id: string
+          interviewer_id: string
+          organization_id: string
+          private_notes: string | null
+          rating: number
+          recommendation: Database["public"]["Enums"]["feedback_recommendation"]
+          strengths: string[] | null
+          submitted_at: string
+          technical_skills_score: number | null
+        }
+        Insert: {
+          candidate_id: string
+          communication_score?: number | null
+          concerns?: string[] | null
+          created_at?: string
+          cultural_fit_score?: number | null
+          id?: string
+          interview_id: string
+          interviewer_id: string
+          organization_id: string
+          private_notes?: string | null
+          rating: number
+          recommendation: Database["public"]["Enums"]["feedback_recommendation"]
+          strengths?: string[] | null
+          submitted_at?: string
+          technical_skills_score?: number | null
+        }
+        Update: {
+          candidate_id?: string
+          communication_score?: number | null
+          concerns?: string[] | null
+          created_at?: string
+          cultural_fit_score?: number | null
+          id?: string
+          interview_id?: string
+          interviewer_id?: string
+          organization_id?: string
+          private_notes?: string | null
+          rating?: number
+          recommendation?: Database["public"]["Enums"]["feedback_recommendation"]
+          strengths?: string[] | null
+          submitted_at?: string
+          technical_skills_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_interview_feedback_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interview_feedback_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_interviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interview_feedback_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interview_feedback_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interview_feedback_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_interviews: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          duration_minutes: number
+          google_event_id: string | null
+          id: string
+          interview_type: Database["public"]["Enums"]["interview_type"]
+          interviewer_id: string
+          location: string | null
+          organization_id: string
+          phone_number: string | null
+          scheduled_by: string | null
+          scheduled_date: string
+          status: Database["public"]["Enums"]["interview_status"]
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          duration_minutes?: number
+          google_event_id?: string | null
+          id?: string
+          interview_type: Database["public"]["Enums"]["interview_type"]
+          interviewer_id: string
+          location?: string | null
+          organization_id: string
+          phone_number?: string | null
+          scheduled_by?: string | null
+          scheduled_date: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          duration_minutes?: number
+          google_event_id?: string | null
+          id?: string
+          interview_type?: Database["public"]["Enums"]["interview_type"]
+          interviewer_id?: string
+          location?: string | null
+          organization_id?: string
+          phone_number?: string | null
+          scheduled_by?: string | null
+          scheduled_date?: string
+          status?: Database["public"]["Enums"]["interview_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_interviews_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_scheduled_by_fkey"
+            columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_scheduled_by_fkey"
+            columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_manager_approvals: {
+        Row: {
+          additional_interview_requested: boolean
+          candidate_id: string
+          created_at: string
+          decision: Database["public"]["Enums"]["approval_decision"] | null
+          decision_at: string | null
+          decision_notes: string | null
+          id: string
+          manager_id: string
+          organization_id: string
+          requested_at: string
+          requested_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_interview_requested?: boolean
+          candidate_id: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["approval_decision"] | null
+          decision_at?: string | null
+          decision_notes?: string | null
+          id?: string
+          manager_id: string
+          organization_id: string
+          requested_at?: string
+          requested_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_interview_requested?: boolean
+          candidate_id?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["approval_decision"] | null
+          decision_at?: string | null
+          decision_notes?: string | null
+          id?: string
+          manager_id?: string
+          organization_id?: string
+          requested_at?: string
+          requested_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_manager_approvals_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_notes: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          is_pinned: boolean
+          note_content: string
+          note_type: Database["public"]["Enums"]["note_type"]
+          organization_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          note_content: string
+          note_type?: Database["public"]["Enums"]["note_type"]
+          organization_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          note_content?: string
+          note_type?: Database["public"]["Enums"]["note_type"]
+          organization_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_notes_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_pipeline_stages: {
+        Row: {
+          color_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          organization_id: string
+          stage_name: string
+          stage_order: number
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          updated_at: string
+        }
+        Insert: {
+          color_code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          stage_name: string
+          stage_order: number
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          updated_at?: string
+        }
+        Update: {
+          color_code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          stage_name?: string
+          stage_order?: number
+          stage_type?: Database["public"]["Enums"]["stage_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_pipeline_stages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_positions: {
+        Row: {
+          created_at: string
+          department: string | null
+          employment_type: Database["public"]["Enums"]["employment_type"]
+          hiring_manager_id: string | null
+          hr_recruiter_id: string | null
+          id: string
+          job_description: string | null
+          job_title: string
+          location: string | null
+          organization_id: string
+          posted_date: string
+          requirements: string | null
+          salary_range_max: number | null
+          salary_range_min: number | null
+          status: Database["public"]["Enums"]["position_status"]
+          target_hire_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          employment_type: Database["public"]["Enums"]["employment_type"]
+          hiring_manager_id?: string | null
+          hr_recruiter_id?: string | null
+          id?: string
+          job_description?: string | null
+          job_title: string
+          location?: string | null
+          organization_id: string
+          posted_date?: string
+          requirements?: string | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          status?: Database["public"]["Enums"]["position_status"]
+          target_hire_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          employment_type?: Database["public"]["Enums"]["employment_type"]
+          hiring_manager_id?: string | null
+          hr_recruiter_id?: string | null
+          id?: string
+          job_description?: string | null
+          job_title?: string
+          location?: string | null
+          organization_id?: string
+          posted_date?: string
+          requirements?: string | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          status?: Database["public"]["Enums"]["position_status"]
+          target_hire_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_positions_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_hr_recruiter_id_fkey"
+            columns: ["hr_recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_hr_recruiter_id_fkey"
+            columns: ["hr_recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_references: {
+        Row: {
+          call_date: string | null
+          call_duration_minutes: number | null
+          call_status: Database["public"]["Enums"]["call_status"]
+          called_by: string | null
+          candidate_id: string
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          overall_rating: Database["public"]["Enums"]["reference_rating"] | null
+          phone_number: string
+          reference_feedback: string | null
+          reference_name: string
+          relationship: string
+          updated_at: string
+          would_rehire: boolean | null
+        }
+        Insert: {
+          call_date?: string | null
+          call_duration_minutes?: number | null
+          call_status?: Database["public"]["Enums"]["call_status"]
+          called_by?: string | null
+          candidate_id: string
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          overall_rating?:
+            | Database["public"]["Enums"]["reference_rating"]
+            | null
+          phone_number: string
+          reference_feedback?: string | null
+          reference_name: string
+          relationship: string
+          updated_at?: string
+          would_rehire?: boolean | null
+        }
+        Update: {
+          call_date?: string | null
+          call_duration_minutes?: number | null
+          call_status?: Database["public"]["Enums"]["call_status"]
+          called_by?: string | null
+          candidate_id?: string
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          overall_rating?:
+            | Database["public"]["Enums"]["reference_rating"]
+            | null
+          phone_number?: string
+          reference_feedback?: string | null
+          reference_name?: string
+          relationship?: string
+          updated_at?: string
+          would_rehire?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_references_called_by_fkey"
+            columns: ["called_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_references_called_by_fkey"
+            columns: ["called_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_references_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_references_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_stage_transitions: {
+        Row: {
+          automated: boolean
+          candidate_id: string
+          from_stage_id: string | null
+          id: string
+          moved_by: string | null
+          organization_id: string
+          reason: string | null
+          to_stage_id: string
+          transition_date: string
+        }
+        Insert: {
+          automated?: boolean
+          candidate_id: string
+          from_stage_id?: string | null
+          id?: string
+          moved_by?: string | null
+          organization_id: string
+          reason?: string | null
+          to_stage_id: string
+          transition_date?: string
+        }
+        Update: {
+          automated?: boolean
+          candidate_id?: string
+          from_stage_id?: string | null
+          id?: string
+          moved_by?: string | null
+          organization_id?: string
+          reason?: string | null
+          to_stage_id?: string
+          transition_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_stage_transitions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_stage_transitions_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_stage_transitions_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_stage_transitions_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_stage_transitions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_stage_transitions_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_transactions: {
         Row: {
           amount: number
@@ -11399,6 +12341,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_reference_threshold: {
+        Args: { p_candidate_id: string }
+        Returns: boolean
+      }
       cleanup_expired_qr_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -11522,6 +12468,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: number
       }
+      get_candidate_average_rating: {
+        Args: { p_candidate_id: string }
+        Returns: number
+      }
       get_current_user_organization_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -11548,6 +12498,10 @@ export type Database = {
       get_daily_task_summary: {
         Args: { target_date?: string; target_user_id: string }
         Returns: Json
+      }
+      get_days_in_current_stage: {
+        Args: { p_candidate_id: string }
+        Returns: number
       }
       get_employee_detailed_tasks: {
         Args: { end_date: string; start_date: string; target_user_id: string }
@@ -12111,9 +13065,18 @@ export type Database = {
       }
     }
     Enums: {
+      approval_decision: "approved" | "rejected" | "more_info_needed"
       approval_status: "pending" | "approved" | "rejected"
       assignment_type: "individual" | "team" | "role_based"
       assignment_type_v2: "individual" | "team" | "role"
+      call_status:
+        | "not_called"
+        | "answered"
+        | "voicemail"
+        | "no_answer"
+        | "invalid_number"
+      candidate_source: "indeed" | "linkedin" | "referral" | "direct" | "other"
+      candidate_status: "active" | "hired" | "rejected" | "withdrawn"
       checklist_priority: "low" | "medium" | "high" | "critical"
       checklist_status: "draft" | "active" | "inactive" | "archived"
       checklist_status_v2:
@@ -12122,13 +13085,42 @@ export type Database = {
         | "verified"
         | "rejected"
         | "expired"
+      document_type:
+        | "resume"
+        | "cover_letter"
+        | "portfolio"
+        | "reference_letter"
+        | "other"
+      email_status: "sent" | "failed" | "bounced"
+      email_type:
+        | "interview_invitation"
+        | "interview_reminder"
+        | "interview_reschedule"
+        | "rejection"
+        | "offer"
+        | "welcome"
+      employment_type: "full_time" | "part_time" | "contract" | "temporary"
       execution_status:
         | "pending"
         | "in_progress"
         | "completed"
         | "overdue"
         | "verified"
+      feedback_recommendation: "proceed" | "reject" | "unsure"
+      interview_status:
+        | "scheduled"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+        | "rescheduled"
+      interview_type: "phone" | "in_person" | "video" | "technical" | "panel"
       message_type: "text" | "system"
+      note_type:
+        | "general"
+        | "interview_feedback"
+        | "red_flag"
+        | "strength"
+        | "question"
       onboarding_feedback_status: "pending" | "completed"
       onboarding_instance_status:
         | "active"
@@ -12146,6 +13138,17 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "blocked"
+      position_status: "open" | "closed" | "on_hold"
+      reference_rating: "positive" | "neutral" | "negative"
+      stage_type:
+        | "applied"
+        | "screening"
+        | "interview"
+        | "assessment"
+        | "approval"
+        | "offer"
+        | "hired"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -12273,9 +13276,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      approval_decision: ["approved", "rejected", "more_info_needed"],
       approval_status: ["pending", "approved", "rejected"],
       assignment_type: ["individual", "team", "role_based"],
       assignment_type_v2: ["individual", "team", "role"],
+      call_status: [
+        "not_called",
+        "answered",
+        "voicemail",
+        "no_answer",
+        "invalid_number",
+      ],
+      candidate_source: ["indeed", "linkedin", "referral", "direct", "other"],
+      candidate_status: ["active", "hired", "rejected", "withdrawn"],
       checklist_priority: ["low", "medium", "high", "critical"],
       checklist_status: ["draft", "active", "inactive", "archived"],
       checklist_status_v2: [
@@ -12285,6 +13298,23 @@ export const Constants = {
         "rejected",
         "expired",
       ],
+      document_type: [
+        "resume",
+        "cover_letter",
+        "portfolio",
+        "reference_letter",
+        "other",
+      ],
+      email_status: ["sent", "failed", "bounced"],
+      email_type: [
+        "interview_invitation",
+        "interview_reminder",
+        "interview_reschedule",
+        "rejection",
+        "offer",
+        "welcome",
+      ],
+      employment_type: ["full_time", "part_time", "contract", "temporary"],
       execution_status: [
         "pending",
         "in_progress",
@@ -12292,7 +13322,23 @@ export const Constants = {
         "overdue",
         "verified",
       ],
+      feedback_recommendation: ["proceed", "reject", "unsure"],
+      interview_status: [
+        "scheduled",
+        "completed",
+        "cancelled",
+        "no_show",
+        "rescheduled",
+      ],
+      interview_type: ["phone", "in_person", "video", "technical", "panel"],
       message_type: ["text", "system"],
+      note_type: [
+        "general",
+        "interview_feedback",
+        "red_flag",
+        "strength",
+        "question",
+      ],
       onboarding_feedback_status: ["pending", "completed"],
       onboarding_instance_status: [
         "active",
@@ -12312,6 +13358,18 @@ export const Constants = {
         "in_progress",
         "completed",
         "blocked",
+      ],
+      position_status: ["open", "closed", "on_hold"],
+      reference_rating: ["positive", "neutral", "negative"],
+      stage_type: [
+        "applied",
+        "screening",
+        "interview",
+        "assessment",
+        "approval",
+        "offer",
+        "hired",
+        "rejected",
       ],
     },
   },
