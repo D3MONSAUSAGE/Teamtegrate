@@ -9,6 +9,8 @@ export const useTeamMemberOperations = () => {
   const invalidateTeamQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['teams'] });
     queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['team-members'] });
+    queryClient.invalidateQueries({ queryKey: ['organization-tasks'] });
   };
 
   // Add team member with optional team leader role
