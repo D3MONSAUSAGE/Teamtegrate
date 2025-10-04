@@ -2,12 +2,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
 };
 
 interface QRGenerateRequest {
   tokenType: 'clock_in' | 'clock_out';
   expirationSeconds?: number;
+  targetUserId?: string; // For manager-assisted clock-in
 }
 
 Deno.serve(async (req) => {
@@ -36,22 +37,66 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { tokenType, expirationSeconds = 45 }: QRGenerateRequest = await req.json();
+    const { tokenType, expirationSeconds = 45, targetUserId }: QRGenerateRequest = await req.json();
 
-    // Get user's organization
-    const { data: userData, error: userError } = await supabaseClient
+    // Get current user's data for authorization
+    const { data: currentUserData, error: currentUserError } = await supabaseClient
       .from('users')
-      .select('organization_id, name')
+      .select('organization_id, name, role')
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
-      console.error('User data error:', userError);
+    if (currentUserError || !currentUserData) {
+      console.error('Current user data error:', currentUserError);
       return new Response(
         JSON.stringify({ error: 'User not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // If targetUserId is provided, validate manager/team_leader can assist
+    let targetUser = currentUserData;
+    if (targetUserId && targetUserId !== user.id) {
+      // Check if current user has permission to generate for others
+      const canAssist = ['manager', 'team_leader', 'admin', 'superadmin'].includes(currentUserData.role);
+      
+      if (!canAssist) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Unauthorized',
+            details: 'Only managers and team leaders can generate QR codes for employees'
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get target user's data
+      const { data: targetUserData, error: targetUserError } = await supabaseClient
+        .from('users')
+        .select('id, organization_id, name')
+        .eq('id', targetUserId)
+        .single();
+
+      if (targetUserError || !targetUserData) {
+        return new Response(
+          JSON.stringify({ error: 'Target employee not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Verify same organization
+      if (targetUserData.organization_id !== currentUserData.organization_id) {
+        return new Response(
+          JSON.stringify({ error: 'Cannot generate QR for employees in different organizations' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      targetUser = targetUserData;
+      console.log(`Manager ${currentUserData.name} generating QR for employee ${targetUserData.name}`);
+    }
+
+    const userData = targetUser;
 
     // Check if user has an active schedule for today (for clock_in)
     if (tokenType === 'clock_in') {
@@ -59,7 +104,7 @@ Deno.serve(async (req) => {
       const { data: schedules } = await supabaseClient
         .from('employee_schedules')
         .select('id, status')
-        .eq('employee_id', user.id)
+        .eq('employee_id', userData.id)
         .eq('scheduled_date', today)
         .eq('status', 'scheduled');
 
@@ -79,7 +124,7 @@ Deno.serve(async (req) => {
       const { data: activeEntry } = await supabaseClient
         .from('time_entries')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', userData.id)
         .is('clock_out', null)
         .limit(1);
 
@@ -99,7 +144,7 @@ Deno.serve(async (req) => {
       const { data: activeEntry } = await supabaseClient
         .from('time_entries')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', userData.id)
         .is('clock_out', null)
         .limit(1);
 
@@ -116,7 +161,7 @@ Deno.serve(async (req) => {
 
     // Generate unique token with encryption
     const tokenPayload = {
-      userId: user.id,
+      userId: userData.id,
       userName: userData.name,
       timestamp: Date.now(),
       tokenType,
@@ -132,7 +177,7 @@ Deno.serve(async (req) => {
       .from('qr_attendance_tokens')
       .insert({
         organization_id: userData.organization_id,
-        user_id: user.id,
+        user_id: userData.id,
         token,
         token_type: tokenType,
         expires_at: expiresAt.toISOString(),
@@ -149,7 +194,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`QR token generated for user ${user.id}, type: ${tokenType}, expires in ${expirationSeconds}s`);
+    console.log(`QR token generated for user ${userData.id}, type: ${tokenType}, expires in ${expirationSeconds}s`);
 
     return new Response(
       JSON.stringify({
@@ -158,7 +203,7 @@ Deno.serve(async (req) => {
         expiresAt: expiresAt.toISOString(),
         tokenType,
         userName: userData.name,
-        userId: user.id,
+        userId: userData.id,
         expirationSeconds
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

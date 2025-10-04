@@ -31,7 +31,8 @@ import { WeeklyScheduleCreator } from './WeeklyScheduleCreator';
 import { Input } from '@/components/ui/input';
 import ModernMetricCard from './modern/ModernMetricCard';
 import { ScannerStationManagement } from '@/components/attendance/ScannerStationManagement';
-import { Monitor } from 'lucide-react';
+import { ManagerQRGenerator } from '@/components/attendance/ManagerQRGenerator';
+import { Monitor, QrCode } from 'lucide-react';
 
 export const TeamManagementView: React.FC = () => {
   const { user, hasRoleAccess } = useAuth();
@@ -45,6 +46,7 @@ export const TeamManagementView: React.FC = () => {
   } = useScheduleManagement();
   const [activeSubTab, setActiveSubTab] = useState('create-schedule');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showManagerQR, setShowManagerQR] = useState(false);
 
   // Calculate team-specific metrics
   const getTeamMetrics = () => {
@@ -207,6 +209,27 @@ export const TeamManagementView: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="scanners" className="space-y-6">
+          {/* Quick Action: Generate QR for Employee */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Help employees with attendance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => setShowManagerQR(true)}
+                size="lg"
+                className="w-full"
+              >
+                <QrCode className="h-5 w-5 mr-2" />
+                Generate QR for Employee
+              </Button>
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                Help employees without phones clock in/out
+              </p>
+            </CardContent>
+          </Card>
+
           <ScannerStationManagement />
         </TabsContent>
 
@@ -230,6 +253,12 @@ export const TeamManagementView: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Manager QR Generator Dialog */}
+      <ManagerQRGenerator 
+        open={showManagerQR}
+        onOpenChange={setShowManagerQR}
+      />
     </div>
   );
 };
