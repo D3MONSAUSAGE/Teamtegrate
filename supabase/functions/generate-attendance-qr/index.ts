@@ -28,6 +28,18 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Service role client for inserting tokens (bypasses RLS)
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
     const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
     
     if (authError || !user) {
@@ -214,25 +226,27 @@ Deno.serve(async (req) => {
     const token = btoa(JSON.stringify(tokenPayload));
     const expiresAt = new Date(Date.now() + expirationSeconds * 1000);
 
-    // Store token in database using secure database function (bypasses RLS)
-    const { data: tokenData, error: tokenError } = await supabaseUserClient
-      .rpc('create_qr_attendance_token', {
-        p_organization_id: userData.organization_id,
-        p_user_id: userData.id,
-        p_token: token,
-        p_token_type: tokenType,
-        p_expires_at: expiresAt.toISOString()
-      });
+    // Store token in database using service role (bypasses RLS)
+    const { data: tokenData, error: tokenError } = await supabaseServiceClient
+      .from('qr_attendance_tokens')
+      .insert({
+        organization_id: userData.organization_id,
+        user_id: userData.id,
+        token: token,
+        token_type: tokenType,
+        expires_at: expiresAt.toISOString(),
+        is_used: false
+      })
+      .select('id')
+      .single();
 
-    if (tokenError || !tokenData || tokenData.length === 0) {
+    if (tokenError || !tokenData) {
       console.error('Token creation error:', tokenError);
       return new Response(
-        JSON.stringify({ error: 'Failed to generate token' }),
+        JSON.stringify({ error: 'Failed to generate token', details: tokenError?.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const createdToken = tokenData[0];
 
     console.log(`QR token generated for user ${userData.id}, type: ${tokenType}, expires in ${expirationSeconds}s`);
 

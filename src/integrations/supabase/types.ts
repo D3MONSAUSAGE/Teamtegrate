@@ -11609,7 +11609,9 @@ export type Database = {
         Returns: number
       }
       get_pending_time_approvals: {
-        Args: { manager_user_id: string; team_filter_id?: string }
+        Args:
+          | { manager_id: string }
+          | { manager_user_id: string; team_filter_id?: string }
         Returns: {
           clock_in: string
           clock_out: string
