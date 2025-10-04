@@ -7,6 +7,7 @@ import { Settings, Calendar, User, Crown, Users, Shield, Star, RefreshCw } from 
 import { useNavigate } from 'react-router-dom';
 import ProfileAvatar from '@/components/settings/ProfileSection/ProfileAvatar';
 import ProfileInfoForm from '@/components/settings/ProfileSection/ProfileInfoForm';
+import { EmailChangeStatus } from '@/components/settings/EmailChangeStatus';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,7 @@ const ProfileHeader = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   // Update local state when user changes
   useEffect(() => {
@@ -59,6 +61,22 @@ const ProfileHeader = () => {
     fetchAvatar();
   }, [user]);
 
+  // Check for pending email change
+  useEffect(() => {
+    const checkPendingEmail = async () => {
+      if (!user) return;
+      
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser?.new_email) {
+        setPendingEmail(authUser.new_email);
+      } else {
+        setPendingEmail(null);
+      }
+    };
+    
+    checkPendingEmail();
+  }, [user]);
+
   const handleSave = async () => {
     if (!user) {
       toast.error("You must be logged in to update your profile");
@@ -67,20 +85,34 @@ const ProfileHeader = () => {
 
     setIsLoading(true);
     try {
-      const updates: { name?: string; email?: string } = {};
-      
+      let hasChanges = false;
+
+      // Handle name change through database
       if (name !== user.name) {
-        updates.name = name;
+        await updateUserProfile({ name });
+        hasChanges = true;
       }
       
+      // Handle email change through Supabase Auth
       if (email !== user.email) {
-        updates.email = email;
-        toast.info("Email change may require Google Calendar re-authentication");
+        const { error: emailError } = await supabase.auth.updateUser(
+          { email },
+          { 
+            emailRedirectTo: `${window.location.origin}/auth/callback` 
+          }
+        );
+
+        if (emailError) throw emailError;
+
+        setPendingEmail(email);
+        toast.success("Confirmation email sent! Check your new email inbox.");
+        hasChanges = true;
       }
 
-      if (Object.keys(updates).length > 0) {
-        await updateUserProfile(updates);
-        toast.success("Profile updated successfully!");
+      if (hasChanges) {
+        if (email === user.email) {
+          toast.success("Profile updated successfully!");
+        }
       } else {
         toast.info("No changes to save");
       }
@@ -89,6 +121,23 @@ const ProfileHeader = () => {
       toast.error("Failed to update profile");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!pendingEmail) return;
+    
+    try {
+      const { error } = await supabase.auth.updateUser(
+        { email: pendingEmail },
+        { emailRedirectTo: `${window.location.origin}/auth/callback` }
+      );
+      
+      if (error) throw error;
+      toast.success("Confirmation email resent!");
+    } catch (error) {
+      console.error("Error resending confirmation:", error);
+      toast.error("Failed to resend confirmation email");
     }
   };
 
@@ -189,6 +238,16 @@ const ProfileHeader = () => {
             </div>
             
             <div className="flex-1 min-w-0">
+              {pendingEmail && (
+                <div className="mb-4">
+                  <EmailChangeStatus
+                    currentEmail={user.email}
+                    pendingEmail={pendingEmail}
+                    onResendConfirmation={handleResendConfirmation}
+                  />
+                </div>
+              )}
+              
               <ProfileInfoForm
                 user={{
                   id: user.id,
