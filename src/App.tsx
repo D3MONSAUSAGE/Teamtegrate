@@ -58,6 +58,7 @@ import ScannerStationPage from "@/pages/ScannerStationPage";
 import GoogleCalendarCallback from "@/components/auth/GoogleCalendarCallback";
 import PrivacyPage from "@/pages/PrivacyPage";
 import TermsPage from "@/pages/TermsPage";
+import { RecruitmentDashboard } from "@/pages/RecruitmentDashboard";
 import CookiePolicyPage from "@/pages/CookiePolicyPage";
 import SecurityPage from "@/pages/SecurityPage";
 import InventoryPage from "@/pages/InventoryPage";
@@ -146,6 +147,7 @@ function App() {
                    <Route path="organization/request-types" element={<RoleProtectedRoute requiredRole="admin"><RequestTypesPage /></RoleProtectedRoute>} />
                    <Route path="employees" element={<RoleProtectedRoute requiredRole="manager"><EmployeesPage /></RoleProtectedRoute>} />
                    <Route path="employee-actions" element={<RoleProtectedRoute requiredRole="manager"><EmployeeActionsPage /></RoleProtectedRoute>} />
+                   <Route path="recruitment" element={<RoleProtectedRoute requiredRole="manager"><RecruitmentDashboard /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
                    <Route path="reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsDashboard /></RoleProtectedRoute>} />
                    <Route path="reports/tasks" element={<RoleProtectedRoute requiredRole="manager"><TaskReportsPage /></RoleProtectedRoute>} />
