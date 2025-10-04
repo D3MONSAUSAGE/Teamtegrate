@@ -56,6 +56,7 @@ import RequestTypesPage from "@/pages/RequestTypesPage";
 import SchedulePage from "@/pages/SchedulePage";
 import ScannerStationPage from "@/pages/ScannerStationPage";
 import GoogleCalendarCallback from "@/components/auth/GoogleCalendarCallback";
+import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import TermsPage from "@/pages/TermsPage";
 import { RecruitmentDashboard } from "@/pages/RecruitmentDashboard";
@@ -113,6 +114,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/landing" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/auth/google/callback" element={<GoogleCalendarCallback />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />

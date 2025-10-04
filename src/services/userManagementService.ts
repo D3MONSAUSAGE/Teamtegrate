@@ -221,12 +221,11 @@ class UserManagementService {
     }
 
     if (Object.keys(updateData).length > 0) {
-      const { error } = await supabase.auth.updateUser(updateData);
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.updateUser(updateData, {
+        emailRedirectTo: redirectUrl,
+      });
       if (error) throw error;
-      
-      if (updates.email) {
-        toast.info('Email confirmation sent. Please check your new email to confirm the change.');
-      }
     }
   }
 

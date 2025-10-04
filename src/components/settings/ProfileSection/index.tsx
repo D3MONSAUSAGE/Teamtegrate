@@ -4,6 +4,7 @@ import { toast } from '@/components/ui/sonner';
 import ProfileInfoForm from "./ProfileInfoForm";
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileSyncButton from "./ProfileSyncButton";
+import { EmailChangeStatus } from "../EmailChangeStatus";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ const ProfileSection = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dbProfile, setDbProfile] = useState<{ email?: string; name?: string } | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | undefined>();
 
   // Update local state when user changes
   useEffect(() => {
@@ -46,6 +48,12 @@ const ProfileSection = () => {
           setAvatarUrl(data.avatar_url);
           setDbProfile({ email: data.email, name: data.name });
         }
+
+        // Check for pending email change
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser?.new_email) {
+          setPendingEmail(authUser.new_email);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
@@ -70,12 +78,19 @@ const ProfileSection = () => {
       
       if (email !== user.email) {
         updates.email = email;
-        toast.info("Email confirmation will be sent. Check both old and new email addresses.");
       }
 
       if (Object.keys(updates).length > 0) {
         await updateUserProfile(updates);
-        toast.success("Profile updated successfully!");
+        
+        if (updates.email) {
+          setPendingEmail(email);
+          toast.success('Confirmation email sent! Check your new email inbox to complete the change.', {
+            duration: 6000,
+          });
+        } else {
+          toast.success("Profile updated successfully!");
+        }
       } else {
         toast.info("No changes to save");
       }
@@ -106,6 +121,17 @@ const ProfileSection = () => {
           authEmail={user.email}
           dbEmail={dbProfile?.email}
         />
+        
+        {/* Email change status banner */}
+        {pendingEmail && (
+          <EmailChangeStatus
+            currentEmail={user.email}
+            pendingEmail={pendingEmail}
+            onResendConfirmation={async () => {
+              await updateUserProfile({ email: pendingEmail });
+            }}
+          />
+        )}
         
         <div className="flex flex-col md:flex-row md:items-start gap-8 animate-fade-in">
           <ProfileAvatar 
