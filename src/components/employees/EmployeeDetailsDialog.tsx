@@ -20,7 +20,6 @@ export default function EmployeeDetailsDialog({ open, onOpenChange, employeeId }
         .from('users')
         .select(`
           *,
-          manager:users!manager_id(id, name),
           teams:team_memberships(
             team:teams(id, name)
           )
@@ -29,7 +28,19 @@ export default function EmployeeDetailsDialog({ open, onOpenChange, employeeId }
         .single();
       
       if (error) throw error;
-      return data;
+
+      // Fetch manager separately to avoid circular type reference
+      let managerData = null;
+      if (data.manager_id) {
+        const { data: manager } = await supabase
+          .from('users')
+          .select('id, name')
+          .eq('id', data.manager_id)
+          .single();
+        managerData = manager;
+      }
+      
+      return { ...data, manager: managerData };
     },
     enabled: open && !!employeeId,
   });
