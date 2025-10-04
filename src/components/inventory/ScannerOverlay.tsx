@@ -195,12 +195,17 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
     // Normalize barcode
     const normalized = hit.text.trim().replace(/\s+/g, '');
     
-    // Cleanup before calling onBarcode to prevent race conditions with API calls
+    // Call onBarcode first, then cleanup to prevent race conditions
     if (!continuous) {
-      cleanup().then(() => {
-        onBarcode(normalized);
-        onClose();
-      });
+      onBarcode(normalized);
+      cleanup()
+        .then(() => {
+          onClose();
+        })
+        .catch((error) => {
+          console.error('Scanner cleanup error:', error);
+          onClose();
+        });
     } else {
       onBarcode(normalized);
     }
