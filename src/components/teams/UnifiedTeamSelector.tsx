@@ -47,18 +47,24 @@ export const UnifiedTeamSelector: React.FC<UnifiedTeamSelectorProps> = ({
     onTeamChange(value === 'all' ? null : value);
   };
 
-  const renderSelector = () => (
-    <Select
-      value={selectedTeamId || 'all'}
-      onValueChange={handleValueChange}
-      disabled={disabled || isLoading}
-    >
-      <SelectTrigger className={variant === 'inline' ? 'w-48 h-8' : 'w-full'}>
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          <SelectValue placeholder={placeholder} />
-        </div>
-      </SelectTrigger>
+  const renderSelector = () => {
+    const hasSelection = selectedTeamId !== null;
+    const triggerClassName = variant === 'inline' 
+      ? `w-full md:w-48 min-h-[44px] ${hasSelection ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90' : ''}`
+      : 'w-full';
+    
+    return (
+      <Select
+        value={selectedTeamId || 'all'}
+        onValueChange={handleValueChange}
+        disabled={disabled || isLoading}
+      >
+        <SelectTrigger className={triggerClassName}>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <SelectValue placeholder={placeholder} />
+          </div>
+        </SelectTrigger>
       <SelectContent>
         {showAllOption && isAdmin && (
           <SelectItem value="all">
@@ -79,6 +85,7 @@ export const UnifiedTeamSelector: React.FC<UnifiedTeamSelectorProps> = ({
       </SelectContent>
     </Select>
   );
+  };
 
   if (isLoading) {
     const loadingContent = (

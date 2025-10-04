@@ -1,14 +1,17 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import ErrorBoundary from '@/components/ui/error-boundary';
 import { Calendar, Users } from 'lucide-react';
 import { MyScheduleView } from '@/components/schedule/MyScheduleView';
 import { TeamManagementView } from '@/components/schedule/TeamManagementView';
 import ModernScheduleHeader from '@/components/schedule/modern/ModernScheduleHeader';
+import { useState } from 'react';
 
 const SchedulePage: React.FC = () => {
   const { hasRoleAccess, user, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState('my-schedule');
 
   // Show loading state while auth is being determined
   if (loading) {
@@ -45,20 +48,28 @@ const SchedulePage: React.FC = () => {
           }
         />
         
-        <Tabs defaultValue="my-schedule" className="space-y-6">
-          <TabsList className={`grid w-full ${isManager ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <TabsTrigger value="my-schedule" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              My Schedule
-            </TabsTrigger>
-            
-            {isManager && (
-              <TabsTrigger value="team-management" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Team Management
-              </TabsTrigger>
-            )}
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <ScrollableTabs>
+            <ScrollableTabsList>
+              <ScrollableTabsTrigger 
+                isActive={activeTab === 'my-schedule'}
+                onClick={() => setActiveTab('my-schedule')}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                My Schedule
+              </ScrollableTabsTrigger>
+              
+              {isManager && (
+                <ScrollableTabsTrigger 
+                  isActive={activeTab === 'team-management'}
+                  onClick={() => setActiveTab('team-management')}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Team Management
+                </ScrollableTabsTrigger>
+              )}
+            </ScrollableTabsList>
+          </ScrollableTabs>
           
           <TabsContent value="my-schedule" className="space-y-6">
             <MyScheduleView />

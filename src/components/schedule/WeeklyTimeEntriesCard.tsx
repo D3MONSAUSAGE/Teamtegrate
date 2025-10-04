@@ -140,32 +140,31 @@ export const WeeklyTimeEntriesCard: React.FC<WeeklyTimeEntriesCardProps> = ({
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TimerReset className="h-5 w-5" />
-                Time Entries
-              </CardTitle>
-              <CardDescription>
-                Your time entries for this week ({format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'MMM d, yyyy')})
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-sm font-medium px-3 py-1 bg-primary/10 text-primary rounded-lg border border-primary/20">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TimerReset className="h-5 w-5" />
+                  Time Entries
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Your time entries for this week ({format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'MMM d, yyyy')})
+                </CardDescription>
+              </div>
+              <div className="text-sm font-medium px-3 py-1 bg-primary/10 text-primary rounded-lg border border-primary/20 w-fit">
                 Total: {calculateTotalHours().toFixed(1)}h
               </div>
-              {selectedEntries.size > 0 && (
-                <Button
-                  onClick={() => setShowCorrectionForm(true)}
-                  disabled={isLoading}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <FileEdit className="h-4 w-4" />
-                  Request Corrections ({selectedEntries.size})
-                </Button>
-              )}
             </div>
+            {selectedEntries.size > 0 && (
+              <Button
+                onClick={() => setShowCorrectionForm(true)}
+                disabled={isLoading}
+                className="w-full md:w-auto bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <FileEdit className="h-4 w-4" />
+                Request Corrections ({selectedEntries.size})
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

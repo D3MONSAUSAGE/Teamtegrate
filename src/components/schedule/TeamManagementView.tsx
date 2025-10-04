@@ -108,7 +108,7 @@ export const TeamManagementView: React.FC = () => {
       {/* Team Selection Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -118,13 +118,17 @@ export const TeamManagementView: React.FC = () => {
                 {selectedTeamName ? `Managing ${selectedTeamName}` : 'Select a team to manage schedules and approvals'}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-3">
-              <InlineTeamSelector
-                selectedTeamId={selectedTeamId}
-                onTeamChange={setSelectedTeamId}
-                disabled={teamsLoading}
-                showAllOption={hasRoleAccess('admin')}
-              />
+            <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3">
+              <div className="w-full md:w-auto flex items-center justify-center">
+                <div className="w-full md:w-auto">
+                  <InlineTeamSelector
+                    selectedTeamId={selectedTeamId}
+                    onTeamChange={setSelectedTeamId}
+                    disabled={teamsLoading}
+                    showAllOption={hasRoleAccess('admin')}
+                  />
+                </div>
+              </div>
               {selectedTeamId && (
                 <Button
                   variant="outline"
@@ -185,7 +189,7 @@ export const TeamManagementView: React.FC = () => {
 
       {/* Management Tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
           <TabsTrigger value="create-schedule" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Create Schedule
