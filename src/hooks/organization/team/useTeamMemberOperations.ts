@@ -106,7 +106,13 @@ export const useTeamMemberOperations = () => {
   };
 
   // Transfer team member to another team
-  const transferTeamMember = async (fromTeamId: string, toTeamId: string, userId: string, newRole: 'manager' | 'member' | 'admin' = 'member') => {
+  const transferTeamMember = async (
+    fromTeamId: string,
+    toTeamId: string,
+    userId: string,
+    newRole: 'manager' | 'member' | 'admin' = 'member',
+    jobRoles?: { jobRoleId: string, isPrimary: boolean }[]
+  ) => {
     try {
       // Upsert into destination team first to avoid duplicate key conflicts
       const { error: upsertError } = await supabase
@@ -135,6 +141,44 @@ export const useTeamMemberOperations = () => {
         .update({ team_id: toTeamId })
         .or(`user_id.eq.${userId},assigned_to_id.eq.${userId}`)
         .eq('team_id', fromTeamId);
+
+      // Update job roles if provided
+      if (jobRoles && jobRoles.length > 0) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('organization_id')
+          .eq('id', userId)
+          .single();
+
+        if (userData?.organization_id) {
+          // Delete existing job roles
+          const { error: deleteError } = await supabase
+            .from('user_job_roles')
+            .delete()
+            .eq('user_id', userId);
+
+          if (deleteError) {
+            console.error('Error deleting old job roles:', deleteError);
+          }
+
+          // Insert new job roles
+          const jobRoleInserts = jobRoles.map(jr => ({
+            user_id: userId,
+            job_role_id: jr.jobRoleId,
+            is_primary: jr.isPrimary,
+            organization_id: userData.organization_id
+          }));
+
+          const { error: insertError } = await supabase
+            .from('user_job_roles')
+            .insert(jobRoleInserts);
+
+          if (insertError) {
+            console.error('Error inserting new job roles:', insertError);
+            throw insertError;
+          }
+        }
+      }
 
       invalidateTeamQueries();
       toast.success('Team member transferred successfully');
