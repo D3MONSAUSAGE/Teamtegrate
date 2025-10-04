@@ -177,19 +177,28 @@ Deno.serve(async (req) => {
     if (tokenType === 'clock_in') {
       const { data: activeEntry } = await supabaseUserClient
         .from('time_entries')
-        .select('id')
+        .select('id, notes')
         .eq('user_id', userData.id)
         .is('clock_out', null)
-        .limit(1);
+        .maybeSingle();
 
-      if (activeEntry && activeEntry.length > 0) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Already clocked in',
-            details: 'You must clock out before generating a new clock-in QR'
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // If there's an active entry, check if it's a break
+      if (activeEntry) {
+        const isBreak = activeEntry.notes?.toLowerCase().includes('break');
+        
+        // Only block if it's NOT a break (i.e., it's a regular work session)
+        if (!isBreak) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'Already clocked in',
+              details: 'You must clock out before generating a new clock-in QR'
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // If it IS a break, allow QR generation (user is resuming work from break)
+        console.log('Allowing clock-in QR during break - user will resume work');
       }
     }
 
