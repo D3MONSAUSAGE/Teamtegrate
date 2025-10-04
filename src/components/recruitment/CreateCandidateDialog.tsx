@@ -10,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserPlus } from 'lucide-react';
 import type { CandidateSource } from '@/types/recruitment';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRecruitmentPipeline } from '@/hooks/recruitment/useRecruitmentPipeline';
 
 interface CreateCandidateDialogProps {
   positionId?: string;
@@ -20,6 +22,8 @@ export function CreateCandidateDialog({ positionId, children }: CreateCandidateD
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { positions } = useRecruitmentPositions();
+  const queryClient = useQueryClient();
+  const { stages } = useRecruitmentPipeline();
 
   const [formData, setFormData] = useState({
     position_id: positionId || '',
@@ -49,23 +53,57 @@ export function CreateCandidateDialog({ positionId, children }: CreateCandidateD
 
       if (!userData) throw new Error('User data not found');
 
-      const { error } = await supabase.from('recruitment_candidates').insert({
-        organization_id: userData.organization_id,
-        position_id: formData.position_id,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        phone: formData.phone || null,
-        source: formData.source,
-        source_details: formData.source_details || null,
-        resume_url: formData.resume_url || null,
-        cover_letter_url: formData.cover_letter_url || null,
-        applied_date: new Date().toISOString(),
-        status: 'active',
-        created_by: user.user.id,
-      });
+      // Get the first active pipeline stage (Applied)
+      const { data: firstStage } = await supabase
+        .from('recruitment_pipeline_stages')
+        .select('id')
+        .eq('organization_id', userData.organization_id)
+        .eq('is_active', true)
+        .order('stage_order', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (!firstStage) {
+        throw new Error('No active pipeline stages found. Please configure pipeline stages first.');
+      }
+
+      const { data: candidate, error } = await supabase
+        .from('recruitment_candidates')
+        .insert({
+          organization_id: userData.organization_id,
+          position_id: formData.position_id,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email,
+          phone: formData.phone || null,
+          source: formData.source,
+          source_details: formData.source_details || null,
+          resume_url: formData.resume_url || null,
+          cover_letter_url: formData.cover_letter_url || null,
+          applied_date: new Date().toISOString(),
+          status: 'active',
+          created_by: user.user.id,
+          current_stage_id: firstStage.id,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Create stage history record
+      if (candidate) {
+        await supabase.from('recruitment_candidate_stages').insert({
+          organization_id: userData.organization_id,
+          candidate_id: candidate.id,
+          stage_id: firstStage.id,
+          entered_date: new Date().toISOString(),
+          status: 'in_progress',
+          moved_by: user.user.id,
+        });
+      }
+
+      // Refresh the candidates list
+      queryClient.invalidateQueries({ queryKey: ['recruitment-candidates'] });
 
       toast.success('Candidate added successfully');
       setOpen(false);
