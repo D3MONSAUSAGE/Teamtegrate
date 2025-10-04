@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { analyticsService, KPIMetrics, PerformanceInsight } from '@/services/AnalyticsService';
 import { exportService } from '@/services/ExportService';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { toast } from '@/components/ui/sonner';
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Cell } from 'recharts';
@@ -41,7 +41,7 @@ const AnalyticsDashboard: React.FC = () => {
   const [insights, setInsights] = useState<PerformanceInsight[]>([]);
   const [trendData, setTrendData] = useState<any[]>([]);
   
-  const { teams } = useTeams();
+  const { teams } = useTeamAccess();
   
   const dateRangeOptions: DateRangeOption[] = [
     {

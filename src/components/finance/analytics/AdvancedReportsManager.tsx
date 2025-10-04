@@ -20,7 +20,7 @@ import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, su
 import { analyticsService, LocationPerformance, ChannelTrendData, ChannelBreakdown } from '@/services/AnalyticsService';
 import { exportService } from '@/services/ExportService';
 import { salesDataService } from '@/services/SalesDataService';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useSalesChannels } from '@/hooks/useSalesChannels';
 import { toast } from '@/components/ui/sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
@@ -49,7 +49,7 @@ const AdvancedReportsManager: React.FC = () => {
   const [channelTrendData, setChannelTrendData] = useState<ChannelTrendData[]>([]);
   const [channelBreakdown, setChannelBreakdown] = useState<ChannelBreakdown | null>(null);
 
-  const { teams } = useTeams();
+  const { teams } = useTeamAccess();
   const { channels } = useSalesChannels();
 
   const teamOptions = [

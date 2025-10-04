@@ -31,7 +31,7 @@ import { Team } from '@/types/teams';
 import { parseUniversalPDF, ParsedPDFData } from '@/utils/universalPdfParser';
 import { parseCSVExcel } from '@/utils/csvExcelParser';
 import { uploadBatchService, StagedData } from '@/services/UploadBatchService';
-import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
+import { InlineTeamSelector } from '@/components/teams';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import { DataPreviewModal } from './DataPreviewModal';
 import { BatchProgressCard } from './BatchProgressCard';
@@ -561,8 +561,7 @@ const EnhancedSalesUploadManager: React.FC<EnhancedSalesUploadManagerProps> = ({
         
         <div className="space-y-2">
           <label className="text-sm font-medium">Team</label>
-          <TeamScheduleSelector
-            teams={teams}
+          <InlineTeamSelector
             selectedTeamId={teamId}
             onTeamChange={setTeamId}
             disabled={teamsLoading || uploadStatus === 'processing'}

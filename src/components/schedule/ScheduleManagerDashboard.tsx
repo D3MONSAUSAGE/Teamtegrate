@@ -6,7 +6,7 @@ import { Calendar, Users, Clock, Settings, Plus, TrendingUp, Target, Activity } 
 
 import { EmployeeScheduleManager } from './EmployeeScheduleManager';
 import { ScheduleTemplateManager } from './ScheduleTemplateManager';
-import { TeamScheduleSelector } from './TeamScheduleSelector';
+import { InlineTeamSelector } from '@/components/teams';
 import { TimeEntryApprovalList } from '@/components/time-approvals/TimeEntryApprovalList';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
 import { useAuth } from '@/contexts/AuthContext';
@@ -109,8 +109,7 @@ const ScheduleManagerDashboard: React.FC = () => {
         onNotificationClick={() => console.log('Notifications clicked')}
       >
         {showTeamSelector && (
-          <TeamScheduleSelector
-            teams={teams}
+          <InlineTeamSelector
             selectedTeamId={selectedTeamId}
             onTeamChange={setSelectedTeamId}
             disabled={isLoading}

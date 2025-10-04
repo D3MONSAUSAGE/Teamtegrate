@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { TeamSelect } from '@/components/ui/team-select';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { InventoryTemplate } from '@/contexts/inventory/types';
 import { Search, Package, Users, Play, Shield } from 'lucide-react';
 
@@ -28,7 +28,7 @@ export const TemplateCountSelectionDialog: React.FC<TemplateCountSelectionDialog
   onStartCount,
 }) => {
   const { user } = useAuth();
-  const { teams, isLoading: teamsLoading } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
   const { templates, teamAssignments, templateItems } = useInventory();
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

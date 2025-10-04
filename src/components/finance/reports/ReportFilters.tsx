@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TimeRangeSelector } from '@/components/reports/TimeRangeSelector';
-import { EnhancedTeamSelector } from '@/components/finance/reports/EnhancedTeamSelector';
+import { CardTeamSelector } from '@/components/teams';
 import { TeamNameResolver } from '@/components/finance/reports/TeamNameResolver';
 import { IndividualUserSelector } from '@/components/finance/reports/IndividualUserSelector';
 
@@ -58,7 +58,7 @@ export const ReportFilters: React.FC<ReportFiltersProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Select Team</label>
-            <EnhancedTeamSelector
+            <CardTeamSelector
               selectedTeamId={selectedTeamId}
               onTeamChange={onTeamChange}
             />

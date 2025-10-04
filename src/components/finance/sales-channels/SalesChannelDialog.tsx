@@ -24,7 +24,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSalesChannels } from '@/hooks/useSalesChannels';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import type { SalesChannel } from '@/types/salesChannels';
 
 const salesChannelSchema = z.object({
@@ -59,7 +59,7 @@ export const SalesChannelDialog: React.FC<SalesChannelDialogProps> = ({
   channel
 }) => {
   const { createChannel, updateChannel } = useSalesChannels();
-  const { teams, isLoading: teamsLoading } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({

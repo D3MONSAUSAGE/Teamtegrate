@@ -23,9 +23,9 @@ interface Team {
   is_active: boolean;
 }
 
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useScheduleManagement } from '@/hooks/useScheduleManagement';
-import { TeamScheduleSelector } from './TeamScheduleSelector';
+import { InlineTeamSelector } from '@/components/teams';
 import { TimeEntryApprovalList } from '@/components/time-approvals/TimeEntryApprovalList';
 import { TeamWeeklyScheduleView } from './TeamWeeklyScheduleView';
 import { WeeklyScheduleCreator } from './WeeklyScheduleCreator';
@@ -38,8 +38,8 @@ import { TeamSettingsDialog } from './TeamSettingsDialog';
 
 export const TeamManagementView: React.FC = () => {
   const { user, hasRoleAccess } = useAuth();
-  const { teams, isLoading: teamsLoading } = useTeams();
-  const { 
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
+  const {
     employeeSchedules, 
     selectedTeamId, 
     setSelectedTeamId, 
@@ -119,8 +119,7 @@ export const TeamManagementView: React.FC = () => {
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
-              <TeamScheduleSelector
-                teams={teams as any}
+              <InlineTeamSelector
                 selectedTeamId={selectedTeamId}
                 onTeamChange={setSelectedTeamId}
                 disabled={teamsLoading}

@@ -8,7 +8,7 @@ import { InventoryItemDialog } from '../InventoryItemDialog';
 
 
 import { InventoryTemplatesPanel } from '../InventoryTemplatesPanel';
-import { TeamSelector } from '@/components/team/TeamSelector';
+import { SimpleTeamSelector } from '@/components/teams';
 import { InventoryCategoryDialog } from '../InventoryCategoryDialog';
 import { InventoryUnitDialog } from '../InventoryUnitDialog';
 import { VendorDialog } from '../dialogs/VendorDialog';
@@ -357,8 +357,6 @@ export const InventoryManagementTab: React.FC = () => {
                 )}
               </div>
             </div>
-
-            <TeamSelector />
 
             {loading || itemsLoading ? (
               <LoadingState type="table" rows={6} />

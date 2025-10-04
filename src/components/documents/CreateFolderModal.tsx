@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { FolderPlus, Building2, Users, Globe, Check } from 'lucide-react';
 import { useFolders } from '@/hooks/documents/useFolders';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
 import { toast } from 'sonner';
@@ -45,7 +45,7 @@ export const CreateFolderModal = ({
 }: CreateFolderModalProps) => {
   const { user } = useAuth();
   const { hasRoleAccess } = useRoleAccess(user);
-  const { teams, isLoading: teamsLoading } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
   const { createFolder } = useFolders(selectedTeamId);
   
   const [formData, setFormData] = useState({

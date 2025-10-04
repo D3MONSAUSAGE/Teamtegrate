@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTeamContext } from '@/hooks/useTeamContext';
 import { useTeamMemberOperations } from '@/hooks/organization/team/useTeamMemberOperations';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { TeamMemberPerformanceData } from '@/hooks/team/useRealTeamMembers';
@@ -54,7 +54,7 @@ export const TeamTransferDialog: React.FC<TeamTransferDialogProps> = ({
   }
   
   // Fallback to direct teams hook if context is not available
-  const { teams: fallbackTeams } = useTeams();
+  const { teams: fallbackTeams } = useTeamAccess();
   if (contextError && fallbackTeams) {
     userTeams = fallbackTeams;
   }

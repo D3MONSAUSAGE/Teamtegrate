@@ -26,7 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from '@/components/ui/sonner';
 import { useRealTeamMembers } from '@/hooks/team/useRealTeamMembers';
 import { useTeamMemberOperations } from '@/hooks/organization/team/useTeamMemberOperations';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import AddUserToTeamDialog from './AddUserToTeamDialog';
 import { TeamTransferDialog } from '@/components/team/TeamTransferDialog';
 
@@ -56,7 +56,7 @@ const TeamMemberManagementDialog: React.FC<TeamMemberManagementDialogProps> = ({
   
   const { teamMembers, isLoading, refetch } = useRealTeamMembers(team.id);
   const { removeTeamMember, updateTeamMemberRole } = useTeamMemberOperations();
-  const { teams } = useTeams();
+  const { teams } = useTeamAccess();
 
   const filteredMembers = teamMembers.filter(member =>
     member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 import { TeamSelect } from '@/components/ui/team-select';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { canStartChecklistExecution } from '@/utils/checklistTimeUtils';
 import { useMultipleChecklistTimeWindows } from '@/hooks/useChecklistTimeWindow';
 
@@ -23,7 +23,7 @@ export const MyChecklistsTab: React.FC = () => {
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
   const isAdmin = hasRoleAccess(user?.role, 'admin');
-  const { teams, isLoading: teamsLoading } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
 
   // Use different hooks based on role and team selection
   const { data: myExecutions, isLoading: myExecutionsLoading } = useMyChecklistExecutions();

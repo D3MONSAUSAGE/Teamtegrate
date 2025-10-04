@@ -19,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { useCreateChecklistTemplateV2, useUpdateChecklistTemplateV2, ChecklistTemplateFormData } from '@/hooks/useChecklistTemplatesV2';
 import { ChecklistFormData, ChecklistPriority, AssignmentType, Checklist } from '@/types/checklist';
 import { useUsers } from '@/hooks/useUsers';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, X, GripVertical, Clock, Users, Settings, Calendar } from 'lucide-react';
 
@@ -110,7 +110,7 @@ export const ChecklistCreationDialog: React.FC<ChecklistCreationDialogProps> = (
   const createTemplate = useCreateChecklistTemplateV2();
   const updateTemplate = useUpdateChecklistTemplateV2();
   const { users } = useUsers();
-  const { teams } = useTeams();
+  const { teams } = useTeamAccess();
 
   const WEEKDAYS = [
     { id: 'monday', label: 'Monday' },

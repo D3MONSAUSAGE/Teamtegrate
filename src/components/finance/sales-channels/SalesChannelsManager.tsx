@@ -19,14 +19,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSalesChannels } from '@/hooks/useSalesChannels';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { SalesChannelDialog } from './SalesChannelDialog';
 import type { SalesChannel } from '@/types/salesChannels';
 
 export const SalesChannelsManager: React.FC = () => {
   const { channels, isLoading, toggleChannelStatus, deleteChannel } = useSalesChannels();
-  const { teams } = useTeams();
+  const { teams } = useTeamAccess();
   const { hasRoleAccess } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingChannel, setEditingChannel] = useState<SalesChannel | null>(null);

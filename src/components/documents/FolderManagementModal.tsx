@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, MoreVertical, FolderPlus, Palette, Users } from 'lucide-react';
 import { useFolders, type Folder } from '@/hooks/documents/useFolders';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoleAccess } from '@/contexts/auth/hooks/useRoleAccess';
 import { TeamSelect } from '@/components/ui/team-select';
@@ -35,7 +35,7 @@ const colorOptions = [
 export const FolderManagementModal = ({ isOpen, onClose, selectedTeamId }: FolderManagementModalProps) => {
   const { user } = useAuth();
   const { hasRoleAccess } = useRoleAccess(user);
-  const { teams, isLoading: teamsLoading } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
   const { folders, createFolder, updateFolder, deleteFolder } = useFolders(selectedTeamId);
   const [isCreating, setIsCreating] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);

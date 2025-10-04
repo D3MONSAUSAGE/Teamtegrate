@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { TeamSelect } from '@/components/ui/team-select';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTeams } from '@/hooks/useTeams';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { Package, Users, Play, Shield } from 'lucide-react';
 
 interface ManualCountSelectionDialogProps {
@@ -23,7 +23,7 @@ export const ManualCountSelectionDialog: React.FC<ManualCountSelectionDialogProp
   onStartCount,
 }) => {
   const { user } = useAuth();
-  const { teams, isLoading: teamsLoading } = useTeams();
+  const { teams, isLoading: teamsLoading } = useTeamAccess();
   const [open, setOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
 

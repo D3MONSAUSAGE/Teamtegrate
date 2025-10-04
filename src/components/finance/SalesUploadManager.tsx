@@ -27,7 +27,7 @@ import { Team } from '@/types/teams';
 import { parseUniversalPDF } from '@/utils/universalPdfParser';
 import { parseCSVExcel } from '@/utils/csvExcelParser';
 import { salesDataService } from '@/services/SalesDataService';
-import { TeamScheduleSelector } from '@/components/schedule/TeamScheduleSelector';
+import { InlineTeamSelector } from '@/components/teams';
 import { useTeamQueries } from '@/hooks/organization/team/useTeamQueries';
 import ChannelSalesInput, { ChannelSalesEntry } from './ChannelSalesInput';
 
@@ -394,8 +394,7 @@ const SalesUploadManager: React.FC<SalesUploadManagerProps> = ({
         
         <div className="space-y-2">
           <label className="text-sm font-medium">Team</label>
-          <TeamScheduleSelector
-            teams={teams}
+          <InlineTeamSelector
             selectedTeamId={teamId}
             onTeamChange={setTeamId}
             disabled={teamsLoading || uploadStatus === 'processing'}
