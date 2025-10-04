@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
   Clock, 
-  TimerOff, 
   Coffee, 
   UtensilsCrossed, 
   Play, 
@@ -15,8 +14,10 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  Timer
+  Timer,
+  QrCode
 } from 'lucide-react';
+import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
 import { useEnhancedTimeTracking } from '@/hooks/useEnhancedTimeTracking';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,13 @@ const EnhancedTimeTracking: React.FC = () => {
   } = useEnhancedTimeTracking();
   
   const [notes, setNotes] = useState('');
+  const [qrDialogOpen, setQRDialogOpen] = useState(false);
+  const [qrTokenType, setQRTokenType] = useState<'clock_in' | 'clock_out'>('clock_in');
+
+  const openQRDialog = (type: 'clock_in' | 'clock_out') => {
+    setQRTokenType(type);
+    setQRDialogOpen(true);
+  };
 
   const formatTime = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -151,32 +159,28 @@ const EnhancedTimeTracking: React.FC = () => {
               ) : sessionState.isActive ? (
                 <Button
                   variant="destructive"
-                  onClick={() => clockOut(notes)}
+                  onClick={() => openQRDialog('clock_out')}
                   disabled={isLoading}
                   size="lg"
+                  className="gap-2"
                 >
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <TimerOff className="mr-2 h-4 w-4" />
-                  )}
-                  Clock Out
+                  <QrCode className="h-5 w-5" />
+                  Generate Clock Out QR Code
                 </Button>
               ) : (
                 <Button
-                  onClick={() => clockIn(notes)}
+                  onClick={() => openQRDialog('clock_in')}
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-primary to-emerald-500"
+                  className="bg-gradient-to-r from-primary to-emerald-500 gap-2"
                   size="lg"
                 >
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Clock className="mr-2 h-4 w-4" />
-                  )}
-                  Clock In
+                  <QrCode className="h-5 w-5" />
+                  Generate Clock In QR Code
                 </Button>
               )}
+              <p className="text-xs text-muted-foreground text-center">
+                Scan QR at wall-mounted station to {sessionState.isActive ? 'clock out' : 'clock in'}
+              </p>
 
               {/* Break Controls - Always visible when working */}
               {sessionState.isActive && (
@@ -323,6 +327,13 @@ const EnhancedTimeTracking: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Code Generator Dialog */}
+      <EmployeeQRGenerator
+        open={qrDialogOpen}
+        onOpenChange={setQRDialogOpen}
+        tokenType={qrTokenType}
+      />
     </div>
   );
 };

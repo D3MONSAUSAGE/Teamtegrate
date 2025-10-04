@@ -1,18 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Play, 
-  Square, 
   Coffee, 
   Utensils, 
-  Clock,
   Wifi,
   WifiOff,
-  AlertTriangle
+  AlertTriangle,
+  QrCode
 } from 'lucide-react';
+import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
 import { useEnhancedTimeTracking } from '@/hooks/useEnhancedTimeTracking';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,14 @@ const StreamlinedTimeControls: React.FC = () => {
   const isWorking = sessionState.isActive && !sessionState.isOnBreak;
   const isOnBreak = sessionState.isActive && sessionState.isOnBreak;
   const canTakeBreak = isWorking && breakRequirements.canTakeBreak;
+
+  const [qrDialogOpen, setQRDialogOpen] = useState(false);
+  const [qrTokenType, setQRTokenType] = useState<'clock_in' | 'clock_out'>('clock_in');
+
+  const openQRDialog = (type: 'clock_in' | 'clock_out') => {
+    setQRTokenType(type);
+    setQRDialogOpen(true);
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -133,34 +141,34 @@ const StreamlinedTimeControls: React.FC = () => {
             {/* Main Action Button */}
             {!sessionState.isActive ? (
               <Button
-                onClick={() => clockIn()}
+                onClick={() => openQRDialog('clock_in')}
                 disabled={isLoading}
                 size="lg"
-                className="gap-2 bg-green-600 hover:bg-green-700 text-white min-w-[140px]"
+                className="gap-2 bg-green-600 hover:bg-green-700 text-white min-w-[180px]"
               >
-                <Play className="h-4 w-4" />
-                Clock In
+                <QrCode className="h-4 w-4" />
+                Generate Clock In QR
               </Button>
             ) : isOnBreak ? (
               <Button
                 onClick={resumeWork}
                 disabled={isLoading}
                 size="lg"
-                className="gap-2 bg-primary hover:bg-primary/90 min-w-[140px]"
+                className="gap-2 bg-primary hover:bg-primary/90 min-w-[180px]"
               >
                 <Play className="h-4 w-4" />
                 Resume Work
               </Button>
             ) : (
               <Button
-                onClick={() => clockOut()}
+                onClick={() => openQRDialog('clock_out')}
                 disabled={isLoading}
                 variant="destructive"
                 size="lg"
-                className="gap-2 min-w-[140px]"
+                className="gap-2 min-w-[180px]"
               >
-                <Square className="h-4 w-4" />
-                Clock Out
+                <QrCode className="h-4 w-4" />
+                Generate Clock Out QR
               </Button>
             )}
           </div>
@@ -192,6 +200,13 @@ const StreamlinedTimeControls: React.FC = () => {
           </div>
         )}
       </CardContent>
+
+      {/* QR Code Generator Dialog */}
+      <EmployeeQRGenerator
+        open={qrDialogOpen}
+        onOpenChange={setQRDialogOpen}
+        tokenType={qrTokenType}
+      />
     </Card>
   );
 };
