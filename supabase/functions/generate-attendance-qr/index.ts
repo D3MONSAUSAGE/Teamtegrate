@@ -123,23 +123,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch attendance settings for organization
-    const { data: attendanceSettings } = await supabaseUserClient
-      .from('organization_attendance_settings')
-      .select('require_schedule_for_clock_in, allow_early_clock_in_minutes, allow_late_clock_in_minutes')
-      .eq('organization_id', userData.organization_id)
-      .maybeSingle();
+    // Fetch attendance settings and team memberships in parallel for faster performance
+    const [
+      { data: attendanceSettings },
+      { data: userTeams }
+    ] = await Promise.all([
+      supabaseUserClient
+        .from('organization_attendance_settings')
+        .select('require_schedule_for_clock_in, allow_early_clock_in_minutes, allow_late_clock_in_minutes')
+        .eq('organization_id', userData.organization_id)
+        .maybeSingle(),
+      
+      supabaseUserClient
+        .from('team_memberships')
+        .select('teams(require_schedule_for_clock_in)')
+        .eq('user_id', userData.id)
+        .limit(1)
+        .maybeSingle()
+    ]);
 
     console.log('Attendance settings:', attendanceSettings);
 
     // Check if user belongs to a team and get team settings
     let teamRequiresSchedule: boolean | null = null;
-    const { data: userTeams } = await supabaseUserClient
-      .from('team_memberships')
-      .select('teams(require_schedule_for_clock_in)')
-      .eq('user_id', userData.id)
-      .limit(1)
-      .maybeSingle();
 
     if (userTeams?.teams) {
       teamRequiresSchedule = (userTeams.teams as any).require_schedule_for_clock_in;
