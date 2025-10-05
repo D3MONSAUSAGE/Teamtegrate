@@ -10,7 +10,7 @@ interface MeetingsErrorFallbackProps {
 }
 
 const MeetingsErrorFallback: React.FC<MeetingsErrorFallbackProps> = ({ error, resetErrorBoundary }) => {
-  console.error('🔴 MeetingsErrorFallback: Meetings error occurred:', error);
+  console.error('MeetingsErrorFallback: Meetings error occurred:', error);
   
   return (
     <div style={{ padding: '20px', background: '#ffebee', border: '2px solid red', borderRadius: '8px' }}>
@@ -54,16 +54,11 @@ interface MeetingsErrorBoundaryProps {
 }
 
 export const MeetingsErrorBoundary: React.FC<MeetingsErrorBoundaryProps> = ({ children }) => {
-  console.log('🟡 MeetingsErrorBoundary: Wrapping meetings component');
-  
   return (
     <ErrorBoundary
       FallbackComponent={MeetingsErrorFallback}
       onError={(error, errorInfo) => {
-        console.error('🔴 MeetingsErrorBoundary: Error caught:', error, errorInfo);
-      }}
-      onReset={() => {
-        console.log('🟡 MeetingsErrorBoundary: Error boundary reset');
+        console.error('MeetingsErrorBoundary: Error caught:', error, errorInfo);
       }}
     >
       {children}

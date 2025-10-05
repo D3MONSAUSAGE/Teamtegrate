@@ -46,14 +46,6 @@ const ModernMessageArea: React.FC<ModernMessageAreaProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-
-  // Debug auth state
-  console.log('ModernMessageArea: Auth state:', {
-    hasUser: !!user,
-    userId: user?.id,
-    userEmail: user?.email,
-    userOrgId: user?.organizationId
-  });
   
   const { messages, loading: messagesLoading, loadingMore, hasMore, sendMessage, loadMoreMessages, retryMessage } = useMessages(room.id);
   const { draft, updateDraft, clearDraft, isLoading: isDraftLoading } = useDraftPersistence(room.id);

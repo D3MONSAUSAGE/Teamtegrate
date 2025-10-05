@@ -86,7 +86,6 @@ export const SimplifiedTimeTracking: React.FC = () => {
         isLoading={timeTrackingLoading}
         onRequestCorrection={(entryId) => {
           // TODO: Implement correction request functionality
-          console.log('Request correction for entry:', entryId);
         }}
       />
     </div>

@@ -32,7 +32,6 @@ const PushNotificationManager: React.FC = () => {
   useEffect(() => {
     const hasNotifications = (fcmSupported && fcmToken) || isRegistered;
     if (hasNotifications && user) {
-      console.log('Push notifications registered successfully');
       toast.success('🔔 Push notifications are now active!', {
         description: fcmSupported ? 'FCM notifications enabled for enhanced delivery.' : 'Basic notifications enabled.',
         duration: 4000,

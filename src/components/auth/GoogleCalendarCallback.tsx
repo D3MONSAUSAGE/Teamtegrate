@@ -7,52 +7,35 @@ const GoogleCalendarCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    console.log('🔄 Google Calendar callback processing...');
     const code = searchParams.get('code');
     const error = searchParams.get('error');
     const state = searchParams.get('state'); // This contains the user ID
 
-    console.log('📥 Callback parameters:', { 
-      hasCode: !!code, 
-      hasError: !!error, 
-      hasState: !!state,
-      code: code?.substring(0, 10) + '...', 
-      error,
-      state 
-    });
-
     if (error) {
-      console.error('❌ OAuth error received:', error);
-      // Send error message to parent window
+      console.error('OAuth error received:', error);
       window.opener?.postMessage({
         type: 'GOOGLE_AUTH_ERROR',
         error,
       }, window.location.origin);
-      console.log('📤 Sent error message to parent window, closing...');
       window.close();
       return;
     }
 
     if (code && state) {
-      console.log('✅ Sending success message to parent window');
-      // Send success message with code to parent window
       window.opener?.postMessage({
         type: 'GOOGLE_AUTH_SUCCESS',
         code,
         userId: state,
       }, window.location.origin);
-      console.log('📤 Sent success message to parent window, closing...');
       window.close();
       return;
     }
 
-    // If no code or error, something went wrong
-    console.error('⚠️ No code or error received - invalid callback');
+    console.error('No code or error received - invalid callback');
     window.opener?.postMessage({
       type: 'GOOGLE_AUTH_ERROR',
       error: 'Missing authorization code',
     }, window.location.origin);
-    console.log('📤 Sent missing code error to parent window, closing...');
     window.close();
   }, [searchParams]);
 

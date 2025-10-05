@@ -158,8 +158,6 @@ export const useTaskReports = (params: any) => {
   // Daily detail query for specific date - legacy support
   const getDailyTaskDetails = React.useCallback(async (selectedDate: string): Promise<DailyDetailData | null> => {
     if (!user?.organizationId) return null;
-
-    console.log(`[LEGACY] Fetching daily details for date: ${selectedDate}, userId: ${params.userId}`);
     
     // Fetch all tasks with broader date range to ensure we capture all relevant data
     const startOfMonth = format(subDays(new Date(selectedDate), 30), 'yyyy-MM-dd');
@@ -201,7 +199,6 @@ export const useTaskReports = (params: any) => {
     }
 
     if (!data || data.length === 0) {
-      console.log('No tasks found for the query');
       return {
         date: selectedDate,
         completion_score: 0,
@@ -216,8 +213,6 @@ export const useTaskReports = (params: any) => {
         low_priority_count: 0
       };
     }
-
-    console.log(`Found ${data.length} total tasks to process`);
     
     const selectedDateObj = new Date(selectedDate);
     const selectedDateStr = format(selectedDateObj, 'yyyy-MM-dd');

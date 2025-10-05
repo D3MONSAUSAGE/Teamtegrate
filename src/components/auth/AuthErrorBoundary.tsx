@@ -30,10 +30,7 @@ class AuthErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    console.log('AuthErrorBoundary: Retrying authentication...');
     this.setState({ hasError: false, error: null, errorInfo: null });
-    
-    // Force a page reload to reset auth state
     window.location.reload();
   };
 

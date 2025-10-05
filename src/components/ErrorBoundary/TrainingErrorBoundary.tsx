@@ -10,7 +10,7 @@ interface TrainingErrorFallbackProps {
 }
 
 const TrainingErrorFallback: React.FC<TrainingErrorFallbackProps> = ({ error, resetErrorBoundary }) => {
-  console.error('🔴 TrainingErrorFallback: Training error occurred:', error);
+  console.error('TrainingErrorFallback: Training error occurred:', error);
   
   return (
     <div style={{ padding: '20px', background: '#ffebee', border: '2px solid red', borderRadius: '8px' }}>
@@ -54,16 +54,11 @@ interface TrainingErrorBoundaryProps {
 }
 
 export const TrainingErrorBoundary: React.FC<TrainingErrorBoundaryProps> = ({ children }) => {
-  console.log('🟡 TrainingErrorBoundary: Wrapping training component');
-  
   return (
     <ErrorBoundary
       FallbackComponent={TrainingErrorFallback}
       onError={(error, errorInfo) => {
-        console.error('🔴 TrainingErrorBoundary: Error caught:', error, errorInfo);
-      }}
-      onReset={() => {
-        console.log('🟡 TrainingErrorBoundary: Error boundary reset');
+        console.error('TrainingErrorBoundary: Error caught:', error, errorInfo);
       }}
     >
       {children}

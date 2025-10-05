@@ -52,26 +52,8 @@ export function formatInTZ(iso: string | number | Date, timezone: string, opts?:
 }
 
 /**
- * @deprecated Use new Date().toISOString() directly for proper UTC storage
- * This function was creating incorrect timestamps
- */
-export function createTimestampInTZ(timezone: string): string {
-  console.warn('createTimestampInTZ is deprecated - use new Date().toISOString() for proper UTC storage');
-  return new Date().toISOString();
-}
-
-/**
  * Get the local date in a specific timezone (YYYY-MM-DD format)
  */
 export function getLocalDateString(timezone: string, date: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(date);
-}
-
-/**
- * @deprecated This function created fake ISO strings with wrong timestamps
- * Use getTZDayRangeUTC from tzRange.ts for proper timezone handling
- */
-export function getLocalDateForStorage(timezone: string, date: Date = new Date()): string {
-  console.warn('getLocalDateForStorage is deprecated - creates incorrect timestamps');
-  return new Date().toISOString();
 }

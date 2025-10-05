@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { InventoryCount, InventoryCountItem } from '../types';
-import { createTimestampInTZ } from '@/lib/dates/tz';
 
 // Utility for chunked operations
 const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -63,7 +62,7 @@ export const inventoryCountsApi = {
   ): Promise<void> {
     const updateData: any = {
       actual_quantity: actualQuantity,
-      counted_at: createTimestampInTZ(userTimezone || 'UTC'),
+      counted_at: new Date().toISOString(),
     };
 
     if (notes) updateData.notes = notes;
@@ -501,7 +500,7 @@ export const inventoryCountsApi = {
         batch.map(({ itemId, actualQuantity, notes, countedBy }) => {
           const updateData: any = {
             actual_quantity: actualQuantity,
-            counted_at: createTimestampInTZ('UTC'), // Use UTC for bulk operations
+            counted_at: new Date().toISOString(),
           };
 
           if (notes) updateData.notes = notes;
@@ -592,7 +591,7 @@ export const inventoryCountsApi = {
     // Update with new quantity
     const updateData = {
       actual_quantity: newActual,
-      counted_at: createTimestampInTZ('UTC'),
+      counted_at: new Date().toISOString(),
     };
 
     const { error } = await supabase
@@ -607,7 +606,7 @@ export const inventoryCountsApi = {
   async setActual(countId: string, itemId: string, qty: number): Promise<void> {
     const updateData = {
       actual_quantity: qty,
-      counted_at: createTimestampInTZ('UTC'),
+      counted_at: new Date().toISOString(),
     };
 
     const { error } = await supabase

@@ -197,10 +197,7 @@ const EnhancedTimeTracking: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        console.log('Coffee break clicked, canTakeBreak:', breakRequirements.canTakeBreak);
-                        startBreak('Coffee');
-                      }}
+                      onClick={() => startBreak('Coffee')}
                       disabled={isLoading || !breakRequirements.canTakeBreak}
                       className="justify-start"
                     >
@@ -211,10 +208,7 @@ const EnhancedTimeTracking: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        console.log('Rest break clicked, canTakeBreak:', breakRequirements.canTakeBreak);
-                        startBreak('Rest');
-                      }}
+                      onClick={() => startBreak('Rest')}
                       disabled={isLoading || !breakRequirements.canTakeBreak}
                       className="justify-start"
                     >
@@ -225,10 +219,7 @@ const EnhancedTimeTracking: React.FC = () => {
                     <Button
                       variant={breakRequirements.requiresMealBreak ? "default" : "outline"}
                       size="sm"
-                      onClick={() => {
-                        console.log('Lunch break clicked, canTakeBreak:', breakRequirements.canTakeBreak);
-                        startBreak('Lunch');
-                      }}
+                      onClick={() => startBreak('Lunch')}
                       disabled={isLoading || !breakRequirements.canTakeBreak}
                       className="justify-start"
                     >
