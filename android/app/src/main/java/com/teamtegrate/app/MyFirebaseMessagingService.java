@@ -45,14 +45,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void onNewToken(String token) {
         Log.d(TAG, "Refreshed token: " + token);
         
-        // Store in SharedPreferences for later sync
-        getSharedPreferences("fcm", MODE_PRIVATE)
+        // Store in SharedPreferences for later sync - MATCH FCMTokenPlugin EXACTLY
+        getSharedPreferences("FCMPrefs", MODE_PRIVATE)
             .edit()
-            .putString("token", token)
+            .putString("fcm_token", token)
             .putBoolean("needs_sync", true)
             .apply();
         
-        Log.d(TAG, "Token stored locally, will sync when user logs in");
+        Log.d(TAG, "Token stored in FCMPrefs with key fcm_token for JavaScript bridge");
     }
 
     private void sendNotification(String title, String messageBody) {

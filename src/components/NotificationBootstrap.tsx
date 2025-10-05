@@ -7,9 +7,6 @@ import { useFCMTokenManager } from '@/hooks/useFCMTokenManager';
 // Web push notifications removed - using FCM for all platforms
 import { usePWAPrompt } from '@/hooks/usePWAPrompt';
 
-// Simple web-only check instead of Capacitor import
-const isNative = false; // Always false for web-only builds
-
 /**
  * Headless component that initializes comprehensive notification functionality
  * including native notifications, FCM push notifications, web push notifications,

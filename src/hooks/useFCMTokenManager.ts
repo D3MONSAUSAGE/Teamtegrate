@@ -60,20 +60,52 @@ export const useFCMTokenManager = () => {
         await PushNotifications.register();
         console.log('✅ Registration completed');
         
-        // Wait a moment for token to be saved to SharedPreferences
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Retry logic with exponential backoff to get token from native bridge
+        const maxRetries = 5;
+        const retryDelays = [1000, 2000, 3000, 5000, 8000]; // Exponential backoff
+        let lastError: Error | null = null;
         
-        // Get token from native bridge using Capacitor plugin
-        console.log('📝 Getting FCM token from native storage...');
-        // @ts-ignore - Custom plugin
-        const result: any = await Capacitor.Plugins.FCMToken.getToken();
-        
-        if (!result || !result.success || !result.token) {
-          throw new Error('No FCM token found in native storage. Token may still be generating.');
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            console.log(`📝 Attempt ${attempt + 1}/${maxRetries}: Getting FCM token from native storage...`);
+            
+            // Wait before attempting (except first attempt)
+            if (attempt > 0) {
+              await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
+            } else {
+              // Small initial delay for first attempt
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            // @ts-ignore - Custom plugin
+            const result: any = await Capacitor.Plugins.FCMToken.getToken();
+            
+            if (result && result.success && result.token) {
+              // Validate FCM token format (FCM tokens are typically 152+ characters)
+              if (result.token.length < 100) {
+                throw new Error('Invalid FCM token format (too short)');
+              }
+              
+              currentToken = result.token;
+              console.log('✅ FCM Token obtained from native bridge:', currentToken.substring(0, 30) + '...');
+              break; // Success - exit retry loop
+            } else {
+              throw new Error(result?.error || 'No FCM token found in native storage');
+            }
+          } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            console.warn(`⚠️ Attempt ${attempt + 1} failed:`, lastError.message);
+            
+            if (attempt === maxRetries - 1) {
+              // Last attempt failed
+              throw new Error(`Failed to register for notifications after ${maxRetries} attempts. Please try again. Error: ${lastError.message}`);
+            }
+          }
         }
         
-        currentToken = result.token;
-        console.log('✅ FCM Token obtained from native bridge:', currentToken.substring(0, 30) + '...');
+        if (!currentToken) {
+          throw lastError || new Error('Failed to obtain FCM token after all retries');
+        }
       } else {
         console.log('🌐 Web Path - Using Web Push');
         
