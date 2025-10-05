@@ -133,6 +133,18 @@ export const ScannerStationPage: React.FC = () => {
 
       if (data.success) {
         toast.success(data.message);
+        
+        // Broadcast to other tabs/windows to sync their time tracking state
+        try {
+          const syncChannel = new BroadcastChannel('time-tracking-sync');
+          syncChannel.postMessage({ 
+            type: data.action === 'clock_in' ? 'clock-in' : 'clock-out',
+            timestamp: Date.now()
+          });
+          syncChannel.close();
+        } catch (broadcastError) {
+          console.warn('BroadcastChannel not supported:', broadcastError);
+        }
       } else {
         // Better error messaging based on scan status
         const scanStatus = data.scanStatus || '';

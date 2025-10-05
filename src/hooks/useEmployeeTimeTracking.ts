@@ -60,6 +60,7 @@ export const useEmployeeTimeTracking = () => {
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
   const [weeklyEntries, setWeeklyEntries] = useState<TimeEntry[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   // Auto-close stale sessions on load
   const autoCloseStaleSessionsAPI = useCallback(async () => {
@@ -497,6 +498,7 @@ export const useEmployeeTimeTracking = () => {
                   isOnBreak: false,
                   breakElapsedMinutes: 0
                 });
+                toast.success('Clocked out successfully!');
               }
             } else if (payload.eventType === 'DELETE') {
               setCurrentSession({
@@ -520,8 +522,10 @@ export const useEmployeeTimeTracking = () => {
           
           if (status === 'SUBSCRIBED') {
             console.log('✓ Real-time updates active');
+            setRealtimeConnected(true);
             retryCount = 0;
           } else if (status === 'CLOSED' && retryCount < maxRetries) {
+            setRealtimeConnected(false);
             console.warn('Real-time connection closed, retrying...', retryCount + 1);
             retryCount++;
             retryTimeout = setTimeout(() => {
@@ -545,12 +549,46 @@ export const useEmployeeTimeTracking = () => {
     };
   }, [user?.id, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
 
+  // Polling fallback mechanism - checks every 5 seconds if real-time fails
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const pollingInterval = setInterval(async () => {
+      // Only poll if real-time is disconnected or if there's an active session
+      if (!realtimeConnected || currentSession.isActive) {
+        console.log('🔄 Polling fallback: Checking session status...');
+        await fetchCurrentSession();
+      }
+    }, 5000);
+
+    return () => clearInterval(pollingInterval);
+  }, [user?.id, realtimeConnected, currentSession.isActive, fetchCurrentSession]);
+
+  // Cross-tab communication using BroadcastChannel
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = new BroadcastChannel('time-tracking-sync');
+    
+    channel.onmessage = (event) => {
+      console.log('📡 Cross-tab sync received:', event.data);
+      if (event.data.type === 'clock-in' || event.data.type === 'clock-out') {
+        fetchCurrentSession();
+        fetchDailySummary();
+        fetchWeeklyEntries();
+      }
+    };
+
+    return () => channel.close();
+  }, [user?.id, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
+
   return {
     currentSession,
     dailySummary,
     weeklyEntries,
     isLoading,
     lastError,
+    realtimeConnected,
     clockIn,
     clockOut,
     startBreak,
