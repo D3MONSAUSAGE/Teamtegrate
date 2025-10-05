@@ -5,9 +5,6 @@ import InvoiceFilters from './invoice-list/InvoiceFilters';
 import InvoiceTable from './invoice-list/InvoiceTable';
 import EmptyState from './invoice-list/EmptyState';
 import ImageViewerModal from './invoice-list/ImageViewerModal';
-import InvoiceDataIntegrityChecker from './invoice-list/InvoiceDataIntegrityChecker';
-import AutomatedIntegrityChecker from './invoice-list/AutomatedIntegrityChecker';
-import InvoiceSystemMonitor from './invoice-list/InvoiceSystemMonitor';
 import { useInvoiceData } from './invoice-list/useInvoiceData';
 import { useInvoiceFilters } from './invoice-list/useInvoiceFilters';
 import { useInvoiceActions } from './invoice-list/useInvoiceActions';
@@ -70,15 +67,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
 
   return (
     <div className="space-y-6">
-      {/* System Health Monitoring - Only visible to admins */}
-      <InvoiceSystemMonitor />
-      
-      {/* Automated Integrity Checker - Only visible to admins */}
-      <AutomatedIntegrityChecker />
-      
-      {/* Manual Data Integrity Checker - Only visible to admins */}
-      <InvoiceDataIntegrityChecker />
-      
       <Card>
         <CardHeader>
           <CardTitle>Invoice Management</CardTitle>
