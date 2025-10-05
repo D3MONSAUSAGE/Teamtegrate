@@ -30,6 +30,35 @@ export interface InvoiceTemplate {
   updated_at: string;
 }
 
+export interface UploadedInvoice {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  branch: string; // deprecated but keep for backward compat
+  team_id: string;
+  uploader_name: string;
+  file_name: string;
+  file_type: string;
+  file_path: string;
+  file_size: number;
+  user_id: string;
+  organization_id: string;
+  created_at: string;
+  
+  // New financial tracking fields
+  vendor_id?: string;
+  invoice_total?: number;
+  currency: string;
+  payment_status: 'unpaid' | 'partial' | 'paid' | 'void';
+  payment_due_date?: string;
+  paid_amount: number;
+  expense_category_id?: string;
+  payment_method?: string;
+  reference_number?: string;
+  notes?: string;
+  tags?: string[];
+}
+
 export interface CreatedInvoice {
   id: string;
   organization_id: string;

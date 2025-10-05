@@ -17,6 +17,16 @@ interface InvoiceMetadata {
   invoiceNumber: string;
   invoiceDate: string;
   teamId: string;
+  vendorId?: string;
+  expenseCategoryId?: string;
+  invoiceTotal?: number;
+  currency: string;
+  paymentDueDate?: string;
+  paymentStatus: string;
+  paymentMethod?: string;
+  referenceNumber?: string;
+  notes?: string;
+  tags?: string[];
 }
 
 interface InvoiceUploadProps {
@@ -27,6 +37,16 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(undefined);
   const [teamId, setTeamId] = useState('');
+  const [vendorId, setVendorId] = useState('');
+  const [expenseCategoryId, setExpenseCategoryId] = useState('');
+  const [invoiceTotal, setInvoiceTotal] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [paymentDueDate, setPaymentDueDate] = useState<Date | undefined>(undefined);
+  const [paymentStatus, setPaymentStatus] = useState('unpaid');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [notes, setNotes] = useState('');
+  const [tags, setTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
@@ -75,7 +95,19 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           file_path: uploadResult.filePath!,
           file_size: file.size,
           user_id: user.id,
-          organization_id: user.organizationId
+          organization_id: user.organizationId,
+          // New financial tracking fields
+          vendor_id: metadata.vendorId || null,
+          invoice_total: metadata.invoiceTotal || null,
+          currency: metadata.currency,
+          payment_status: metadata.paymentStatus,
+          payment_due_date: metadata.paymentDueDate || null,
+          paid_amount: 0,
+          expense_category_id: metadata.expenseCategoryId || null,
+          payment_method: metadata.paymentMethod || null,
+          reference_number: metadata.referenceNumber || null,
+          notes: metadata.notes || null,
+          tags: metadata.tags || null
         });
 
       if (dbError) {
@@ -108,6 +140,16 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       setInvoiceNumber('');
       setInvoiceDate(undefined);
       setTeamId('');
+      setVendorId('');
+      setExpenseCategoryId('');
+      setInvoiceTotal('');
+      setCurrency('USD');
+      setPaymentDueDate(undefined);
+      setPaymentStatus('unpaid');
+      setPaymentMethod('');
+      setReferenceNumber('');
+      setNotes('');
+      setTags('');
       
       // Reset upload status after a delay
       setTimeout(() => {
@@ -129,19 +171,50 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   }, [user?.organizationId, user?.name, user?.email, user?.id, onUploadSuccess]);
 
   const handleFileUpload = useCallback(async (file: File) => {
-    if (!invoiceNumber || !invoiceDate || !teamId) {
-      toast.error('Please fill in all invoice details before uploading');
+    // Validate required fields
+    if (!invoiceNumber || !invoiceDate || !teamId || !vendorId || !expenseCategoryId || !invoiceTotal) {
+      toast.error('Please fill in all required fields (Invoice Number, Date, Team, Vendor, Category, Total)');
       return;
     }
+
+    // Validate invoice total
+    const totalAmount = parseFloat(invoiceTotal);
+    if (isNaN(totalAmount) || totalAmount <= 0) {
+      toast.error('Invoice total must be greater than 0');
+      return;
+    }
+
+    // Validate payment due date
+    if (paymentDueDate && paymentDueDate < invoiceDate) {
+      toast.error('Payment due date must be on or after invoice date');
+      return;
+    }
+
+    // Parse tags
+    const parsedTags = tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
 
     const metadata: InvoiceMetadata = {
       invoiceNumber: invoiceNumber,
       invoiceDate: invoiceDate.toISOString(),
       teamId: teamId,
+      vendorId: vendorId,
+      expenseCategoryId: expenseCategoryId,
+      invoiceTotal: totalAmount,
+      currency: currency,
+      paymentDueDate: paymentDueDate?.toISOString(),
+      paymentStatus: paymentStatus,
+      paymentMethod: paymentMethod || undefined,
+      referenceNumber: referenceNumber || undefined,
+      notes: notes || undefined,
+      tags: parsedTags.length > 0 ? parsedTags : undefined
     };
 
     await uploadInvoice(file, metadata);
-  }, [invoiceNumber, invoiceDate, teamId, uploadInvoice]);
+  }, [invoiceNumber, invoiceDate, teamId, vendorId, expenseCategoryId, invoiceTotal, 
+      currency, paymentDueDate, paymentStatus, paymentMethod, referenceNumber, notes, tags, uploadInvoice]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -191,7 +264,15 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
     return <InvoiceAccessRestriction />;
   }
 
-  const hasRequiredFields = !!(invoiceNumber && invoiceDate && teamId);
+  const hasRequiredFields = !!(
+    invoiceNumber && 
+    invoiceDate && 
+    teamId && 
+    vendorId && 
+    expenseCategoryId && 
+    invoiceTotal && 
+    parseFloat(invoiceTotal) > 0
+  );
   const isUploadDisabled = isUploading || !hasRequiredFields;
 
   return (
@@ -211,6 +292,26 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
           setInvoiceDate={setInvoiceDate}
           teamId={teamId}
           setTeamId={setTeamId}
+          vendorId={vendorId}
+          setVendorId={setVendorId}
+          expenseCategoryId={expenseCategoryId}
+          setExpenseCategoryId={setExpenseCategoryId}
+          invoiceTotal={invoiceTotal}
+          setInvoiceTotal={setInvoiceTotal}
+          currency={currency}
+          setCurrency={setCurrency}
+          paymentDueDate={paymentDueDate}
+          setPaymentDueDate={setPaymentDueDate}
+          paymentStatus={paymentStatus}
+          setPaymentStatus={setPaymentStatus}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          referenceNumber={referenceNumber}
+          setReferenceNumber={setReferenceNumber}
+          notes={notes}
+          setNotes={setNotes}
+          tags={tags}
+          setTags={setTags}
           isUploading={isUploading}
         />
 
