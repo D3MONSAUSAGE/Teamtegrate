@@ -25,6 +25,12 @@ export const FinanceNavMenu: React.FC<FinanceNavMenuProps> = ({
 }) => {
   const location = useLocation();
   const { hasRoleAccess } = useAuth();
+
+  // Hide Finance menu from regular users
+  if (!hasRoleAccess('team_leader')) {
+    return null;
+  }
+
   const [isExpanded, setIsExpanded] = useState(
     location.pathname.startsWith('/dashboard/finance')
   );

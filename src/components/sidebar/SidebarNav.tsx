@@ -34,6 +34,7 @@ interface NavItemProps {
   name: string;
   href: string;
   icon: React.ComponentType<any>;
+  requiresRole?: 'team_leader' | 'manager' | 'admin' | 'superadmin';
 }
 
 interface SidebarNavProps {
@@ -51,8 +52,8 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
     const items = [
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
-      { name: 'Projects', href: '/dashboard/projects', icon: Briefcase },
-      { name: 'Organization', href: '/dashboard/organization', icon: Users },
+      { name: 'Projects', href: '/dashboard/projects', icon: Briefcase, requiresRole: 'team_leader' as const },
+      { name: 'Organization', href: '/dashboard/organization', icon: Users, requiresRole: 'team_leader' as const },
     ];
 
     // Add HR Management for managers and above
@@ -64,15 +65,15 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
 
     items.push(
       { name: 'Requests', href: '/dashboard/requests', icon: Send },
-      { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+      { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar, requiresRole: 'team_leader' as const },
       { name: 'Schedule', href: '/dashboard/schedule', icon: CalendarDays },
-      { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck },
+      { name: 'Meetings', href: '/dashboard/meetings', icon: CalendarCheck, requiresRole: 'team_leader' as const },
       { name: 'Checklists', href: '/dashboard/checklists', icon: ClipboardList },
-      { name: 'Focus', href: '/dashboard/focus', icon: Target },
-      { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+      { name: 'Focus', href: '/dashboard/focus', icon: Target, requiresRole: 'team_leader' as const },
+      { name: 'Reports', href: '/dashboard/reports', icon: BarChart3, requiresRole: 'team_leader' as const },
       { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
       { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-      { name: 'Documents', href: '/dashboard/documents', icon: FileText },
+      { name: 'Documents', href: '/dashboard/documents', icon: FileText, requiresRole: 'team_leader' as const },
       // Finance is handled by FinanceNavMenu component
       // Inventory is handled by InventoryNavMenu component
       { name: 'Notebook', href: '/dashboard/notebook', icon: NotebookPen },
@@ -108,6 +109,11 @@ const SidebarNav: React.FC<SidebarNavProps> = memo(({ onNavigation, isCollapsed 
   return (
     <div className="flex flex-col space-y-1 p-2">
       {navigation.map((item: NavItemProps) => {
+        // Filter based on role requirements
+        if (item.requiresRole && !hasRoleAccess(item.requiresRole)) {
+          return null;
+        }
+
         const isActive = isActiveRoute(item.href, currentPath);
         
         return (
