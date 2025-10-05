@@ -160,20 +160,34 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
 
         if (error || !data) return;
 
-        const createdAt = new Date(data.created_at);
         const now = new Date();
-        const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
+        
+        // For clock-in: Check created_at (INSERT creates new record)
+        // For clock-out: Check clock_out timestamp (UPDATE sets clock_out field)
+        if (tokenType === 'clock_in') {
+          const createdAt = new Date(data.created_at);
+          const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
 
-        if (secondsSinceCreation < 3) {
-          const isClockIn = data.clock_out === null;
-          const expectedAction = tokenType === 'clock_in';
-
-          if (isClockIn === expectedAction) {
-            console.log('✅ Polling detected successful scan!');
+          if (secondsSinceCreation < 3 && data.clock_out === null) {
+            console.log('✅ Polling detected clock-in!');
             setScanSuccess(true);
-            setSuccessMessage(`${tokenType === 'clock_in' ? 'Clock In' : 'Clock Out'} Successful!`);
+            setSuccessMessage('Clock In Successful!');
             setAutoCloseCountdown(2);
             toast.success('Action confirmed!');
+          }
+        } else {
+          // Clock-out: Check clock_out timestamp
+          if (data.clock_out) {
+            const clockOutTime = new Date(data.clock_out);
+            const secondsSinceClockOut = (now.getTime() - clockOutTime.getTime()) / 1000;
+
+            if (secondsSinceClockOut < 3) {
+              console.log('✅ Polling detected clock-out!');
+              setScanSuccess(true);
+              setSuccessMessage('Clock Out Successful!');
+              setAutoCloseCountdown(2);
+              toast.success('Action confirmed!');
+            }
           }
         }
       } catch (error) {
@@ -203,13 +217,33 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
         (payload) => {
           console.log('⚡ Real-time INSERT detected:', payload);
           const newEntry = payload.new as any;
-          const isClockIn = newEntry.clock_out === null;
-          const expectedAction = tokenType === 'clock_in';
-
-          if (isClockIn === expectedAction) {
-            console.log('✅ Real-time detected successful scan!');
+          
+          if (tokenType === 'clock_in' && newEntry.clock_out === null) {
+            console.log('✅ Real-time detected clock-in!');
             setScanSuccess(true);
-            setSuccessMessage(`${tokenType === 'clock_in' ? 'Clock In' : 'Clock Out'} Successful!`);
+            setSuccessMessage('Clock In Successful!');
+            setAutoCloseCountdown(2);
+            toast.success('Action confirmed!');
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'time_entries',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('⚡ Real-time UPDATE detected:', payload);
+          const updatedEntry = payload.new as any;
+          
+          // Clock-out is an UPDATE that sets clock_out
+          if (tokenType === 'clock_out' && updatedEntry.clock_out !== null) {
+            console.log('✅ Real-time detected clock-out!');
+            setScanSuccess(true);
+            setSuccessMessage('Clock Out Successful!');
             setAutoCloseCountdown(2);
             toast.success('Action confirmed!');
           }

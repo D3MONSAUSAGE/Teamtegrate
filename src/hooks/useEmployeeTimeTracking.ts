@@ -454,7 +454,7 @@ export const useEmployeeTimeTracking = () => {
         clearInterval(interval);
       }
     };
-  }, [currentSession.isActive, currentSession.isOnBreak, currentSession.clockInTime, currentSession.breakStartTime, currentSession.sessionId]);
+  }, [currentSession.isActive, currentSession.isOnBreak, currentSession.clockInTime, currentSession.breakStartTime]);
 
   // Initialize data on mount
   useEffect(() => {
