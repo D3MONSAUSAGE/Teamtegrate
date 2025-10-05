@@ -409,35 +409,52 @@ export const useEmployeeTimeTracking = () => {
 
   // Real-time session timer with improved logging
   useEffect(() => {
+    console.log('🔄 Timer useEffect triggered:', {
+      isActive: currentSession.isActive,
+      hasClockInTime: !!currentSession.clockInTime,
+      isOnBreak: currentSession.isOnBreak,
+      hasBreakStartTime: !!currentSession.breakStartTime,
+      sessionId: currentSession.sessionId
+    });
+
     let interval: NodeJS.Timeout;
 
     if (currentSession.isActive && currentSession.clockInTime) {
-      console.log('⏱️ Starting work timer for session:', currentSession.sessionId);
+      console.log('✅ STARTING WORK TIMER for session:', currentSession.sessionId);
+      console.log('Clock in time:', currentSession.clockInTime.toISOString());
+      
       interval = setInterval(() => {
-        const elapsedMs = Date.now() - currentSession.clockInTime!.getTime();
+        const now = Date.now();
+        const clockInMs = currentSession.clockInTime!.getTime();
+        const elapsedMs = now - clockInMs;
         const elapsedMinutes = Math.floor(elapsedMs / 60000);
         const elapsedSeconds = Math.floor(elapsedMs / 1000);
-        console.log(`Timer tick: ${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s`);
+        
+        console.log(`⏱️ Work timer tick: ${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s (${elapsedMinutes} total minutes)`);
+        
         setCurrentSession(prev => ({ ...prev, elapsedMinutes }));
       }, 1000);
     } else if (currentSession.isOnBreak && currentSession.breakStartTime) {
-      console.log('⏱️ Starting break timer for session:', currentSession.sessionId);
+      console.log('✅ STARTING BREAK TIMER for session:', currentSession.sessionId);
+      
       interval = setInterval(() => {
         const elapsedMs = Date.now() - currentSession.breakStartTime!.getTime();
         const breakElapsedMinutes = Math.floor(elapsedMs / 60000);
+        console.log(`⏱️ Break timer tick: ${breakElapsedMinutes} minutes`);
+        
         setCurrentSession(prev => ({ ...prev, breakElapsedMinutes }));
       }, 1000);
     } else {
-      console.log('⏸️ No active session, timer stopped');
+      console.log('⏸️ No active session or missing time, timer not started');
     }
 
     return () => {
       if (interval) {
-        console.log('🛑 Clearing timer interval');
+        console.log('🛑 Clearing timer interval for session:', currentSession.sessionId);
         clearInterval(interval);
       }
     };
-  }, [currentSession.isActive, currentSession.isOnBreak, currentSession.clockInTime, currentSession.breakStartTime]);
+  }, [currentSession.isActive, currentSession.isOnBreak, currentSession.clockInTime, currentSession.breakStartTime, currentSession.sessionId]);
 
   // Initialize data on mount
   useEffect(() => {
@@ -490,7 +507,7 @@ export const useEmployeeTimeTracking = () => {
               });
               
               // Immediately set state
-              setCurrentSession({
+              const newSession = {
                 isActive: true,
                 sessionId: newEntry.id,
                 clockInTime: isBreakSession ? undefined : clockInTime,
@@ -499,12 +516,19 @@ export const useEmployeeTimeTracking = () => {
                 breakType: isBreakSession ? newEntry.notes?.split(' ')[0] : undefined,
                 breakStartTime: isBreakSession ? clockInTime : undefined,
                 breakElapsedMinutes: 0
+              };
+              
+              console.log('🎯 Setting new session state:', {
+                isActive: newSession.isActive,
+                hasClockInTime: !!newSession.clockInTime,
+                isOnBreak: newSession.isOnBreak,
+                clockInTime: newSession.clockInTime?.toISOString()
               });
               
-              // Force re-render to start timer
+              setCurrentSession(newSession);
               setRealtimeConnected(true);
               
-              // Fetch again after short delay to ensure timer calculation is correct
+              // Fetch again after short delay to sync with server
               setTimeout(() => {
                 console.log('🔄 Fetching session after real-time INSERT');
                 fetchCurrentSession();
