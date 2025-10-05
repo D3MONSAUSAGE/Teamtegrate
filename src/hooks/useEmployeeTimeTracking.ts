@@ -489,7 +489,7 @@ export const useEmployeeTimeTracking = () => {
                 clockInTime: clockInTime.toISOString()
               });
               
-              // Immediately set state - don't wait for refetch
+              // Immediately set state
               setCurrentSession({
                 isActive: true,
                 sessionId: newEntry.id,
@@ -501,8 +501,17 @@ export const useEmployeeTimeTracking = () => {
                 breakElapsedMinutes: 0
               });
               
-              console.log('✓ State updated, timer will start on next tick');
-              toast.success('Clock-in confirmed!');
+              // Force re-render to start timer
+              setRealtimeConnected(true);
+              
+              // Fetch again after short delay to ensure timer calculation is correct
+              setTimeout(() => {
+                console.log('🔄 Fetching session after real-time INSERT');
+                fetchCurrentSession();
+                fetchDailySummary();
+              }, 100);
+              
+              toast.success('Clocked in successfully!');
             } else if (payload.eventType === 'UPDATE') {
               const updatedEntry = payload.new as TimeEntry;
               
@@ -580,48 +589,11 @@ export const useEmployeeTimeTracking = () => {
     return () => clearInterval(pollingInterval);
   }, [user?.id, realtimeConnected, currentSession.isActive, fetchCurrentSession]);
 
-  // Cross-tab communication using BroadcastChannel with aggressive refresh
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = new BroadcastChannel('time-tracking-sync');
-    
-    channel.onmessage = async (event) => {
-      console.log('📡 Hook received sync message:', event.data);
-      
-      // Check if message is for this user
-      if (event.data.userId === user.id) {
-        console.log('✓ Message is for current user, triggering aggressive refresh');
-        
-        // Immediate first fetch
-        await Promise.all([
-          fetchCurrentSession(),
-          fetchDailySummary()
-        ]);
-        
-        // Second fetch after 1 second (gives DB time to update)
-        setTimeout(async () => {
-          console.log('🔄 Second fetch (1s delay)');
-          await Promise.all([
-            fetchCurrentSession(),
-            fetchDailySummary()
-          ]);
-        }, 1000);
-        
-        // Third fetch after 3 seconds (final reconciliation)
-        setTimeout(async () => {
-          console.log('🔄 Third fetch (3s delay - final)');
-          await Promise.all([
-            fetchCurrentSession(),
-            fetchDailySummary(),
-            fetchWeeklyEntries()
-          ]);
-        }, 3000);
-      }
-    };
-
-    return () => channel.close();
-  }, [user?.id, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
+  // BroadcastChannel removed - cross-device communication now uses polling + real-time in QR Generator
+  // The QR Generator component handles detection of scans via:
+  // 1. Real-time subscription to time_entries table for instant updates
+  // 2. Polling every 1 second as fallback for reliability
+  // This approach works across different devices (PC showing QR, tablet scanning)
 
   return {
     currentSession,

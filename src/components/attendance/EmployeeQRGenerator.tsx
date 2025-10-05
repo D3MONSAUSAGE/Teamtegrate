@@ -142,39 +142,86 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
     onOpenChange(false);
   };
 
-  // Listen for scan success via BroadcastChannel
+  // Poll for new time entries every 1 second (for cross-device detection)
   useEffect(() => {
-    if (!open || !user?.id) return;
+    if (!open || !user?.id || scanSuccess) return;
 
-    const channel = new BroadcastChannel('time-tracking-sync');
-    
-    channel.onmessage = (event) => {
-      console.log('📱 QR Generator received broadcast:', event.data);
-      
-      // Check if this is for the current user and matches expected action
-      if (event.data.userId === user.id) {
-        console.log('✓ User ID matches, checking action type...');
-        console.log('Expected tokenType:', tokenType, 'Received type:', event.data.type);
-        
-        const isMatchingAction = 
-          (event.data.type === 'clock_in' && tokenType === 'clock_in') ||
-          (event.data.type === 'clock_out' && tokenType === 'clock_out');
-        
-        if (isMatchingAction) {
-          console.log('✓ Action matches! Showing success state');
-          const action = tokenType === 'clock_in' ? 'Clock In' : 'Clock Out';
-          setSuccessMessage(`${action} Successful!`);
-          setScanSuccess(true);
-          setAutoCloseCountdown(2);
-          toast.success(`${action} confirmed!`);
-        } else {
-          console.log('✗ Action does not match');
+    console.log('🔍 Starting polling for scan detection...');
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error || !data) return;
+
+        const createdAt = new Date(data.created_at);
+        const now = new Date();
+        const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
+
+        if (secondsSinceCreation < 3) {
+          const isClockIn = data.clock_out === null;
+          const expectedAction = tokenType === 'clock_in';
+
+          if (isClockIn === expectedAction) {
+            console.log('✅ Polling detected successful scan!');
+            setScanSuccess(true);
+            setSuccessMessage(`${tokenType === 'clock_in' ? 'Clock In' : 'Clock Out'} Successful!`);
+            setAutoCloseCountdown(2);
+            toast.success('Action confirmed!');
+          }
         }
+      } catch (error) {
+        console.error('Polling error:', error);
       }
-    };
+    }, 1000);
 
-    return () => channel.close();
-  }, [open, user?.id, tokenType]);
+    return () => clearInterval(pollInterval);
+  }, [open, user?.id, tokenType, scanSuccess]);
+
+  // Real-time subscription for instant detection
+  useEffect(() => {
+    if (!open || !user?.id || scanSuccess) return;
+
+    console.log('⚡ Setting up real-time subscription for user:', user.id);
+
+    const channel = supabase
+      .channel('qr-scan-detection')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'time_entries',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('⚡ Real-time INSERT detected:', payload);
+          const newEntry = payload.new as any;
+          const isClockIn = newEntry.clock_out === null;
+          const expectedAction = tokenType === 'clock_in';
+
+          if (isClockIn === expectedAction) {
+            console.log('✅ Real-time detected successful scan!');
+            setScanSuccess(true);
+            setSuccessMessage(`${tokenType === 'clock_in' ? 'Clock In' : 'Clock Out'} Successful!`);
+            setAutoCloseCountdown(2);
+            toast.success('Action confirmed!');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔌 Unsubscribing from real-time channel');
+      supabase.removeChannel(channel);
+    };
+  }, [open, user?.id, tokenType, scanSuccess]);
 
   // Auto-close countdown after success
   useEffect(() => {
@@ -259,22 +306,30 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
                 </Button>
               </div>
             ) : qrDataUrl ? (
-              <div className="relative">
-                <img 
-                  src={qrDataUrl} 
-                  alt="QR Code" 
-                  className="w-full max-w-xs rounded-lg border-4 border-primary/20 shadow-lg"
-                />
+              <div className="space-y-3 w-full">
+                {/* Monitoring indicator */}
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span>Monitoring for scan...</span>
+                </div>
                 
-                {/* Countdown Overlay */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32">
-                  <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full border-2 ${
-                    countdown <= 10 
-                      ? 'bg-destructive/10 border-destructive/30 text-destructive' 
-                      : 'bg-primary/10 border-primary/30 text-primary'
-                  } shadow-lg backdrop-blur-sm`}>
-                    <Clock className="h-4 w-4" />
-                    <span className="font-bold text-lg">{countdown}s</span>
+                <div className="relative flex justify-center">
+                  <img 
+                    src={qrDataUrl} 
+                    alt="QR Code" 
+                    className="w-full max-w-xs rounded-lg border-4 border-primary/20 shadow-lg"
+                  />
+                  
+                  {/* Countdown Overlay */}
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32">
+                    <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full border-2 ${
+                      countdown <= 10 
+                        ? 'bg-destructive/10 border-destructive/30 text-destructive' 
+                        : 'bg-primary/10 border-primary/30 text-primary'
+                    } shadow-lg backdrop-blur-sm`}>
+                      <Clock className="h-4 w-4" />
+                      <span className="font-bold text-lg">{countdown}s</span>
+                    </div>
                   </div>
                 </div>
               </div>
