@@ -1,9 +1,5 @@
 import { useState, useMemo } from 'react';
-
-interface Invoice {
-  id: string;
-  [key: string]: any;
-}
+import type { Invoice } from '@/types/invoice';
 
 export const useInvoicePagination = (invoices: Invoice[]) => {
   const [currentPage, setCurrentPage] = useState(1);

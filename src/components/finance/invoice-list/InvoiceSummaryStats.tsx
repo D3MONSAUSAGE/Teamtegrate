@@ -1,15 +1,10 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { DollarSign, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
+import type { Invoice } from '@/types/invoice';
 
 interface InvoiceSummaryStatsProps {
-  invoices: Array<{
-    invoice_total?: number;
-    payment_status?: string;
-    payment_due_date?: string;
-    paid_amount?: number;
-    currency?: string;
-  }>;
+  invoices: Invoice[];
 }
 
 const InvoiceSummaryStats: React.FC<InvoiceSummaryStatsProps> = ({ invoices }) => {

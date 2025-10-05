@@ -1,16 +1,5 @@
 import { useState, useMemo } from 'react';
-
-interface Invoice {
-  id: string;
-  invoice_number: string;
-  invoice_date: string;
-  payment_due_date?: string;
-  invoice_total?: number;
-  payment_status?: string;
-  created_at: string;
-  vendor?: { name: string };
-  expense_category?: { name: string };
-}
+import type { Invoice } from '@/types/invoice';
 
 type SortField = 'invoice_number' | 'invoice_date' | 'due_date' | 'vendor' | 'total' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
