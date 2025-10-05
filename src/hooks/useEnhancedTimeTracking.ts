@@ -337,17 +337,18 @@ export const useEnhancedTimeTracking = () => {
     }
 
     // Only start timer if we have an active session and a start time
-    if ((sessionState.isActive || sessionState.isOnBreak) && startTimeRef.current) {
+    if (sessionState.isActive && startTimeRef.current) {
       timerRef.current = setInterval(() => {
         const now = Date.now();
         const startTime = startTimeRef.current!.getTime();
         const elapsedMinutes = Math.floor((now - startTime) / 60000);
 
         setSessionState(prev => {
-          if (prev.isActive) {
-            return { ...prev, workElapsedMinutes: elapsedMinutes };
-          } else if (prev.isOnBreak) {
+          // Check break first (higher priority)
+          if (prev.isOnBreak) {
             return { ...prev, breakElapsedMinutes: elapsedMinutes };
+          } else if (prev.isActive) {
+            return { ...prev, workElapsedMinutes: elapsedMinutes };
           }
           return prev;
         });
@@ -359,7 +360,7 @@ export const useEnhancedTimeTracking = () => {
         clearInterval(timerRef.current);
       }
     };
-  }, [sessionState.isActive, sessionState.isOnBreak]); // Minimal dependencies to prevent timer restarts
+  }, [sessionState.isActive, sessionState.isOnBreak, startTimeRef.current]); // Include startTimeRef to restart timer on session change
 
   // Initialize on mount
   useEffect(() => {
