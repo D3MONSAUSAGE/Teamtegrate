@@ -52,6 +52,24 @@ class NotificationService {
     };
     
     await this.sendNotification(payload);
+    
+    // Send push notification to managers
+    try {
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          type: 'checklist_submitted',
+          organization_id: instance.org_id,
+          title: 'Checklist Submitted for Verification',
+          body: `${this.generateDisplayCode(instance)} - ${instance.template?.name || 'Unknown Checklist'} needs verification`,
+          data: {
+            instance_id: instanceId,
+            route: '/dashboard/checklists'
+          }
+        }
+      });
+    } catch (pushError) {
+      console.warn('Failed to send push notification:', pushError);
+    }
   }
 
   /**
@@ -80,6 +98,27 @@ class NotificationService {
     };
     
     await this.sendNotification(payload);
+    
+    // Send push notification to employee
+    if (instance.executed_by) {
+      try {
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            type: 'checklist_verified',
+            organization_id: instance.org_id,
+            user_ids: [instance.executed_by],
+            title: 'Checklist Verified',
+            body: `${this.generateDisplayCode(instance)} - ${instance.template?.name || 'Unknown Checklist'} has been verified`,
+            data: {
+              instance_id: instanceId,
+              route: '/dashboard/checklists'
+            }
+          }
+        });
+      } catch (pushError) {
+        console.warn('Failed to send push notification:', pushError);
+      }
+    }
   }
 
   /**
@@ -108,6 +147,27 @@ class NotificationService {
     };
     
     await this.sendNotification(payload);
+    
+    // Send push notification to employee
+    if (instance.executed_by) {
+      try {
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            type: 'checklist_rejected',
+            organization_id: instance.org_id,
+            user_ids: [instance.executed_by],
+            title: 'Checklist Rejected',
+            body: `${this.generateDisplayCode(instance)} - ${instance.template?.name || 'Unknown Checklist'} needs revision`,
+            data: {
+              instance_id: instanceId,
+              route: '/dashboard/checklists'
+            }
+          }
+        });
+      } catch (pushError) {
+        console.warn('Failed to send push notification:', pushError);
+      }
+    }
   }
 
   /**

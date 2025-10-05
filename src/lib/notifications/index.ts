@@ -691,9 +691,60 @@ export const notifications = {
           'Content-Type': 'application/json'
         }
       });
+      
+      // Send push notification to assigned user
+      if (shift.assigned_user_id) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              type: 'schedule_shift_updated',
+              organization_id: orgId,
+              user_ids: [shift.assigned_user_id],
+              title: 'Schedule Updated',
+              body: `Your shift "${shift.title}" has been updated`,
+              data: {
+                shift_id: shift.id,
+                route: '/dashboard/schedules'
+              }
+            }
+          });
+        } catch (pushError) {
+          console.warn('Failed to send push notification:', pushError);
+        }
+      }
     } catch (error) {
       console.error('[SCHED_NOTIFY] Error in notifyShiftUpdated:', error);
       // Don't throw - notifications should not break the main flow
+    }
+  },
+  
+  // Shift Cancelled - notify assigned user
+  async notifyShiftCancelled({ 
+    orgId, teamId, shift, actor 
+  }: {
+    orgId: string;
+    teamId?: string | null;
+    shift: { id: string; title: string; starts_at: string; assigned_user_id?: string };
+    actor: { id: string; name: string; email: string };
+  }) {
+    try {
+      if (shift.assigned_user_id) {
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            type: 'schedule_shift_cancelled',
+            organization_id: orgId,
+            user_ids: [shift.assigned_user_id],
+            title: 'Shift Cancelled',
+            body: `Your shift "${shift.title}" on ${new Date(shift.starts_at).toLocaleDateString()} has been cancelled`,
+            data: {
+              shift_id: shift.id,
+              route: '/dashboard/schedules'
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('[SCHED_NOTIFY] Error in notifyShiftCancelled:', error);
     }
   },
 

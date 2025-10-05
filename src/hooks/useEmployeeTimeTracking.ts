@@ -667,6 +667,33 @@ export const useEmployeeTimeTracking = () => {
       if (data?.success) {
           toast.success('Time entry approved');
           await fetchWeeklyEntries();
+          
+          // Send push notification to employee
+          try {
+            const { data: entryData } = await supabase
+              .from('time_entries')
+              .select('user_id, duration_minutes, clock_in')
+              .eq('id', entryId)
+              .single();
+            
+            if (entryData) {
+              await supabase.functions.invoke('send-push-notification', {
+                body: {
+                  type: 'time_entry_approved',
+                  organization_id: user.organizationId,
+                  user_ids: [entryData.user_id],
+                  title: 'Time Entry Approved',
+                  body: `Your time entry for ${Math.round((entryData.duration_minutes || 0) / 60 * 10) / 10} hours has been approved`,
+                  data: {
+                    entry_id: entryId,
+                    route: '/dashboard/time-tracking'
+                  }
+                }
+              });
+            }
+          } catch (pushError) {
+            console.warn('Failed to send push notification:', pushError);
+          }
         } else {
           throw new Error(data?.error);
         }
@@ -692,6 +719,33 @@ export const useEmployeeTimeTracking = () => {
         if (data?.success) {
           toast.success('Time entry rejected');
           await fetchWeeklyEntries();
+          
+          // Send push notification to employee
+          try {
+            const { data: entryData } = await supabase
+              .from('time_entries')
+              .select('user_id, duration_minutes, clock_in')
+              .eq('id', entryId)
+              .single();
+            
+            if (entryData) {
+              await supabase.functions.invoke('send-push-notification', {
+                body: {
+                  type: 'time_entry_rejected',
+                  organization_id: user.organizationId,
+                  user_ids: [entryData.user_id],
+                  title: 'Time Entry Rejected',
+                  body: `Your time entry has been rejected. Reason: ${reason}`,
+                  data: {
+                    entry_id: entryId,
+                    route: '/dashboard/time-tracking'
+                  }
+                }
+              });
+            }
+          } catch (pushError) {
+            console.warn('Failed to send push notification:', pushError);
+          }
         } else {
           throw new Error(data?.error);
         }

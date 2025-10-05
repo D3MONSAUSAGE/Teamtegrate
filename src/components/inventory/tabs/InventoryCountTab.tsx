@@ -9,6 +9,7 @@ import { inventoryCountsApi } from '@/contexts/inventory/api';
 import { InventoryCountItem, InventoryTemplate } from '@/contexts/inventory/types';
 import { Package, Play, CheckCircle, Clock, X, Smartphone, Tablet, Zap, Camera, Scan } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { TemplateCountSelectionDialog } from '../TemplateCountSelectionDialog';
 import { ManualCountSelectionDialog } from '../ManualCountSelectionDialog';
 import { BatchCountInterface } from '../BatchCountInterface';
@@ -278,6 +279,35 @@ export const InventoryCountTab: React.FC = () => {
     setIsCompletingCount(true);
     try {
       await completeInventoryCount(activeCount);
+      
+      // Send push notification to managers about count completion
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData } = await supabase
+        .from('users')
+        .select('organization_id, name, email')
+        .eq('id', user?.id)
+        .single();
+      
+      if (userData && activeCountRecord) {
+        const countName = activeCountRecord.notes || `Count ${activeCount.slice(0, 8)}`;
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              type: 'inventory_count_completed',
+              organization_id: userData.organization_id,
+              title: 'Inventory Count Completed',
+              body: `${countName} has been completed by ${userData.name}`,
+              data: {
+                count_id: activeCount,
+                route: '/dashboard/inventory/count'
+              }
+            }
+          });
+        } catch (notifError) {
+          console.warn('Failed to send push notification:', notifError);
+        }
+      }
+      
       setActiveCount(null);
       setActiveTemplate(null);
       setCountItems([]);
