@@ -166,16 +166,23 @@ export const createMeetingRequestAPI = async (params: CreateMeetingParams) => {
 
   if (participantsError) throw participantsError;
 
-  // Create notifications for participants
-  const notifications = participantIds.map(userId => ({
-    user_id: userId,
-    title: 'Meeting Invitation',
-    content: `You've been invited to: ${title}`,
-    type: 'meeting_invitation',
-    organization_id: user.organizationId,
-  }));
-
-  await supabase.from('notifications').insert(notifications);
+  // Create notifications with push for participants
+  for (const userId of participantIds) {
+    await supabase.functions.invoke('send-push-notification', {
+      body: {
+        user_id: userId,
+        title: 'Meeting Invitation',
+        content: `You've been invited to: ${title}`,
+        type: 'meeting_invitation',
+        metadata: {
+          meeting_id: meeting.id,
+          route: '/dashboard/meetings'
+        },
+        organization_id: user.organizationId,
+        send_push: true
+      }
+    });
+  }
 
   // Fetch organizer and participant details for email notification with their timezones
   try {
@@ -332,30 +339,44 @@ export const updateMeetingAPI = async (params: UpdateMeetingParams): Promise<boo
     if (addError) throw addError;
   }
 
-  // Create notifications for all current participants about the update
+  // Create notifications with push for all current participants about the update
   if (participantIds.length > 0) {
-    const updateNotifications = participantIds.map(userId => ({
-      user_id: userId,
-      title: 'Meeting Updated',
-      content: `The meeting "${title}" has been updated. Please review the new details.`,
-      type: 'meeting_update',
-      organization_id: user.organizationId,
-    }));
-
-    await supabase.from('notifications').insert(updateNotifications);
+    for (const userId of participantIds) {
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: userId,
+          title: 'Meeting Updated',
+          content: `The meeting "${title}" has been updated. Please review the new details.`,
+          type: 'meeting_update',
+          metadata: {
+            meeting_id: meetingId,
+            route: '/dashboard/meetings'
+          },
+          organization_id: user.organizationId,
+          send_push: true
+        }
+      });
+    }
   }
 
-  // Create notifications for newly added participants
+  // Create notifications with push for newly added participants
   if (participantsToAdd.length > 0) {
-    const inviteNotifications = participantsToAdd.map(userId => ({
-      user_id: userId,
-      title: 'Meeting Invitation',
-      content: `You have been invited to the meeting "${title}" on ${startTime.toLocaleDateString()}.`,
-      type: 'meeting_invitation',
-      organization_id: user.organizationId,
-    }));
-
-    await supabase.from('notifications').insert(inviteNotifications);
+    for (const userId of participantsToAdd) {
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: userId,
+          title: 'Meeting Invitation',
+          content: `You have been invited to the meeting "${title}" on ${startTime.toLocaleDateString()}.`,
+          type: 'meeting_invitation',
+          metadata: {
+            meeting_id: meetingId,
+            route: '/dashboard/meetings'
+          },
+          organization_id: user.organizationId,
+          send_push: true
+        }
+      });
+    }
   }
 
   return true;
@@ -395,19 +416,24 @@ export const cancelMeetingAPI = async (params: CancelMeetingParams) => {
 
   if (meetingError) throw meetingError;
 
-  // Create notifications for all participants (excluding organizer)
-  const participantNotifications = meetingToCancel.participants
-    .filter(p => p.user_id !== user.id)
-    .map(participant => ({
-      user_id: participant.user_id,
-      title: 'Meeting Cancelled',
-      content: `The meeting "${meetingToCancel.title}" scheduled for ${new Date(meetingToCancel.start_time).toLocaleDateString()} has been cancelled`,
-      type: 'meeting_cancellation',
-      organization_id: user.organizationId,
-    }));
+  // Create notifications with push for all participants (excluding organizer)
+  const participantsToNotify = meetingToCancel.participants.filter(p => p.user_id !== user.id);
 
-  if (participantNotifications.length > 0) {
-    await supabase.from('notifications').insert(participantNotifications);
+  for (const participant of participantsToNotify) {
+    await supabase.functions.invoke('send-push-notification', {
+      body: {
+        user_id: participant.user_id,
+        title: 'Meeting Cancelled',
+        content: `The meeting "${meetingToCancel.title}" scheduled for ${new Date(meetingToCancel.start_time).toLocaleDateString()} has been cancelled`,
+        type: 'meeting_cancellation',
+        metadata: {
+          meeting_id: meetingId,
+          route: '/dashboard/meetings'
+        },
+        organization_id: user.organizationId,
+        send_push: true
+      }
+    });
   }
 
   toast({

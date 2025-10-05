@@ -13,12 +13,18 @@ export const createProjectTeamAdditionNotification = async (
   try {
     const notificationContent = `You've been added to project: ${projectTitle} by ${adderName}`;
     
-    await supabase.from('notifications').insert({
-      user_id: userId,
-      title: 'Added to Project Team',
-      content: notificationContent,
-      type: 'project_team_addition',
-      organization_id: organizationId
+    await supabase.functions.invoke('send-push-notification', {
+      body: {
+        user_id: userId,
+        title: 'Added to Project Team',
+        content: notificationContent,
+        type: 'project_team_addition',
+        metadata: {
+          route: '/dashboard/projects'
+        },
+        organization_id: organizationId,
+        send_push: true
+      }
     });
     
     console.log('Project team addition notification created for user:', userId);
