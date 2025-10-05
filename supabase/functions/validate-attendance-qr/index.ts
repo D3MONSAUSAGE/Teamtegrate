@@ -173,18 +173,39 @@ Deno.serve(async (req) => {
       console.log(`User ${userData.name} clocked in successfully`);
       
     } else if (tokenData.token_type === 'clock_out') {
-      // Update existing time entry
+      // Fetch current time entry first to get existing notes
+      const { data: currentEntry, error: fetchError } = await supabaseClient
+        .from('time_entries')
+        .select('id, notes')
+        .eq('user_id', tokenData.user_id)
+        .is('clock_out', null)
+        .order('clock_in', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (fetchError || !currentEntry) {
+        console.error('No active time entry found:', fetchError);
+        await logScan(supabaseClient, tokenData.user_id, tokenData.organization_id, stationId, 'error', 'No active clock-in session found');
+        
+        return new Response(
+          JSON.stringify({ error: 'No active clock-in session found' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Build updated notes string in JavaScript
+      const currentNotes = currentEntry.notes || '';
+      const newNotes = `${currentNotes}${currentNotes ? ' | ' : ''}Clocked out via QR scanner${stationLocation ? ` at ${stationLocation}` : ''}`;
+
+      // Update time entry with clock_out and appended notes
       const { data: timeEntry, error: clockOutError } = await supabaseClient
         .from('time_entries')
         .update({
           clock_out: new Date().toISOString(),
-          notes: supabaseClient.raw(`COALESCE(notes, '') || ' | Clocked out via QR scanner${stationLocation ? ` at ${stationLocation}` : ''}'`)
+          notes: newNotes
         })
-        .eq('user_id', tokenData.user_id)
-        .is('clock_out', null)
+        .eq('id', currentEntry.id)
         .select()
-        .order('clock_in', { ascending: false })
-        .limit(1)
         .single();
 
       if (clockOutError) {
