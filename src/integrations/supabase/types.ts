@@ -474,6 +474,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "budgets_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       bug_reports: {
@@ -757,6 +764,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -1691,6 +1705,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
             foreignKeyName: "created_invoices_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
@@ -1718,6 +1739,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           break_count: number | null
+          calculated_labor_cost: number | null
           compliance_notes: string | null
           created_at: string | null
           id: string
@@ -1735,6 +1757,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           break_count?: number | null
+          calculated_labor_cost?: number | null
           compliance_notes?: string | null
           created_at?: string | null
           id?: string
@@ -1752,6 +1775,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           break_count?: number | null
+          calculated_labor_cost?: number | null
           compliance_notes?: string | null
           created_at?: string | null
           id?: string
@@ -1970,6 +1994,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -2393,6 +2424,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_schedules_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
             foreignKeyName: "fk_employee_schedules_employee_id"
             columns: ["employee_id"]
             isOneToOne: false
@@ -2459,6 +2497,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "fk_events_organization"
@@ -2628,6 +2673,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "expenses_user_id_fkey"
@@ -3114,6 +3166,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "inventory_counts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
             foreignKeyName: "inventory_counts_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
@@ -3273,6 +3332,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "inventory_items_vendor_id_fkey"
@@ -3657,6 +3723,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inventory_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       inventory_transactions: {
@@ -3765,6 +3838,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "inventory_transactions_warehouse_id_fkey"
@@ -3880,6 +3960,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_clients_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -4039,6 +4126,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -5720,6 +5814,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "organization_invites_invited_team_id_fkey"
+            columns: ["invited_team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
             foreignKeyName: "organization_invites_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -6201,6 +6302,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "petty_cash_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       pos_system_configs: {
@@ -6454,6 +6562,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profit_loss_snapshots_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       project_team_members: {
@@ -6556,6 +6671,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -9062,6 +9184,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sales_channel_transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       sales_channels: {
@@ -9124,6 +9253,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_channels_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -9223,6 +9359,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_data_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -9770,6 +9913,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tasks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       team_inventory_assignments: {
@@ -9823,6 +9973,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_inventory_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "team_inventory_assignments_template_id_fkey"
@@ -9899,6 +10056,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "team_item_pricing_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       team_item_visibility: {
@@ -9957,6 +10121,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "team_item_visibility_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       team_job_roles: {
@@ -10002,6 +10173,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_job_roles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "team_job_roles_user_id_fkey"
@@ -10096,6 +10274,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_memberships_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
           {
             foreignKeyName: "team_memberships_user_id_fkey"
@@ -10203,6 +10388,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_paused: boolean | null
+          labor_cost: number | null
           notes: string | null
           organization_id: string
           paused_at: string | null
@@ -10228,6 +10414,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_paused?: boolean | null
+          labor_cost?: number | null
           notes?: string | null
           organization_id: string
           paused_at?: string | null
@@ -10253,6 +10440,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_paused?: boolean | null
+          labor_cost?: number | null
           notes?: string | null
           organization_id?: string
           paused_at?: string | null
@@ -10290,6 +10478,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -10877,6 +11072,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       upload_batches: {
@@ -11245,6 +11447,7 @@ export type Database = {
           google_tasks_enabled: boolean | null
           google_tasks_token: string | null
           hire_date: string | null
+          hourly_rate: number | null
           id: string
           job_title: string | null
           location: string | null
@@ -11276,6 +11479,7 @@ export type Database = {
           google_tasks_enabled?: boolean | null
           google_tasks_token?: string | null
           hire_date?: string | null
+          hourly_rate?: number | null
           id: string
           job_title?: string | null
           location?: string | null
@@ -11307,6 +11511,7 @@ export type Database = {
           google_tasks_enabled?: boolean | null
           google_tasks_token?: string | null
           hire_date?: string | null
+          hourly_rate?: number | null
           id?: string
           job_title?: string | null
           location?: string | null
@@ -11773,6 +11978,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_wt_team"
+            columns: ["to_team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
             foreignKeyName: "fk_wt_wh"
             columns: ["warehouse_id"]
             isOneToOne: false
@@ -11826,6 +12038,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }
@@ -12122,6 +12341,13 @@ export type Database = {
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inventory_counts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
         ]
       }
       organization_user_hierarchy: {
@@ -12224,10 +12450,44 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_wt_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
             foreignKeyName: "fk_wtl_item"
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_payroll_summary: {
+        Row: {
+          days_worked: number | null
+          employee_email: string | null
+          employee_name: string | null
+          hourly_rate: number | null
+          organization_id: string | null
+          overtime_hours: number | null
+          overtime_minutes: number | null
+          team_id: string | null
+          team_name: string | null
+          total_hours: number | null
+          total_labor_cost: number | null
+          total_minutes: number | null
+          user_id: string | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -13012,6 +13272,10 @@ export type Database = {
         Returns: undefined
       }
       update_daily_summary: {
+        Args: { target_date: string; target_user_id: string }
+        Returns: undefined
+      }
+      update_daily_summary_with_labor_cost: {
         Args: { target_date: string; target_user_id: string }
         Returns: undefined
       }
