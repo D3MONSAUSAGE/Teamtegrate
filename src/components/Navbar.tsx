@@ -34,7 +34,7 @@ const Navbar = memo(() => {
   }, [navigate]);
 
   const handleNotificationsOpen = useCallback(() => {
-    console.log("Opening notifications panel");
+    // Notifications panel opened
   }, []);
 
   const handleNotificationClick = useCallback((notificationType: string) => {

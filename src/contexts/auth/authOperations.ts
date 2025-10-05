@@ -6,22 +6,17 @@ import { userManagementService } from '@/services/userManagementService';
 
 export const login = async (email: string, password: string) => {
   try {
-    console.log('Attempting login for:', email);
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.error('Login error:', error);
       throw error;
     }
 
-    console.log('Login successful for:', email);
     return data;
   } catch (error) {
-    console.error('Login failed:', error);
     throw error;
   }
 };
@@ -38,8 +33,6 @@ export const signup = async (
   }
 ) => {
   try {
-    console.log('Attempting signup for:', email, 'with role:', role);
-    
     const redirectUrl = `${window.location.origin}/`;
     
     const metadata: Record<string, any> = {
@@ -66,36 +59,28 @@ export const signup = async (
     });
 
     if (error) {
-      console.error('Signup error:', error);
       toast.error(error.message);
       throw error;
     }
 
-    console.log('Signup successful for:', email);
     toast.success('Account created successfully!');
     return data;
   } catch (error) {
-    console.error('Signup failed:', error);
     throw error;
   }
 };
 
 export const logout = async (hasSession: boolean) => {
   try {
-    console.log('Attempting logout, has session:', hasSession);
-    
     const { error } = await supabase.auth.signOut();
     
     if (error) {
-      console.error('Logout error:', error);
       toast.error('Error signing out');
       throw error;
     }
 
-    console.log('Logout successful');
     toast.success('Signed out successfully');
   } catch (error) {
-    console.error('Logout failed:', error);
     throw error;
   }
 };
@@ -107,10 +92,7 @@ export const updateUserProfile = async (data: { name?: string; email?: string })
 
     // Use the centralized user management service
     await userManagementService.updateUserProfile(currentUser.user.id, data);
-    
-    console.log('✅ Profile updated via centralized service');
   } catch (error) {
-    console.error('Profile update failed:', error);
     throw error;
   }
 };
@@ -120,15 +102,10 @@ export const syncProfileData = async () => {
   try {
     const { data: currentUser } = await supabase.auth.getUser();
     if (!currentUser.user) throw new Error('No authenticated user');
-
-    console.log('🔄 Syncing profile data via centralized service...');
     
     // Use the centralized user management service
     await userManagementService.syncUserData(currentUser.user.id);
-    
-    console.log('✅ Profile sync completed via centralized service');
   } catch (error) {
-    console.error('Profile sync failed:', error);
     throw error;
   }
 };
@@ -147,13 +124,11 @@ export const generateInviteCode = async (
     });
 
     if (error) {
-      console.error('Error generating invite code:', error);
       return { success: false, error: 'Failed to generate invite code' };
     }
 
     return { success: true, inviteCode: data };
   } catch (error) {
-    console.error('Error in generateInviteCode:', error);
     return { success: false, error: 'Failed to generate invite code' };
   }
 };
@@ -177,13 +152,11 @@ export const generateEnhancedInviteCode = async (
     });
 
     if (error) {
-      console.error('Error generating enhanced invite code:', error);
       return { success: false, error: 'Failed to generate invite code' };
     }
 
     return { success: true, inviteCode: data };
   } catch (error) {
-    console.error('Error in generateEnhancedInviteCode:', error);
     return { success: false, error: 'Failed to generate invite code' };
   }
 };
@@ -199,7 +172,6 @@ export const validateInviteCode = async (
     });
 
     if (error) {
-      console.error('Error validating invite code:', error);
       return { success: false, error: error.message };
     }
 
@@ -209,7 +181,6 @@ export const validateInviteCode = async (
 
     return { success: true };
   } catch (error) {
-    console.error('Error in validateInviteCode:', error);
     return { success: false, error: 'Failed to validate invite code' };
   }
 };

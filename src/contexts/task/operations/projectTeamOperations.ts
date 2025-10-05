@@ -20,7 +20,6 @@ export const fetchProjectTeamMembers = async (
       .eq('project_id', projectId);
 
     if (teamError) {
-      console.error('Error fetching team members:', teamError);
       toast.error('Failed to load team members');
       return;
     }
@@ -40,7 +39,6 @@ export const fetchProjectTeamMembers = async (
       .eq('organization_id', organizationId);
 
     if (usersError) {
-      console.error('Error fetching users:', usersError);
       toast.error('Failed to load user details');
       return;
     }
@@ -50,7 +48,6 @@ export const fetchProjectTeamMembers = async (
 
     setUsers(transformedUsers);
   } catch (error) {
-    console.error('Error in fetchProjectTeamMembers:', error);
     toast.error('Failed to load team members');
   } finally {
     setIsLoading(false);

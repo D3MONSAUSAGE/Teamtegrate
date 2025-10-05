@@ -17,8 +17,6 @@ export const useTeamsByOrganization = (organizationId?: string) => {
     queryFn: async (): Promise<Team[]> => {
       if (!organizationId) return [];
       
-      console.log('Fetching teams for organization:', organizationId);
-      
       const { data, error } = await supabase
         .from('teams')
         .select('id, name, description, organization_id, manager_id, created_at')
@@ -27,11 +25,9 @@ export const useTeamsByOrganization = (organizationId?: string) => {
         .order('name');
 
       if (error) {
-        console.error('Error fetching teams:', error);
         throw new Error(error.message);
       }
 
-      console.log(`Loaded ${data?.length || 0} teams for organization`);
       return data || [];
     },
     enabled: !!organizationId,

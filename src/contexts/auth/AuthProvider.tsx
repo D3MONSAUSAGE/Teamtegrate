@@ -14,8 +14,6 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('AuthProvider: Initializing');
-
   return (
     <AuthProviderInner>
       {children}
@@ -47,14 +45,6 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
   } = useAuthOperations(session, user, setSession, setUser, setLoading);
 
   const isAuthenticated = !!user && !!session;
-
-  console.log('🔐 AUTH PROVIDER: Current state:', { 
-    loading, 
-    profileLoading, 
-    hasUser: !!user, 
-    isAuthenticated, 
-    isReady
-  });
 
   // Add null check for safety
   const value: AuthContextType = {
