@@ -6,6 +6,7 @@ import { ChatMessage } from '@/types/chat';
 import { toast } from 'sonner';
 import { createChatMessageNotification } from '@/contexts/task/operations/assignment/createChatNotification';
 import { useEnhancedChatNotifications } from '@/hooks/useEnhancedChatNotifications';
+import { useChatSounds } from '@/hooks/useChatSounds';
 
 export function useMessages(roomId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -16,6 +17,7 @@ export function useMessages(roomId: string | null) {
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
   const { user } = useAuth();
   const { sendChatNotification } = useEnhancedChatNotifications();
+  const { playMessageSound } = useChatSounds();
 
   const MESSAGES_PER_PAGE = 50;
 
@@ -183,6 +185,13 @@ export function useMessages(roomId: string | null) {
         // Non-blocking notification error
       }
 
+      // Play subtle send confirmation sound
+      try {
+        await playMessageSound();
+      } catch (soundError) {
+        console.log('Send sound failed (non-critical):', soundError);
+      }
+
       return data;
     } catch (err: any) {
       // Update temp message to failed state
@@ -264,8 +273,19 @@ export function useMessages(roomId: string | null) {
             message_type: payload.new.message_type as 'text' | 'file' | 'image' | 'system'
           } as ChatMessage;
           
-          // Always add new messages to the end (most recent)
-          setMessages(prev => [...prev, newMessage]);
+          // Deduplicate: check if message already exists (from optimistic update or previous subscription)
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === newMessage.id);
+            if (exists) {
+              // Replace temp message if this is the real one
+              return prev.map(m => 
+                m.id.toString().startsWith('temp_') && m.content === newMessage.content
+                  ? newMessage
+                  : m
+              );
+            }
+            return [...prev, newMessage];
+          });
         }
       )
       .on('postgres_changes',
