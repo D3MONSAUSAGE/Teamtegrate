@@ -13287,6 +13287,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      send_upcoming_checklist_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       send_warehouse_transfer: {
         Args: { p_transfer_id: string; p_user: string }
         Returns: undefined
