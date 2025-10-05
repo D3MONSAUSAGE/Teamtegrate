@@ -43,7 +43,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
   const [currency, setCurrency] = useState('USD');
   const [paymentDueDate, setPaymentDueDate] = useState<Date | undefined>(undefined);
   const [paymentStatus, setPaymentStatus] = useState('unpaid');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('none');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState('');
@@ -146,7 +146,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       setCurrency('USD');
       setPaymentDueDate(undefined);
       setPaymentStatus('unpaid');
-      setPaymentMethod('');
+      setPaymentMethod('none');
       setReferenceNumber('');
       setNotes('');
       setTags('');
@@ -206,7 +206,7 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       currency: currency,
       paymentDueDate: paymentDueDate?.toISOString(),
       paymentStatus: paymentStatus,
-      paymentMethod: paymentMethod || undefined,
+      paymentMethod: paymentMethod === 'none' ? undefined : paymentMethod,
       referenceNumber: referenceNumber || undefined,
       notes: notes || undefined,
       tags: parsedTags.length > 0 ? parsedTags : undefined

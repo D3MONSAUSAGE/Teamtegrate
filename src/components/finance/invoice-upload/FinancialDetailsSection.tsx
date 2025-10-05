@@ -36,7 +36,7 @@ const PAYMENT_STATUS_OPTIONS = [
 ] as const;
 
 const PAYMENT_METHOD_OPTIONS = [
-  { value: '', label: 'Select method' },
+  { value: 'none', label: 'None' },
   { value: 'check', label: 'Check' },
   { value: 'wire_transfer', label: 'Wire Transfer' },
   { value: 'credit_card', label: 'Credit Card' },
