@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { InventoryCategory, InventoryUnit } from '@/contexts/inventory/types';
 import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton';
-import { validateSKUUniqueness } from '@/utils/skuGenerator';
+import { validateSKUUniqueness } from '@/contexts/inventory/api/skuGenerator';
 import { toast } from 'sonner';
 import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';

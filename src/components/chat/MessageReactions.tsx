@@ -109,7 +109,6 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
 
       if (existingReaction) {
         // Remove reaction
-        console.log('Removing reaction:', { reactionId: existingReaction.id, emoji });
         const { error } = await supabase
           .from('message_reactions')
           .delete()
@@ -119,10 +118,8 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
           console.error('Error removing reaction:', error);
           throw error;
         }
-        console.log('Reaction removed successfully');
       } else {
         // Add reaction - organization_id will be set by the trigger
-        console.log('Adding reaction:', { messageId, userId: user.id, emoji });
         const { error } = await supabase
           .from('message_reactions')
           .insert({
@@ -136,7 +133,6 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId }) => {
           console.error('Error adding reaction:', error);
           throw error;
         }
-        console.log('Reaction added successfully');
       }
     } catch (error) {
       console.error('Error handling reaction:', error);

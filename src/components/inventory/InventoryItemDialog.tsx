@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { InventoryCategoryDialog } from './InventoryCategoryDialog';
 import { InventoryUnitDialog } from './InventoryUnitDialog';
 import { SKUGeneratorButton, SKUValidationIndicator } from './SKUGeneratorButton';
-import { validateSKUUniqueness } from '@/utils/skuGenerator';
+import { validateSKUUniqueness } from '@/contexts/inventory/api/skuGenerator';
 import { BarcodeInput } from './BarcodeInput';
 import { TeamInventorySelector } from './TeamInventorySelector';
 import { VendorSelector } from './VendorSelector';

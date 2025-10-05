@@ -15,15 +15,9 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight, isRead
     queryKey: ['unified-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
       if (!user?.organizationId || !user?.id) {
-        console.log('🚫 UnifiedDataContext: Missing user data for tasks query', {
-          hasUser: !!user,
-          organizationId: user?.organizationId,
-          userId: user?.id
-        });
         return [];
       }
 
-      console.log('🔄 UnifiedDataContext: Fetching MY TASKS via RLS filtering');
       setRequestsInFlight(count => count + 1);
 
       try {
@@ -35,11 +29,8 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight, isRead
           .order('created_at', { ascending: false });
 
         if (tasksError) {
-          console.error('❌ UnifiedDataContext: Tasks query error:', tasksError);
           throw new Error(tasksError.message);
         }
-
-        console.log(`📊 UnifiedDataContext: Retrieved ${tasksData?.length || 0} tasks (RLS filtered)`);
 
         if (!tasksData || tasksData.length === 0) {
           return [];
@@ -113,7 +104,6 @@ export const useTasksQuery = ({ user, networkStatus, setRequestsInFlight, isRead
           };
         });
 
-        console.log('✅ UnifiedDataContext: Successfully processed tasks:', transformedTasks.length);
         return transformedTasks;
       } finally {
         setRequestsInFlight(count => count - 1);
@@ -139,11 +129,9 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight, isR
     queryKey: ['unified-projects', user?.organizationId],
     queryFn: async (): Promise<Project[]> => {
       if (!user?.organizationId) {
-        console.log('🚫 UnifiedDataContext: Missing organization data for projects query');
         return [];
       }
 
-      console.log('🔄 UnifiedDataContext: Fetching projects');
       setRequestsInFlight(count => count + 1);
 
       try {
@@ -154,11 +142,8 @@ export const useProjectsQuery = ({ user, networkStatus, setRequestsInFlight, isR
           .order('created_at', { ascending: false });
 
         if (projectsError) {
-          console.error('❌ UnifiedDataContext: Projects query error:', projectsError);
           throw new Error(projectsError.message);
         }
-
-        console.log(`📊 UnifiedDataContext: Retrieved ${projectsData?.length || 0} projects`);
         
         // Transform projects to app format
         const transformedProjects: Project[] = (projectsData || []).map(project => ({
@@ -207,11 +192,9 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
     queryKey: ['unified-users', user?.organizationId],
     queryFn: async (): Promise<User[]> => {
       if (!user?.organizationId) {
-        console.log('🚫 UnifiedDataContext: Missing organization data for users query');
         return [];
       }
 
-      console.log('🔄 UnifiedDataContext: Fetching users');
       setRequestsInFlight(count => count + 1);
 
       try {
@@ -222,11 +205,8 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
           .order('created_at', { ascending: false });
 
         if (usersError) {
-          console.error('❌ UnifiedDataContext: Users query error:', usersError);
           throw new Error(usersError.message);
         }
-
-        console.log(`📊 UnifiedDataContext: Retrieved ${usersData?.length || 0} users`);
         
         // Transform users to app format
         const transformedUsers: User[] = (usersData || []).map(userData => ({
@@ -255,8 +235,6 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
   // Set up real-time subscription for users in UnifiedDataContext
   useEffect(() => {
     if (!user?.organizationId || !isReady) return;
-
-    console.log('🔄 UnifiedDataContext: Setting up real-time users subscription');
     
     const channel = supabase
       .channel('unified-users-realtime')
@@ -268,8 +246,7 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
           table: 'users',
           filter: `organization_id=eq.${user.organizationId}`
         },
-        (payload) => {
-          console.log('🔄 UnifiedDataContext: Real-time user change:', payload);
+        () => {
           // Invalidate both unified and regular user queries
           queryClient.invalidateQueries({ queryKey: ['unified-users'] });
           queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -278,7 +255,6 @@ export const useUsersQuery = ({ user, networkStatus, setRequestsInFlight, isRead
       .subscribe();
 
     return () => {
-      console.log('🧹 UnifiedDataContext: Cleaning up users real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.organizationId, queryClient, isReady]);

@@ -31,7 +31,6 @@ const CalendarTaskItem: React.FC<CalendarTaskItemProps> = ({
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', task.id);
     e.dataTransfer.effectAllowed = 'move';
-    console.log('Started dragging task:', task.id);
   };
 
   const getPriorityConfig = (priority: string) => {

@@ -46,13 +46,8 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
     queryKey: ['organization-users', currentUser?.organizationId, searchTerm],
     queryFn: async () => {
       if (!currentUser?.organizationId) {
-        console.error('UserSearchDialog: No organization ID available');
-        console.error('UserSearchDialog: Current user:', currentUser);
         throw new Error('No organization ID available');
       }
-      
-      console.log('UserSearchDialog: Searching for users in org:', currentUser.organizationId);
-      console.log('UserSearchDialog: Search term:', searchTerm);
       
       let query = supabase
         .from('users')
@@ -71,12 +66,8 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         .limit(50);
 
       if (error) {
-        console.error('UserSearchDialog: Error fetching users:', error);
         throw error;
       }
-      
-      console.log('UserSearchDialog: Found users:', data?.length || 0);
-      console.log('UserSearchDialog: Users data:', data);
       
       return (data as User[]) || [];
     },
@@ -88,19 +79,15 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
   const { data: existingMembers = [] } = useQuery({
     queryKey: ['room-members-ids', roomId],
     queryFn: async () => {
-      console.log('UserSearchDialog: Fetching existing members for room:', roomId);
-      
       const { data, error } = await supabase
         .from('chat_participants')
         .select('user_id')
         .eq('room_id', roomId);
 
       if (error) {
-        console.error('UserSearchDialog: Error fetching room members:', error);
         throw error;
       }
       
-      console.log('UserSearchDialog: Existing members:', data?.length || 0);
       return data?.map(m => m.user_id) || [];
     },
     enabled: open,
@@ -129,7 +116,6 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
 
     try {
       setLoading(true);
-      console.log('UserSearchDialog: Adding users to room:', { roomId, selectedUsers });
       
       const participantsToAdd = selectedUsers.map(userId => ({
         room_id: roomId,
@@ -137,15 +123,11 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         role: 'member' as const
       }));
 
-      console.log('UserSearchDialog: Participants to add:', participantsToAdd);
-
       const { error } = await supabase
         .from('chat_participants')
         .insert(participantsToAdd);
 
       if (error) {
-        console.error('UserSearchDialog: Error adding participants:', error);
-        
         // Provide more specific error messages
         if (error.code === '23505') {
           toast.error('One or more users are already members of this room');
@@ -156,8 +138,6 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
         }
         throw error;
       }
-
-      console.log('UserSearchDialog: Successfully added participants');
       
       const addedUserNames = users
         .filter(u => selectedUsers.includes(u.id))
@@ -170,7 +150,6 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
       onOpenChange(false);
       onUsersAdded?.();
     } catch (error: any) {
-      console.error('UserSearchDialog: Failed to add users:', error);
       // Error already handled above with specific messages
     } finally {
       setLoading(false);
@@ -181,25 +160,6 @@ const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
     refetch();
   };
 
-  // Debug info
-  React.useEffect(() => {
-    if (open) {
-      console.log('UserSearchDialog: Dialog opened with state:', {
-        currentUser: currentUser?.email,
-        organizationId: currentUser?.organizationId,
-        roomId,
-        searchTerm,
-        usersFound: users.length,
-        existingMembers: existingMembers.length,
-        filteredUsers: filteredUsers.length,
-        hasOrgId: !!currentUser?.organizationId
-      });
-      
-      if (!currentUser?.organizationId) {
-        console.error('UserSearchDialog: CRITICAL - No organization ID available!');
-      }
-    }
-  }, [open, currentUser, roomId, searchTerm, users.length, existingMembers.length, filteredUsers.length]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

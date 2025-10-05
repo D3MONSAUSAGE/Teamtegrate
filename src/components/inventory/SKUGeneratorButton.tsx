@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wand2, Check, AlertCircle } from 'lucide-react';
-import { generateSKU, validateSKUUniqueness } from '@/utils/skuGenerator';
+import { generateSKU, validateSKUUniqueness } from '@/contexts/inventory/api/skuGenerator';
 import { InventoryCategory } from '@/contexts/inventory/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

@@ -79,7 +79,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
       networkStatus: 'healthy' as const
     };
     
-    console.log('UnifiedDataContext: Query options', options);
     return options;
   }, [user?.id, user?.organizationId, isReady]);
 
@@ -93,7 +92,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     queryKey: ['my-tasks', user?.id],
     queryFn: async () => {
       if (!queryOptions.hasUser) {
-        console.log('UnifiedDataContext: Skipping tasks query due to invalid user');
         return [];
       }
 
@@ -103,7 +101,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .eq('user_id', user!.id);
 
       if (error) {
-        console.error('UnifiedDataContext: Error fetching tasks:', error);
         throw error;
       }
 
@@ -123,7 +120,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     queryKey: ['my-projects', user?.organizationId],
     queryFn: async () => {
       if (!queryOptions.organizationId) {
-        console.log('UnifiedDataContext: Skipping projects query due to invalid org ID');
         return [];
       }
 
@@ -133,7 +129,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .eq('organization_id', queryOptions.organizationId);
 
       if (error) {
-        console.error('UnifiedDataContext: Error fetching projects:', error);
         throw error;
       }
 
@@ -152,7 +147,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     queryKey: ['my-users', user?.organizationId],
     queryFn: async () => {
       if (!queryOptions.organizationId) {
-        console.log('UnifiedDataContext: Skipping users query due to invalid org ID');
         return [];
       }
 
@@ -162,7 +156,6 @@ export const UnifiedDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .eq('organization_id', queryOptions.organizationId);
 
       if (error) {
-        console.error('UnifiedDataContext: Error fetching users:', error);
         throw error;
       }
 

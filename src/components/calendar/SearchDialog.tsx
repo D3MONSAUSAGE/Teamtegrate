@@ -14,7 +14,6 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange }) => {
 
   const handleSearch = () => {
     // TODO: Implement search functionality
-    console.log('Searching for:', query);
     onOpenChange(false);
   };
 

@@ -21,16 +21,6 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
 
-  // Debug logging
-  console.log('CompactMessageArea render:', { 
-    roomId, 
-    loading, 
-    error, 
-    messageCount: messages.length,
-    user: !!user,
-    userDetails: user ? { id: user.id, name: user.name, email: user.email } : null
-  });
-
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -137,22 +127,9 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
   }
 
   const messageGroups = groupMessages(messages);
-  
-  console.log('CompactMessageArea render:', { 
-    totalMessages: messages.length, 
-    messageGroups: messageGroups.length,
-    roomId,
-    loading,
-    error,
-    messageGroupDetails: messageGroups.map((g, i) => ({ groupIndex: i, userId: g.userId, messageCount: g.messages.length }))
-  });
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Debug Info - Temporary */}
-      <div className="bg-yellow-100 text-yellow-800 text-xs p-1 border-b">
-        Debug: {messages.length} messages | {messageGroups.length} groups | Room: {roomId}
-      </div>
       {/* Messages Area - Maximized height */}
       <ScrollArea className="flex-1 px-1 sm:px-2 min-h-0" ref={scrollAreaRef}>
         <div className="space-y-1 py-1">
@@ -166,15 +143,6 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
               const isOwn = group.userId === user?.id;
               const groupKey = `${group.userId}-${group.messages[0]?.id || groupIndex}`;
               
-              console.log('Rendering group:', { 
-                groupIndex, 
-                groupKey, 
-                userId: group.userId, 
-                isOwn, 
-                messageCount: group.messages.length,
-                firstMessageId: group.messages[0]?.id 
-              });
-              
               try {
                 return (
                   <div key={groupKey} className={cn("flex gap-2 mb-2", isOwn && "flex-row-reverse")}>
@@ -186,7 +154,6 @@ const CompactMessageArea: React.FC<CompactMessageAreaProps> = ({ roomId }) => {
                     <div className={cn("flex-1 space-y-0.5 min-w-0", isOwn && "flex-1")}>
                       {group.messages.map((message, messageIndex) => {
                         if (!message || !message.id) {
-                          console.warn('Invalid message in group:', message);
                           return null;
                         }
                         

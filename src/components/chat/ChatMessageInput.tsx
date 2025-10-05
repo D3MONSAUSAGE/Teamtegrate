@@ -108,20 +108,15 @@ const ChatMessageInput: React.FC<ChatMessageInputProps> = ({
   };
 
   const handleVoiceRecordingComplete = async (recording: VoiceRecording) => {
-    console.log('Processing voice recording...', { duration: recording.duration, hasTranscript: !!recording.transcript });
     try {
       // Create a voice file from the recording
       const voiceFile = new File([recording.audioBlob], `voice_${Date.now()}.webm`, {
         type: 'audio/webm'
       });
       
-      console.log('Voice file created:', { name: voiceFile.name, size: voiceFile.size, type: voiceFile.type });
-      
       // Add to uploads and upload immediately
       addFiles([voiceFile]);
-      console.log('Voice file added to uploads, starting upload...');
       const uploadedFiles = await uploadAll(roomId);
-      console.log('Voice upload completed:', uploadedFiles);
       
       if (uploadedFiles.length > 0) {
         const attachmentUrls = uploadedFiles

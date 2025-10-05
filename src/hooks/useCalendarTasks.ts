@@ -22,11 +22,7 @@ export const useCalendarTasks = () => {
   const { data: tasks = [], isLoading, error, refetch } = useQuery({
     queryKey: ['calendar-tasks', user?.organizationId, user?.id],
     queryFn: async (): Promise<Task[]> => {
-      console.log('=== CALENDAR TASKS QUERY EXECUTING ===');
-      console.log('🔒 Security: Fetching CALENDAR-ONLY tasks for user:', user?.id);
-      
       if (!user?.organizationId || !user?.id) {
-        console.log('useCalendarTasks: Missing user data, cannot fetch tasks');
         throw new Error('User must be authenticated and belong to an organization');
       }
 
@@ -70,11 +66,9 @@ export const useCalendarTasks = () => {
 
           // Check for errors
           if (unassignedResult.error) {
-            console.error('useCalendarTasks: Error fetching unassigned tasks:', unassignedResult.error);
             throw new Error(`Failed to fetch unassigned tasks: ${unassignedResult.error.message}`);
           }
           if (singleAssignedResult.error) {
-            console.error('useCalendarTasks: Error fetching single assigned tasks:', singleAssignedResult.error);
             throw new Error(`Failed to fetch assigned tasks: ${singleAssignedResult.error.message}`);
           }
 
@@ -92,8 +86,6 @@ export const useCalendarTasks = () => {
           });
 
           const combinedTasks = Array.from(allTasksMap.values());
-
-          console.log(`🔒 Calendar Security: Found ${combinedTasks.length} calendar-appropriate tasks`);
 
           if (combinedTasks.length === 0) {
             return [];
@@ -116,10 +108,6 @@ export const useCalendarTasks = () => {
             // This ensures no shared/team tasks appear on personal calendar
             const shouldShowOnCalendar = (isCreatedByUser && isUnassigned) || isAssignedOnlyToUser;
             
-            if (!shouldShowOnCalendar) {
-              console.log(`🔒 Filtered out task ${task.id}: not calendar-appropriate`);
-            }
-            
             return shouldShowOnCalendar;
           });
 
@@ -133,10 +121,6 @@ export const useCalendarTasks = () => {
             usersPromise,
             timeoutPromise
           ]) as any;
-
-          if (usersError) {
-            console.error('useCalendarTasks: Error fetching users:', usersError);
-          }
 
           // Create user lookup map
           const userLookup = new Map();
@@ -200,7 +184,6 @@ export const useCalendarTasks = () => {
             };
           });
 
-          console.log(`🔒 Calendar Security: Returning ${transformedTasks.length} calendar-safe tasks`);
           return transformedTasks;
 
         } catch (error: any) {
