@@ -48,8 +48,8 @@ export const useEmployeeWeeklySchedule = (weekDate: Date = new Date()): WeeklySc
 
         const entries = (data || []).map(entry => {
           // Calculate duration in hours from start and end times
-          const startTime = parseISO(`${entry.scheduled_date}T${entry.scheduled_start_time}`);
-          const endTime = parseISO(`${entry.scheduled_date}T${entry.scheduled_end_time}`);
+          const startTime = parseISO(entry.scheduled_start_time);
+          const endTime = parseISO(entry.scheduled_end_time);
           const duration = differenceInHours(endTime, startTime);
           
           return {

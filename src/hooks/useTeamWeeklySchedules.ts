@@ -127,8 +127,8 @@ export const useTeamWeeklySchedules = (
         if (!user) return;
 
         // Calculate duration
-        const startTime = parseISO(`${schedule.scheduled_date}T${schedule.scheduled_start_time}`);
-        const endTime = parseISO(`${schedule.scheduled_date}T${schedule.scheduled_end_time}`);
+        const startTime = parseISO(schedule.scheduled_start_time);
+        const endTime = parseISO(schedule.scheduled_end_time);
         const duration = differenceInHours(endTime, startTime);
 
         const scheduleItem = {
