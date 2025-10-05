@@ -23,7 +23,6 @@ export const useInvoiceData = (refreshTrigger: number) => {
   const fetchInvoices = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching invoices for organization...');
       
       const { data, error } = await supabase
         .from('invoices')
@@ -31,12 +30,10 @@ export const useInvoiceData = (refreshTrigger: number) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching invoices:', error);
         toast.error('Failed to load invoices');
         return;
       }
 
-      console.log(`Successfully loaded ${data?.length || 0} invoices`);
       setInvoices(data || []);
     } catch (error) {
       console.error('Error fetching invoices:', error);

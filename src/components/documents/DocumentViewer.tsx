@@ -79,8 +79,6 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
     // Handle both storage_id and file_path formats - normalize path
     const path = documentPath.startsWith('/') ? documentPath.slice(1) : documentPath;
     
-    console.log('Loading document with path:', path);
-    
     // Strategy 1: Try public URL first (documents bucket is public)
     try {
       const { data } = supabase.storage
@@ -88,13 +86,12 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
         .getPublicUrl(path);
 
       if (data.publicUrl) {
-        console.log('Using public URL strategy:', data.publicUrl);
         setFileUrl(data.publicUrl);
         setViewingStrategy('public');
         return;
       }
     } catch (error) {
-      console.warn('Public URL strategy failed:', error);
+      // Try next strategy
     }
 
     // Strategy 2: Try blob URL (fallback for better security if needed)
@@ -107,12 +104,11 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
         if (error) throw error;
 
         const url = URL.createObjectURL(data);
-        console.log('Using blob URL strategy');
         setFileUrl(url);
         setViewingStrategy('blob');
         return;
       } catch (error) {
-        console.warn('Blob URL strategy failed:', error);
+        // Try next strategy
       }
     }
 
@@ -124,12 +120,11 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
 
       if (error) throw error;
 
-      console.log('Using signed URL strategy');
       setFileUrl(data.signedUrl);
       setViewingStrategy('signed');
       return;
     } catch (error) {
-      console.warn('Signed URL strategy failed:', error);
+      // Try next strategy
     }
 
     // Strategy 4: For Google Docs viewer fallback
@@ -141,18 +136,16 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
           .getPublicUrl(path);
 
         if (data.publicUrl) {
-          console.log('Using Google Docs viewer strategy with public URL');
           setFileUrl(data.publicUrl);
           setViewingStrategy('google');
           return;
         }
       } catch (error) {
-        console.warn('Google Docs strategy failed:', error);
+        // Final strategy failed
       }
     }
 
     // Strategy 5: Download only
-    console.log('All viewing strategies failed, download only');
     setViewingStrategy('download');
     throw new Error('Cannot preview this file type. Download is available.');
   };
@@ -194,9 +187,7 @@ export const DocumentViewer = ({ documentPath, documentName, children }: Documen
     if (viewingStrategy === 'google' || fileType === 'pdf' || fileType === 'document') {
       // Properly encode the URL for Google Docs viewer
       const encodedUrl = encodeURIComponent(fileUrl);
-      const googleDocsUrl = `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
-      console.log('Google Docs URL:', googleDocsUrl);
-      return googleDocsUrl;
+      return `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
     }
     return null;
   };

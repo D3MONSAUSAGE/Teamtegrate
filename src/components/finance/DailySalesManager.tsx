@@ -41,12 +41,10 @@ const DailySalesManager: React.FC = () => {
   }));
 
   const handleSalesDataUpload = async (newData: SalesData) => {
-    console.log('[DailySalesManager] Uploading new sales data:', newData);
     try {
       await addSalesData(newData);
       // Success toast is handled in the service
     } catch (error) {
-      console.error('[DailySalesManager] Error uploading sales data:', error);
       // Error handling is done in the hook and service
     }
   };
@@ -56,7 +54,7 @@ const DailySalesManager: React.FC = () => {
       await refreshData();
       toast.success('Data refreshed successfully');
     } catch (error) {
-      console.error('[DailySalesManager] Error refreshing data:', error);
+      // Error is logged internally
     }
   };
 

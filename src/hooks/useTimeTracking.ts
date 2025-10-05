@@ -71,7 +71,6 @@ export function useTimeTracking() {
       await validateAuth();
 
       const data = await requestManager.dedupe(requestKey, async () => {
-        console.log('Fetching time entries...');
         const { data, error } = await supabase
           .from('time_entries')
           .select('*')
@@ -83,10 +82,7 @@ export function useTimeTracking() {
         return data;
       });
 
-      if (!data) {
-        console.warn('No data returned from time entries fetch');
-        return;
-      }
+      if (!data) return;
 
       const entries: TimeEntry[] = data.map(entry => ({
         id: entry.id,
@@ -109,13 +105,9 @@ export function useTimeTracking() {
           clock_in: activeEntry.clock_in,
           id: activeEntry.id
         });
-        console.log('Active session found:', activeEntry.id);
       } else {
         setCurrentEntry({ isClocked: false });
-        console.log('No active session found');
       }
-
-      console.log(`Successfully loaded ${entries.length} time entries`);
     } catch (error) {
       console.error('Error fetching time entries:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load time entries';
@@ -152,8 +144,7 @@ export function useTimeTracking() {
       setLastError(null);
 
       // Validate authentication
-      const session = await validateAuth();
-      console.log('Clock in - Authentication validated for user:', user.id);
+      await validateAuth();
 
       const { data, error } = await supabase
         .from('time_entries')
@@ -165,12 +156,7 @@ export function useTimeTracking() {
         .select()
         .single();
 
-      if (error) {
-        console.error('Clock in error:', error);
-        throw error;
-      }
-
-      console.log('Clock in successful:', data);
+      if (error) throw error;
 
       const newEntry: TimeEntry = {
         id: data.id,
@@ -212,7 +198,6 @@ export function useTimeTracking() {
   const clockOut = async (notes?: string) => {
     if (!currentEntry?.id) {
       toast.error('No active session found');
-      console.warn('Clock out attempted but no active session ID');
       await fetchTimeEntries(false); // Refresh to sync state
       return;
     }
@@ -228,14 +213,10 @@ export function useTimeTracking() {
       setIsLoading(true);
       setLastError(null);
       
-      console.log('Attempting to clock out session:', sessionId);
-      
-      // Critical: Validate authentication first
-      const session = await validateAuth();
-      console.log('Clock out - Authentication validated for user:', user!.id);
+      // Validate authentication first
+      await validateAuth();
       
       // Verify the session exists and is still active
-      console.log('Verifying session exists in database...');
       const { data: checkData, error: checkError } = await supabase
         .from('time_entries')
         .select('id, clock_out, user_id')
@@ -243,14 +224,10 @@ export function useTimeTracking() {
         .single();
 
       if (checkError) {
-        console.error('Session verification failed:', checkError);
         throw new Error(`Session not found: ${checkError.message}`);
       }
 
-      console.log('Session verification result:', checkData);
-
       if (checkData.clock_out) {
-        console.warn('Session already clocked out');
         setCurrentEntry({ isClocked: false });
         toast.warning('Session was already ended');
         await fetchTimeEntries(false);
@@ -259,14 +236,8 @@ export function useTimeTracking() {
 
       // Ensure the session belongs to the current user
       if (checkData.user_id !== user!.id) {
-        console.error('Session user mismatch:', {
-          sessionUserId: checkData.user_id,
-          currentUserId: user!.id
-        });
         throw new Error('Session does not belong to current user');
       }
-
-      console.log('Updating session with server-side clock_out time...');
       
       // Use server-side NOW() function instead of client timestamp
       const { error: updateError } = await supabase
@@ -279,8 +250,6 @@ export function useTimeTracking() {
         .eq('user_id', user!.id); // Double verification for security
 
       if (updateError) {
-        console.error('Clock out update failed:', updateError);
-        
         // Parse the error message for better user feedback
         if (updateError.message.includes('Clock times cannot be in the future')) {
           throw new Error('Clock synchronization issue. Please try again in a moment.');
@@ -290,8 +259,6 @@ export function useTimeTracking() {
           throw new Error(`Update failed: ${updateError.message}`);
         }
       }
-
-      console.log('Clock out successful for session:', sessionId);
 
       // Optimistic update
       setCurrentEntry({ isClocked: false });
@@ -431,8 +398,6 @@ export function useTimeTracking() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Real-time time entry update:', payload);
-          
           // Clear cache and refresh after a short debounce
           requestManager.clearCache(createRequestKey('fetch-entries'));
           setTimeout(() => {

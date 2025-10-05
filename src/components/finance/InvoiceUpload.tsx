@@ -48,7 +48,6 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       setIsUploading(true);
       setUploadProgress(0);
       setUploadStatus('Uploading file...');
-      console.log('Starting invoice upload process for file:', file.name);
 
       // Use simplified upload
       const uploadResult = await uploadInvoiceFileSimple(file, user.organizationId, user.id);
@@ -57,13 +56,10 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
       setUploadStatus('File uploaded, saving to database...');
       
       if (!uploadResult.success) {
-        console.error('Upload failed:', uploadResult.error);
         toast.error(uploadResult.error || 'Upload failed');
         setUploadStatus('Upload failed');
         return;
       }
-
-      console.log('File uploaded successfully, inserting into database...');
 
       // Insert into database
       const { error: dbError } = await supabase
@@ -83,14 +79,11 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
         });
 
       if (dbError) {
-        console.error('Database error:', dbError);
-        
         // Clean up uploaded file on database error
         try {
           await supabase.storage
             .from('documents')
             .remove([uploadResult.filePath!]);
-          console.log('Cleaned up file after database error');
         } catch (cleanupError) {
           console.error('Failed to cleanup file:', cleanupError);
         }
@@ -102,8 +95,6 @@ const InvoiceUpload: React.FC<InvoiceUploadProps> = ({ onUploadSuccess }) => {
 
       setUploadProgress(100);
       setUploadStatus('Upload complete!');
-
-      console.log('Invoice uploaded and saved successfully');
       
       toast.success(
         `Invoice "${metadata.invoiceNumber}" uploaded successfully!`,

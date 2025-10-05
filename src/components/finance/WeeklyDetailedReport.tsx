@@ -190,7 +190,7 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       format(week, 'yyyy-MM-dd') === format(selectedWeek, 'yyyy-MM-dd')
     );
     if (currentIndex < weeksWithData.length - 1) {
-      setSelectedWeek(weeksWithData[currentIndex + 1]);
+    setSelectedWeek(weeksWithData[currentIndex + 1]);
     }
   };
 
@@ -200,16 +200,6 @@ const WeeklyDetailedReport: React.FC<WeeklyDetailedReportProps> = ({
       setSelectedWeek(weeksWithData[0]);
     }
   };
-
-  // Debug logging
-  console.log('WeeklyDetailedReport Debug:', {
-    selectedWeek: format(selectedWeek, 'yyyy-MM-dd'),
-    weeksWithData: weeksWithData.map(w => format(w, 'yyyy-MM-dd')),
-    selectedTeam,
-    teams,
-    weeklyData: weeklyData ? 'exists' : 'null',
-    salesDataCount: salesData.length
-  });
 
   const handleExportReport = () => {
     if (!weeklyData) return;

@@ -18,8 +18,6 @@ interface Invoice {
 export const useInvoiceActions = () => {
   const downloadInvoice = async (invoice: Invoice) => {
     try {
-      console.log('Downloading invoice with file path:', invoice.file_path);
-      
       // Use public URL for download since bucket is now public
       const { data: urlData } = supabase.storage
         .from('documents')
@@ -53,8 +51,6 @@ export const useInvoiceActions = () => {
     setViewModalOpen: (open: boolean) => void
   ) => {
     try {
-      console.log('Viewing invoice with file path:', invoice.file_path);
-      
       // Use public URL for viewing since bucket is now public
       const { data: urlData } = supabase.storage
         .from('documents')
@@ -65,7 +61,6 @@ export const useInvoiceActions = () => {
         return;
       }
 
-      console.log('Public URL generated successfully');
       setImageUrl(urlData.publicUrl);
       setViewingInvoice(invoice);
       setViewModalOpen(true);
@@ -82,15 +77,12 @@ export const useInvoiceActions = () => {
     }
 
     try {
-      console.log('Deleting invoice with file path:', invoice.file_path);
-      
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('documents')
         .remove([invoice.file_path]);
 
       if (storageError) {
-        console.error('Storage deletion error:', storageError);
         // Continue with database deletion even if file deletion fails
         console.warn('File may have already been deleted from storage');
       }
@@ -101,10 +93,7 @@ export const useInvoiceActions = () => {
         .delete()
         .eq('id', invoice.id);
 
-      if (dbError) {
-        console.error('Database deletion error:', dbError);
-        throw dbError;
-      }
+      if (dbError) throw dbError;
 
       toast.success(`Deleted invoice "${invoice.invoice_number}"`);
       refetchInvoices();

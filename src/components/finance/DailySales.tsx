@@ -48,12 +48,10 @@ const DailySales: React.FC = () => {
   } = useWeeklySalesData(salesData);
   
   const handleSalesDataUpload = async (newData: SalesData) => {
-    console.log('[DailySales] Uploading new sales data:', newData);
     try {
       await addSalesData(newData);
       // Data will be automatically updated via the hook
     } catch (error) {
-      console.error('[DailySales] Error uploading sales data:', error);
       // Error toast is handled in the hook
     }
   };
