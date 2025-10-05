@@ -134,26 +134,55 @@ export const ScannerStationPage: React.FC = () => {
       if (data.success) {
         toast.success(data.message);
       } else {
-        toast.error(data.error);
+        // Better error messaging based on scan status
+        const scanStatus = data.scanStatus || '';
+        let errorMessage = data.error;
+        
+        if (scanStatus === 'expired') {
+          errorMessage = '⏰ QR Code Expired - Generate a new one';
+        } else if (scanStatus === 'already_used') {
+          errorMessage = '🔄 QR Code Already Used - Generate a new one';
+        } else if (scanStatus === 'schedule_required') {
+          errorMessage = '📅 Schedule Required - Contact your manager';
+        } else if (scanStatus === 'invalid') {
+          errorMessage = '❌ Invalid QR Code - Please try again';
+        }
+        
+        toast.error(errorMessage);
       }
 
-      // Auto-hide result and restart scanning after 3 seconds
+      // Auto-hide result and restart scanning after 3 seconds for success, 4 seconds for errors
       setTimeout(() => {
         setShowResult(false);
         setScanResult(null);
         setScanning(true);
-      }, 3000);
+      }, data.success ? 3000 : 4000);
 
     } catch (error: any) {
       console.error('Scan validation error:', error);
-      setScanResult({ success: false, error: error.message });
-      setShowResult(true);
       
+      // Distinguish between network errors and validation errors
+      const isNetworkError = error.message?.includes('Failed to fetch') || 
+                            error.message?.includes('NetworkError');
+      
+      const errorMessage = isNetworkError 
+        ? '📡 Network Error - Check your connection'
+        : error.message || 'Scan validation failed';
+      
+      setScanResult({ 
+        success: false, 
+        error: errorMessage,
+        isNetworkError 
+      });
+      setShowResult(true);
+      toast.error(errorMessage);
+      
+      // Network errors get longer timeout and auto-restart
       setTimeout(() => {
         setShowResult(false);
         setScanResult(null);
         setScanning(true);
-      }, 3000);
+      }, isNetworkError ? 5000 : 4000);
     }
   };
 

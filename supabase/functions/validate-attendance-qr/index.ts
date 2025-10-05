@@ -110,27 +110,36 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify schedule exists for today (for clock_in)
+    // Check organization settings for schedule requirement (for clock_in)
     if (tokenData.token_type === 'clock_in') {
-      const today = new Date().toISOString().split('T')[0];
-      const { data: schedules } = await supabaseClient
-        .from('employee_schedules')
-        .select('id, status')
-        .eq('employee_id', tokenData.user_id)
-        .eq('scheduled_date', today)
-        .eq('status', 'scheduled');
+      const { data: orgSettings } = await supabaseClient
+        .from('organization_attendance_settings')
+        .select('require_schedule_for_clock_in')
+        .eq('organization_id', tokenData.organization_id)
+        .single();
 
-      if (!schedules || schedules.length === 0) {
-        await logScan(supabaseClient, tokenData.user_id, tokenData.organization_id, stationId, 'schedule_mismatch', 'No active schedule for today');
-        
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'No scheduled shift found for today',
-            scanStatus: 'schedule_mismatch'
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // Only validate schedule if required by organization settings
+      if (orgSettings?.require_schedule_for_clock_in) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: schedules } = await supabaseClient
+          .from('employee_schedules')
+          .select('id, status')
+          .eq('employee_id', tokenData.user_id)
+          .eq('scheduled_date', today)
+          .eq('status', 'scheduled');
+
+        if (!schedules || schedules.length === 0) {
+          await logScan(supabaseClient, tokenData.user_id, tokenData.organization_id, stationId, 'schedule_required', 'No scheduled shift found for today');
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Schedule required: No scheduled shift found for today',
+              scanStatus: 'schedule_required'
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
     }
 
