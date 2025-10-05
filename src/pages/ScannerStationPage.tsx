@@ -139,7 +139,10 @@ export const ScannerStationPage: React.FC = () => {
           const syncChannel = new BroadcastChannel('time-tracking-sync');
           syncChannel.postMessage({ 
             type: data.action === 'clock_in' ? 'clock-in' : 'clock-out',
-            timestamp: Date.now()
+            userId: data.userId,
+            userName: data.userName,
+            timestamp: Date.now(),
+            action: data.action
           });
           syncChannel.close();
         } catch (broadcastError) {

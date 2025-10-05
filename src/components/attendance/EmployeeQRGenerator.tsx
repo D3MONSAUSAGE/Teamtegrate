@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import QRCode from 'qrcode';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 interface EmployeeQRGeneratorProps {
   open: boolean;
@@ -24,6 +25,9 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
   const [tokenData, setTokenData] = useState<any>(null);
   const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [scanSuccess, setScanSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [autoCloseCountdown, setAutoCloseCountdown] = useState(0);
 
   const generateQR = useCallback(async () => {
     if (!user) return;
@@ -132,8 +136,57 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
     setTokenData(null);
     setCountdown(0);
     setError(null);
+    setScanSuccess(false);
+    setSuccessMessage('');
+    setAutoCloseCountdown(0);
     onOpenChange(false);
   };
+
+  // Listen for scan success via BroadcastChannel
+  useEffect(() => {
+    if (!open || !user?.id) return;
+
+    const channel = new BroadcastChannel('time-tracking-sync');
+    
+    channel.onmessage = (event) => {
+      console.log('QR Generator received broadcast:', event.data);
+      
+      // Check if this is for the current user and matches expected action
+      if (event.data.userId === user.id) {
+        const isMatchingAction = 
+          (event.data.type === 'clock-in' && tokenType === 'clock_in') ||
+          (event.data.type === 'clock-out' && tokenType === 'clock_out');
+        
+        if (isMatchingAction) {
+          const action = tokenType === 'clock_in' ? 'Clock In' : 'Clock Out';
+          setSuccessMessage(`${action} Successful!`);
+          setScanSuccess(true);
+          setAutoCloseCountdown(2);
+          toast.success(`${action} confirmed!`);
+        }
+      }
+    };
+
+    return () => channel.close();
+  }, [open, user?.id, tokenType]);
+
+  // Auto-close countdown after success
+  useEffect(() => {
+    if (autoCloseCountdown <= 0) return;
+
+    const timer = setInterval(() => {
+      setAutoCloseCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [autoCloseCountdown]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -158,9 +211,34 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
             </div>
           </div>
 
-          {/* QR Code Display */}
+          {/* QR Code Display or Success Screen */}
           <div className="flex flex-col items-center justify-center">
-            {loading ? (
+            {scanSuccess ? (
+              <motion.div 
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="flex flex-col items-center gap-4 py-12"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.6 }}
+                  className="p-6 rounded-full bg-gradient-to-br from-green-500/20 to-green-600/20"
+                >
+                  <CheckCircle className="h-24 w-24 text-green-600" />
+                </motion.div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-2xl font-bold text-green-600">{successMessage}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date().toLocaleTimeString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Closing in {autoCloseCountdown}...
+                  </p>
+                </div>
+              </motion.div>
+            ) : loading ? (
               <div className="flex flex-col items-center gap-4 py-12">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">Generating QR code...</p>
@@ -198,7 +276,7 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
           </div>
 
           {/* Instructions */}
-          {qrDataUrl && !error && (
+          {qrDataUrl && !error && !scanSuccess && (
             <div className="space-y-3">
               <div className="flex items-start gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
@@ -222,24 +300,26 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
           )}
 
           {/* Actions */}
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline" 
-              className="flex-1"
-              disabled={loading}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Code
-            </Button>
-            <Button 
-              onClick={handleClose} 
-              variant="secondary" 
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-          </div>
+          {!scanSuccess && (
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline" 
+                className="flex-1"
+                disabled={loading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Code
+              </Button>
+              <Button 
+                onClick={handleClose} 
+                variant="secondary" 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
