@@ -88,7 +88,7 @@ export async function startQuagga(opts: StartQuaggaOpts): Promise<() => Promise<
       type: 'LiveStream',
       target: mountEl,
       constraints: {
-        facingMode: { ideal: facingMode },
+        facingMode: isTablet ? { exact: 'user' } : { ideal: facingMode },
         aspectRatio: { ideal: 1.777 },
         focusMode: 'continuous',
       }
@@ -157,8 +157,44 @@ export async function getCameraStream(constraints?: MediaStreamConstraints): Pro
   const isTablet = /(ipad|tablet|(android(?!.*mobile)))/.test(navigator.userAgent.toLowerCase());
   const facingMode = isTablet ? 'user' : 'environment';
   
-  // Progressive constraint degradation
-  const attempts = [
+  console.log('📷 getCameraStream - Device type:', isTablet ? 'TABLET' : 'PHONE', 'facingMode:', facingMode);
+  
+  // Progressive constraint degradation - for tablets, force front camera with exact first
+  const attempts = isTablet ? [
+    {
+      video: {
+        facingMode: { exact: 'user' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        focusMode: 'continuous'
+      },
+      audio: false
+    },
+    {
+      video: {
+        facingMode: { ideal: 'user' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        focusMode: 'continuous'
+      },
+      audio: false
+    },
+    {
+      video: {
+        facingMode: { ideal: 'user' },
+        focusMode: 'continuous'
+      },
+      audio: false
+    },
+    {
+      video: { facingMode: { ideal: 'user' } },
+      audio: false
+    },
+    {
+      video: true,
+      audio: false
+    }
+  ] : [
     {
       video: {
         facingMode: { ideal: facingMode },
@@ -185,11 +221,15 @@ export async function getCameraStream(constraints?: MediaStreamConstraints): Pro
     }
   ];
 
-  for (const attempt of attempts) {
+  for (let i = 0; i < attempts.length; i++) {
+    const attempt = attempts[i];
     try {
-      return await navigator.mediaDevices.getUserMedia(constraints || attempt);
+      console.log(`📷 Attempt ${i + 1}/${attempts.length}:`, attempt.video);
+      const stream = await navigator.mediaDevices.getUserMedia(constraints || attempt);
+      console.log('✅ Camera stream acquired successfully');
+      return stream;
     } catch (e) {
-      // Try next constraint
+      console.log(`⚠️ Attempt ${i + 1} failed:`, e);
       continue;
     }
   }

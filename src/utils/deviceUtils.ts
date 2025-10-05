@@ -36,16 +36,49 @@ export const requestCameraAccess = async (): Promise<{ success: boolean; stream?
     const isTablet = isTabletDevice();
     const facingMode = isTablet ? 'user' : 'environment';
     
-    const constraints = {
-      video: {
-        facingMode: facingMode,
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+    // For tablets, try to force front camera with exact constraint
+    const attempts = isTablet ? [
+      {
+        video: {
+          facingMode: { exact: 'user' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      },
+      {
+        video: {
+          facingMode: { ideal: 'user' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       }
-    };
+    ] : [
+      {
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      }
+    ];
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    console.log('✅ Camera access granted');
+    let stream;
+    for (const constraints of attempts) {
+      try {
+        console.log('🎥 Trying camera with constraints:', constraints);
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('✅ Camera access granted with facing mode:', constraints.video.facingMode);
+        break;
+      } catch (err) {
+        console.log('⚠️ Camera attempt failed, trying next...', err);
+        continue;
+      }
+    }
+    
+    if (!stream) {
+      throw new Error('All camera attempts failed');
+    }
+    
     return { success: true, stream };
   } catch (error: any) {
     console.error('❌ Camera access denied:', error);
