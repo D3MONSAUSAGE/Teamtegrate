@@ -42,14 +42,11 @@ export const useFCMTokenManager = () => {
     try {
       let currentToken: string;
 
-      if (isNativeApp) {
-        console.log('📱 Native App Path - Using Capacitor Push Notifications');
+      if (isNativeApp && platform === 'android') {
+        console.log('📱 Android Native App - Using Native Token Bridge');
         
-        // Use Capacitor Push Notifications for native apps
+        // Request permission first
         const { PushNotifications } = await import('@capacitor/push-notifications');
-        console.log('✅ PushNotifications plugin imported');
-        
-        // Request permission
         console.log('🔐 Requesting push notification permissions...');
         const permResult = await PushNotifications.requestPermissions();
         console.log('🔐 Permission result:', permResult);
@@ -58,35 +55,25 @@ export const useFCMTokenManager = () => {
           throw new Error('Push notification permission denied');
         }
 
-        // Register with FCM
+        // Register with FCM (this triggers token generation in MyFirebaseMessagingService)
         console.log('📝 Registering with FCM...');
         await PushNotifications.register();
-        console.log('✅ Registration call completed');
-
-        // Get registration token
-        const result = await new Promise<string>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            console.error('⏰ Timeout waiting for FCM token');
-            reject(new Error('Timeout waiting for FCM token'));
-          }, 10000);
-          
-          PushNotifications.addListener('registration', (token) => {
-            console.log('🎯 Registration event received!', { 
-              tokenPreview: token.value.substring(0, 20) + '...' 
-            });
-            clearTimeout(timeout);
-            resolve(token.value);
-          });
-
-          PushNotifications.addListener('registrationError', (error: any) => {
-            console.error('❌ Registration error event:', error);
-            clearTimeout(timeout);
-            reject(error);
-          });
-        });
-
-        currentToken = result;
-        console.log('✅ Native FCM Token obtained:', currentToken.substring(0, 30) + '...');
+        console.log('✅ Registration completed');
+        
+        // Wait a moment for token to be saved to SharedPreferences
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Get token from native bridge using Capacitor plugin
+        console.log('📝 Getting FCM token from native storage...');
+        // @ts-ignore - Custom plugin
+        const result: any = await Capacitor.Plugins.FCMToken.getToken();
+        
+        if (!result || !result.success || !result.token) {
+          throw new Error('No FCM token found in native storage. Token may still be generating.');
+        }
+        
+        currentToken = result.token;
+        console.log('✅ FCM Token obtained from native bridge:', currentToken.substring(0, 30) + '...');
       } else {
         console.log('🌐 Web Path - Using Web Push');
         

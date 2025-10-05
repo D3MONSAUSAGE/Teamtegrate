@@ -9,7 +9,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Register PushNotifications plugin
+        // Register plugins
         registerPlugin(PushNotificationsPlugin.class);
+        registerPlugin(FCMTokenPlugin.class);
     }
 }
