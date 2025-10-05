@@ -443,41 +443,62 @@ export const useEmployeeTimeTracking = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel('time_entries_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'time_entries',
-          filter: `user_id=eq.${user.id}`
-        },
-        async (payload) => {
-          console.log('Real-time event received:', payload.eventType);
-          
-          // Immediately update UI state based on event type
-          if (payload.eventType === 'INSERT') {
-            const newEntry = payload.new as TimeEntry;
-            const clockInTime = new Date(newEntry.clock_in);
-            const isBreakSession = newEntry.notes?.toLowerCase().includes('break');
+    let retryTimeout: NodeJS.Timeout;
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    const setupChannel = () => {
+      const channel = supabase
+        .channel('time_entries_changes', {
+          config: {
+            broadcast: { self: false },
+            presence: { key: user.id }
+          }
+        })
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'time_entries',
+            filter: `user_id=eq.${user.id}`
+          },
+          async (payload) => {
+            console.log('✓ Real-time event received:', payload.eventType);
+            retryCount = 0; // Reset retry count on successful message
             
-            // Immediately set state - don't wait for refetch
-            setCurrentSession({
-              isActive: true,
-              sessionId: newEntry.id,
-              clockInTime: isBreakSession ? undefined : clockInTime,
-              elapsedMinutes: 0,
-              isOnBreak: isBreakSession || false,
-              breakType: isBreakSession ? newEntry.notes?.split(' ')[0] : undefined,
-              breakStartTime: isBreakSession ? clockInTime : undefined,
-              breakElapsedMinutes: 0
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedEntry = payload.new as TimeEntry;
-            
-            // If clocked out, clear session
-            if (updatedEntry.clock_out) {
+            // Immediately update UI state based on event type
+            if (payload.eventType === 'INSERT') {
+              const newEntry = payload.new as TimeEntry;
+              const clockInTime = new Date(newEntry.clock_in);
+              const isBreakSession = newEntry.notes?.toLowerCase().includes('break');
+              
+              // Immediately set state - don't wait for refetch
+              setCurrentSession({
+                isActive: true,
+                sessionId: newEntry.id,
+                clockInTime: isBreakSession ? undefined : clockInTime,
+                elapsedMinutes: 0,
+                isOnBreak: isBreakSession || false,
+                breakType: isBreakSession ? newEntry.notes?.split(' ')[0] : undefined,
+                breakStartTime: isBreakSession ? clockInTime : undefined,
+                breakElapsedMinutes: 0
+              });
+              
+              toast.success('Clock-in confirmed!');
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedEntry = payload.new as TimeEntry;
+              
+              // If clocked out, clear session
+              if (updatedEntry.clock_out) {
+                setCurrentSession({
+                  isActive: false,
+                  elapsedMinutes: 0,
+                  isOnBreak: false,
+                  breakElapsedMinutes: 0
+                });
+              }
+            } else if (payload.eventType === 'DELETE') {
               setCurrentSession({
                 isActive: false,
                 elapsedMinutes: 0,
@@ -485,26 +506,41 @@ export const useEmployeeTimeTracking = () => {
                 breakElapsedMinutes: 0
               });
             }
-          } else if (payload.eventType === 'DELETE') {
-            setCurrentSession({
-              isActive: false,
-              elapsedMinutes: 0,
-              isOnBreak: false,
-              breakElapsedMinutes: 0
-            });
+            
+            // Then fetch to sync with server (debounced)
+            await Promise.all([
+              fetchCurrentSession(),
+              fetchDailySummary(),
+              fetchWeeklyEntries()
+            ]);
           }
+        )
+        .subscribe((status) => {
+          console.log('Real-time connection status:', status);
           
-          // Then fetch to sync with server
-          await Promise.all([
-            fetchCurrentSession(),
-            fetchDailySummary(),
-            fetchWeeklyEntries()
-          ]);
-        }
-      )
-      .subscribe();
+          if (status === 'SUBSCRIBED') {
+            console.log('✓ Real-time updates active');
+            retryCount = 0;
+          } else if (status === 'CLOSED' && retryCount < maxRetries) {
+            console.warn('Real-time connection closed, retrying...', retryCount + 1);
+            retryCount++;
+            retryTimeout = setTimeout(() => {
+              supabase.removeChannel(channel);
+              setupChannel();
+            }, 2000 * retryCount);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Real-time connection error');
+            setLastError('Real-time updates unavailable. Please refresh manually.');
+          }
+        });
+
+      return channel;
+    };
+
+    const channel = setupChannel();
 
     return () => {
+      if (retryTimeout) clearTimeout(retryTimeout);
       supabase.removeChannel(channel);
     };
   }, [user?.id, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
@@ -519,6 +555,7 @@ export const useEmployeeTimeTracking = () => {
     clockOut,
     startBreak,
     endBreak,
+    fetchCurrentSession,
     fetchDailySummary,
     fetchWeeklyEntries,
     autoCloseStaleSessionsAPI,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { startOfWeek, endOfWeek, format, differenceInHours, parseISO } from 'date-fns';
@@ -19,15 +19,53 @@ interface WeeklyScheduleData {
   error: string | null;
 }
 
+// Request cache to prevent duplicate calls
+const requestCache = new Map<string, { data: WeeklyScheduleData; timestamp: number }>();
+const CACHE_DURATION = 30000; // 30 seconds
+
 export const useEmployeeWeeklySchedule = (weekDate: Date = new Date()): WeeklyScheduleData => {
   const { user } = useAuth();
   const [scheduledHours, setScheduledHours] = useState(0);
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastFetchRef = useRef<number>(0);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     if (!user?.id) return;
+
+    const cacheKey = `${user.id}-${format(weekDate, 'yyyy-MM-dd')}`;
+    const now = Date.now();
+    
+    // Check cache first
+    const cached = requestCache.get(cacheKey);
+    if (cached && now - cached.timestamp < CACHE_DURATION) {
+      setScheduledHours(cached.data.scheduledHours);
+      setScheduleEntries(cached.data.scheduleEntries);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    // Throttle requests - minimum 5 seconds between fetches
+    const timeSinceLastFetch = now - lastFetchRef.current;
+    if (timeSinceLastFetch < 5000) {
+      // Clear any pending timeout
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      
+      // Schedule fetch for later
+      fetchTimeoutRef.current = setTimeout(() => {
+        lastFetchRef.current = Date.now();
+        fetchWeeklySchedule();
+      }, 5000 - timeSinceLastFetch);
+      
+      return;
+    }
+
+    lastFetchRef.current = now;
 
     const fetchWeeklySchedule = async () => {
       setIsLoading(true);
@@ -47,7 +85,6 @@ export const useEmployeeWeeklySchedule = (weekDate: Date = new Date()): WeeklySc
         if (error) throw error;
 
         const entries = (data || []).map(entry => {
-          // Calculate duration in hours from start and end times
           const startTime = parseISO(entry.scheduled_start_time);
           const endTime = parseISO(entry.scheduled_end_time);
           const duration = differenceInHours(endTime, startTime);
@@ -66,6 +103,12 @@ export const useEmployeeWeeklySchedule = (weekDate: Date = new Date()): WeeklySc
 
         setScheduleEntries(entries);
         setScheduledHours(totalHours);
+        
+        // Cache the result
+        requestCache.set(cacheKey, {
+          data: { scheduledHours: totalHours, scheduleEntries: entries, isLoading: false, error: null },
+          timestamp: Date.now()
+        });
       } catch (err) {
         console.error('Error fetching weekly schedule:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch schedule');
@@ -77,6 +120,12 @@ export const useEmployeeWeeklySchedule = (weekDate: Date = new Date()): WeeklySc
     };
 
     fetchWeeklySchedule();
+
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
   }, [user?.id, weekDate]);
 
   return {
