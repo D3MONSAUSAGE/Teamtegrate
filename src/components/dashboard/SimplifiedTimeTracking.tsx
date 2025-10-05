@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { WeeklyScheduleSummary } from './WeeklyScheduleSummary';
 import StreamlinedTimeControls from './StreamlinedTimeControls';
 import { EmployeeTimeStatusCard } from '@/components/employee/EmployeeTimeStatusCard';
@@ -8,6 +8,7 @@ import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 
 export const SimplifiedTimeTracking: React.FC = () => {
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
   
   const {
     currentSession,
@@ -89,6 +90,8 @@ export const SimplifiedTimeTracking: React.FC = () => {
       <EmployeeTimeStatusCard 
         entries={recentEntries}
         isLoading={timeTrackingLoading}
+        selectedWeek={selectedWeek}
+        onWeekChange={setSelectedWeek}
         onRequestCorrection={(entryId) => {
           // TODO: Implement correction request functionality
         }}

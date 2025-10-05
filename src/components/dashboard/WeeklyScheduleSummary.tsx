@@ -5,6 +5,7 @@ import { Clock, Calendar, Target, TrendingUp } from 'lucide-react';
 import { useEmployeeWeeklySchedule } from '@/hooks/useEmployeeWeeklySchedule';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 import { formatHoursMinutes } from '@/utils/timeUtils';
+import { startOfWeek, format } from 'date-fns';
 
 interface WeeklyScheduleSummaryProps {
   weekDate?: Date;
@@ -15,6 +16,9 @@ export const WeeklyScheduleSummary: React.FC<WeeklyScheduleSummaryProps> = ({
 }) => {
   const { scheduledHours, isLoading: scheduleLoading } = useEmployeeWeeklySchedule(weekDate);
   const { weeklyEntries, isLoading: timeLoading } = useEmployeeTimeTracking();
+
+  // Get the Monday of the week
+  const weekStart = startOfWeek(weekDate, { weekStartsOn: 1 });
 
   // Calculate total tracked hours for the week
   const totalTrackedMinutes = weeklyEntries.reduce((total, entry) => {
@@ -51,7 +55,7 @@ export const WeeklyScheduleSummary: React.FC<WeeklyScheduleSummaryProps> = ({
             Weekly Summary
           </h3>
           <div className="text-sm text-muted-foreground">
-            Week of {weekDate.toLocaleDateString()}
+            Week of {format(weekStart, 'MMM dd, yyyy')}
           </div>
         </div>
 

@@ -12,11 +12,13 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
-  User
+  User,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { EmployeeTimeStatusBadge } from './EmployeeTimeStatusBadge';
 import { formatHoursMinutes } from '@/utils/timeUtils';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface TimeEntry {
@@ -35,18 +37,32 @@ interface EmployeeTimeStatusCardProps {
   entries: TimeEntry[];
   onRequestCorrection?: (entryId: string) => void;
   isLoading?: boolean;
+  selectedWeek?: Date;
+  onWeekChange?: (week: Date) => void;
 }
 
 export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
   entries,
   onRequestCorrection,
-  isLoading = false
+  isLoading = false,
+  selectedWeek = new Date(),
+  onWeekChange
 }) => {
   const [selectedEntry, setSelectedEntry] = useState<string | null>(null);
+  
+  // Calculate week boundaries
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+  
+  // Filter entries for the selected week
+  const weekEntries = entries.filter(entry => {
+    const entryDate = new Date(entry.clock_in);
+    return isWithinInterval(entryDate, { start: weekStart, end: weekEnd });
+  });
 
-  const pendingCount = entries.filter(e => e.approval_status === 'pending').length;
-  const approvedCount = entries.filter(e => e.approval_status === 'approved').length;
-  const rejectedCount = entries.filter(e => e.approval_status === 'rejected').length;
+  const pendingCount = weekEntries.filter(e => e.approval_status === 'pending').length;
+  const approvedCount = weekEntries.filter(e => e.approval_status === 'approved').length;
+  const rejectedCount = weekEntries.filter(e => e.approval_status === 'rejected').length;
 
   const getStatusSummary = () => {
     if (rejectedCount > 0) {
@@ -72,8 +88,26 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
 
   const summary = getStatusSummary();
   const StatusIcon = summary.icon;
+  
+  const handlePreviousWeek = () => {
+    if (onWeekChange) {
+      onWeekChange(subWeeks(selectedWeek, 1));
+    }
+  };
 
-  if (entries.length === 0) {
+  const handleNextWeek = () => {
+    if (onWeekChange) {
+      onWeekChange(addWeeks(selectedWeek, 1));
+    }
+  };
+
+  const handleToday = () => {
+    if (onWeekChange) {
+      onWeekChange(new Date());
+    }
+  };
+
+  if (weekEntries.length === 0) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
@@ -136,10 +170,37 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
       {/* Recent Entries */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Recent Time Entries</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Recent Time Entries - Week of {format(weekStart, 'MMM dd, yyyy')}</CardTitle>
+            {onWeekChange && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreviousWeek}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToday}
+                >
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextWeek}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {entries.slice(0, 5).map((entry, index) => (
+          {weekEntries.slice(0, 5).map((entry, index) => (
             <div key={entry.id}>
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-3">
@@ -213,15 +274,21 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
                 </div>
               )}
 
-              {index < entries.length - 1 && <Separator className="mt-3" />}
+              {index < Math.min(weekEntries.length, 5) - 1 && <Separator className="mt-3" />}
             </div>
           ))}
 
-          {entries.length > 5 && (
+          {weekEntries.length > 5 && (
             <div className="text-center pt-2">
               <Button variant="ghost" size="sm">
-                View All {entries.length} Entries
+                View All {weekEntries.length} Entries
               </Button>
+            </div>
+          )}
+          {weekEntries.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No time entries for this week</p>
             </div>
           )}
         </CardContent>
