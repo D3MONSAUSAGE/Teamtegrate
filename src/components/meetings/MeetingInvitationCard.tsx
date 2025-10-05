@@ -141,12 +141,18 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
             
             <div className="flex items-center justify-between">
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
+                size="default"
                 onClick={() => setShowParticipants(!showParticipants)}
-                className="text-xs text-muted-foreground h-auto p-0 hover:no-underline"
+                className="flex items-center gap-2"
               >
-                {showParticipants ? 'Hide details' : 'Show participant details'}
+                <Users className="h-4 w-4" />
+                {showParticipants ? 'Hide Participants' : 'View All Participants'}
+                {!showParticipants && (
+                  <Badge variant="secondary" className="ml-1">
+                    {meeting.participants?.length || 0}
+                  </Badge>
+                )}
               </Button>
             </div>
             
@@ -169,6 +175,7 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
                     size="sm"
                     variant={currentUserParticipant?.response_status === 'accepted' ? 'default' : 'outline'}
                     onClick={() => handleResponse('accepted')}
+                    disabled={currentUserParticipant?.response_status === 'accepted'}
                     className="flex items-center gap-1"
                   >
                     <Check className="h-3 w-3" />
@@ -178,6 +185,7 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
                     size="sm"
                     variant={currentUserParticipant?.response_status === 'tentative' ? 'default' : 'outline'}
                     onClick={() => handleResponse('tentative')}
+                    disabled={currentUserParticipant?.response_status === 'tentative'}
                     className="flex items-center gap-1"
                   >
                     <UserCheck className="h-3 w-3" />
@@ -187,6 +195,7 @@ export const MeetingInvitationCard: React.FC<MeetingInvitationCardProps> = ({ me
                     size="sm"
                     variant={currentUserParticipant?.response_status === 'declined' ? 'destructive' : 'outline'}
                     onClick={() => handleResponse('declined')}
+                    disabled={currentUserParticipant?.response_status === 'declined'}
                     className="flex items-center gap-1"
                   >
                     <X className="h-3 w-3" />
