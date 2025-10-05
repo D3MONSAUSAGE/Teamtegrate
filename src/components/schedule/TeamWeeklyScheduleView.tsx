@@ -19,7 +19,7 @@ import {
   Target
 } from 'lucide-react';
 import { useTeamWeeklySchedules } from '@/hooks/useTeamWeeklySchedules';
-import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, isSameDay, eachDayOfInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ModernTableCard } from './modern/ModernTableCard';
 import { ScheduleEditModal } from './ScheduleEditModal';
@@ -63,12 +63,8 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
 
   // Generate week days for header
   const weekDays = useMemo(() => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(addDays(weekStart, i));
-    }
-    return days;
-  }, [weekStart]);
+    return eachDayOfInterval({ start: weekStart, end: weekEnd });
+  }, [weekStart, weekEnd]);
 
   const handleExport = async () => {
     try {
