@@ -12,7 +12,7 @@ export const calculateBonusMinutes = (totalMinutes: number) => {
 
 export const formatHoursMinutes = (minutes: number) => {
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const remainingMinutes = Math.round(minutes % 60);
   if (remainingMinutes === 0) {
     return `${hours}h`;
   }
