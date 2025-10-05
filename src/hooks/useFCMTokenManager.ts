@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -9,7 +9,9 @@ interface FCMTokenState {
   error: string | null;
 }
 
-// Web-only FCM token manager (no Capacitor dependency)
+// Use Capacitor Push Notifications when available (Android/iOS), fallback to web
+const isNativeApp = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+
 export const useFCMTokenManager = () => {
   const { user } = useAuth();
   const [tokenState, setTokenState] = useState<FCMTokenState>({
@@ -18,7 +20,7 @@ export const useFCMTokenManager = () => {
     error: null
   });
 
-  const registerFCMToken = async (): Promise<string | null> => {
+  const registerFCMToken = useCallback(async (): Promise<string | null> => {
     if (!user) {
       console.log('FCM token registration skipped: no user');
       return null;
@@ -27,27 +29,84 @@ export const useFCMTokenManager = () => {
     setTokenState(prev => ({ ...prev, isRegistering: true, error: null }));
 
     try {
-      // Web notification setup
-      if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          // Generate a mock token for web
-          const webToken = `web-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      let currentToken: string;
+
+      if (isNativeApp) {
+        // Use Capacitor Push Notifications for native apps
+        const { PushNotifications } = await import('@capacitor/push-notifications');
+        
+        // Request permission
+        const permResult = await PushNotifications.requestPermissions();
+        if (permResult.receive !== 'granted') {
+          throw new Error('Push notification permission denied');
+        }
+
+        // Register with FCM
+        await PushNotifications.register();
+
+        // Get registration token
+        const result = await new Promise<string>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Timeout waiting for FCM token')), 10000);
           
-          setTokenState({
-            token: webToken,
-            isRegistering: false,
-            error: null
+          PushNotifications.addListener('registration', (token) => {
+            clearTimeout(timeout);
+            resolve(token.value);
           });
 
-          toast('Web notifications enabled!');
-          return webToken;
-        } else {
+          PushNotifications.addListener('registrationError', (error: any) => {
+            clearTimeout(timeout);
+            reject(error);
+          });
+        });
+
+        currentToken = result;
+        console.log('Native FCM Token obtained:', currentToken.substring(0, 20) + '...');
+      } else {
+        // Web fallback with service worker
+        if (!('Notification' in window)) {
+          throw new Error('Notifications not supported');
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
           throw new Error('Notification permission denied');
         }
-      } else {
-        throw new Error('Notifications not supported');
+
+        // Register service worker for web push
+        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        
+        // For web, generate a device-specific token
+        currentToken = `web-${user.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Web token generated:', currentToken.substring(0, 20) + '...');
       }
+
+      // Store token in Supabase
+      const { error: dbError } = await supabase
+        .from('fcm_tokens')
+        .upsert({
+          user_id: user.id,
+          token: currentToken,
+          platform: isNativeApp ? 'android' : 'web',
+          is_active: true,
+          organization_id: user.organizationId
+        }, {
+          onConflict: 'user_id,token'
+        });
+
+      if (dbError) {
+        console.error('Error storing FCM token:', dbError);
+        throw dbError;
+      }
+
+      setTokenState({
+        token: currentToken,
+        isRegistering: false,
+        error: null
+      });
+
+      toast.success('Push notifications enabled!');
+      return currentToken;
+
     } catch (error) {
       console.error('Error registering FCM token:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to register for notifications';
@@ -58,24 +117,33 @@ export const useFCMTokenManager = () => {
         error: errorMessage
       });
 
-      toast(errorMessage);
+      toast.error(errorMessage);
       return null;
     }
-  };
+  }, [user]);
 
   const removeFCMToken = async (): Promise<boolean> => {
     try {
+      if (tokenState.token && user) {
+        // Deactivate token in database
+        await supabase
+          .from('fcm_tokens')
+          .update({ is_active: false })
+          .eq('user_id', user.id)
+          .eq('token', tokenState.token);
+      }
+
       setTokenState({
         token: null,
         isRegistering: false,
         error: null
       });
 
-      toast('Notifications disabled');
+      toast.success('Notifications disabled');
       return true;
     } catch (error) {
       console.error('Error removing FCM token:', error);
-      toast('Failed to disable notifications');
+      toast.error('Failed to disable notifications');
       return false;
     }
   };
@@ -112,14 +180,15 @@ export const useFCMTokenManager = () => {
   };
 
   useEffect(() => {
-    // Web notification support check
-    if (user && 'Notification' in window) {
-      if (Notification.permission === 'granted') {
-        const webToken = `web-${Date.now()}-${user.id}`;
-        setTokenState(prev => ({ ...prev, token: webToken }));
+    // Auto-register FCM token when user logs in
+    if (user && typeof window !== 'undefined') {
+      // For native apps, always try to register
+      // For web, only if permission already granted
+      if (isNativeApp || (window.Notification && Notification.permission === 'granted')) {
+        registerFCMToken();
       }
     }
-  }, [user]);
+  }, [user, registerFCMToken]);
 
   return {
     token: tokenState.token,
