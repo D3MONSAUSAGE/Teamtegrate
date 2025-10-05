@@ -7,6 +7,7 @@ interface Invoice {
   id: string;
   invoice_number: string;
   branch: string;
+  team_id?: string;
   uploader_name: string;
   invoice_date: string;
   file_name: string;
@@ -14,6 +15,30 @@ interface Invoice {
   file_size: number;
   file_path: string;
   created_at: string;
+  
+  // Financial tracking fields
+  vendor_id?: string;
+  invoice_total?: number;
+  currency?: string;
+  payment_status?: 'unpaid' | 'partial' | 'paid' | 'void';
+  payment_due_date?: string;
+  paid_amount?: number;
+  expense_category_id?: string;
+  payment_method?: string;
+  reference_number?: string;
+  notes?: string;
+  tags?: string[];
+  
+  // Joined data
+  vendor?: {
+    id: string;
+    name: string;
+    contact_email?: string;
+  };
+  expense_category?: {
+    id: string;
+    name: string;
+  };
 }
 
 export const useInvoiceData = (refreshTrigger: number) => {
@@ -26,7 +51,11 @@ export const useInvoiceData = (refreshTrigger: number) => {
       
       const { data, error } = await supabase
         .from('invoices')
-        .select('*')
+        .select(`
+          *,
+          vendor:vendors(id, name, contact_email),
+          expense_category:expense_categories(id, name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -34,7 +63,7 @@ export const useInvoiceData = (refreshTrigger: number) => {
         return;
       }
 
-      setInvoices(data || []);
+      setInvoices((data || []) as Invoice[]);
     } catch (error) {
       console.error('Error fetching invoices:', error);
       toast.error('Failed to load invoices');
