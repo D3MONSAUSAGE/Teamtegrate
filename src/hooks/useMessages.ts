@@ -185,13 +185,6 @@ export function useMessages(roomId: string | null) {
         // Non-blocking notification error
       }
 
-      // Play subtle send confirmation sound
-      try {
-        await playMessageSound();
-      } catch (soundError) {
-        console.log('Send sound failed (non-critical):', soundError);
-      }
-
       return data;
     } catch (err: any) {
       // Update temp message to failed state

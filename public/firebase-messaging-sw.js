@@ -1,16 +1,15 @@
 // Firebase messaging service worker for background notifications
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-// Firebase config will be injected by the app
+// Firebase config
 const firebaseConfig = {
-  // This will be dynamically set by the main app
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  apiKey: "AIzaSyAvJimzk_C9YenP4sZL4lYyBxcrCukSO4M",
+  authDomain: "teamtegrate-mobile.firebaseapp.com",
+  projectId: "teamtegrate-mobile",
+  storageBucket: "teamtegrate-mobile.firebasestorage.app",
+  messagingSenderId: "584796006988",
+  appId: "1:584796006988:android:a849a9b070c56f7f5da2e9"
 };
 
 // Initialize Firebase
