@@ -190,8 +190,10 @@ Deno.serve(async (req) => {
         if (!isBreak) {
           return new Response(
             JSON.stringify({ 
-              error: 'Already clocked in',
-              details: 'You must clock out before generating a new clock-in QR'
+              error: 'Already Clocked In',
+              message: 'You are currently working',
+              details: 'You must clock out first before generating a new clock-in QR code. If you need to take a break, use the break button instead.',
+              action: 'clock_out'
             }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
@@ -206,7 +208,7 @@ Deno.serve(async (req) => {
     if (tokenType === 'clock_out') {
       const { data: activeEntry } = await supabaseUserClient
         .from('time_entries')
-        .select('id')
+        .select('id, notes')
         .eq('user_id', userData.id)
         .is('clock_out', null)
         .limit(1);
@@ -214,8 +216,24 @@ Deno.serve(async (req) => {
       if (!activeEntry || activeEntry.length === 0) {
         return new Response(
           JSON.stringify({ 
-            error: 'No active time entry',
-            details: 'You must be clocked in to generate a clock-out QR'
+            error: 'Not Clocked In',
+            message: 'No active work session found',
+            details: 'You must clock in first before you can generate a clock-out QR code. Please generate a clock-in QR code to start your work session.',
+            action: 'clock_in'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Check if they're on break
+      const isBreak = activeEntry[0]?.notes?.toLowerCase().includes('break');
+      if (isBreak) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Currently on Break',
+            message: 'Cannot clock out during break',
+            details: 'You are currently on a break. Please resume work first before clocking out for the day.',
+            action: 'resume'
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

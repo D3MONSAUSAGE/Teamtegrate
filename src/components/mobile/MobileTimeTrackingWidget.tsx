@@ -23,6 +23,8 @@ interface MobileTimeTrackingWidgetProps {
   onResumeFromBreak?: () => void;
   isLoading?: boolean;
   isOnline?: boolean;
+  lastSyncTime?: Date;
+  isSyncing?: boolean;
 }
 
 const MobileTimeTrackingWidget: React.FC<MobileTimeTrackingWidgetProps> = ({
@@ -36,9 +38,22 @@ const MobileTimeTrackingWidget: React.FC<MobileTimeTrackingWidgetProps> = ({
   onStartBreak,
   onResumeFromBreak,
   isLoading = false,
-  isOnline = true
+  isOnline = true,
+  lastSyncTime,
+  isSyncing = false
 }) => {
   const [showBreakPanel, setShowBreakPanel] = useState(false);
+  
+  // Calculate time since last sync
+  const getTimeSinceSync = () => {
+    if (!lastSyncTime) return 'Never synced';
+    const seconds = Math.floor((Date.now() - lastSyncTime.getTime()) / 1000);
+    if (seconds < 5) return 'Just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    return `${Math.floor(minutes / 60)}h ago`;
+  };
 
   // Parse elapsed time to calculate progress (assuming 8-hour work day)
   const parseTimeToMinutes = (timeStr: string): number => {
@@ -69,12 +84,14 @@ const MobileTimeTrackingWidget: React.FC<MobileTimeTrackingWidgetProps> = ({
   };
 
   const getStatusText = () => {
+    if (isSyncing) return 'Syncing...';
     if (isOnBreak) return `${lastBreakType} Break`;
-    if (currentEntry.isClocked) return 'Working';
-    return 'Ready to Work';
+    if (currentEntry.isClocked) return '✅ Clocked In';
+    return '⏸️ Not Clocked In';
   };
 
   const getStatusColor = () => {
+    if (isSyncing) return 'text-blue-600 dark:text-blue-400 animate-pulse';
     if (isOnBreak) return 'text-orange-600 dark:text-orange-400';
     if (currentEntry.isClocked) return 'text-green-600 dark:text-green-400';
     return 'text-muted-foreground';
@@ -179,13 +196,26 @@ const MobileTimeTrackingWidget: React.FC<MobileTimeTrackingWidgetProps> = ({
               )}
             </div>
 
-            {/* Connection status */}
-            {!isOnline && (
-              <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-900">
-                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                Offline - Changes will sync when connected
-              </div>
-            )}
+            {/* Status Footer */}
+            <div className="w-full space-y-2">
+              {/* Sync Status */}
+              {isSyncing ? (
+                <div className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-900">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  Syncing changes...
+                </div>
+              ) : !isOnline ? (
+                <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-900">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                  Offline - Changes will sync when connected
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                  <span>Last updated {getTimeSinceSync()}</span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

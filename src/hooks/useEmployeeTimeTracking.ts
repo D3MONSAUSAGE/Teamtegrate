@@ -439,7 +439,7 @@ export const useEmployeeTimeTracking = () => {
     }
   }, [user?.id, autoCloseStaleSessionsAPI, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries]);
 
-  // Real-time subscription for time entries
+  // Real-time subscription for time entries with immediate state updates
   useEffect(() => {
     if (!user?.id) return;
 
@@ -453,10 +453,53 @@ export const useEmployeeTimeTracking = () => {
           table: 'time_entries',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
-          fetchCurrentSession();
-          fetchDailySummary();
-          fetchWeeklyEntries();
+        async (payload) => {
+          console.log('Real-time event received:', payload.eventType);
+          
+          // Immediately update UI state based on event type
+          if (payload.eventType === 'INSERT') {
+            const newEntry = payload.new as TimeEntry;
+            const clockInTime = new Date(newEntry.clock_in);
+            const isBreakSession = newEntry.notes?.toLowerCase().includes('break');
+            
+            // Immediately set state - don't wait for refetch
+            setCurrentSession({
+              isActive: true,
+              sessionId: newEntry.id,
+              clockInTime: isBreakSession ? undefined : clockInTime,
+              elapsedMinutes: 0,
+              isOnBreak: isBreakSession || false,
+              breakType: isBreakSession ? newEntry.notes?.split(' ')[0] : undefined,
+              breakStartTime: isBreakSession ? clockInTime : undefined,
+              breakElapsedMinutes: 0
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedEntry = payload.new as TimeEntry;
+            
+            // If clocked out, clear session
+            if (updatedEntry.clock_out) {
+              setCurrentSession({
+                isActive: false,
+                elapsedMinutes: 0,
+                isOnBreak: false,
+                breakElapsedMinutes: 0
+              });
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setCurrentSession({
+              isActive: false,
+              elapsedMinutes: 0,
+              isOnBreak: false,
+              breakElapsedMinutes: 0
+            });
+          }
+          
+          // Then fetch to sync with server
+          await Promise.all([
+            fetchCurrentSession(),
+            fetchDailySummary(),
+            fetchWeeklyEntries()
+          ]);
         }
       )
       .subscribe();

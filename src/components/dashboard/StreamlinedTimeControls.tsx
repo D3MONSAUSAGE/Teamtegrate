@@ -13,25 +13,21 @@ import {
   QrCode
 } from 'lucide-react';
 import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
-import { useEnhancedTimeTracking } from '@/hooks/useEnhancedTimeTracking';
+import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
 
 const StreamlinedTimeControls: React.FC = () => {
   const { 
-    sessionState, 
-    breakRequirements,
-    clockIn, 
-    clockOut, 
-    startBreak, 
-    resumeWork,
+    currentSession,
     isLoading,
-    lastError
-  } = useEnhancedTimeTracking();
+    lastError,
+    startBreak
+  } = useEmployeeTimeTracking();
 
-  const isWorking = sessionState.isActive && !sessionState.isOnBreak;
-  const isOnBreak = sessionState.isActive && sessionState.isOnBreak;
-  const canTakeBreak = isWorking && breakRequirements.canTakeBreak;
+  const isWorking = currentSession.isActive && !currentSession.isOnBreak;
+  const isOnBreak = currentSession.isActive && currentSession.isOnBreak;
+  const canTakeBreak = isWorking && currentSession.elapsedMinutes > 240; // Can take break after 4 hours
 
   const [qrDialogOpen, setQRDialogOpen] = useState(false);
   const [qrTokenType, setQRTokenType] = useState<'clock_in' | 'clock_out'>('clock_in');
@@ -66,17 +62,22 @@ const StreamlinedTimeControls: React.FC = () => {
                   </span>
                   {isWorking && (
                     <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400">
-                      {formatHoursMinutes(sessionState.workElapsedMinutes)}
+                      {formatHoursMinutes(currentSession.elapsedMinutes)}
                     </Badge>
                   )}
                   {isOnBreak && (
                     <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-400">
-                      {formatHoursMinutes(sessionState.breakElapsedMinutes)}
+                      {formatHoursMinutes(currentSession.breakElapsedMinutes)}
                     </Badge>
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Today: {formatHoursMinutes(sessionState.totalWorkedToday)} worked • {formatHoursMinutes(sessionState.totalBreakToday)} breaks
+                  {currentSession.clockInTime && (
+                    <>Clocked in: {new Date(currentSession.clockInTime).toLocaleTimeString()}</>
+                  )}
+                  {isOnBreak && currentSession.breakType && (
+                    <> • {currentSession.breakType} break</>
+                  )}
                 </div>
               </div>
             </div>
@@ -123,7 +124,7 @@ const StreamlinedTimeControls: React.FC = () => {
                   Coffee Break
                 </Button>
                 
-                {breakRequirements.requiresMealBreak && (
+                {currentSession.elapsedMinutes > 300 && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -139,7 +140,7 @@ const StreamlinedTimeControls: React.FC = () => {
             )}
 
             {/* Main Action Button */}
-            {!sessionState.isActive ? (
+            {!currentSession.isActive ? (
               <Button
                 onClick={() => openQRDialog('clock_in')}
                 disabled={isLoading}
@@ -175,27 +176,15 @@ const StreamlinedTimeControls: React.FC = () => {
         </div>
 
         {/* Break Requirements Footer */}
-        {(breakRequirements.canTakeBreak || breakRequirements.requiresMealBreak) && (
+        {canTakeBreak && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
             <div className="text-xs text-muted-foreground">
               CA Labor Law Requirements:
             </div>
             <div className="flex items-center gap-4 text-xs">
-              {breakRequirements.canTakeBreak && (
-                <span className="text-muted-foreground">
-                  Break available now
-                </span>
-              )}
-              {breakRequirements.requiresMealBreak && (
-                <span className="text-muted-foreground">
-                  Meal break required (30min)
-                </span>
-              )}
-              {breakRequirements.complianceMessage && (
-                <span className="text-amber-600 dark:text-amber-400">
-                  {breakRequirements.complianceMessage}
-                </span>
-              )}
+              <span className="text-amber-600 dark:text-amber-400">
+                Break available after 4 hours of work
+              </span>
             </div>
           </div>
         )}

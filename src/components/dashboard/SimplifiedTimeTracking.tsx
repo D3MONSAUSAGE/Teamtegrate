@@ -33,6 +33,8 @@ export const SimplifiedTimeTracking: React.FC = () => {
   
   const currentEntry = {
     isClocked: currentSession?.isActive || false,
+    clock_in: currentSession?.clockInTime,
+    id: currentSession?.sessionId
   };
 
   const breakState = {
@@ -75,6 +77,8 @@ export const SimplifiedTimeTracking: React.FC = () => {
           onResumeFromBreak={endBreak}
           isLoading={timeTrackingLoading}
           isOnline={!lastError}
+          lastSyncTime={currentSession?.clockInTime ? new Date(currentSession.clockInTime) : undefined}
+          isSyncing={timeTrackingLoading}
         />
       ) : (
         <StreamlinedTimeControls />
