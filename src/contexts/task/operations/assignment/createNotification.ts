@@ -18,12 +18,19 @@ export const createTaskAssignmentNotification = async (
       ? `You assigned yourself to task: ${taskTitle}` 
       : `You've been assigned to task: ${taskTitle}`;
     
-    await supabase.from('notifications').insert({
-      user_id: userId,
-      title: notificationType,
-      content: notificationContent,
-      type: 'task_assignment',
-      organization_id: organizationId
+    // Create notification with push for the assignee
+    await supabase.functions.invoke('send-push-notification', {
+      body: {
+        user_id: userId,
+        title: notificationType,
+        content: notificationContent,
+        type: 'task_assigned',
+        metadata: {
+          route: '/dashboard/tasks'
+        },
+        organization_id: organizationId,
+        send_push: true
+      }
     });
     
     console.log(`${isSelfAssigned ? 'Self-assignment' : 'Task assignment'} notification created for user:`, userId);
@@ -98,19 +105,29 @@ export const createMultipleTaskAssignmentNotifications = async (
   organizationId: string
 ): Promise<void> => {
   try {
-    const dbNotifications = userIds.map(userId => ({
-      user_id: userId,
-      title: userId === currentUserId ? 'Task Self-Assigned' : 'Task Assigned',
-      content: userId === currentUserId 
+    // Create notifications with push for multiple assignees
+    for (const userId of userIds) {
+      const notificationType = userId === currentUserId ? 'Task Self-Assigned' : 'Task Assigned';
+      const notificationContent = userId === currentUserId 
         ? `You assigned yourself to task: ${taskTitle}`
-        : `You've been assigned to task: ${taskTitle}`,
-      type: 'task_assignment',
-      organization_id: organizationId
-    }));
+        : `You've been assigned to task: ${taskTitle}`;
 
-    await supabase.from('notifications').insert(dbNotifications);
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: userId,
+          title: notificationType,
+          content: notificationContent,
+          type: 'task_assigned',
+          metadata: {
+            route: '/dashboard/tasks'
+          },
+          organization_id: organizationId,
+          send_push: true
+        }
+      });
+    }
     
-    console.log(`Created ${dbNotifications.length} task assignment notifications for task:`, taskTitle);
+    console.log(`Created ${userIds.length} task assignment notifications for task:`, taskTitle);
 
     // Also send email notifications for multiple assignees (don't block if it fails)
     try {

@@ -12590,8 +12590,8 @@ export type Database = {
           | { p_count_id: string; p_count_item_id: string; p_delta: number }
           | { p_count_id: string; p_delta: number; p_item_id: string }
         Returns: {
-          actual_quantity: number
-          id: string
+          count_item_id: string
+          new_actual: number
         }[]
       }
       calculate_execution_score: {
@@ -12879,16 +12879,11 @@ export type Database = {
         Returns: {
           clock_in: string
           clock_out: string
-          created_at: string
           duration_minutes: number
           id: string
-          notes: string
-          team_id: string
-          team_name: string
           user_email: string
           user_id: string
           user_name: string
-          work_date: string
         }[]
       }
       get_project_comment_stats: {
@@ -12900,22 +12895,22 @@ export type Database = {
           | { organization_id_param: string; quiz_id_param: string }
           | { quiz_id_param: string }
         Returns: {
-          adjusted_passed: boolean
-          adjusted_score: number
           answers: Json
           attempt_number: number
           completed_at: string
           email: string
+          final_passed: boolean
+          final_score: number
           has_overrides: boolean
           id: string
           max_score: number
           name: string
           organization_id: string
+          original_passed: boolean
+          original_score: number
           override_count: number
-          passed: boolean
           quiz_id: string
           role: string
-          score: number
           started_at: string
           total_adjustment: number
           user_id: string
@@ -12929,12 +12924,7 @@ export type Database = {
               p_warehouse_id?: string
             }
           | { p_warehouse_id: string }
-        Returns: {
-          item_count: number
-          low_stock_items: number
-          overstock_items: number
-          total_value: number
-        }[]
+        Returns: Json
       }
       get_request_notification_recipients: {
         Args: { request_id_param: string }
@@ -12957,11 +12947,10 @@ export type Database = {
           | { p_organization_id: string }
           | { p_organization_id: string; p_team_id?: string }
         Returns: {
-          item_count: number
-          low_stock_count: number
-          overstock_count: number
-          team_id: string
+          low_stock_items: number
+          out_of_stock_count: number
           team_name: string
+          total_items: number
           total_value: number
         }[]
       }
@@ -13155,7 +13144,7 @@ export type Database = {
               p_unit_cost?: number
               p_vendor_id?: string
             }
-        Returns: undefined
+        Returns: Json
       }
       receive_warehouse_transfer: {
         Args: { p_transfer_id: string; p_user: string }
