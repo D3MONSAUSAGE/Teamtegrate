@@ -17,16 +17,19 @@ export interface TeamMemberSchedule {
     duration_hours: number;
     notes?: string;
     area?: string;
+    actual_hours?: number;
   }[];
   totalHours: number;
   overtimeHours: number;
+  actualHours: number;
 }
 
 export interface TeamScheduleMetrics {
-  totalHours: number;
+  projectedHours: number;
+  actualHours: number;
+  hoursVariance: number;
+  utilizationRate: number;
   activeMembers: number;
-  coverageGaps: number;
-  completionRate: number;
   averageHoursPerMember: number;
   totalOvertimeHours: number;
 }
@@ -95,6 +98,25 @@ export const useTeamWeeklySchedules = (
 
       if (schedulesError) throw schedulesError;
 
+      // Fetch actual time entries for team members
+      const { data: timeEntries, error: timeEntriesError } = await supabase
+        .from('time_entries')
+        .select('user_id, duration_minutes, clock_in')
+        .in('user_id', memberIds)
+        .gte('clock_in', startDate)
+        .lte('clock_in', endDate)
+        .not('clock_out', 'is', null);
+
+      if (timeEntriesError) throw timeEntriesError;
+
+      // Calculate actual hours per employee from time entries
+      const employeeActualHours = new Map<string, number>();
+      (timeEntries || []).forEach((entry) => {
+        const hours = (entry.duration_minutes || 0) / 60;
+        const currentHours = employeeActualHours.get(entry.user_id) || 0;
+        employeeActualHours.set(entry.user_id, currentHours + hours);
+      });
+
       // Process schedules by employee
       const employeeScheduleMap = new Map<string, TeamMemberSchedule>();
 
@@ -128,6 +150,7 @@ export const useTeamWeeklySchedules = (
             schedules: [],
             totalHours: 0,
             overtimeHours: 0,
+            actualHours: employeeActualHours.get(employeeId) || 0,
           });
         }
 
@@ -145,27 +168,22 @@ export const useTeamWeeklySchedules = (
       setTeamSchedules(teamSchedulesList);
 
       // Calculate team metrics
-      const totalHours = teamSchedulesList.reduce((sum, member) => sum + member.totalHours, 0);
+      const projectedHours = teamSchedulesList.reduce((sum, member) => sum + member.totalHours, 0);
+      const actualHours = teamSchedulesList.reduce((sum, member) => sum + member.actualHours, 0);
       const totalOvertimeHours = teamSchedulesList.reduce((sum, member) => sum + member.overtimeHours, 0);
       const activeMembers = teamSchedulesList.length;
       
-      const completedShifts = teamSchedulesList.reduce((sum, member) => 
-        sum + member.schedules.filter(s => s.status === 'completed').length, 0
-      );
-      const totalShifts = teamSchedulesList.reduce((sum, member) => sum + member.schedules.length, 0);
-      const completionRate = totalShifts > 0 ? Math.round((completedShifts / totalShifts) * 100) : 100;
-      
-      // Simple coverage gap calculation (missed + no-show shifts)
-      const coverageGaps = teamSchedulesList.reduce((sum, member) => 
-        sum + member.schedules.filter(s => s.status === 'missed' || s.status === 'no_show').length, 0
-      );
+      // Calculate hours variance and utilization rate
+      const hoursVariance = actualHours - projectedHours;
+      const utilizationRate = projectedHours > 0 ? Math.round((actualHours / projectedHours) * 100) : 0;
 
       setTeamMetrics({
-        totalHours,
+        projectedHours,
+        actualHours,
+        hoursVariance,
+        utilizationRate,
         activeMembers,
-        coverageGaps,
-        completionRate,
-        averageHoursPerMember: activeMembers > 0 ? Math.round(totalHours / activeMembers) : 0,
+        averageHoursPerMember: activeMembers > 0 ? Math.round(projectedHours / activeMembers) : 0,
         totalOvertimeHours,
       });
 

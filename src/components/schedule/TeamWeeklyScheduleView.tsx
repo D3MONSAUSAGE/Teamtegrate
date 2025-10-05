@@ -13,7 +13,10 @@ import {
   CheckCircle,
   Calendar,
   CalendarDays,
-  Edit
+  Edit,
+  TrendingUp,
+  TrendingDown,
+  Target
 } from 'lucide-react';
 import { useTeamWeeklySchedules } from '@/hooks/useTeamWeeklySchedules';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
@@ -158,9 +161,12 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium mb-1">Total Hours</p>
+                <p className="text-sm text-muted-foreground font-medium mb-1">Projected Hours</p>
                 <p className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  {teamMetrics?.totalHours || 0}h
+                  {teamMetrics?.projectedHours || 0}h
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Actual: {teamMetrics?.actualHours || 0}h
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-inner">
@@ -186,33 +192,55 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className={cn(
+          "rounded-xl shadow-lg hover:shadow-xl transition-all duration-300",
+          teamMetrics && teamMetrics.hoursVariance < 0 
+            ? "bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20"
+            : "bg-gradient-to-br from-success/5 to-success/10 border-success/20"
+        )}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium mb-1">Coverage Gaps</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-warning to-warning/70 bg-clip-text text-transparent">
-                  {teamMetrics?.coverageGaps || 0}
+                <p className="text-sm text-muted-foreground font-medium mb-1">Hours Variance</p>
+                <p className={cn(
+                  "text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent",
+                  teamMetrics && teamMetrics.hoursVariance < 0
+                    ? "from-destructive to-destructive/70"
+                    : "from-success to-success/70"
+                )}>
+                  {teamMetrics?.hoursVariance ? 
+                    `${teamMetrics.hoursVariance > 0 ? '+' : ''}${Math.round(teamMetrics.hoursVariance)}h` 
+                    : '0h'
+                  }
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-gradient-to-br from-warning/20 to-warning/30 shadow-inner">
-                <AlertTriangle className="h-6 w-6 text-warning" />
+              <div className={cn(
+                "p-3 rounded-xl shadow-inner",
+                teamMetrics && teamMetrics.hoursVariance < 0
+                  ? "bg-gradient-to-br from-destructive/20 to-destructive/30"
+                  : "bg-gradient-to-br from-success/20 to-success/30"
+              )}>
+                {teamMetrics && teamMetrics.hoursVariance < 0 ? (
+                  <TrendingDown className="h-6 w-6 text-destructive" />
+                ) : (
+                  <TrendingUp className="h-6 w-6 text-success" />
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl bg-gradient-to-br from-success/5 to-success/10 border-success/20 shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium mb-1">Completion Rate</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-success to-success/70 bg-clip-text text-transparent">
-                  {teamMetrics?.completionRate || 0}%
+                <p className="text-sm text-muted-foreground font-medium mb-1">Utilization Rate</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  {teamMetrics?.utilizationRate || 0}%
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-gradient-to-br from-success/20 to-success/30 shadow-inner">
-                <CheckCircle className="h-6 w-6 text-success" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-inner">
+                <Target className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -340,9 +368,9 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-muted/30 font-semibold">
-                    <td className="p-4 sticky left-0 bg-muted/30 z-10">
-                      Team Totals
+                  <tr className="bg-muted/20 font-semibold border-t-2">
+                    <td className="p-4 sticky left-0 bg-muted/20 z-10">
+                      <div className="text-sm text-muted-foreground">Projected Hours</div>
                     </td>
                     {weekDays.map((day) => {
                       const dayTotal = filteredSchedules.reduce((total, member) => {
@@ -354,12 +382,32 @@ export const TeamWeeklyScheduleView: React.FC<TeamWeeklyScheduleViewProps> = ({
                       
                       return (
                         <td key={day.toISOString()} className="p-4 text-center">
-                          <span className="font-semibold">{dayTotal}h</span>
+                          <span className="font-semibold text-primary">{dayTotal}h</span>
                         </td>
                       );
                     })}
                     <td className="p-4 text-center">
-                      <span className="font-semibold text-lg">{teamMetrics?.totalHours || 0}h</span>
+                      <span className="font-semibold text-lg text-primary">{teamMetrics?.projectedHours || 0}h</span>
+                    </td>
+                  </tr>
+                  <tr className="bg-muted/30 font-semibold">
+                    <td className="p-4 sticky left-0 bg-muted/30 z-10">
+                      <div className="text-sm text-muted-foreground">Actual Hours</div>
+                    </td>
+                    {weekDays.map((day) => {
+                      // Calculate actual hours for this day from time entries
+                      const dayActual = filteredSchedules.reduce((total, member) => {
+                        return total + (member.actualHours || 0) / 7; // Approximate daily split
+                      }, 0);
+                      
+                      return (
+                        <td key={day.toISOString()} className="p-4 text-center">
+                          <span className="font-semibold text-accent">-</span>
+                        </td>
+                      );
+                    })}
+                    <td className="p-4 text-center">
+                      <span className="font-semibold text-lg text-accent">{teamMetrics?.actualHours || 0}h</span>
                     </td>
                   </tr>
                 </tfoot>
