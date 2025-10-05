@@ -3,6 +3,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
+import { useFCMTokenManager } from '@/hooks/useFCMTokenManager';
 // Web push notifications removed - using FCM for all platforms
 import { usePWAPrompt } from '@/hooks/usePWAPrompt';
 
@@ -25,6 +26,9 @@ export function NotificationBootstrap() {
   
   // Initialize Firebase Cloud Messaging for push notifications
   useFirebaseMessaging();
+  
+  // Initialize FCM Token Manager - registers tokens on login
+  useFCMTokenManager();
   
   // Initialize enhanced system notifications with dropdown support
   useSystemNotifications();

@@ -10,14 +10,6 @@ interface FCMTokenState {
   error: string | null;
 }
 
-// Detect if running on native platform
-const isNativeApp = Capacitor.isNativePlatform();
-console.log('🔍 FCM Manager - Platform Detection:', {
-  isNative: isNativeApp,
-  platform: Capacitor.getPlatform(),
-  isPluginAvailable: Capacitor.isPluginAvailable('PushNotifications')
-});
-
 export const useFCMTokenManager = () => {
   const { user } = useAuth();
   const [tokenState, setTokenState] = useState<FCMTokenState>({
@@ -27,16 +19,23 @@ export const useFCMTokenManager = () => {
   });
 
   const registerFCMToken = useCallback(async (): Promise<string | null> => {
-    console.log('🚀 FCM Registration Started', { 
-      hasUser: !!user, 
-      userId: user?.id,
-      isNative: isNativeApp 
-    });
-
     if (!user) {
       console.log('❌ FCM token registration skipped: no user');
       return null;
     }
+
+    // CRITICAL: Detect platform INSIDE the function, not at module level
+    // This ensures Capacitor is fully ready before checking
+    const isNativeApp = Capacitor.isNativePlatform();
+    const platform = Capacitor.getPlatform();
+    
+    console.log('🚀 FCM Registration Started', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      isNative: isNativeApp,
+      platform: platform,
+      isPluginAvailable: Capacitor.isPluginAvailable('PushNotifications')
+    });
 
     setTokenState(prev => ({ ...prev, isRegistering: true, error: null }));
 
@@ -113,9 +112,10 @@ export const useFCMTokenManager = () => {
       }
 
       // Store token in Supabase
+      const detectedPlatform = isNativeApp ? platform : 'web';
       console.log('💾 Storing token in database...', {
         userId: user.id,
-        platform: isNativeApp ? 'android' : 'web',
+        platform: detectedPlatform,
         organizationId: user.organizationId,
         tokenPreview: currentToken.substring(0, 20) + '...'
       });
@@ -125,7 +125,7 @@ export const useFCMTokenManager = () => {
         .upsert({
           user_id: user.id,
           token: currentToken,
-          platform: isNativeApp ? 'android' : 'web',
+          platform: detectedPlatform,
           is_active: true,
           organization_id: user.organizationId
         }, {
@@ -135,6 +135,12 @@ export const useFCMTokenManager = () => {
 
       if (dbError) {
         console.error('❌ Database error storing FCM token:', dbError);
+        console.error('❌ Database error details:', {
+          message: dbError.message,
+          code: dbError.code,
+          details: dbError.details,
+          hint: dbError.hint
+        });
         throw dbError;
       }
 
@@ -223,22 +229,23 @@ export const useFCMTokenManager = () => {
   };
 
   useEffect(() => {
+    const isNative = Capacitor.isNativePlatform();
     console.log('🔄 FCM Manager useEffect triggered', { 
       hasUser: !!user, 
       userId: user?.id,
-      isNative: isNativeApp 
+      isNative: isNative 
     });
 
     // Auto-register FCM token when user logs in
     if (user && typeof window !== 'undefined') {
       // For native apps, always try to register
       // For web, only if permission already granted
-      if (isNativeApp || (window.Notification && Notification.permission === 'granted')) {
+      if (isNative || (window.Notification && Notification.permission === 'granted')) {
         console.log('✅ Conditions met, calling registerFCMToken...');
         registerFCMToken();
       } else {
         console.log('⚠️ Conditions not met for auto-registration', {
-          isNative: isNativeApp,
+          isNative: isNative,
           hasNotification: !!window.Notification,
           permission: window.Notification?.permission
         });
