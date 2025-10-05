@@ -33,7 +33,7 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke('generate-attendance-qr', {
-        body: { tokenType, expirationSeconds: 15 }
+        body: { tokenType, expirationSeconds: 30 }
       });
 
       if (functionError) {
