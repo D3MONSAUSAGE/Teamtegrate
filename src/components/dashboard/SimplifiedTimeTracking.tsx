@@ -21,15 +21,16 @@ export const SimplifiedTimeTracking: React.FC = () => {
   } = useEmployeeTimeTracking();
 
   // Format elapsed time for mobile widget
-  const formatElapsedTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:00`;
+  const formatElapsedTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Convert session data to mobile widget format
-  const elapsedTime = currentSession?.elapsedMinutes ? formatElapsedTime(currentSession.elapsedMinutes) : '00:00:00';
-  const breakElapsedTime = currentSession?.breakElapsedMinutes ? formatElapsedTime(currentSession.breakElapsedMinutes) : '00:00:00';
+  const elapsedTime = currentSession?.elapsedSeconds ? formatElapsedTime(currentSession.elapsedSeconds) : '00:00:00';
+  const breakElapsedTime = currentSession?.breakElapsedSeconds ? formatElapsedTime(currentSession.breakElapsedSeconds) : '00:00:00';
   
   const currentEntry = {
     isClocked: currentSession?.isActive || false,

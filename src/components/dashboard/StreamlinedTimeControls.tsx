@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
 import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
-import { formatHoursMinutes } from '@/utils/timeUtils';
+import { formatTimeWithSeconds } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
 
 const StreamlinedTimeControls: React.FC = () => {
@@ -62,12 +62,12 @@ const StreamlinedTimeControls: React.FC = () => {
                   </span>
                   {isWorking && (
                     <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400">
-                      {formatHoursMinutes(currentSession.elapsedMinutes)}
+                      {formatTimeWithSeconds(currentSession.elapsedSeconds)}
                     </Badge>
                   )}
                   {isOnBreak && (
                     <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-400">
-                      {formatHoursMinutes(currentSession.breakElapsedMinutes)}
+                      {formatTimeWithSeconds(currentSession.breakElapsedSeconds)}
                     </Badge>
                   )}
                 </div>

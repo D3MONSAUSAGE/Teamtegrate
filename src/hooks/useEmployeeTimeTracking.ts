@@ -42,10 +42,12 @@ export interface CurrentSession {
   sessionId?: string;
   clockInTime?: Date;
   elapsedMinutes: number;
+  elapsedSeconds: number;
   isOnBreak: boolean;
   breakType?: string;
   breakStartTime?: Date;
   breakElapsedMinutes: number;
+  breakElapsedSeconds: number;
 }
 
 export const useEmployeeTimeTracking = () => {
@@ -54,8 +56,10 @@ export const useEmployeeTimeTracking = () => {
   const [currentSession, setCurrentSession] = useState<CurrentSession>({
     isActive: false,
     elapsedMinutes: 0,
+    elapsedSeconds: 0,
     isOnBreak: false,
-    breakElapsedMinutes: 0
+    breakElapsedMinutes: 0,
+    breakElapsedSeconds: 0
   });
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
   const [weeklyEntries, setWeeklyEntries] = useState<TimeEntry[]>([]);
@@ -94,6 +98,7 @@ export const useEmployeeTimeTracking = () => {
         const clockInTime = new Date(entry.clock_in);
         const elapsedMs = Date.now() - clockInTime.getTime();
         const elapsedMinutes = Math.floor(elapsedMs / 60000);
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
 
         // Check if this is a break session
         const isBreakSession = entry.notes?.toLowerCase().includes('break');
@@ -103,17 +108,21 @@ export const useEmployeeTimeTracking = () => {
           sessionId: entry.id,
           clockInTime: isBreakSession ? undefined : clockInTime,
           elapsedMinutes: isBreakSession ? 0 : elapsedMinutes,
+          elapsedSeconds: isBreakSession ? 0 : elapsedSeconds,
           isOnBreak: isBreakSession || false,
           breakType: isBreakSession ? entry.notes?.split(' ')[0] : undefined,
           breakStartTime: isBreakSession ? clockInTime : undefined,
-          breakElapsedMinutes: isBreakSession ? elapsedMinutes : 0
+          breakElapsedMinutes: isBreakSession ? elapsedMinutes : 0,
+          breakElapsedSeconds: isBreakSession ? elapsedSeconds : 0
         });
       } else {
         setCurrentSession({
           isActive: false,
           elapsedMinutes: 0,
+          elapsedSeconds: 0,
           isOnBreak: false,
-          breakElapsedMinutes: 0
+          breakElapsedMinutes: 0,
+          breakElapsedSeconds: 0
         });
       }
     } catch (error) {
@@ -432,7 +441,7 @@ export const useEmployeeTimeTracking = () => {
         
         console.log(`⏱️ Work timer tick: ${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s (${elapsedMinutes} total minutes)`);
         
-        setCurrentSession(prev => ({ ...prev, elapsedMinutes }));
+        setCurrentSession(prev => ({ ...prev, elapsedMinutes, elapsedSeconds }));
       }, 1000);
     } else if (currentSession.isOnBreak && currentSession.breakStartTime) {
       console.log('✅ STARTING BREAK TIMER for session:', currentSession.sessionId);
@@ -440,9 +449,10 @@ export const useEmployeeTimeTracking = () => {
       interval = setInterval(() => {
         const elapsedMs = Date.now() - currentSession.breakStartTime!.getTime();
         const breakElapsedMinutes = Math.floor(elapsedMs / 60000);
+        const breakElapsedSeconds = Math.floor(elapsedMs / 1000);
         console.log(`⏱️ Break timer tick: ${breakElapsedMinutes} minutes`);
         
-        setCurrentSession(prev => ({ ...prev, breakElapsedMinutes }));
+        setCurrentSession(prev => ({ ...prev, breakElapsedMinutes, breakElapsedSeconds }));
       }, 1000);
     } else {
       console.log('⏸️ No active session or missing time, timer not started');
@@ -512,10 +522,12 @@ export const useEmployeeTimeTracking = () => {
                 sessionId: newEntry.id,
                 clockInTime: isBreakSession ? undefined : clockInTime,
                 elapsedMinutes: 0,
+                elapsedSeconds: 0,
                 isOnBreak: isBreakSession || false,
                 breakType: isBreakSession ? newEntry.notes?.split(' ')[0] : undefined,
                 breakStartTime: isBreakSession ? clockInTime : undefined,
-                breakElapsedMinutes: 0
+                breakElapsedMinutes: 0,
+                breakElapsedSeconds: 0
               };
               
               console.log('🎯 Setting new session state:', {
@@ -544,8 +556,10 @@ export const useEmployeeTimeTracking = () => {
                 setCurrentSession({
                   isActive: false,
                   elapsedMinutes: 0,
+                  elapsedSeconds: 0,
                   isOnBreak: false,
-                  breakElapsedMinutes: 0
+                  breakElapsedMinutes: 0,
+                  breakElapsedSeconds: 0
                 });
                 toast.success('Clocked out successfully!');
               }
@@ -553,8 +567,10 @@ export const useEmployeeTimeTracking = () => {
               setCurrentSession({
                 isActive: false,
                 elapsedMinutes: 0,
+                elapsedSeconds: 0,
                 isOnBreak: false,
-                breakElapsedMinutes: 0
+                breakElapsedMinutes: 0,
+                breakElapsedSeconds: 0
               });
             }
             
