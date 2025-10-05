@@ -4060,6 +4060,8 @@ export type Database = {
         Row: {
           branch: string
           created_at: string
+          currency: string | null
+          expense_category_id: string | null
           file_name: string
           file_path: string
           file_size: number
@@ -4067,15 +4069,26 @@ export type Database = {
           id: string
           invoice_date: string
           invoice_number: string
+          invoice_total: number | null
+          notes: string | null
           organization_id: string
+          paid_amount: number | null
+          payment_due_date: string | null
+          payment_method: string | null
+          payment_status: string | null
+          reference_number: string | null
+          tags: string[] | null
           team_id: string | null
           updated_at: string
           uploader_name: string
           user_id: string
+          vendor_id: string | null
         }
         Insert: {
           branch: string
           created_at?: string
+          currency?: string | null
+          expense_category_id?: string | null
           file_name: string
           file_path: string
           file_size: number
@@ -4083,15 +4096,26 @@ export type Database = {
           id?: string
           invoice_date: string
           invoice_number: string
+          invoice_total?: number | null
+          notes?: string | null
           organization_id: string
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          reference_number?: string | null
+          tags?: string[] | null
           team_id?: string | null
           updated_at?: string
           uploader_name: string
           user_id: string
+          vendor_id?: string | null
         }
         Update: {
           branch?: string
           created_at?: string
+          currency?: string | null
+          expense_category_id?: string | null
           file_name?: string
           file_path?: string
           file_size?: number
@@ -4099,13 +4123,29 @@ export type Database = {
           id?: string
           invoice_date?: string
           invoice_number?: string
+          invoice_total?: number | null
+          notes?: string | null
           organization_id?: string
+          paid_amount?: number | null
+          payment_due_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          reference_number?: string | null
+          tags?: string[] | null
           team_id?: string | null
           updated_at?: string
           uploader_name?: string
           user_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_organization_id_fkey"
             columns: ["organization_id"]
@@ -4133,6 +4173,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "weekly_payroll_summary"
             referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
           },
         ]
       }
