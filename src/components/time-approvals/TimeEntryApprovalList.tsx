@@ -46,8 +46,8 @@ export interface PendingTimeEntry {
   notes?: string;
   team_id?: string;
   team_name?: string;
-  created_at: string;
-  work_date: string;
+  created_at?: string;
+  work_date?: string;
 }
 
 interface TimeEntryApprovalListProps {
@@ -425,7 +425,7 @@ export const TimeEntryApprovalList: React.FC<TimeEntryApprovalListProps> = ({
                       <div>
                         <Label className="text-xs text-muted-foreground">Date</Label>
                         <p className="font-medium">
-                          {format(new Date(entry.work_date), 'MMM d, yyyy')}
+                          {format(new Date(entry.work_date || entry.clock_in), 'MMM d, yyyy')}
                         </p>
                       </div>
                       <div>
