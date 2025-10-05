@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { WeekPicker } from '@/components/ui/week-picker';
 import EditTimeEntryDialog from './EditTimeEntryDialog';
 import { EnhancedTimeEntryCorrectionForm } from './EnhancedTimeEntryCorrectionForm';
+import { TimeEntryExportButton } from './TimeEntryExportButton';
 import { useTimeEntriesAdmin } from '@/hooks/useTimeEntriesAdmin';
 import { useTimeEntryCorrectionRequests } from '@/hooks/useTimeEntryCorrectionRequests';
 
@@ -337,7 +338,7 @@ const PastTimeEntriesManager: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-border/50">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   {(selectedEntries.size > 0 || selectedEmptyDays.size > 0) && (
                     <Button 
                       variant="outline" 
@@ -348,6 +349,13 @@ const PastTimeEntriesManager: React.FC = () => {
                       Request Correction ({selectedEntries.size + selectedEmptyDays.size})
                     </Button>
                   )}
+                  <TimeEntryExportButton
+                    startDate={displayMode === 'daily' ? dayStart : weekStart}
+                    endDate={displayMode === 'daily' ? dayEnd : weekEnd}
+                    userId={targetUserId}
+                    teamId={selectedTeamId}
+                    disabled={isLoading}
+                  />
                 </div>
                 
                 {canManageOthers && (
