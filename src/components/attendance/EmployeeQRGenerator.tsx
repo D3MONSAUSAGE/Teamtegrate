@@ -149,20 +149,26 @@ export const EmployeeQRGenerator: React.FC<EmployeeQRGeneratorProps> = ({
     const channel = new BroadcastChannel('time-tracking-sync');
     
     channel.onmessage = (event) => {
-      console.log('QR Generator received broadcast:', event.data);
+      console.log('📱 QR Generator received broadcast:', event.data);
       
       // Check if this is for the current user and matches expected action
       if (event.data.userId === user.id) {
+        console.log('✓ User ID matches, checking action type...');
+        console.log('Expected tokenType:', tokenType, 'Received type:', event.data.type);
+        
         const isMatchingAction = 
-          (event.data.type === 'clock-in' && tokenType === 'clock_in') ||
-          (event.data.type === 'clock-out' && tokenType === 'clock_out');
+          (event.data.type === 'clock_in' && tokenType === 'clock_in') ||
+          (event.data.type === 'clock_out' && tokenType === 'clock_out');
         
         if (isMatchingAction) {
+          console.log('✓ Action matches! Showing success state');
           const action = tokenType === 'clock_in' ? 'Clock In' : 'Clock Out';
           setSuccessMessage(`${action} Successful!`);
           setScanSuccess(true);
           setAutoCloseCountdown(2);
           toast.success(`${action} confirmed!`);
+        } else {
+          console.log('✗ Action does not match');
         }
       }
     };

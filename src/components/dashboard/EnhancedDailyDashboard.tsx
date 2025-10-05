@@ -13,18 +13,39 @@ import {
   Timer,
   Award
 } from 'lucide-react';
-import { useEnhancedTimeTracking } from '@/hooks/useEnhancedTimeTracking';
+import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
 
 const EnhancedDailyDashboard: React.FC = () => {
   const { 
-    sessionState, 
-    todayEntries, 
-    breakRequirements, 
+    currentSession,
+    dailySummary,
     isLoading,
     lastError 
-  } = useEnhancedTimeTracking();
+  } = useEmployeeTimeTracking();
+
+  // Map to sessionState format for compatibility
+  const sessionState = {
+    isActive: currentSession.isActive,
+    isOnBreak: currentSession.isOnBreak,
+    workElapsedMinutes: currentSession.elapsedMinutes,
+    breakElapsedMinutes: currentSession.breakElapsedMinutes,
+    totalWorkedToday: dailySummary?.total_work_minutes || 0,
+    totalBreakToday: dailySummary?.total_break_minutes || 0,
+  };
+
+  // Calculate break requirements
+  const totalWorked = sessionState.totalWorkedToday + sessionState.workElapsedMinutes;
+  const requiresMealBreak = totalWorked >= 300 && sessionState.totalBreakToday < 30;
+  const canTakeBreak = totalWorked >= 120;
+  
+  const breakRequirements = {
+    canTakeBreak,
+    requiresMealBreak,
+    suggestedBreakType: totalWorked >= 300 ? 'Lunch' : 'Coffee',
+    complianceMessage: requiresMealBreak ? 'Meal break required after 5 hours' : undefined
+  };
 
   // Calculate daily progress (8 hours = 480 minutes)
   const dailyTargetMinutes = 480;
@@ -275,7 +296,7 @@ const EnhancedDailyDashboard: React.FC = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Sessions Completed:</span>
-                  <span className="font-medium">{todayEntries.length}</span>
+                  <span className="font-medium">{dailySummary?.session_count || 0}</span>
                 </div>
                 
                 <div className="flex justify-between">

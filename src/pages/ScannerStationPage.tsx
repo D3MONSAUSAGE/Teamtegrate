@@ -138,12 +138,12 @@ export const ScannerStationPage: React.FC = () => {
         try {
           const syncChannel = new BroadcastChannel('time-tracking-sync');
           syncChannel.postMessage({ 
-            type: data.action === 'clock_in' ? 'clock-in' : 'clock-out',
+            type: data.action, // Send action in original format (clock_in/clock_out)
             userId: data.userId,
             userName: data.userName,
-            timestamp: Date.now(),
-            action: data.action
+            timestamp: new Date().toISOString()
           });
+          console.log('📢 Scanner broadcast sent:', { type: data.action, userId: data.userId });
           syncChannel.close();
         } catch (broadcastError) {
           console.warn('BroadcastChannel not supported:', broadcastError);

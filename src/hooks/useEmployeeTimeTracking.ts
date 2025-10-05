@@ -407,26 +407,35 @@ export const useEmployeeTimeTracking = () => {
     }
   }, [currentSession.isOnBreak, currentSession.sessionId, isLoading, user, fetchCurrentSession, fetchDailySummary]);
 
-  // Real-time session timer
+  // Real-time session timer with improved logging
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (currentSession.isActive && currentSession.clockInTime) {
+      console.log('⏱️ Starting work timer for session:', currentSession.sessionId);
       interval = setInterval(() => {
         const elapsedMs = Date.now() - currentSession.clockInTime!.getTime();
         const elapsedMinutes = Math.floor(elapsedMs / 60000);
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+        console.log(`Timer tick: ${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s`);
         setCurrentSession(prev => ({ ...prev, elapsedMinutes }));
       }, 1000);
     } else if (currentSession.isOnBreak && currentSession.breakStartTime) {
+      console.log('⏱️ Starting break timer for session:', currentSession.sessionId);
       interval = setInterval(() => {
         const elapsedMs = Date.now() - currentSession.breakStartTime!.getTime();
         const breakElapsedMinutes = Math.floor(elapsedMs / 60000);
         setCurrentSession(prev => ({ ...prev, breakElapsedMinutes }));
       }, 1000);
+    } else {
+      console.log('⏸️ No active session, timer stopped');
     }
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        console.log('🛑 Clearing timer interval');
+        clearInterval(interval);
+      }
     };
   }, [currentSession.isActive, currentSession.isOnBreak, currentSession.clockInTime, currentSession.breakStartTime]);
 
@@ -474,6 +483,12 @@ export const useEmployeeTimeTracking = () => {
               const clockInTime = new Date(newEntry.clock_in);
               const isBreakSession = newEntry.notes?.toLowerCase().includes('break');
               
+              console.log('⚡ Real-time INSERT detected:', {
+                id: newEntry.id,
+                isBreak: isBreakSession,
+                clockInTime: clockInTime.toISOString()
+              });
+              
               // Immediately set state - don't wait for refetch
               setCurrentSession({
                 isActive: true,
@@ -486,6 +501,7 @@ export const useEmployeeTimeTracking = () => {
                 breakElapsedMinutes: 0
               });
               
+              console.log('✓ State updated, timer will start on next tick');
               toast.success('Clock-in confirmed!');
             } else if (payload.eventType === 'UPDATE') {
               const updatedEntry = payload.new as TimeEntry;
@@ -564,18 +580,43 @@ export const useEmployeeTimeTracking = () => {
     return () => clearInterval(pollingInterval);
   }, [user?.id, realtimeConnected, currentSession.isActive, fetchCurrentSession]);
 
-  // Cross-tab communication using BroadcastChannel
+  // Cross-tab communication using BroadcastChannel with aggressive refresh
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = new BroadcastChannel('time-tracking-sync');
     
-    channel.onmessage = (event) => {
-      console.log('📡 Cross-tab sync received:', event.data);
-      if (event.data.type === 'clock-in' || event.data.type === 'clock-out') {
-        fetchCurrentSession();
-        fetchDailySummary();
-        fetchWeeklyEntries();
+    channel.onmessage = async (event) => {
+      console.log('📡 Hook received sync message:', event.data);
+      
+      // Check if message is for this user
+      if (event.data.userId === user.id) {
+        console.log('✓ Message is for current user, triggering aggressive refresh');
+        
+        // Immediate first fetch
+        await Promise.all([
+          fetchCurrentSession(),
+          fetchDailySummary()
+        ]);
+        
+        // Second fetch after 1 second (gives DB time to update)
+        setTimeout(async () => {
+          console.log('🔄 Second fetch (1s delay)');
+          await Promise.all([
+            fetchCurrentSession(),
+            fetchDailySummary()
+          ]);
+        }, 1000);
+        
+        // Third fetch after 3 seconds (final reconciliation)
+        setTimeout(async () => {
+          console.log('🔄 Third fetch (3s delay - final)');
+          await Promise.all([
+            fetchCurrentSession(),
+            fetchDailySummary(),
+            fetchWeeklyEntries()
+          ]);
+        }, 3000);
       }
     };
 
