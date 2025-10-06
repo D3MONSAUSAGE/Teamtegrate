@@ -190,10 +190,54 @@ export const useSearchAssignments = (searchTerm?: string, filters?: {
         return [];
       }
 
+      // Filter out assignments where content no longer exists
+      const complianceIds = assignments
+        .filter(a => a.assignment_type === 'compliance_training')
+        .map(a => a.content_id);
+      const quizIds = assignments
+        .filter(a => a.assignment_type === 'quiz')
+        .map(a => a.content_id);
+      const courseIds = assignments
+        .filter(a => a.assignment_type === 'course')
+        .map(a => a.content_id);
+
+      // Check which content still exists
+      const [complianceTemplates, quizzes, courses] = await Promise.all([
+        complianceIds.length > 0 ? 
+          supabase.from('compliance_training_templates').select('id').in('id', complianceIds) : 
+          Promise.resolve({ data: [] }),
+        quizIds.length > 0 ? 
+          supabase.from('quizzes').select('id').in('id', quizIds) : 
+          Promise.resolve({ data: [] }),
+        courseIds.length > 0 ? 
+          supabase.from('training_courses').select('id').in('id', courseIds) : 
+          Promise.resolve({ data: [] })
+      ]);
+
+      const existingComplianceIds = new Set(complianceTemplates.data?.map(c => c.id) || []);
+      const existingQuizIds = new Set(quizzes.data?.map(q => q.id) || []);
+      const existingCourseIds = new Set(courses.data?.map(c => c.id) || []);
+
+      // Filter out assignments where content doesn't exist
+      const validAssignments = assignments.filter(assignment => {
+        if (assignment.assignment_type === 'compliance_training') {
+          return existingComplianceIds.has(assignment.content_id);
+        } else if (assignment.assignment_type === 'quiz') {
+          return existingQuizIds.has(assignment.content_id);
+        } else if (assignment.assignment_type === 'course') {
+          return existingCourseIds.has(assignment.content_id);
+        }
+        return false;
+      });
+
+      if (validAssignments.length === 0) {
+        return [];
+      }
+
       // Get unique user IDs
       const userIds = [...new Set([
-        ...assignments.map(a => a.assigned_to),
-        ...assignments.map(a => a.assigned_by)
+        ...validAssignments.map(a => a.assigned_to),
+        ...validAssignments.map(a => a.assigned_by)
       ])].filter(Boolean);
 
       // Fetch user data
@@ -211,7 +255,7 @@ export const useSearchAssignments = (searchTerm?: string, filters?: {
       }, {} as Record<string, any>);
 
       // Combine assignment data with user data
-      const result = assignments.map(assignment => ({
+      const result = validAssignments.map(assignment => ({
         ...assignment,
         assigned_to_user: userLookup[assignment.assigned_to] || null,
         assigned_by_user: userLookup[assignment.assigned_by] || null
