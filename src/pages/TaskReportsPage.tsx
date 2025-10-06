@@ -106,17 +106,9 @@ export const TaskReportsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Report Filters</CardTitle>
-                <CardDescription>Customize your report view with filters</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {/* Filters Section - Compact Horizontal Layout */}
+        <Card className="border-dashed">
+          <CardContent className="pt-6 pb-4 space-y-3">
             <ReportFilters
               timeRange={timeRange}
               dateRange={dateRange}
@@ -129,37 +121,34 @@ export const TaskReportsPage: React.FC = () => {
               calculatedDateRange={calculatedDateRange}
               showTimeRange={activeTab === 'weekly'}
             />
-            
-            {/* Active Filter Badges */}
-            <FilterBadges filter={filter} />
           </CardContent>
         </Card>
 
         {/* Reports Content */}
-        <Card>
+        <Card className="overflow-hidden">
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-2xl bg-muted/50">
+              <TabsList className="grid w-full grid-cols-3 max-w-2xl bg-gradient-to-r from-muted/50 to-muted/30 p-1 rounded-lg">
                 <TabsTrigger 
                   value="daily" 
-                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="flex items-center gap-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-md transition-all"
                 >
                   <Calendar className="h-4 w-4" />
-                  Daily View
+                  <span className="font-medium">Daily</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="weekly" 
-                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="flex items-center gap-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-md transition-all"
                 >
                   <FileText className="h-4 w-4" />
-                  Weekly View
+                  <span className="font-medium">Weekly</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="performance" 
-                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="flex items-center gap-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-md transition-all"
                 >
                   <TrendingUp className="h-4 w-4" />
-                  Performance
+                  <span className="font-medium">Performance</span>
                 </TabsTrigger>
               </TabsList>
 

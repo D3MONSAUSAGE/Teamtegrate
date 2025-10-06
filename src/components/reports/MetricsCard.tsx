@@ -11,7 +11,7 @@ interface MetricsCardProps {
     value: number;
     label: string;
   };
-  colorClass: string;
+  colorClass?: string;
   className?: string;
 }
 
@@ -39,28 +39,32 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
 
   return (
     <Card className={cn(
-      "relative overflow-hidden transition-all duration-200 hover:shadow-lg", 
+      "relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 border-border/50", 
       className
     )}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2 flex-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2.5 flex-1 min-w-0">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {title}
             </p>
-            <p className="text-3xl font-bold tracking-tight">
+            <p className="text-4xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">
               {value}
             </p>
             {trend && (
-              <div className={cn("flex items-center gap-1.5 text-xs font-medium", getTrendColor())}>
+              <div className={cn(
+                "flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full w-fit",
+                getTrendColor(),
+                trend.value > 0 ? "bg-success/10" : trend.value < 0 ? "bg-destructive/10" : "bg-muted/50"
+              )}>
                 {getTrendIcon()}
                 <span>{trend.label}</span>
               </div>
             )}
           </div>
           <div className={cn(
-            "p-4 rounded-full shadow-lg transition-transform duration-200 hover:scale-110",
-            colorClass
+            "p-3.5 rounded-2xl shadow-lg transition-all duration-300 hover:scale-110 hover:rotate-3 flex-shrink-0",
+            colorClass || "bg-primary text-primary-foreground"
           )}>
             {icon}
           </div>
