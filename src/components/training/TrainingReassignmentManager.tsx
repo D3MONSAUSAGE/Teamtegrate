@@ -47,11 +47,6 @@ const TrainingReassignmentManager: React.FC<TrainingReassignmentManagerProps> = 
   const { data: assignments = [], isLoading, refetch } = useSearchAssignments(searchTerm, filters);
   const bulkReassignMutation = useBulkReassignTraining();
 
-  // Filter assignments to exclude completed and reassigned ones for individual reassignment
-  const reassignableAssignments = assignments.filter(a => 
-    !['completed', 'reassigned'].includes(a.status)
-  );
-
   const handleAssignmentSelect = (assignmentId: string) => {
     setSelectedAssignments(prev => 
       prev.includes(assignmentId) 
@@ -61,10 +56,10 @@ const TrainingReassignmentManager: React.FC<TrainingReassignmentManagerProps> = 
   };
 
   const handleSelectAll = () => {
-    if (selectedAssignments.length === reassignableAssignments.length) {
+    if (selectedAssignments.length === assignments.length) {
       setSelectedAssignments([]);
     } else {
-      setSelectedAssignments(reassignableAssignments.map(a => a.id));
+      setSelectedAssignments(assignments.map(a => a.id));
     }
   };
 
@@ -100,20 +95,17 @@ const TrainingReassignmentManager: React.FC<TrainingReassignmentManagerProps> = 
       isAfter(new Date(), parseISO(assignment.due_date)) && 
       assignment.status !== 'completed';
     const displayStatus = isOverdue ? 'overdue' : assignment.status;
-    const canReassignThis = !['completed', 'reassigned'].includes(assignment.status);
 
     return (
       <Card key={assignment.id} className="hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="space-y-3">
-            <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                {canReassignThis && (
-                  <Checkbox
-                    checked={selectedAssignments.includes(assignment.id)}
-                    onCheckedChange={() => handleAssignmentSelect(assignment.id)}
-                  />
-                )}
+                <Checkbox
+                  checked={selectedAssignments.includes(assignment.id)}
+                  onCheckedChange={() => handleAssignmentSelect(assignment.id)}
+                />
                 <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                   {assignment.assignment_type === 'course' ? (
                     <BookOpen className="h-5 w-5 text-blue-600" />
@@ -166,19 +158,17 @@ const TrainingReassignmentManager: React.FC<TrainingReassignmentManagerProps> = 
               )}
             </div>
 
-            {canReassignThis && (
-              <div className="flex justify-end">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleIndividualReassign(assignment)}
-                  className="gap-2"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  Reassign
-                </Button>
-              </div>
-            )}
+            <div className="flex justify-end">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleIndividualReassign(assignment)}
+                className="gap-2"
+              >
+                <ArrowRight className="h-4 w-4" />
+                Reassign
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -303,15 +293,15 @@ const TrainingReassignmentManager: React.FC<TrainingReassignmentManagerProps> = 
             </div>
 
             {/* Bulk Actions */}
-            {reassignableAssignments.length > 0 && (
+            {assignments.length > 0 && (
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Checkbox
-                    checked={selectedAssignments.length === reassignableAssignments.length}
+                    checked={selectedAssignments.length === assignments.length}
                     onCheckedChange={handleSelectAll}
                   />
                   <span className="text-sm font-medium">
-                    Select All ({selectedAssignments.length}/{reassignableAssignments.length} selected)
+                    Select All ({selectedAssignments.length}/{assignments.length} selected)
                   </span>
                 </div>
                 {selectedAssignments.length > 0 && (
