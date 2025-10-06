@@ -19,6 +19,7 @@ import { useWeeklyReport } from '@/hooks/useTaskReports';
 import { DailyCompletionChart } from '@/components/reports/weekly/DailyCompletionChart';
 import { DailyTaskDetailView, DailyDetailData } from '@/components/reports/weekly/DailyTaskDetailView';
 import { MetricsCard } from '@/components/reports/MetricsCard';
+import { EmptyStateCard } from '@/components/reports/redesigned/EmptyStateCard';
 import { downloadCSV } from '@/utils/exportUtils';
 import type { ReportFilter } from '@/types/reports';
 import { toast } from 'sonner';
@@ -243,6 +244,39 @@ export const WeeklyOverviewTab: React.FC<WeeklyOverviewTabProps> = ({
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  // Check if we have any meaningful data
+  const hasData = weeklyData && weeklyData.length > 0 && 
+    (summary.total_tasks > 0 || summary.completed_tasks > 0);
+
+  if (!hasData) {
+    return (
+      <div className="space-y-6">
+        {/* Header Controls */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Weekly Overview Report
+                </CardTitle>
+                <p className="text-muted-foreground mt-1">
+                  {userName} • {range.startDate} to {range.endDate}
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        <EmptyStateCard
+          title="No Weekly Data Available"
+          description="Complete tasks throughout the week to see trends, charts, and comprehensive weekly performance metrics."
+          icon="chart"
+        />
+      </div>
     );
   }
 

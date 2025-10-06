@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateRange } from 'react-day-picker';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { FilterBadges } from '@/components/reports/redesigned/FilterBadges';
 import { useReportFilters } from '@/hooks/useReportFilters';
 import { ReportFilters } from '@/components/finance/reports/ReportFilters';
 import { DailyCompletionTab } from '@/components/reports/tabs/DailyCompletionTab';
 import { WeeklyOverviewTab } from '@/components/reports/tabs/WeeklyOverviewTab';
 import { PerformanceTab } from '@/components/reports/PerformanceTab';
-import { ArrowLeft, BarChart3, Download, RefreshCw, Trophy } from 'lucide-react';
+import { ArrowLeft, BarChart3, Download, RefreshCw, Trophy, Calendar, FileText, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -108,9 +109,14 @@ export const TaskReportsPage: React.FC = () => {
         {/* Filters Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Report Filters</CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Report Filters</CardTitle>
+                <CardDescription>Customize your report view with filters</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <ReportFilters
               timeRange={timeRange}
               dateRange={dateRange}
@@ -123,6 +129,9 @@ export const TaskReportsPage: React.FC = () => {
               calculatedDateRange={calculatedDateRange}
               showTimeRange={activeTab === 'weekly'}
             />
+            
+            {/* Active Filter Badges */}
+            <FilterBadges filter={filter} />
           </CardContent>
         </Card>
 
@@ -130,17 +139,26 @@ export const TaskReportsPage: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-2xl">
-                <TabsTrigger value="daily" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
+              <TabsList className="grid w-full grid-cols-3 max-w-2xl bg-muted/50">
+                <TabsTrigger 
+                  value="daily" 
+                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <Calendar className="h-4 w-4" />
                   Daily View
                 </TabsTrigger>
-                <TabsTrigger value="weekly" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
+                <TabsTrigger 
+                  value="weekly" 
+                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <FileText className="h-4 w-4" />
                   Weekly View
                 </TabsTrigger>
-                <TabsTrigger value="performance" className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4" />
+                <TabsTrigger 
+                  value="performance" 
+                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <TrendingUp className="h-4 w-4" />
                   Performance
                 </TabsTrigger>
               </TabsList>

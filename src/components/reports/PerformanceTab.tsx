@@ -5,9 +5,8 @@ import { useTaskTeamPerformance } from '@/hooks/useTaskTeamPerformance';
 import { useOrgLeaderboard } from '@/hooks/useOrgLeaderboard';
 import { EmployeeScoreCard } from './EmployeeScoreCard';
 import { TeamLeaderboard } from './TeamLeaderboard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, Award, Zap, Target } from 'lucide-react';
+import { PerformanceLeaderboard } from './redesigned/PerformanceLeaderboard';
+import { EmptyStateCard } from './redesigned/EmptyStateCard';
 import type { ReportFilter } from '@/types/reports';
 
 interface PerformanceTabProps {
@@ -49,28 +48,42 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ filter }) => {
     limit: 10
   });
 
-  if (isLoadingEmployee || isLoadingTeams || isLoadingLeaderboard) {
+  const isLoading = isLoadingEmployee || isLoadingTeams || isLoadingLeaderboard;
+  
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Loading performance data...</div>
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-32 bg-muted rounded-lg mb-4" />
+          <div className="h-64 bg-muted rounded-lg mb-4" />
+          <div className="h-48 bg-muted rounded-lg" />
+        </div>
       </div>
     );
   }
 
-  const getBadgeIcon = (badge: string) => {
-    switch (badge) {
-      case 'Top Performer': return <Trophy className="h-3 w-3" />;
-      case 'Quality Master': return <Award className="h-3 w-3" />;
-      case 'High Volume': return <Zap className="h-3 w-3" />;
-      case 'Consistent': return <Target className="h-3 w-3" />;
-      default: return null;
-    }
-  };
+  // Check if we have any data at all
+  const hasEmployeeData = employeePerformance && employeePerformance.completed_tasks > 0;
+  const hasLeaderboardData = leaderboard && leaderboard.length > 0;
+  const hasTeamData = teamPerformance && teamPerformance.length > 0;
+  const hasAnyData = hasEmployeeData || hasLeaderboardData || hasTeamData;
+
+  if (!hasAnyData) {
+    return (
+      <div className="space-y-6">
+        <EmptyStateCard
+          title="No Performance Data Available"
+          description="Start completing tasks to build your performance history. Performance metrics are calculated based on task completion rates, velocity, quality, and consistency over time."
+          icon="chart"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Employee Performance */}
-      {employeePerformance && (
+      {hasEmployeeData && (
         <div>
           <h3 className="text-lg font-semibold mb-4">Your Performance</h3>
           <EmployeeScoreCard performance={employeePerformance} />
@@ -78,53 +91,13 @@ export const PerformanceTab: React.FC<PerformanceTabProps> = ({ filter }) => {
       )}
 
       {/* Organization Leaderboard */}
-      {leaderboard && leaderboard.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              Top Performers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {leaderboard.map((entry) => (
-                <div
-                  key={entry.user_id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
-                      {entry.rank}
-                    </div>
-                    <div>
-                      <div className="font-medium">{entry.user_name}</div>
-                      <div className="text-sm text-muted-foreground">{entry.team_name || 'No Team'}</div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {entry.badges.map((badge) => (
-                          <Badge key={badge} variant="secondary" className="text-xs">
-                            <span className="mr-1">{getBadgeIcon(badge)}</span>
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{entry.total_score.toFixed(1)}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {entry.completed_tasks} tasks • {entry.completion_rate.toFixed(0)}%
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <PerformanceLeaderboard 
+        leaderboard={leaderboard}
+        isLoading={false}
+      />
 
       {/* Team Performance */}
-      {teamPerformance && teamPerformance.length > 0 && (
+      {hasTeamData && (
         <div>
           <h3 className="text-lg font-semibold mb-4">Team Performance</h3>
           <TeamLeaderboard teams={teamPerformance} />

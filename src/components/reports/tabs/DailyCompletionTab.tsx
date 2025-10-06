@@ -7,6 +7,7 @@ import { ScrollableTaskContainer } from '@/components/reports/ScrollableTaskCont
 import { TaskDetailModal } from '@/components/reports/TaskDetailModal';
 import { MetricsCard } from '@/components/reports/MetricsCard';
 import { DailyTaskDetail, DailyDetailData as DailyDetailViewData } from '@/components/reports/weekly/DailyTaskDetailView';
+import { EmptyStateCard } from '@/components/reports/redesigned/EmptyStateCard';
 import type { ReportFilter } from '@/types/reports';
 import { toast } from 'sonner';
 
@@ -98,6 +99,7 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
     setIsModalOpen(false);
     setSelectedTask(null);
   };
+  
   if (metricsLoading || detailLoading) {
     return (
       <div className="space-y-6">
@@ -113,6 +115,42 @@ export const DailyCompletionTab: React.FC<DailyCompletionTabProps> = ({
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Check if we have any data
+  const hasData = dailyMetrics && (
+    dailyMetrics.completed > 0 || 
+    dailyMetrics.created > 0 || 
+    dailyMetrics.assigned > 0 || 
+    dailyMetrics.overdue > 0
+  );
+
+  if (!hasData) {
+    return (
+      <div className="space-y-6">
+        {/* Header with Date Navigation */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Daily Task Report</h2>
+            <p className="text-muted-foreground">
+              {userName} • {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </p>
+          </div>
+          {onDateChange && (
+            <DateNavigation
+              selectedDate={selectedDate}
+              onDateChange={onDateChange}
+            />
+          )}
+        </div>
+
+        <EmptyStateCard
+          title="No Tasks for This Day"
+          description="There are no tasks recorded for this date. Tasks will appear here once they are created, assigned, or completed."
+          icon="plus"
+        />
       </div>
     );
   }
