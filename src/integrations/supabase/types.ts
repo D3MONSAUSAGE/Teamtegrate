@@ -13219,6 +13219,49 @@ export type Database = {
           week_start: string
         }[]
       }
+      rpc_employee_task_performance: {
+        Args: {
+          p_end: string
+          p_org: string
+          p_start: string
+          p_tz: string
+          p_user: string
+        }
+        Returns: {
+          completed_on_time: number
+          completed_tasks: number
+          completion_rate: number
+          consistency_score: number
+          overdue_tasks: number
+          quality_score: number
+          total_score: number
+          total_tasks: number
+          user_email: string
+          user_id: string
+          user_name: string
+          velocity: number
+        }[]
+      }
+      rpc_org_task_leaderboard: {
+        Args: {
+          p_end: string
+          p_limit?: number
+          p_org: string
+          p_start: string
+          p_tz: string
+        }
+        Returns: {
+          badges: string[]
+          completed_tasks: number
+          completion_rate: number
+          rank: number
+          team_name: string
+          total_score: number
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       rpc_task_report_user_day_lists: {
         Args: {
           p_day: string
@@ -13260,6 +13303,29 @@ export type Database = {
           task_id: string
           team_id: string
           title: string
+        }[]
+      }
+      rpc_team_task_performance: {
+        Args: {
+          p_end: string
+          p_org: string
+          p_start: string
+          p_team: string[]
+          p_tz: string
+        }
+        Returns: {
+          avg_completion_rate: number
+          collaboration_score: number
+          completed_tasks: number
+          member_count: number
+          team_id: string
+          team_name: string
+          team_score: number
+          team_velocity: number
+          top_performer_id: string
+          top_performer_name: string
+          total_tasks: number
+          workload_balance_score: number
         }[]
       }
       send_daily_emails_and_reminders: {

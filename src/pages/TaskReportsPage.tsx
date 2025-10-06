@@ -8,7 +8,8 @@ import { useReportFilters } from '@/hooks/useReportFilters';
 import { ReportFilters } from '@/components/finance/reports/ReportFilters';
 import { DailyCompletionTab } from '@/components/reports/tabs/DailyCompletionTab';
 import { WeeklyOverviewTab } from '@/components/reports/tabs/WeeklyOverviewTab';
-import { ArrowLeft, BarChart3, Download, RefreshCw } from 'lucide-react';
+import { PerformanceTab } from '@/components/reports/PerformanceTab';
+import { ArrowLeft, BarChart3, Download, RefreshCw, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -129,7 +130,7 @@ export const TaskReportsPage: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsList className="grid w-full grid-cols-3 max-w-2xl">
                 <TabsTrigger value="daily" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Daily View
@@ -137,6 +138,10 @@ export const TaskReportsPage: React.FC = () => {
                 <TabsTrigger value="weekly" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   Weekly View
+                </TabsTrigger>
+                <TabsTrigger value="performance" className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Performance
                 </TabsTrigger>
               </TabsList>
 
@@ -149,6 +154,12 @@ export const TaskReportsPage: React.FC = () => {
 
               <TabsContent value="weekly" className="space-y-4">
                 <WeeklyOverviewTab 
+                  filter={filter}
+                />
+              </TabsContent>
+
+              <TabsContent value="performance" className="space-y-4">
+                <PerformanceTab 
                   filter={filter}
                 />
               </TabsContent>
