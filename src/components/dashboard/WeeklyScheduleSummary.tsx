@@ -46,15 +46,15 @@ export const WeeklyScheduleSummary: React.FC<WeeklyScheduleSummaryProps> = ({
   }
 
   return (
-    <Card className="p-6">
-      <div className="space-y-6">
+    <Card className="p-3 sm:p-4 md:p-6">
+      <div className="space-y-3 sm:space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
             Weekly Summary
           </h3>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             Week of {format(weekStart, 'MMM dd, yyyy')}
           </div>
         </div>
@@ -74,47 +74,47 @@ export const WeeklyScheduleSummary: React.FC<WeeklyScheduleSummaryProps> = ({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
           {/* Scheduled Hours */}
-          <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
-              <Target className="h-5 w-5 text-primary" />
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-lg">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Scheduled</p>
-              <p className="text-lg font-semibold">
+              <p className="text-xs sm:text-sm text-muted-foreground">Scheduled</p>
+              <p className="text-base sm:text-lg font-semibold">
                 {formatHoursMinutes(scheduledHoursDecimal * 60)}
               </p>
             </div>
           </div>
 
           {/* Tracked Hours */}
-          <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-center w-10 h-10 bg-green-500/10 rounded-lg">
-              <Clock className="h-5 w-5 text-green-600" />
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-500/10 rounded-lg">
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Tracked</p>
-              <p className="text-lg font-semibold">
+              <p className="text-xs sm:text-sm text-muted-foreground">Tracked</p>
+              <p className="text-base sm:text-lg font-semibold">
                 {formatHoursMinutes(totalTrackedMinutes)}
               </p>
             </div>
           </div>
 
           {/* Remaining/Overtime */}
-          <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-muted/50 rounded-lg sm:col-span-2 md:col-span-1">
+            <div className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${
               isOvertime ? 'bg-orange-500/10' : 'bg-blue-500/10'
             }`}>
-              <TrendingUp className={`h-5 w-5 ${
+              <TrendingUp className={`h-4 w-4 sm:h-5 sm:w-5 ${
                 isOvertime ? 'text-orange-600' : 'text-blue-600'
               }`} />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {isOvertime ? 'Overtime' : 'Remaining'}
               </p>
-              <p className={`text-lg font-semibold ${
+              <p className={`text-base sm:text-lg font-semibold ${
                 isOvertime ? 'text-orange-600' : ''
               }`}>
                 {isOvertime 

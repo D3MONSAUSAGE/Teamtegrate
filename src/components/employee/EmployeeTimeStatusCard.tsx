@@ -125,9 +125,9 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
     <div className="space-y-4">
       {/* Summary Card */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Time Entry Status</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Time Entry Status</CardTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -138,7 +138,7 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
           {/* Status Summary Alert */}
           <Alert className={cn(
             summary.type === 'warning' && "border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950",
@@ -150,17 +150,17 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
           </Alert>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingCount}</div>
               <div className="text-xs text-muted-foreground">Pending</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{approvedCount}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{approvedCount}</div>
               <div className="text-xs text-muted-foreground">Approved</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{rejectedCount}</div>
+              <div className="text-xl sm:text-2xl font-bold text-red-600">{rejectedCount}</div>
               <div className="text-xs text-muted-foreground">Rejected</div>
             </div>
           </div>
@@ -169,22 +169,27 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
 
       {/* Recent Entries */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Recent Time Entries - Week of {format(weekStart, 'MMM dd, yyyy')}</CardTitle>
+        <CardHeader className="p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+            <CardTitle className="text-sm sm:text-base">
+              <span className="hidden sm:inline">Recent Time Entries - Week of {format(weekStart, 'MMM dd, yyyy')}</span>
+              <span className="sm:hidden">Week of {format(weekStart, 'MMM dd')}</span>
+            </CardTitle>
             {onWeekChange && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handlePreviousWeek}
+                  className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleToday}
+                  className="h-8 px-2 sm:h-9 sm:px-3 text-xs sm:text-sm"
                 >
                   Today
                 </Button>
@@ -192,39 +197,41 @@ export const EmployeeTimeStatusCard: React.FC<EmployeeTimeStatusCardProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleNextWeek}
+                  className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-6">
           {weekEntries.slice(0, 5).map((entry, index) => (
             <div key={entry.id}>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 p-2 sm:p-3 rounded-lg bg-muted/50">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div className="text-sm">
-                      <div className="font-medium">
-                        {format(new Date(entry.clock_in), 'MMM dd, yyyy')}
+                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                    <div className="text-xs sm:text-sm min-w-0">
+                      <div className="font-medium truncate">
+                        <span className="hidden sm:inline">{format(new Date(entry.clock_in), 'MMM dd, yyyy')}</span>
+                        <span className="sm:hidden">{format(new Date(entry.clock_in), 'MMM dd')}</span>
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-muted-foreground text-xs truncate">
                         {format(new Date(entry.clock_in), 'h:mm a')} - {format(new Date(entry.clock_out), 'h:mm a')}
                       </div>
                     </div>
                   </div>
                   
-                  <Separator orientation="vertical" className="h-8" />
+                  <Separator orientation="vertical" className="h-8 hidden sm:block" />
                   
-                  <div className="text-sm">
+                  <div className="text-xs sm:text-sm">
                     <div className="font-medium">{formatHoursMinutes(entry.duration_minutes)}</div>
                     <div className="text-muted-foreground text-xs">Duration</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 justify-end sm:justify-start">
                   <EmployeeTimeStatusBadge 
                     status={{
                       approval_status: entry.approval_status,

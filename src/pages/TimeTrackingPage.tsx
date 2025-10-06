@@ -18,12 +18,12 @@ const TimeTrackingPage = () => {
   const canManageTeams = isAdmin || isManager;
 
   return (
-    <div className="space-y-6 p-6 max-w-4xl mx-auto">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="time-tracking">Time Tracking</TabsTrigger>
-          <TabsTrigger value="schedule">My Schedule</TabsTrigger>
-          <TabsTrigger value="time-entries">Time Entries</TabsTrigger>
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 md:p-6 max-w-full sm:max-w-4xl mx-auto">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsTrigger value="time-tracking" className="text-xs sm:text-sm px-2 sm:px-3">Time Tracking</TabsTrigger>
+          <TabsTrigger value="schedule" className="text-xs sm:text-sm px-2 sm:px-3">My Schedule</TabsTrigger>
+          <TabsTrigger value="time-entries" className="text-xs sm:text-sm px-2 sm:px-3">Time Entries</TabsTrigger>
         </TabsList>
 
         {/* Time Tracking Tab - Main employee dashboard */}
