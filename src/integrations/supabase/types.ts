@@ -12075,21 +12075,21 @@ export type Database = {
           {
             foreignKeyName: "warehouses_team_id_fkey"
             columns: ["team_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "team_details"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "warehouses_team_id_fkey"
             columns: ["team_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "warehouses_team_id_fkey"
             columns: ["team_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "weekly_payroll_summary"
             referencedColumns: ["team_id"]
           },

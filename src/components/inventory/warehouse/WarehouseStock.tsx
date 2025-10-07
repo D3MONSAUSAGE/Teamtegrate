@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Search, AlertTriangle, Hash, Barcode, DollarSign, Package2 } from 'lucide-react';
+import { Package, Search, AlertTriangle, Hash, Barcode, DollarSign, Package2, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { 
   Table, 
   TableBody, 
@@ -18,6 +19,7 @@ import { getStockStatusSummary } from '@/utils/stockStatus';
 import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 import { type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { WarehouseSettingsApi } from '@/contexts/warehouse/api/warehouseSettingsApi';
+import { QuickAddProductDialog } from './QuickAddProductDialog';
 
 interface WarehouseStockProps {
   warehouseId?: string;
@@ -30,6 +32,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
   const [search, setSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [thresholds, setThresholds] = useState<Map<string, { min: number | null; max: number | null }>>(new Map());
   
   // Warehouse settings API instance
@@ -187,6 +190,14 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
             Warehouse Stock
           </CardTitle>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button 
+              onClick={() => setIsQuickAddOpen(true)}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Quick Add Product
+            </Button>
             <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input 
@@ -365,6 +376,13 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
         open={isDetailsModalOpen}
         onOpenChange={setIsDetailsModalOpen}
         item={modalItem}
+      />
+
+      <QuickAddProductDialog
+        open={isQuickAddOpen}
+        onOpenChange={setIsQuickAddOpen}
+        warehouseId={warehouseId}
+        onProductCreated={onRefresh}
       />
     </Card>
   );

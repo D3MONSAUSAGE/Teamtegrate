@@ -37,7 +37,14 @@ export const WarehouseOverviewDashboard: React.FC<WarehouseOverviewDashboardProp
         warehouseApi.getDailyMetrics()
       ]);
       
-      setWarehouses(warehouseData);
+      // Filter out orphaned warehouses (those without a team_id)
+      const validWarehouses = warehouseData.filter(warehouse => warehouse.team_id !== null);
+      
+      if (validWarehouses.length < warehouseData.length) {
+        console.warn(`Filtered out ${warehouseData.length - validWarehouses.length} orphaned warehouses without team assignment`);
+      }
+      
+      setWarehouses(validWarehouses);
       setDailyMetrics(metricsData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);

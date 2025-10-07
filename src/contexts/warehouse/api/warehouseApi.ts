@@ -491,6 +491,13 @@ export const warehouseApi = {
 
     if (error) {
       console.error('❌ Error creating warehouse:', error);
+      // Provide user-friendly error message for constraint violations
+      if (error.message?.includes('warehouses_team_id_unique') || error.message?.includes('duplicate key')) {
+        throw new Error('This team already has a warehouse. Each team can only have one warehouse.');
+      }
+      if (error.message?.includes('check_team_warehouse_limit')) {
+        throw new Error('This team already has a warehouse. Each team can only have one warehouse.');
+      }
       throw error;
     }
 
