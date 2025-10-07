@@ -138,13 +138,10 @@ export const warehouseApi = {
         team:teams(id, name)
       `)
       .eq('team_id', teamId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned
-        return null;
-      }
+      console.error('Error fetching warehouse by team:', error);
       throw error;
     }
 
