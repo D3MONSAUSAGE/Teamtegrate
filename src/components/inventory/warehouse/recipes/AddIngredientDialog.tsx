@@ -9,7 +9,6 @@ import { AlertCircle, Package, DollarSign } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { useAddIngredient } from '@/hooks/useRecipeIngredients';
 import { getItemPackagingInfo } from '@/hooks/useRecipes';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AddIngredientDialogProps {
   recipeId: string;
@@ -71,14 +70,14 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
     })();
   }, [itemId]);
 
-  const handleAdd = async () => {
+  const handleAdd = () => {
     if (!itemId || !quantityNeeded || !unit || !packagingInfo) return;
     if (noPriceAvailable && !manualCost) return;
 
     const finalCost = noPriceAvailable ? parseFloat(manualCost) : null;
 
-    // Store snapshot data
-    await supabase.from('recipe_ingredients').insert({
+    // Use the mutation hook for proper cache invalidation
+    addIngredient({
       recipe_id: recipeId,
       item_id: itemId,
       quantity_needed: parseFloat(quantityNeeded),
@@ -91,17 +90,19 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
       conversion_factor_snapshot: packagingInfo.conversionFactor,
       sort_order: 0,
       notes: notes || null,
+    }, {
+      onSuccess: () => {
+        // Reset form
+        setItemId('');
+        setQuantityNeeded('');
+        setUnit('');
+        setManualCost('');
+        setNotes('');
+        setPackagingInfo(null);
+        setNoPriceAvailable(false);
+        onOpenChange(false);
+      }
     });
-
-    // Reset form
-    setItemId('');
-    setQuantityNeeded('');
-    setUnit('');
-    setManualCost('');
-    setNotes('');
-    setPackagingInfo(null);
-    setNoPriceAvailable(false);
-    onOpenChange(false);
   };
 
   const calculatedTotal = quantityNeeded && packagingInfo && (packagingInfo.costPerBaseUnit > 0 || manualCost)

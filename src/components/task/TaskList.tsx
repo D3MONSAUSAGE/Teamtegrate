@@ -85,6 +85,12 @@ const TaskList = ({ tasks, onEdit, onNewTask, onStatusChange, emptyMessage = "No
         open={showDetails}
         onOpenChange={setShowDetails}
         task={selectedTask}
+        onEdit={onEdit}
+        onUpdateTaskStatus={handleStatusChange}
+        onDeleteTask={async (taskId: string) => {
+          // Status change to trigger refresh after delete
+          await handleStatusChange(taskId, 'To Do');
+        }}
       />
     </>
   );
