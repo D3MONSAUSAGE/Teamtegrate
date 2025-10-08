@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RefreshCw } from 'lucide-react';
 import { RecipeWithCosts, useRefreshRecipePrices } from '@/hooks/useRecipes';
+import { RecipeExportButton } from './RecipeExportButton';
 
 interface RecipeDetailsDialogProps {
   recipe: RecipeWithCosts;
@@ -28,16 +29,19 @@ export const RecipeDetailsDialog: React.FC<RecipeDetailsDialogProps> = ({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>{recipe.name}</DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshPrices}
-              disabled={isPending}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isPending ? 'animate-spin' : ''}`} />
-              Refresh Prices
-            </Button>
+            <div className="flex gap-2">
+              <RecipeExportButton recipe={recipe} variant="outline" size="sm" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshPrices}
+                disabled={isPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isPending ? 'animate-spin' : ''}`} />
+                Refresh Prices
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 

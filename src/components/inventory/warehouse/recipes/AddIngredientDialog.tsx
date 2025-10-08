@@ -92,7 +92,7 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
       notes: notes || null,
     }, {
       onSuccess: () => {
-        // Reset form
+        // Reset form but keep dialog open for adding more ingredients
         setItemId('');
         setQuantityNeeded('');
         setUnit('');
@@ -100,7 +100,7 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
         setNotes('');
         setPackagingInfo(null);
         setNoPriceAvailable(false);
-        onOpenChange(false);
+        // Don't close dialog - let user add more ingredients
       }
     });
   };

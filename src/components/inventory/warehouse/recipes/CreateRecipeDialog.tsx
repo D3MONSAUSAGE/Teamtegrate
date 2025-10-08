@@ -7,9 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import { useCreateRecipe } from '@/hooks/useRecipes';
-import { useRecipeIngredients, useAddIngredient, useDeleteIngredient } from '@/hooks/useRecipeIngredients';
+import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { AddIngredientDialog } from './AddIngredientDialog';
 import { IngredientsTable } from './IngredientsTable';
+import { AddOtherCostDialog } from './costs/AddOtherCostDialog';
+import { OtherCostsTable } from './costs/OtherCostsTable';
 
 interface CreateRecipeDialogProps {
   open: boolean;
@@ -26,6 +28,7 @@ export const CreateRecipeDialog: React.FC<CreateRecipeDialogProps> = ({
   const [outputUnit, setOutputUnit] = useState('');
   const [notes, setNotes] = useState('');
   const [addIngredientOpen, setAddIngredientOpen] = useState(false);
+  const [addOtherCostOpen, setAddOtherCostOpen] = useState(false);
   const [tempRecipeId, setTempRecipeId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('info');
 
@@ -75,10 +78,13 @@ export const CreateRecipeDialog: React.FC<CreateRecipeDialogProps> = ({
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="info">Recipe Info</TabsTrigger>
               <TabsTrigger value="ingredients" disabled={!tempRecipeId}>
                 Ingredients {ingredients && `(${ingredients.length})`}
+              </TabsTrigger>
+              <TabsTrigger value="other-costs" disabled={!tempRecipeId}>
+                Other Costs
               </TabsTrigger>
             </TabsList>
 
@@ -172,16 +178,48 @@ export const CreateRecipeDialog: React.FC<CreateRecipeDialogProps> = ({
                 </>
               )}
             </TabsContent>
+
+            <TabsContent value="other-costs" className="space-y-4">
+              {tempRecipeId && (
+                <>
+                  <Button
+                    onClick={() => setAddOtherCostOpen(true)}
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Other Cost
+                  </Button>
+
+                  <OtherCostsTable recipeId={tempRecipeId} />
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleClose} className="flex-1">
+                      Close
+                    </Button>
+                    <Button onClick={handleClose} className="flex-1">
+                      Done
+                    </Button>
+                  </div>
+                </>
+              )}
+            </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
 
       {tempRecipeId && (
-        <AddIngredientDialog
-          recipeId={tempRecipeId}
-          open={addIngredientOpen}
-          onOpenChange={setAddIngredientOpen}
-        />
+        <>
+          <AddIngredientDialog
+            recipeId={tempRecipeId}
+            open={addIngredientOpen}
+            onOpenChange={setAddIngredientOpen}
+          />
+          <AddOtherCostDialog
+            recipeId={tempRecipeId}
+            open={addOtherCostOpen}
+            onOpenChange={setAddOtherCostOpen}
+          />
+        </>
       )}
     </>
   );

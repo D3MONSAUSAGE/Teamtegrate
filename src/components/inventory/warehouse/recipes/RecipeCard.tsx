@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Copy, Trash2, Edit } from 'lucide-react';
+import { Eye, Copy, Trash2, Edit, FileDown } from 'lucide-react';
 import { RecipeWithCosts } from '@/hooks/useRecipes';
 import { useDeleteRecipe, useDuplicateRecipe } from '@/hooks/useRecipes';
 import { RecipeDetailsDialog } from './RecipeDetailsDialog';
 import { EditRecipeDialog } from './EditRecipeDialog';
+import { RecipeExportButton } from './RecipeExportButton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,6 +89,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
               <Eye className="mr-2 h-4 w-4" />
               View
             </Button>
+            <RecipeExportButton recipe={recipe} variant="outline" size="sm" />
             <Button
               variant="outline"
               size="sm"

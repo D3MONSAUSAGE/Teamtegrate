@@ -7159,6 +7159,41 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_cost_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_cost_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_ingredients: {
         Row: {
           base_unit: string | null
@@ -7218,6 +7253,48 @@ export type Database = {
           },
           {
             foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "production_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_other_costs: {
+        Row: {
+          category_id: string
+          cost_amount: number
+          created_at: string | null
+          id: string
+          notes: string | null
+          recipe_id: string
+        }
+        Insert: {
+          category_id: string
+          cost_amount: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          recipe_id: string
+        }
+        Update: {
+          category_id?: string
+          cost_amount?: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          recipe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_other_costs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_cost_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_other_costs_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "production_recipes"
