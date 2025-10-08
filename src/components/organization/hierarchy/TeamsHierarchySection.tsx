@@ -19,12 +19,16 @@ interface TeamsHierarchySectionProps {
   teams: Team[];
   allUsers: OrganizationUser[];
   searchTerm: string;
+  onCreateTeam?: () => void;
+  canCreateTeams?: boolean;
 }
 
 export const TeamsHierarchySection: React.FC<TeamsHierarchySectionProps> = ({ 
   teams, 
   allUsers, 
-  searchTerm 
+  searchTerm,
+  onCreateTeam,
+  canCreateTeams = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -57,12 +61,14 @@ export const TeamsHierarchySection: React.FC<TeamsHierarchySectionProps> = ({
                   {filteredTeams.length} Teams
                 </Badge>
               </CardTitle>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Team
-                </Button>
-              </div>
+              {canCreateTeams && onCreateTeam && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="sm" onClick={onCreateTeam}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Team
+                  </Button>
+                </div>
+              )}
             </div>
           </CollapsibleTrigger>
         </CardHeader>
@@ -73,10 +79,12 @@ export const TeamsHierarchySection: React.FC<TeamsHierarchySectionProps> = ({
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
                 <p>No teams found</p>
-                <Button variant="outline" className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Team
-                </Button>
+                {canCreateTeams && onCreateTeam && (
+                  <Button variant="outline" className="mt-4" onClick={onCreateTeam}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Team
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

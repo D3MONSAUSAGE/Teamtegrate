@@ -14,13 +14,19 @@ import { TeamsHierarchySection } from './TeamsHierarchySection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganizationUsers } from '@/hooks/useOrganizationUsers';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
+import CreateTeamDialog from '@/components/organization/team/CreateTeamDialog';
+import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 
 export const OrganizationHierarchyView = () => {
   const { user } = useAuth();
   const { users, isLoading: usersLoading } = useOrganizationUsers();
-  const { teams, isLoading: teamsLoading } = useTeamAccess();
+  const { teams, isLoading: teamsLoading, teamStats } = useTeamAccess();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+
+  // Check if user can create teams (admin or superadmin)
+  const canCreateTeams = user ? hasRoleAccess(user.role, 'admin') : false;
 
   const isLoading = usersLoading || teamsLoading;
 
@@ -115,6 +121,14 @@ export const OrganizationHierarchyView = () => {
         teams={teams}
         allUsers={filteredUsers}
         searchTerm={searchTerm}
+        onCreateTeam={() => setShowCreateTeamDialog(true)}
+        canCreateTeams={canCreateTeams}
+      />
+
+      {/* Create Team Dialog */}
+      <CreateTeamDialog
+        open={showCreateTeamDialog}
+        onOpenChange={setShowCreateTeamDialog}
       />
     </div>
   );
