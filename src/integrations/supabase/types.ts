@@ -11427,6 +11427,66 @@ export type Database = {
           },
         ]
       }
+      user_role_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_role: Database["public"]["Enums"]["app_role"]
+          old_role: string | null
+          organization_id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_role: Database["public"]["Enums"]["app_role"]
+          old_role?: string | null
+          organization_id: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_role?: Database["public"]["Enums"]["app_role"]
+          old_role?: string | null
+          organization_id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_training_progress: {
         Row: {
           completed_at: string | null
@@ -13000,7 +13060,7 @@ export type Database = {
         Returns: Json
       }
       get_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { _user_id: string }
         Returns: string
       }
       get_user_team_manager: {
@@ -13030,6 +13090,13 @@ export type Database = {
           transaction_count: number
           transaction_type: string
         }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       is_admin_or_superadmin: {
         Args: Record<PropertyKey, never>
@@ -13435,6 +13502,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "superadmin" | "admin" | "manager" | "team_leader" | "user"
       approval_decision: "approved" | "rejected" | "more_info_needed"
       approval_status: "pending" | "approved" | "rejected"
       assignment_type: "individual" | "team" | "role_based"
@@ -13646,6 +13714,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["superadmin", "admin", "manager", "team_leader", "user"],
       approval_decision: ["approved", "rejected", "more_info_needed"],
       approval_status: ["pending", "approved", "rejected"],
       assignment_type: ["individual", "team", "role_based"],
