@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Copy, Trash2 } from 'lucide-react';
+import { Eye, Copy, Trash2, Edit } from 'lucide-react';
 import { RecipeWithCosts } from '@/hooks/useRecipes';
 import { useDeleteRecipe, useDuplicateRecipe } from '@/hooks/useRecipes';
 import { RecipeDetailsDialog } from './RecipeDetailsDialog';
+import { EditRecipeDialog } from './EditRecipeDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ interface RecipeCardProps {
 
 export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { mutate: deleteRecipe, isPending: isDeleting } = useDeleteRecipe();
   const { mutate: duplicateRecipe, isPending: isDuplicating } = useDuplicateRecipe();
@@ -89,6 +91,13 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setEditOpen(true)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleDuplicate}
               disabled={isDuplicating}
             >
@@ -110,6 +119,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         recipe={recipe}
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
+      />
+
+      <EditRecipeDialog
+        recipe={recipe}
+        open={editOpen}
+        onOpenChange={setEditOpen}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
