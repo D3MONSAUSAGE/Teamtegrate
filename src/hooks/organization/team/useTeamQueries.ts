@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team, TeamStats } from '@/types/teams';
+import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 
 export const useTeamQueries = () => {
   const { user } = useAuth();
@@ -13,6 +14,22 @@ export const useTeamQueries = () => {
     queryFn: async (): Promise<Team[]> => {
       if (!user?.organizationId) return [];
       
+      const isAdminOrSuperadmin = hasRoleAccess(user.role, 'admin');
+      
+      if (isAdminOrSuperadmin) {
+        // Admins and superadmins see ALL teams in the organization
+        const { data, error } = await supabase
+          .from('team_details')
+          .select('*')
+          .eq('organization_id', user.organizationId)
+          .eq('is_active', true)
+          .order('name');
+        
+        if (error) throw error;
+        return (data || []).map(team => ({ ...team, user_team_role: undefined }));
+      }
+      
+      // Non-admins only see teams they're members of
       const { data, error } = await supabase
         .from('team_details')
         .select(`
@@ -25,16 +42,8 @@ export const useTeamQueries = () => {
         .order('name');
 
       if (error) {
-        // If error (e.g., no memberships), try without the join
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('team_details')
-          .select('*')
-          .eq('organization_id', user.organizationId)
-          .eq('is_active', true)
-          .order('name');
-        
-        if (fallbackError) throw fallbackError;
-        return (fallbackData || []).map(team => ({ ...team, user_team_role: undefined }));
+        // If error (e.g., no memberships), return empty array
+        return [];
       }
       
       // Map the team_memberships data to user_team_role
