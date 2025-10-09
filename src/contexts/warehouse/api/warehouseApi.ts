@@ -31,6 +31,7 @@ export type WarehouseItem = {
     barcode?: string;
     unit_cost?: number;
     sale_price?: number;
+    image_url?: string;
     category?: {
       name: string;
     };

@@ -36,6 +36,8 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [thresholds, setThresholds] = useState<Map<string, { min: number | null; max: number | null }>>(new Map());
   
@@ -132,6 +134,11 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
       setSelectedItemId(itemId);
       setIsDetailsModalOpen(true);
     }
+  };
+
+  const handleEditClick = (itemId: string) => {
+    setEditingItemId(itemId);
+    setIsEditDialogOpen(true);
   };
 
   // Calculate summary statistics
@@ -314,7 +321,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
               <ProductGrid
                 items={items.map(item => {
                   const itemThresholds = thresholds.get(item.item_id);
-                  return {
+                  const productCardItem: ProductCardItem = {
                     id: item.item_id,
                     name: item.item?.name || '',
                     sku: item.item?.sku,
@@ -325,12 +332,13 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
                     reorder_min: itemThresholds?.min || undefined,
                     reorder_max: itemThresholds?.max || undefined,
                     sale_price: item.item?.unit_cost,
-                    image_url: undefined
-                  } as ProductCardItem;
+                    image_url: item.item?.image_url
+                  };
+                  return productCardItem;
                 })}
                 variant="warehouse"
                 onView={handleItemClick}
-                onEdit={handleItemClick}
+                onEdit={handleEditClick}
                 showActions={true}
               />
             ) : (
@@ -431,6 +439,12 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
         open={isAddItemOpen}
         onOpenChange={setIsAddItemOpen}
         itemId={null}
+      />
+
+      <InventoryItemDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        itemId={editingItemId}
       />
     </Card>
   );

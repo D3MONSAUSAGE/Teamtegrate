@@ -23,7 +23,8 @@ import {
   CheckCircle,
   Phone,
   Mail,
-  Globe
+  Globe,
+  TrendingUp
 } from 'lucide-react';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
@@ -88,8 +89,19 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Product Image */}
+          {item.image_url && (
+            <div className="relative w-full h-64 rounded-lg overflow-hidden border bg-muted">
+              <img 
+                src={item.image_url} 
+                alt={item.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -137,7 +149,51 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <DollarSign className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Sale Price</p>
+                    <p className="text-xl font-bold">
+                      {item.sale_price ? formatCurrency(item.sale_price) : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Profit Analysis */}
+          {item.unit_cost && item.sale_price && (
+            <Card className="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border-emerald-500/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                  <TrendingUp className="h-5 w-5" />
+                  Profit Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Profit per Unit</p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(item.sale_price - item.unit_cost)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Profit Margin</p>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {((item.sale_price - item.unit_cost) / item.sale_price * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Product Overview */}
           <Card>
