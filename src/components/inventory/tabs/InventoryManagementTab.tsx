@@ -34,7 +34,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const InventoryManagementTab: React.FC = () => {
   console.log('InventoryManagementTab: Component rendering');
   const { hasRoleAccess, user } = useAuth();
-  const { availableTeams, isAdmin, isSuperAdmin } = useTeamAccess();
+  const { availableTeams, isAdmin, isSuperAdmin, isManager, isTeamManager } = useTeamAccess();
   console.log('InventoryManagementTab: About to call useInventory');
   const {
     items, 
@@ -269,7 +269,10 @@ export const InventoryManagementTab: React.FC = () => {
     }
   };
 
-  if (!hasRoleAccess('manager')) {
+  // Check permissions - allow org-wide managers/admins OR team managers
+  const canAccessInventory = isAdmin || isSuperAdmin || isManager || isTeamManager;
+  
+  if (!canAccessInventory) {
     return (
       <div className="text-center py-8">
         <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />

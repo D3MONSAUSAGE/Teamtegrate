@@ -11,6 +11,7 @@ export interface TeamAccessInfo {
   isAdmin: boolean;
   isManager: boolean;
   isSuperAdmin: boolean;
+  isTeamManager: boolean;
 }
 
 export const useTeamAccess = (): TeamAccessInfo & {
@@ -31,6 +32,7 @@ export const useTeamAccess = (): TeamAccessInfo & {
         isAdmin: false,
         isManager: false,
         isSuperAdmin: false,
+        isTeamManager: false,
       };
     }
 
@@ -46,6 +48,11 @@ export const useTeamAccess = (): TeamAccessInfo & {
           team.manager_id === user.id || 
           team.user_team_role === 'manager'
         );
+
+    // Check if user is a team manager (manages at least one team)
+    const isTeamManager = teams.some(team => 
+      team.manager_id === user.id || team.user_team_role === 'manager'
+    );
 
     const canManageTeam = (teamId: string) => {
       if (isAdmin) return true;
@@ -65,6 +72,7 @@ export const useTeamAccess = (): TeamAccessInfo & {
       isAdmin,
       isManager,
       isSuperAdmin,
+      isTeamManager,
     };
   }, [user, teams]);
 
