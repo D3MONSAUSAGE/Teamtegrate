@@ -396,7 +396,7 @@ export const InventoryManagementTab: React.FC = () => {
                 </Select>
 
 
-                {hasRoleAccess('admin') && (
+                {(isAdmin || isSuperAdmin || isManager || isTeamManager) && (
                   <Button onClick={handleAddItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Item
@@ -417,7 +417,7 @@ export const InventoryManagementTab: React.FC = () => {
                     : 'Get started by adding your first inventory item.'
                   }
                 </p>
-                {(!searchTerm && selectedCategory === 'all') && hasRoleAccess('admin') && (
+                {(!searchTerm && selectedCategory === 'all') && (isAdmin || isSuperAdmin || isManager || isTeamManager) && (
                   <Button onClick={handleAddItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Item
