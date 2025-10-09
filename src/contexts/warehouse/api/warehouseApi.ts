@@ -29,6 +29,7 @@ export type WarehouseItem = {
     sku?: string;
     barcode?: string;
     unit_cost?: number;
+    purchase_price?: number;
     sale_price?: number;
     image_url?: string;
     category?: {
@@ -174,7 +175,9 @@ export const warehouseApi = {
           sku,
           barcode,
           unit_cost,
+          purchase_price,
           sale_price,
+          image_url,
           category:inventory_categories(name),
           base_unit:inventory_units(name, abbreviation)
         )
@@ -567,7 +570,9 @@ export const warehouseApi = {
           sku,
           barcode,
           unit_cost,
+          purchase_price,
           sale_price,
+          image_url,
           category:inventory_categories(name),
           base_unit:inventory_units(name, abbreviation)
         )

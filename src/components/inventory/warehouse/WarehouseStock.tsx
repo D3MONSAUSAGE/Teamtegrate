@@ -331,7 +331,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
                     on_hand: item.on_hand,
                     reorder_min: itemThresholds?.min || undefined,
                     reorder_max: itemThresholds?.max || undefined,
-                    sale_price: item.item?.unit_cost,
+                    sale_price: item.item?.purchase_price,
                     image_url: item.item?.image_url
                   };
                   return productCardItem;
@@ -390,7 +390,7 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(item.item?.unit_cost || 0)}
+                          {formatCurrency(item.item?.purchase_price || 0)}
                         </TableCell>
                         <TableCell className="text-right">
                           {(() => {
