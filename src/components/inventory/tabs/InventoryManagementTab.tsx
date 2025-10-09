@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
+import { UnifiedTeamSelector } from '@/components/teams';
 import { InventoryItemDialog } from '../InventoryItemDialog';
 
 
@@ -32,6 +34,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const InventoryManagementTab: React.FC = () => {
   console.log('InventoryManagementTab: Component rendering');
   const { hasRoleAccess, user } = useAuth();
+  const { availableTeams, isAdmin, isSuperAdmin } = useTeamAccess();
   console.log('InventoryManagementTab: About to call useInventory');
   const {
     items, 
@@ -61,6 +64,7 @@ export const InventoryManagementTab: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   
   // Category dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -121,8 +125,9 @@ export const InventoryManagementTab: React.FC = () => {
                            (item.sku || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = !selectedCategory || selectedCategory === 'all' || item.category?.name === selectedCategory;
+      const matchesTeam = !selectedTeamId || item.team_id === selectedTeamId;
       
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && matchesTeam;
     });
 
     // Sort items
@@ -140,7 +145,7 @@ export const InventoryManagementTab: React.FC = () => {
     });
 
     return filtered;
-  }, [items, searchTerm, selectedCategory, sortBy]);
+  }, [items, searchTerm, selectedCategory, sortBy, selectedTeamId]);
 
   // Get unique categories from items for filtering
   const itemCategories = useMemo(() => {
@@ -277,6 +282,21 @@ export const InventoryManagementTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Team selector for admins/superadmins */}
+      {(isAdmin || isSuperAdmin) && (
+        <Card>
+          <CardContent className="pt-6">
+            <UnifiedTeamSelector
+              selectedTeamId={selectedTeamId || ''}
+              onTeamChange={setSelectedTeamId}
+              variant="inline"
+              showAllOption={true}
+              placeholder="All Teams"
+            />
+          </CardContent>
+        </Card>
+      )}
+      
       <Tabs defaultValue="items" className="w-full">
         <div className="w-full overflow-x-auto pb-2 -mx-1 px-1">
           <TabsList className="inline-flex w-auto min-w-full">
