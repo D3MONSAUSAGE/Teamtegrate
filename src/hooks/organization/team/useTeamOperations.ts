@@ -15,6 +15,8 @@ export const useTeamOperations = () => {
   const invalidateTeamQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['teams'] });
     queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['organization-teams'] });
+    queryClient.invalidateQueries({ queryKey: ['teams-by-organization'] });
   };
 
   // Create team
