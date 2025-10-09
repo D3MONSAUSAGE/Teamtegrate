@@ -12207,30 +12207,27 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          is_primary: boolean
           name: string
           organization_id: string
-          team_id: string | null
+          team_id: string
         }
         Insert: {
           address?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
-          is_primary?: boolean
           name: string
           organization_id: string
-          team_id?: string | null
+          team_id: string
         }
         Update: {
           address?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
-          is_primary?: boolean
           name?: string
           organization_id?: string
-          team_id?: string | null
+          team_id?: string
         }
         Relationships: [
           {

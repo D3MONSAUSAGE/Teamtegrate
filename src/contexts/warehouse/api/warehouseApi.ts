@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 export type Warehouse = {
   id: string;
   name: string;
-  is_primary: boolean;
   organization_id: string;
-  team_id?: string;
+  team_id: string; // Required - every warehouse belongs to a team
   address?: string;
   created_by?: string;
   created_at: string;
@@ -465,20 +464,18 @@ export const warehouseApi = {
 
     console.log('📦 Creating new warehouse with:', {
       name,
-      is_primary: false,
       organization_id: userData.organization_id,
       team_id: teamId,
       created_by: uid
     });
 
-    // Insert with is_primary: false for team warehouses
+    // Create warehouse for team
     const { data, error } = await supabase
       .from('warehouses')
       .insert({
         name,
-        is_primary: false, // Team warehouses are NOT primary
         organization_id: userData.organization_id,
-        team_id: teamId, // Explicitly set team_id
+        team_id: teamId, // Required field
         created_by: uid,
       })
       .select(`
@@ -743,22 +740,24 @@ export const warehouseApi = {
       baseQuery = baseQuery.or(`item.name.ilike.%${searchTerm}%,item.sku.ilike.%${searchTerm}%,item.barcode.ilike.%${searchTerm}%`);
     }
 
-    const { data, error } = await baseQuery.order('item.name');
+    const { data, error } = await baseQuery;
 
     if (error) throw error;
     
     // Transform to match expected InventoryItem interface for search results
-    return (data || []).map(warehouseItem => ({
-      id: warehouseItem.item_id,
-      name: warehouseItem.item?.name || '',
-      sku: warehouseItem.item?.sku,
-      barcode: warehouseItem.item?.barcode,
-      unit_cost: warehouseItem.item?.unit_cost || 0,
-      sale_price: warehouseItem.sale_price || warehouseItem.item?.sale_price || 0,
-      on_hand: warehouseItem.on_hand, // Include warehouse stock level
-      category: warehouseItem.item?.category,
-      base_unit: warehouseItem.item?.base_unit
-    }));
+    return (data || [])
+      .map(warehouseItem => ({
+        id: warehouseItem.item_id,
+        name: warehouseItem.item?.name || '',
+        sku: warehouseItem.item?.sku,
+        barcode: warehouseItem.item?.barcode,
+        unit_cost: warehouseItem.item?.unit_cost || 0,
+        sale_price: warehouseItem.sale_price || warehouseItem.item?.sale_price || 0,
+        on_hand: warehouseItem.on_hand, // Include warehouse stock level
+        category: warehouseItem.item?.category,
+        base_unit: warehouseItem.item?.base_unit
+      }))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '')); // Sort alphabetically by name
   },
 
   // Search ALL inventory items with warehouse stock status (HYBRID APPROACH)
