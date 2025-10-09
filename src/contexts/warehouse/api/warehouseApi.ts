@@ -513,8 +513,10 @@ export const warehouseApi = {
     return data;
   },
 
-  // Ensure a primary warehouse exists (idempotent setup method)
-  async ensurePrimaryWarehouse(name = 'Main Warehouse', teamId?: string): Promise<Warehouse> {
+  /**
+   * Ensures a primary warehouse exists, creating one if it doesn't
+   */
+  async ensurePrimaryWarehouse(name = 'Organization Warehouse', teamId?: string): Promise<Warehouse> {
     try {
       // First try to get existing warehouse by team if teamId is provided
       if (teamId) {
@@ -597,7 +599,7 @@ export const warehouseApi = {
           warehouse_id: warehouse.id,
           warehouse_name: warehouse.name,
           team_id: warehouse.team_id,
-          team_name: warehouse.team?.name || 'Main Warehouse',
+          team_name: warehouse.team?.name || warehouse.name || 'Warehouse',
           total_items: items.length,
           total_inventory_value: totalValue,
           low_stock_count: lowStockCount,

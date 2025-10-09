@@ -125,7 +125,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="grid grid-cols-2 gap-2 pt-2 border-t">
             {variant === 'warehouse' ? (
               <>
-                {/* Warehouse View: Stock & Price */}
+                {/* Warehouse View: Stock & Price - Always show all 4 fields for uniform height */}
                 <div>
                   <p className="text-xs text-muted-foreground">In Stock</p>
                   <p className="font-semibold">
@@ -137,26 +137,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     )}
                   </p>
                 </div>
-                {item.sale_price !== undefined && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">Price</p>
-                    <p className="font-semibold text-primary">
-                      {formatCurrency(item.sale_price)}
-                    </p>
-                  </div>
-                )}
-                {item.reorder_min !== undefined && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">Min Stock</p>
-                    <p className="font-medium text-sm">{formatNumber(item.reorder_min)}</p>
-                  </div>
-                )}
-                {item.reorder_max !== undefined && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">Max Stock</p>
-                    <p className="font-medium text-sm">{formatNumber(item.reorder_max)}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-xs text-muted-foreground">Price</p>
+                  <p className="font-semibold text-primary">
+                    {item.sale_price !== undefined ? formatCurrency(item.sale_price) : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Min Stock</p>
+                  <p className="font-medium text-sm">
+                    {item.reorder_min != null ? formatNumber(item.reorder_min) : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Max Stock</p>
+                  <p className="font-medium text-sm">
+                    {item.reorder_max != null ? formatNumber(item.reorder_max) : '—'}
+                  </p>
+                </div>
               </>
             ) : (
               <>

@@ -74,6 +74,7 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<WarehouseItem | null>(null);
+  const [warehouseName, setWarehouseName] = useState<string>('');
   const [availableLots, setAvailableLots] = useState<InventoryLot[]>([]);
   
   // Line Items for bulk scanning
@@ -100,6 +101,27 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     customer_name: '',
     notes: ''
   });
+
+  // Load warehouse name and clear search when warehouse changes
+  useEffect(() => {
+    const loadWarehouseName = async () => {
+      if (warehouseId) {
+        try {
+          const warehouses = await warehouseApi.listWarehouses();
+          const warehouse = warehouses.find(w => w.id === warehouseId);
+          setWarehouseName(warehouse?.name || 'Warehouse');
+        } catch (error) {
+          console.error('Error loading warehouse name:', error);
+          setWarehouseName('');
+        }
+      }
+    };
+    
+    loadWarehouseName();
+    // Clear search results when warehouse changes
+    setSearchResults([]);
+    setSearchQuery('');
+  }, [warehouseId]);
 
   // Load warehouse items when dialog opens or warehouse changes
   useEffect(() => {
@@ -472,6 +494,7 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
                 Warehouse Stock Withdrawal
               </DialogTitle>
               <p className="text-muted-foreground text-sm">
+                {warehouseName && <span className="font-medium">{warehouseName} • </span>}
                 Process sales, waste, transfers, and other inventory movements with full lot traceability
               </p>
             </div>

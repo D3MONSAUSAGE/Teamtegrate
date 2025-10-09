@@ -24,7 +24,7 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
   const [currentStep, setCurrentStep] = useState<SetupStep>('warehouse');
   const [loading, setLoading] = useState(false);
   const [warehouseName, setWarehouseName] = useState(
-    teamName ? `${teamName} Warehouse` : 'Main Warehouse'
+    teamName ? `${teamName} Warehouse` : 'Team Warehouse'
   );
   const [createdWarehouse, setCreatedWarehouse] = useState<any>(null);
   const [selectedItems, setSelectedItems] = useState<Array<{
@@ -184,7 +184,7 @@ export const WarehouseSetupWizard: React.FC<WarehouseSetupWizardProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Select items from your master inventory list to add to this warehouse with initial quantities and costs.
+              Select items from your organization catalog to add to this warehouse with initial quantities and costs.
             </p>
             
             <WarehouseItemSelector
