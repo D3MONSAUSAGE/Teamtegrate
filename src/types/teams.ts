@@ -12,6 +12,7 @@ export interface Team {
   manager_email?: string;
   member_count: number;
   require_schedule_for_clock_in?: boolean | null;
+  user_team_role?: 'manager' | 'member';
 }
 
 export interface TeamMembership {

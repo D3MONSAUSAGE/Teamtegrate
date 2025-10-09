@@ -39,14 +39,20 @@ export const useTeamAccess = (): TeamAccessInfo & {
     const isManager = user.role === 'manager';
 
     // For admins/superadmins, show all teams
-    // For managers, show only teams they manage
+    // For managers, show teams they manage (either as manager_id or team_memberships.role = 'manager')
     const availableTeams = isAdmin 
       ? teams 
-      : teams.filter(team => team.manager_id === user.id);
+      : teams.filter(team => 
+          team.manager_id === user.id || 
+          team.user_team_role === 'manager'
+        );
 
     const canManageTeam = (teamId: string) => {
       if (isAdmin) return true;
-      return teams.some(team => team.id === teamId && team.manager_id === user.id);
+      return teams.some(team => 
+        team.id === teamId && 
+        (team.manager_id === user.id || team.user_team_role === 'manager')
+      );
     };
 
     // Should auto-select only for managers with exactly one team

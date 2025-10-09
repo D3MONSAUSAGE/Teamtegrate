@@ -7,23 +7,43 @@ import { Team, TeamStats } from '@/types/teams';
 export const useTeamQueries = () => {
   const { user } = useAuth();
 
-  // Fetch teams
+  // Fetch teams with user's team role
   const { data: teams = [], isLoading: teamsLoading, error: teamsError } = useQuery({
-    queryKey: ['teams', user?.organizationId],
+    queryKey: ['teams', user?.organizationId, user?.id],
     queryFn: async (): Promise<Team[]> => {
       if (!user?.organizationId) return [];
       
       const { data, error } = await supabase
         .from('team_details')
-        .select('*')
+        .select(`
+          *,
+          team_memberships!inner(role)
+        `)
         .eq('organization_id', user.organizationId)
         .eq('is_active', true)
+        .eq('team_memberships.user_id', user.id)
         .order('name');
 
-      if (error) throw error;
-      return data || [];
+      if (error) {
+        // If error (e.g., no memberships), try without the join
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('team_details')
+          .select('*')
+          .eq('organization_id', user.organizationId)
+          .eq('is_active', true)
+          .order('name');
+        
+        if (fallbackError) throw fallbackError;
+        return (fallbackData || []).map(team => ({ ...team, user_team_role: undefined }));
+      }
+      
+      // Map the team_memberships data to user_team_role
+      return (data || []).map(team => ({
+        ...team,
+        user_team_role: (team as any).team_memberships?.[0]?.role as 'manager' | 'member' | undefined
+      }));
     },
-    enabled: !!user?.organizationId,
+    enabled: !!user?.organizationId && !!user?.id,
   });
 
   // Fetch team stats
