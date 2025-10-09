@@ -14,6 +14,9 @@ import { InventoryUnitDialog } from '../InventoryUnitDialog';
 import { VendorDialog } from '../dialogs/VendorDialog';
 import { ItemCard } from '../ItemCard';
 import { ItemTableRow } from '../ItemTableRow';
+import { ProductGrid } from '../ProductGrid';
+import { ProductCardItem } from '../ProductCard';
+import { LayoutGrid, List } from 'lucide-react';
 import { LoadingState, LoadingSpinner } from '@/components/ui/loading-state';
 import { Plus, Package, FileText, Search, Filter, FolderOpen, Ruler, Edit2, Trash2, Building2, Mail, Phone, Globe, QrCode, TruckIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -57,6 +60,7 @@ export const InventoryManagementTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'category'>('name');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   
   // Category dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -322,6 +326,26 @@ export const InventoryManagementTab: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-2 w-full md:w-auto">
+                {/* View Toggle */}
+                <div className="flex items-center border rounded-lg p-1 bg-muted/50">
+                  <Button
+                    variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="h-7 px-2"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-7 px-2"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-full md:w-[160px]">
                     <Filter className="h-4 w-4 mr-2" />
@@ -377,6 +401,29 @@ export const InventoryManagementTab: React.FC = () => {
                   </Button>
                 )}
               </div>
+            ) : viewMode === 'grid' ? (
+              <ProductGrid
+                items={filteredAndSortedItems.map(item => ({
+                  id: item.id,
+                  name: item.name,
+                  sku: item.sku,
+                  barcode: item.barcode,
+                  description: item.description,
+                  category: item.category,
+                  base_unit: item.base_unit,
+                  vendor: item.vendor,
+                  purchase_unit: item.purchase_unit,
+                  purchase_price: item.purchase_price,
+                  conversion_factor: item.conversion_factor,
+                  unit_cost: item.unit_cost,
+                  sale_price: item.sale_price,
+                  image_url: item.image_url
+                } as ProductCardItem))}
+                variant="master"
+                onEdit={handleEditItem}
+                onDelete={handleDeleteItem}
+                showActions={true}
+              />
             ) : (
               <Card>
                 <div className="max-h-[600px] overflow-y-auto">

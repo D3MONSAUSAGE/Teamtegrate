@@ -152,8 +152,8 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     
     try {
       setSearchLoading(true);
-      // Use hybrid search to show all catalog items with their warehouse stock status
-      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId, debouncedSearchQuery);
+      // Use warehouse-specific search to only show items available in THIS warehouse
+      const results = await warehouseApi.searchWarehouseItems(warehouseId, debouncedSearchQuery);
       setSearchResults(results);
       setShowResults(true);
     } catch (error) {
@@ -179,20 +179,20 @@ export const OutgoingDialog: React.FC<OutgoingDialogProps> = ({
     }
 
     try {
-      // Search for item by barcode using hybrid search (shows stock status)
-      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId, barcode);
+      // Search for item by barcode in THIS warehouse only
+      const results = await warehouseApi.searchWarehouseItems(warehouseId, barcode);
       
       if (results.length === 0) {
-        toast.error(`No item found with barcode: ${barcode}`);
+        toast.error(`No item found with barcode "${barcode}" in this warehouse`);
         return;
       }
       
       // Auto-select first result (barcode search is precise)
       const item = results[0];
       
-      // Check if item has stock before allowing selection
-      if (item.on_hand <= 0) {
-        toast.error(`Item "${item.name}" found but not available in warehouse (Stock: ${item.on_hand})`);
+      // Items from searchWarehouseItems always have stock > 0, but double-check
+      if (!item.on_hand || item.on_hand <= 0) {
+        toast.error(`Item "${item.name}" not available in warehouse`);
         return;
       }
       

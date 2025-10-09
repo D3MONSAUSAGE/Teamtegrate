@@ -702,7 +702,7 @@ export const warehouseApi = {
     return data || [];
   },
 
-  // Search warehouse items (warehouse-specific stock only) - LEGACY
+  // Search warehouse items (warehouse-specific stock only) - CORRECT IMPLEMENTATION
   async searchWarehouseItems(warehouseId: string, query: string, limit = 20): Promise<any[]> {
     if (!query.trim() || !warehouseId) return [];
 
@@ -729,7 +729,7 @@ export const warehouseApi = {
         )
       `)
       .eq('warehouse_id', warehouseId)
-      .gt('on_hand', 0) // Only items with stock available
+      .gt('on_hand', 0) // Only items with stock available in THIS warehouse
       .limit(limit);
 
     // Search by name, SKU, or barcode through joined inventory_items

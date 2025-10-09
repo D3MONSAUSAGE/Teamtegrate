@@ -19,7 +19,10 @@ import { getStockStatusSummary } from '@/utils/stockStatus';
 import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
 import { type WarehouseItem } from '@/contexts/warehouse/api/warehouseApi';
 import { WarehouseSettingsApi } from '@/contexts/warehouse/api/warehouseSettingsApi';
-import { QuickAddProductDialog } from './QuickAddProductDialog';
+import { InventoryItemDialog } from '../InventoryItemDialog';
+import { ProductGrid } from '../ProductGrid';
+import { ProductCardItem } from '../ProductCard';
+import { LayoutGrid, List } from 'lucide-react';
 
 interface WarehouseStockProps {
   warehouseId?: string;
@@ -32,7 +35,8 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
   const [search, setSearch] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [thresholds, setThresholds] = useState<Map<string, { min: number | null; max: number | null }>>(new Map());
   
   // Warehouse settings API instance
@@ -190,13 +194,33 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
             Warehouse Stock
           </CardTitle>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* View Toggle */}
+            <div className="flex items-center border rounded-lg p-1 bg-muted/50">
+              <Button
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="h-7 px-2"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                className="h-7 px-2"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            
             <Button 
-              onClick={() => setIsQuickAddOpen(true)}
+              onClick={() => setIsAddItemOpen(true)}
               size="sm"
               className="gap-2"
             >
               <Plus className="h-4 w-4" />
-              Quick Add Product
+              Add Item
             </Button>
             <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -286,88 +310,113 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
               </Card>
             </div>
 
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Barcode</TableHead>
-                    <TableHead className="text-right">In Stock</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">Reorder Min</TableHead>
-                    <TableHead className="text-right">Reorder Max</TableHead>
-                    <TableHead className="text-center">Stock Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={`${item.warehouse_id}-${item.item_id}`} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(item.item_id)}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.item?.name}</div>
-                          {item.item?.category && (
+            {viewMode === 'grid' ? (
+              <ProductGrid
+                items={items.map(item => {
+                  const itemThresholds = thresholds.get(item.item_id);
+                  return {
+                    id: item.item_id,
+                    name: item.item?.name || '',
+                    sku: item.item?.sku,
+                    barcode: item.item?.barcode,
+                    category: item.item?.category,
+                    base_unit: item.item?.base_unit,
+                    on_hand: item.on_hand,
+                    reorder_min: itemThresholds?.min || undefined,
+                    reorder_max: itemThresholds?.max || undefined,
+                    sale_price: item.item?.unit_cost,
+                    image_url: undefined
+                  } as ProductCardItem;
+                })}
+                variant="warehouse"
+                onView={handleItemClick}
+                onEdit={handleItemClick}
+                showActions={true}
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Barcode</TableHead>
+                      <TableHead className="text-right">In Stock</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Reorder Min</TableHead>
+                      <TableHead className="text-right">Reorder Max</TableHead>
+                      <TableHead className="text-center">Stock Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((item) => (
+                      <TableRow key={`${item.warehouse_id}-${item.item_id}`} className="cursor-pointer hover:bg-muted/50" onClick={() => handleItemClick(item.item_id)}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{item.item?.name}</div>
+                            {item.item?.category && (
+                              <div className="text-sm text-muted-foreground">
+                                {item.item.category.name}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-sm bg-muted px-1 py-0.5 rounded">
+                            {item.item?.sku || '-'}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-sm bg-muted px-1 py-0.5 rounded">
+                            {item.item?.barcode || '-'}
+                          </code>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="font-medium">
+                            {formatNumber(item.on_hand)}
+                          </div>
+                          {item.item?.base_unit && (
                             <div className="text-sm text-muted-foreground">
-                              {item.item.category.name}
+                              {item.item.base_unit.abbreviation}
                             </div>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-sm bg-muted px-1 py-0.5 rounded">
-                          {item.item?.sku || '-'}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-sm bg-muted px-1 py-0.5 rounded">
-                          {item.item?.barcode || '-'}
-                        </code>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="font-medium">
-                          {formatNumber(item.on_hand)}
-                        </div>
-                        {item.item?.base_unit && (
-                          <div className="text-sm text-muted-foreground">
-                            {item.item.base_unit.abbreviation}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.item?.unit_cost || 0)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {(() => {
-                          const itemThresholds = thresholds.get(item.item_id);
-                          const min = itemThresholds?.min;
-                          return min ? formatNumber(min) : '-';
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {(() => {
-                          const itemThresholds = thresholds.get(item.item_id);
-                          const max = itemThresholds?.max;
-                          return max ? formatNumber(max) : '-';
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {(() => {
-                          const itemThresholds = thresholds.get(item.item_id);
-                          return (
-                            <StockStatusBadge
-                              actualQuantity={item.on_hand}
-                              minimumThreshold={itemThresholds?.min || null}
-                              maximumThreshold={itemThresholds?.max || null}
-                              size="sm"
-                            />
-                          );
-                        })()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.item?.unit_cost || 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {(() => {
+                            const itemThresholds = thresholds.get(item.item_id);
+                            const min = itemThresholds?.min;
+                            return min ? formatNumber(min) : '-';
+                          })()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {(() => {
+                            const itemThresholds = thresholds.get(item.item_id);
+                            const max = itemThresholds?.max;
+                            return max ? formatNumber(max) : '-';
+                          })()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {(() => {
+                            const itemThresholds = thresholds.get(item.item_id);
+                            return (
+                              <StockStatusBadge
+                                actualQuantity={item.on_hand}
+                                minimumThreshold={itemThresholds?.min || null}
+                                maximumThreshold={itemThresholds?.max || null}
+                                size="sm"
+                              />
+                            );
+                          })()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </>
         )}
       </CardContent>
@@ -378,11 +427,10 @@ export const WarehouseStock: React.FC<WarehouseStockProps> = ({ warehouseId, onR
         item={modalItem}
       />
 
-      <QuickAddProductDialog
-        open={isQuickAddOpen}
-        onOpenChange={setIsQuickAddOpen}
-        warehouseId={warehouseId}
-        onProductCreated={onRefresh}
+      <InventoryItemDialog
+        open={isAddItemOpen}
+        onOpenChange={setIsAddItemOpen}
+        itemId={null}
       />
     </Card>
   );
