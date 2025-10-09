@@ -702,13 +702,15 @@ export const warehouseApi = {
     return data || [];
   },
 
-  // Search warehouse items (warehouse-specific stock only) - CORRECT IMPLEMENTATION
+  // Search warehouse items (warehouse-specific stock only) - Filter in JavaScript to avoid PostgREST parsing issues
   async searchWarehouseItems(warehouseId: string, query: string, limit = 20): Promise<any[]> {
     if (!query.trim() || !warehouseId) return [];
 
-    const searchTerm = query.trim();
+    const searchTerm = query.trim().toLowerCase();
+    const isBarcodeScan = /^\d{6,}$/.test(searchTerm);
     
-    let baseQuery = supabase
+    // Fetch all items from this warehouse with stock (filter in JavaScript)
+    const { data, error } = await supabase
       .from('warehouse_items')
       .select(`
         warehouse_id,
@@ -729,23 +731,31 @@ export const warehouseApi = {
         )
       `)
       .eq('warehouse_id', warehouseId)
-      .gt('on_hand', 0) // Only items with stock available in THIS warehouse
-      .limit(limit);
-
-    // Search by name, SKU, or barcode through joined inventory_items
-    if (/^\d{6,}$/.test(searchTerm)) {
-      // If it looks like a barcode (numbers only, 6+ digits), prioritize barcode search
-      baseQuery = baseQuery.or(`item.barcode.eq.${searchTerm},item.name.ilike.%${searchTerm}%,item.sku.ilike.%${searchTerm}%`);
-    } else {
-      baseQuery = baseQuery.or(`item.name.ilike.%${searchTerm}%,item.sku.ilike.%${searchTerm}%,item.barcode.ilike.%${searchTerm}%`);
-    }
-
-    const { data, error } = await baseQuery;
+      .gt('on_hand', 0);
 
     if (error) throw error;
     
-    // Transform to match expected InventoryItem interface for search results
-    return (data || [])
+    // Filter in JavaScript to avoid PostgREST parsing issues with joined columns
+    const filtered = (data || []).filter(warehouseItem => {
+      const name = (warehouseItem.item?.name || '').toLowerCase();
+      const sku = (warehouseItem.item?.sku || '').toLowerCase();
+      const barcode = (warehouseItem.item?.barcode || '').toLowerCase();
+      
+      if (isBarcodeScan) {
+        // Prioritize exact barcode match, fallback to name/SKU
+        return barcode === searchTerm || 
+               name.includes(searchTerm) || 
+               sku.includes(searchTerm);
+      } else {
+        // Search across all fields
+        return name.includes(searchTerm) || 
+               sku.includes(searchTerm) || 
+               barcode.includes(searchTerm);
+      }
+    });
+    
+    // Transform, sort, and limit
+    return filtered
       .map(warehouseItem => ({
         id: warehouseItem.item_id,
         name: warehouseItem.item?.name || '',
@@ -753,11 +763,12 @@ export const warehouseApi = {
         barcode: warehouseItem.item?.barcode,
         unit_cost: warehouseItem.item?.unit_cost || 0,
         sale_price: warehouseItem.sale_price || warehouseItem.item?.sale_price || 0,
-        on_hand: warehouseItem.on_hand, // Include warehouse stock level
+        on_hand: warehouseItem.on_hand,
         category: warehouseItem.item?.category,
         base_unit: warehouseItem.item?.base_unit
       }))
-      .sort((a, b) => (a.name || '').localeCompare(b.name || '')); // Sort alphabetically by name
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      .slice(0, limit);
   },
 
   // Search ALL inventory items with warehouse stock status (HYBRID APPROACH)
