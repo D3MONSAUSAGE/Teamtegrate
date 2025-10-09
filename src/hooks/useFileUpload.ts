@@ -87,11 +87,12 @@ export function useFileUpload({
     setUploads(prev => prev.filter(upload => upload.id !== id));
   }, []);
 
-  const uploadFile = useCallback(async (upload: FileUploadItem, roomId: string): Promise<FileUploadItem> => {
+  const uploadFile = useCallback(async (upload: FileUploadItem, bucketName: string): Promise<FileUploadItem> => {
     const { file } = upload;
     const fileExt = file.name.split('.').pop();
     const fileName = `${upload.id}.${fileExt}`;
-    const filePath = `chat-files/${roomId}/${fileName}`;
+    // Use simple path for product images, keep chat-files for documents
+    const filePath = bucketName === 'product-images' ? fileName : `chat-files/${bucketName}/${fileName}`;
 
     try {
       setUploads(prev => prev.map(u => 
@@ -101,7 +102,7 @@ export function useFileUpload({
       ));
 
       const { data, error } = await supabase.storage
-        .from('documents')
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -110,7 +111,7 @@ export function useFileUpload({
       if (error) throw error;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('documents')
+        .from(bucketName)
         .getPublicUrl(filePath);
 
       const completedUpload = {
@@ -138,7 +139,7 @@ export function useFileUpload({
     }
   }, []);
 
-  const uploadAll = useCallback(async (roomId: string): Promise<FileUploadItem[]> => {
+  const uploadAll = useCallback(async (bucketName: string): Promise<FileUploadItem[]> => {
     const pendingUploads = uploads.filter(u => u.status === 'pending');
     
     if (pendingUploads.length === 0) {
@@ -148,7 +149,7 @@ export function useFileUpload({
     setIsUploading(true);
     
     try {
-      const uploadPromises = pendingUploads.map(upload => uploadFile(upload, roomId));
+      const uploadPromises = pendingUploads.map(upload => uploadFile(upload, bucketName));
       const results = await Promise.allSettled(uploadPromises);
       
       const successful = results

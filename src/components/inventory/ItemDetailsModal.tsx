@@ -90,15 +90,19 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
 
         <div className="space-y-6">
           {/* Product Image */}
-          {item.image_url && (
-            <div className="relative w-full h-64 rounded-lg overflow-hidden border bg-muted">
+          <div className="relative w-full h-64 rounded-lg overflow-hidden border bg-muted">
+            {item.image_url ? (
               <img 
                 src={item.image_url} 
                 alt={item.name}
                 className="w-full h-full object-contain"
               />
-            </div>
-          )}
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted">
+                <Package className="h-32 w-32 text-muted-foreground/30" />
+              </div>
+            )}
+          </div>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

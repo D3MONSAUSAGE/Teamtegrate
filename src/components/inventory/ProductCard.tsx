@@ -75,8 +75,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Package className="h-16 w-16 text-muted-foreground/40" />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted">
+              <Package className="h-24 w-24 text-muted-foreground/30" />
             </div>
           )}
           

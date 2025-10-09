@@ -20,25 +20,25 @@ export const ProductImage: React.FC<ProductImageProps> = ({
 
   const sizeClasses = {
     sm: 'w-8 h-8',
-    md: 'w-12 h-12', 
-    lg: 'w-24 h-24'
+    md: 'w-16 h-16', 
+    lg: 'w-32 h-32'
   };
 
   const iconSizes = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-8 w-8'
+    sm: 'h-4 w-4',
+    md: 'h-8 w-8',
+    lg: 'h-16 w-16'
   };
 
   if (!src || imageError) {
     return (
       <div className={cn(
-        'flex items-center justify-center bg-muted rounded-lg border border-border',
+        'flex items-center justify-center bg-gradient-to-br from-muted/80 to-muted rounded-lg border border-border',
         sizeClasses[size],
         className
       )}>
         <Package className={cn(
-          'text-muted-foreground',
+          'text-muted-foreground/50',
           iconSizes[size]
         )} />
       </div>
