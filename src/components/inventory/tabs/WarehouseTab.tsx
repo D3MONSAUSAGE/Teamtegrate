@@ -7,6 +7,7 @@ import { WarehouseSettingsTab } from '../warehouse/WarehouseSettingsTab';
 import { ProcessingTab } from '../warehouse/ProcessingTab';
 import { OutgoingTab } from '../warehouse/OutgoingTab';
 import { ReportsTab } from '../warehouse/ReportsTab';
+import { WarehouseInvoicesTab } from '../warehouse/tabs/WarehouseInvoicesTab';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -173,6 +174,7 @@ export const WarehouseTab: React.FC = () => {
     { id: 'processing', label: 'Processing' },
     { id: 'outgoing', label: 'Outgoing' },
     { id: 'reports', label: 'Reports' },
+    { id: 'invoices', label: 'Invoices' },
     { id: 'settings', label: 'Settings' }
   ];
 
@@ -191,6 +193,8 @@ export const WarehouseTab: React.FC = () => {
         />;
       case 'reports':
         return <ReportsTab defaultTeamId={warehouse?.team_id} warehouseId={warehouse.id} />;
+      case 'invoices':
+        return <WarehouseInvoicesTab warehouseId={warehouse.id} />;
       case 'settings':
         return <WarehouseSettingsTab 
           warehouseId={warehouse.id} 

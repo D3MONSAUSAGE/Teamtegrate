@@ -181,5 +181,25 @@ export const invoiceService = {
       console.error('Error fetching sales invoices:', error);
       return [];
     }
+  },
+
+  async getWarehouseSalesInvoices(warehouseId: string): Promise<CreatedInvoice[]> {
+    try {
+      const { data, error } = await supabase
+        .from('created_invoices')
+        .select(`
+          *,
+          client:invoice_clients(*),
+          line_items:invoice_line_items(*)
+        `)
+        .eq('warehouse_id', warehouseId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as CreatedInvoice[];
+    } catch (error) {
+      console.error('Error fetching warehouse sales invoices:', error);
+      return [];
+    }
   }
 };
