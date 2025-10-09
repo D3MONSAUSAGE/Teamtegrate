@@ -104,20 +104,21 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
 
   // Search for items when query changes
   useEffect(() => {
-    if (debouncedSearchQuery.trim() && user?.organizationId) {
+    if (debouncedSearchQuery.trim() && warehouseId) {
       performSearch();
     } else {
       setSearchResults([]);
       setShowResults(false);
     }
-  }, [debouncedSearchQuery, user?.organizationId]);
+  }, [debouncedSearchQuery, warehouseId]);
 
   const performSearch = async () => {
-    if (!user?.organizationId || !debouncedSearchQuery.trim()) return;
+    if (!warehouseId || !debouncedSearchQuery.trim()) return;
     
     try {
       setIsLoading(true);
-      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId || '', debouncedSearchQuery);
+      // Use warehouse-specific search to ONLY show items available in THIS warehouse
+      const results = await warehouseApi.searchWarehouseItems(warehouseId, debouncedSearchQuery);
       setSearchResults(results);
       setShowResults(true);
     } catch (error) {
@@ -130,17 +131,23 @@ export const SimpleCheckout: React.FC<SimpleCheckoutProps> = ({
 
   // Handle barcode scan
   const handleBarcodeScanned = async (barcode: string) => {
+    if (!warehouseId) {
+      toast.error('Warehouse not selected');
+      return;
+    }
+
     try {
-      const results = await warehouseApi.searchAllInventoryItemsWithStock(warehouseId || '', barcode);
+      // Search ONLY in THIS warehouse for items with stock available
+      const results = await warehouseApi.searchWarehouseItems(warehouseId, barcode);
       
       if (results.length === 0) {
-        toast.error(`No item found with barcode: ${barcode}`);
+        toast.error(`No item found with barcode "${barcode}" in this warehouse`);
         return;
       }
       
       const item = results[0];
       handleItemSelect(item);
-      toast.success(`Scanned: ${item.name}`);
+      toast.success(`Scanned: ${item.name} (Stock: ${item.on_hand})`);
       
       if (navigator.vibrate) {
         navigator.vibrate(50);
