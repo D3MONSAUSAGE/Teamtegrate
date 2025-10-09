@@ -5,6 +5,7 @@ import { useAuthOperations } from './hooks/useAuthOperations';
 import { useAuthState } from './hooks/useAuthState';
 import { useRoleAccess } from './hooks/useRoleAccess';
 import { syncProfileData } from './authOperations';
+import { UserRole } from '@/types';
 
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,15 +62,9 @@ const AuthProviderInner: React.FC<AuthProviderProps> = ({ children }) => {
         return { error };
       }
     },
-    signup: async (email: string, password: string, name: string, organizationType?: string, organizationName?: string, inviteCode?: string) => {
+    signup: async (email: string, password: string, name: string, role: UserRole, organizationData?: { type: 'create' | 'join'; organizationName?: string; inviteCode?: string }) => {
       try {
-        const organizationData = organizationType === 'create' 
-          ? { type: 'create' as const, organizationName }
-          : organizationType === 'join'
-          ? { type: 'join' as const, inviteCode }
-          : undefined;
-        
-        await signup(email, password, name, 'user', organizationData);
+        await signup(email, password, name, role, organizationData);
         return { error: null };
       } catch (error) {
         return { error };

@@ -1,6 +1,6 @@
 
 import { Session } from '@supabase/supabase-js';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 
 export interface AuthContextType {
   user: User | null;
@@ -9,7 +9,7 @@ export interface AuthContextType {
   profileLoading: boolean;
   isReady: boolean;
   login: (email: string, password: string) => Promise<{ error: any }>;
-  signup: (email: string, password: string, name: string, organizationType?: string, organizationName?: string, inviteCode?: string) => Promise<{ error: any }>;
+  signup: (email: string, password: string, name: string, role: UserRole, organizationData?: { type: 'create' | 'join'; organizationName?: string; inviteCode?: string }) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   updateUserProfile: (updates: Partial<User>) => Promise<void>;

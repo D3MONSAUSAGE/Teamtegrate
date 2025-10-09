@@ -83,9 +83,12 @@ export const useSignupForm = () => {
         formData.email.trim(),
         formData.password,
         formData.name.trim(),
-        signupType,
-        signupType === 'create' ? formData.organizationName : undefined,
-        signupType === 'join' ? formData.inviteCode : undefined
+        'user',  // Default role - will be overridden by invite code if joining
+        {
+          type: signupType,
+          organizationName: signupType === 'create' ? formData.organizationName : undefined,
+          inviteCode: signupType === 'join' ? formData.inviteCode : undefined
+        }
       );
 
       if (error) {
