@@ -65,7 +65,19 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
           </div>
 
           <div className="pt-4 border-t space-y-2">
-            <div className="flex items-center justify-between">
+            {recipe.ingredient_cost !== undefined && recipe.other_costs_total !== undefined && (
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Ingredients:</span>
+                  <span>${recipe.ingredient_cost.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Other Costs:</span>
+                  <span>${recipe.other_costs_total.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2">
               <span className="text-sm font-medium">Total Cost:</span>
               <span className="text-lg font-bold text-primary">
                 ${recipe.total_cost.toFixed(2)}
@@ -79,11 +91,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
             </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="grid grid-cols-2 gap-2 pt-2">
             <Button
               variant="outline"
               size="sm"
-              className="flex-1"
               onClick={() => setDetailsOpen(true)}
             >
               <Eye className="mr-2 h-4 w-4" />
@@ -95,7 +106,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
               size="sm"
               onClick={() => setEditOpen(true)}
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
             </Button>
             <Button
               variant="outline"
@@ -103,15 +115,18 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
               onClick={handleDuplicate}
               disabled={isDuplicating}
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="mr-2 h-4 w-4" />
+              Duplicate
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setDeleteDialogOpen(true)}
               disabled={isDeleting}
+              className="col-span-2"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
             </Button>
           </div>
         </CardContent>

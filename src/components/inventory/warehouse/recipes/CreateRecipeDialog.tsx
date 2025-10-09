@@ -12,6 +12,8 @@ import { AddIngredientDialog } from './AddIngredientDialog';
 import { IngredientsTable } from './IngredientsTable';
 import { AddOtherCostDialog } from './costs/AddOtherCostDialog';
 import { OtherCostsTable } from './costs/OtherCostsTable';
+import { useWarehouseSelection } from '@/contexts/inventory';
+import { toast } from 'sonner';
 
 interface CreateRecipeDialogProps {
   open: boolean;
@@ -32,11 +34,17 @@ export const CreateRecipeDialog: React.FC<CreateRecipeDialogProps> = ({
   const [tempRecipeId, setTempRecipeId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('info');
 
+  const { selectedWarehouse } = useWarehouseSelection();
   const { mutate: createRecipe, isPending } = useCreateRecipe();
   const { data: ingredients } = useRecipeIngredients(tempRecipeId || '');
 
   const handleCreate = async () => {
     if (!name || !outputQuantity || !outputUnit) return;
+
+    if (!selectedWarehouse?.team_id) {
+      toast.error('Please select a warehouse first');
+      return;
+    }
 
     createRecipe(
       {
@@ -46,6 +54,7 @@ export const CreateRecipeDialog: React.FC<CreateRecipeDialogProps> = ({
         output_unit: outputUnit,
         notes: notes || undefined,
         is_active: true,
+        team_id: selectedWarehouse.team_id,
       },
       {
         onSuccess: (newRecipe) => {

@@ -19,8 +19,11 @@ export interface RecipeIngredientWithCost {
 
 export interface RecipeWithCosts extends ProductionRecipe {
   ingredients: RecipeIngredientWithCost[];
+  ingredient_cost: number;
+  other_costs_total: number;
   total_cost: number;
   cost_per_unit: number;
+  team_id?: string;
 }
 
 const RECIPES_QUERY_KEY = ['production-recipes'];
@@ -110,32 +113,51 @@ async function calculateIngredientCost(ingredient: any): Promise<RecipeIngredien
 }
 
 /**
- * Calculate costs for a recipe with all its ingredients
+ * Calculate costs for a recipe with all its ingredients and other costs
  */
 async function calculateRecipeCosts(recipe: RecipeWithIngredients): Promise<RecipeWithCosts> {
   const ingredientsWithCosts = await Promise.all(
     recipe.ingredients.map(calculateIngredientCost)
   );
 
-  const totalCost = ingredientsWithCosts.reduce((sum, ing) => sum + ing.total_cost, 0);
+  const ingredientTotal = ingredientsWithCosts.reduce((sum, ing) => sum + ing.total_cost, 0);
+
+  // Fetch and sum other costs
+  const { data: otherCosts } = await supabase
+    .from('recipe_other_costs')
+    .select('cost_amount')
+    .eq('recipe_id', recipe.id);
+  
+  const otherCostsTotal = otherCosts?.reduce((sum, cost) => sum + cost.cost_amount, 0) || 0;
+
+  // Calculate totals
+  const totalCost = ingredientTotal + otherCostsTotal;
   const costPerUnit = recipe.output_quantity > 0 ? totalCost / recipe.output_quantity : 0;
 
   return {
     ...recipe,
     ingredients: ingredientsWithCosts,
+    ingredient_cost: ingredientTotal,
+    other_costs_total: otherCostsTotal,
     total_cost: totalCost,
     cost_per_unit: costPerUnit,
   };
 }
 
 /**
- * Hook to fetch all recipes with calculated costs
+ * Hook to fetch all recipes with calculated costs, optionally filtered by team
  */
-export function useRecipes() {
+export function useRecipes(teamId?: string) {
   return useQuery({
-    queryKey: RECIPES_QUERY_KEY,
+    queryKey: [...RECIPES_QUERY_KEY, teamId],
     queryFn: async () => {
-      const recipes = await productionRecipesApi.getAll();
+      let recipes = await productionRecipesApi.getAll();
+      
+      // Filter by team if provided
+      if (teamId) {
+        recipes = recipes.filter(r => r.team_id === teamId);
+      }
+      
       const recipesWithIngredients = await Promise.all(
         recipes.map(async (recipe) => {
           const full = await productionRecipesApi.getById(recipe.id);

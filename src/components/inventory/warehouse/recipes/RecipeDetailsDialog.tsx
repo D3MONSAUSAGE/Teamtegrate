@@ -115,7 +115,20 @@ export const RecipeDetailsDialog: React.FC<RecipeDetailsDialogProps> = ({
           </div>
 
           {/* Cost Summary */}
-          <div className="border-t pt-4 space-y-2">
+          <div className="border-t pt-4 space-y-3">
+            {recipe.ingredient_cost !== undefined && recipe.other_costs_total !== undefined && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Ingredient Costs:</span>
+                  <span className="font-medium">${recipe.ingredient_cost.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Other Costs (Labor, Utilities, etc.):</span>
+                  <span className="font-medium">${recipe.other_costs_total.toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-2" />
+              </div>
+            )}
             <div className="flex justify-between text-lg">
               <span className="font-semibold">Total Recipe Cost:</span>
               <span className="font-bold text-primary">

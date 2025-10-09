@@ -3,8 +3,9 @@ import autoTable from 'jspdf-autotable';
 import { RecipeWithCosts } from '@/hooks/useRecipes';
 import { RecipeIngredient } from '@/contexts/inventory/api/productionRecipes';
 import { RecipeOtherCostWithCategory } from '@/contexts/inventory/api/recipeOtherCosts';
+import { supabase } from '@/integrations/supabase/client';
 
-export const exportRecipeToPDF = (
+export const exportRecipeToPDF = async (
   recipe: RecipeWithCosts,
   ingredients: RecipeIngredient[],
   otherCosts: RecipeOtherCostWithCategory[]
@@ -42,17 +43,30 @@ export const exportRecipeToPDF = (
   doc.text('Ingredients', 20, yPosition);
   yPosition += 5;
 
-  const ingredientsData = ingredients.map((ing) => {
-    const unitCost = ing.manual_unit_cost || ing.cost_per_base_unit || 0;
-    const total = ing.quantity_needed * unitCost;
-    return [
-      ing.item_id, // Would be better to have item name
-      `${ing.quantity_needed} ${ing.unit}`,
-      `$${unitCost.toFixed(4)}`,
-      `$${total.toFixed(2)}`,
-      ing.notes || '',
-    ];
-  });
+  const ingredientsData = await Promise.all(
+    ingredients.map(async (ing) => {
+      // Fetch item name and SKU
+      const { data: item } = await supabase
+        .from('inventory_items')
+        .select('name, sku')
+        .eq('id', ing.item_id)
+        .single();
+
+      const itemDisplay = item 
+        ? `${item.sku ? `[${item.sku}] ` : ''}${item.name}` 
+        : ing.item_id;
+
+      const unitCost = ing.manual_unit_cost || ing.cost_per_base_unit || 0;
+      const total = ing.quantity_needed * unitCost;
+      return [
+        itemDisplay,
+        `${ing.quantity_needed} ${ing.unit}`,
+        `$${unitCost.toFixed(4)}`,
+        `$${total.toFixed(2)}`,
+        ing.notes || '',
+      ];
+    })
+  );
 
   const ingredientTotal = ingredients.reduce((sum, ing) => {
     const unitCost = ing.manual_unit_cost || ing.cost_per_base_unit || 0;
@@ -61,7 +75,7 @@ export const exportRecipeToPDF = (
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Item', 'Quantity', 'Unit Cost', 'Total', 'Notes']],
+    head: [['Item [SKU]', 'Quantity', 'Unit Cost', 'Total', 'Notes']],
     body: ingredientsData,
     theme: 'grid',
     headStyles: { fillColor: [59, 130, 246] },

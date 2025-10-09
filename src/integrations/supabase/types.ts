@@ -6490,8 +6490,9 @@ export type Database = {
           organization_id: string
           output_quantity: number
           output_unit: string
+          team_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -6503,8 +6504,9 @@ export type Database = {
           organization_id: string
           output_quantity: number
           output_unit: string
+          team_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -6516,8 +6518,9 @@ export type Database = {
           organization_id?: string
           output_quantity?: number
           output_unit?: string
+          team_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -6526,6 +6529,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_recipes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_recipes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_recipes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
           },
         ]
       }

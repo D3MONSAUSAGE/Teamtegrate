@@ -5,10 +5,12 @@ import { Plus, ChefHat, DollarSign, Package } from 'lucide-react';
 import { useRecipes } from '@/hooks/useRecipes';
 import { RecipeCard } from './RecipeCard';
 import { CreateRecipeDialog } from './CreateRecipeDialog';
+import { useWarehouseSelection } from '@/contexts/inventory';
 
 export const RecipeList: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const { data: recipes, isLoading } = useRecipes();
+  const { selectedWarehouse } = useWarehouseSelection();
+  const { data: recipes, isLoading } = useRecipes(selectedWarehouse?.team_id);
 
   if (isLoading) {
     return (

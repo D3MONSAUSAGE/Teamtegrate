@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ProductionRecipe {
   id: string;
   organization_id: string;
-  user_id: string;
+  user_id?: string;
+  team_id?: string;
   name: string;
   description?: string;
   output_quantity: number;
@@ -80,7 +81,9 @@ export const productionRecipesApi = {
   /**
    * Create a new recipe
    */
-  async create(recipe: Omit<ProductionRecipe, 'id' | 'created_at' | 'updated_at' | 'organization_id' | 'user_id'>): Promise<ProductionRecipe> {
+  async create(
+    recipe: Omit<ProductionRecipe, 'id' | 'created_at' | 'updated_at' | 'organization_id'> & { team_id: string }
+  ): Promise<ProductionRecipe> {
     const { data: user, error: userError } = await supabase.auth.getUser();
     if (userError || !user.user) throw new Error('Not authenticated');
 
@@ -148,6 +151,7 @@ export const productionRecipesApi = {
       output_unit: original.output_unit,
       notes: original.notes,
       is_active: true,
+      team_id: original.team_id!,
     });
 
     // Copy ingredients
@@ -165,6 +169,27 @@ export const productionRecipesApi = {
       const { error } = await supabase
         .from('recipe_ingredients')
         .insert(newIngredients);
+
+      if (error) throw error;
+    }
+
+    // Copy other costs
+    const { data: otherCosts } = await supabase
+      .from('recipe_other_costs')
+      .select('*')
+      .eq('recipe_id', id);
+
+    if (otherCosts && otherCosts.length > 0) {
+      const newOtherCosts = otherCosts.map((cost) => ({
+        recipe_id: newRecipe.id,
+        category_id: cost.category_id,
+        cost_amount: cost.cost_amount,
+        notes: cost.notes,
+      }));
+
+      const { error } = await supabase
+        .from('recipe_other_costs')
+        .insert(newOtherCosts);
 
       if (error) throw error;
     }

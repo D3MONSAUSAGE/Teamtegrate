@@ -21,9 +21,9 @@ export const RecipeExportButton: React.FC<RecipeExportButtonProps> = ({
   const { data: ingredients = [] } = useRecipeIngredients(recipe.id);
   const { data: otherCosts = [] } = useRecipeOtherCosts(recipe.id);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      exportRecipeToPDF(recipe, ingredients, otherCosts);
+      await exportRecipeToPDF(recipe, ingredients, otherCosts);
       toast.success('Recipe exported to PDF');
     } catch (error) {
       console.error('Export error:', error);
