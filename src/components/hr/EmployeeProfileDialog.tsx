@@ -134,7 +134,7 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
           employment_status: formData.employment_status,
           salary_type: formData.salary_type,
           hr_notes: formData.hr_notes,
-          manager_id: formData.manager_id || null,
+          manager_id: formData.manager_id === 'none' || !formData.manager_id ? null : formData.manager_id,
         })
         .eq('id', userId);
 
@@ -267,14 +267,14 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                   <div className="space-y-2">
                     <Label htmlFor="manager">Manager</Label>
                     <Select
-                      value={formData.manager_id}
-                      onValueChange={(value) => setFormData({ ...formData, manager_id: value })}
+                      value={formData.manager_id || 'none'}
+                      onValueChange={(value) => setFormData({ ...formData, manager_id: value === 'none' ? '' : value })}
                     >
                       <SelectTrigger id="manager">
                         <SelectValue placeholder="Select manager (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No Manager</SelectItem>
+                        <SelectItem value="none">No Manager</SelectItem>
                         {potentialManagers
                           .filter(m => m.id !== userId)
                           .map((manager) => (
