@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useRecipeIngredients, useDeleteIngredient } from '@/hooks/useRecipeIngredients';
 import { useInventory } from '@/contexts/inventory';
+import { parsePackagingInfo, calculateDisplayQuantity, formatQuantity } from '@/utils/recipeUnitHelpers';
 
 interface IngredientsTableProps {
   recipeId: string;
@@ -68,7 +69,25 @@ export const IngredientsTable: React.FC<IngredientsTableProps> = ({ recipeId }) 
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {ingredient.quantity_needed} {ingredient.unit}
+                    {(() => {
+                      const packaging = parsePackagingInfo(ingredient.packaging_info);
+                      const displayQty = calculateDisplayQuantity(
+                        ingredient.quantity_needed,
+                        ingredient.conversion_factor_snapshot,
+                        packaging
+                      );
+                      
+                      return (
+                        <div className="flex flex-col items-end">
+                          <span className="font-medium">
+                            {formatQuantity(displayQty.quantity)} {displayQty.unit}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({ingredient.quantity_needed} {ingredient.unit})
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     {ingredient.packaging_info ? (

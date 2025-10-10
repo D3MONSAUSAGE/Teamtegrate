@@ -4,6 +4,7 @@ import { RecipeWithCosts } from '@/hooks/useRecipes';
 import { RecipeIngredient } from '@/contexts/inventory/api/productionRecipes';
 import { RecipeOtherCostWithCategory } from '@/contexts/inventory/api/recipeOtherCosts';
 import { supabase } from '@/integrations/supabase/client';
+import { parsePackagingInfo, calculateDisplayQuantity, formatQuantity } from './recipeUnitHelpers';
 
 export const exportRecipeToPDF = async (
   recipe: RecipeWithCosts,
@@ -52,15 +53,24 @@ export const exportRecipeToPDF = async (
         .eq('id', ing.item_id)
         .single();
 
-      const itemDisplay = item 
-        ? `${item.sku ? `[${item.sku}] ` : ''}${item.name}` 
-        : ing.item_id;
+      const itemName = item?.name || 'Unknown Item';
+      const itemSKU = item?.sku || '-';
+      
+      // Calculate display quantity in purchase units
+      const packaging = parsePackagingInfo(ing.packaging_info);
+      const displayQty = calculateDisplayQuantity(
+        ing.quantity_needed,
+        ing.conversion_factor_snapshot,
+        packaging
+      );
 
       const unitCost = ing.manual_unit_cost || ing.cost_per_base_unit || 0;
       const total = ing.quantity_needed * unitCost;
+      
       return [
-        itemDisplay,
-        `${ing.quantity_needed} ${ing.unit}`,
+        itemName,
+        itemSKU,
+        `${formatQuantity(displayQty.quantity)} ${displayQty.unit}`,
         `$${unitCost.toFixed(4)}`,
         `$${total.toFixed(2)}`,
         ing.notes || '',
@@ -75,12 +85,13 @@ export const exportRecipeToPDF = async (
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Item [SKU]', 'Quantity', 'Unit Cost', 'Total', 'Notes']],
+    head: [['Item', 'SKU', 'Quantity', 'Unit Cost', 'Total', 'Notes']],
     body: ingredientsData,
     theme: 'grid',
     headStyles: { fillColor: [59, 130, 246] },
     foot: [[
       'Ingredient Total',
+      '',
       '',
       '',
       `$${ingredientTotal.toFixed(2)}`,
