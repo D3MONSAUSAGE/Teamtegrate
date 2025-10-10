@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useRecipeIngredients, useDeleteIngredient } from '@/hooks/useRecipeIngredients';
 import { useInventory } from '@/contexts/inventory';
-import { parsePackagingInfo, calculateDisplayQuantity, formatQuantity } from '@/utils/recipeUnitHelpers';
+import { getPurchaseUnitFromPackaging, formatQuantity } from '@/utils/recipeUnitHelpers';
 
 interface IngredientsTableProps {
   recipeId: string;
@@ -68,27 +68,27 @@ export const IngredientsTable: React.FC<IngredientsTableProps> = ({ recipeId }) 
                       </p>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {(() => {
-                      const packaging = parsePackagingInfo(ingredient.packaging_info);
-                      const displayQty = calculateDisplayQuantity(
-                        ingredient.quantity_needed,
-                        ingredient.conversion_factor_snapshot,
-                        packaging
-                      );
-                      
-                      return (
-                        <div className="flex flex-col items-end">
-                          <span className="font-medium">
-                            {formatQuantity(displayQty.quantity)} {displayQty.unit}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ({ingredient.quantity_needed} {ingredient.unit})
-                          </span>
-                        </div>
-                      );
-                    })()}
-                  </TableCell>
+              <TableCell className="text-right">
+                {(() => {
+                  // Try to get purchase unit from packaging info
+                  const purchaseUnit = getPurchaseUnitFromPackaging(ingredient.packaging_info);
+                  const displayUnit = purchaseUnit || ingredient.unit;
+                  
+                  return (
+                    <div className="flex flex-col items-end">
+                      <span className="font-medium">
+                        {formatQuantity(ingredient.quantity_needed)} {displayUnit}
+                      </span>
+                      {/* Show base unit in tooltip only if different */}
+                      {ingredient.base_unit && ingredient.base_unit !== displayUnit && (
+                        <span className="text-xs text-muted-foreground">
+                          (base: {ingredient.base_unit})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </TableCell>
                   <TableCell>
                     {ingredient.packaging_info ? (
                       <Tooltip>

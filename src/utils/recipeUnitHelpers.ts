@@ -40,6 +40,16 @@ export function parsePackagingInfo(packagingInfo?: string | null): ParsedPackagi
 }
 
 /**
+ * Extract just the purchase unit name from packaging info
+ * E.g., "Libras @ $62.18" -> "Libras"
+ * E.g., "16oz @ $12.60" -> "oz"
+ */
+export function getPurchaseUnitFromPackaging(packagingInfo?: string | null): string | null {
+  const parsed = parsePackagingInfo(packagingInfo);
+  return parsed?.unit || null;
+}
+
+/**
  * Calculate the display quantity in purchase units
  */
 export function calculateDisplayQuantity(

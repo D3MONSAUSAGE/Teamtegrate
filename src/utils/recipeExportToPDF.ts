@@ -4,7 +4,7 @@ import { RecipeWithCosts } from '@/hooks/useRecipes';
 import { RecipeIngredient } from '@/contexts/inventory/api/productionRecipes';
 import { RecipeOtherCostWithCategory } from '@/contexts/inventory/api/recipeOtherCosts';
 import { supabase } from '@/integrations/supabase/client';
-import { parsePackagingInfo, calculateDisplayQuantity, formatQuantity } from './recipeUnitHelpers';
+import { getPurchaseUnitFromPackaging, formatQuantity } from './recipeUnitHelpers';
 
 export const exportRecipeToPDF = async (
   recipe: RecipeWithCosts,
@@ -56,21 +56,17 @@ export const exportRecipeToPDF = async (
       const itemName = item?.name || 'Unknown Item';
       const itemSKU = item?.sku || '-';
       
-      // Calculate display quantity in purchase units
-      const packaging = parsePackagingInfo(ing.packaging_info);
-      const displayQty = calculateDisplayQuantity(
-        ing.quantity_needed,
-        ing.conversion_factor_snapshot,
-        packaging
-      );
-
       const unitCost = ing.manual_unit_cost || ing.cost_per_base_unit || 0;
       const total = ing.quantity_needed * unitCost;
+      
+      // Get purchase unit from packaging info
+      const purchaseUnit = getPurchaseUnitFromPackaging(ing.packaging_info);
+      const displayUnit = purchaseUnit || ing.unit;
       
       return [
         itemName,
         itemSKU,
-        `${formatQuantity(displayQty.quantity)} ${displayQty.unit}`,
+        `${formatQuantity(ing.quantity_needed)} ${displayUnit}`,
         `$${unitCost.toFixed(4)}`,
         `$${total.toFixed(2)}`,
         ing.notes || '',

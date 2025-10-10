@@ -53,8 +53,8 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
         const info = await getItemPackagingInfo(itemId);
         setPackagingInfo(info);
         
-        // Auto-fill unit with base unit from inventory (strict mode)
-        setUnit(info.baseUnit || '');
+        // Auto-fill unit with purchase unit from inventory
+        setUnit(info.purchaseUnit || info.baseUnit || '');
         
         if (info.costPerBaseUnit > 0) {
           setNoPriceAvailable(false);
@@ -160,7 +160,7 @@ export const AddIngredientDialog: React.FC<AddIngredientDialogProps> = ({
             />
             {packagingInfo && (
               <p className="text-xs text-muted-foreground">
-                ✓ Unit locked to match inventory base unit
+                ✓ Using purchase unit from inventory
               </p>
             )}
           </div>
