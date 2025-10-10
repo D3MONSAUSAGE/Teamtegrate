@@ -10,12 +10,18 @@ import { cn } from '@/lib/utils';
 interface RecruitmentPipelineViewProps {
   positionId?: string;
   onCandidateClick?: (candidateId: string) => void;
+  statusFilter?: 'active' | 'rejected' | 'hired';
 }
 
-export function RecruitmentPipelineView({ positionId, onCandidateClick }: RecruitmentPipelineViewProps) {
+export function RecruitmentPipelineView({ 
+  positionId, 
+  onCandidateClick, 
+  statusFilter = 'active' 
+}: RecruitmentPipelineViewProps) {
   const { stages, isLoading: stagesLoading } = useRecruitmentPipeline();
   const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates({
     positionId,
+    status: statusFilter,
   });
 
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);

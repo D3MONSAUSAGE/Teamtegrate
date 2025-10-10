@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useRecruitmentPipeline } from '@/hooks/recruitment/useRecruitmentPipeline';
 import { useRecruitmentCandidates } from '@/hooks/recruitment/useRecruitmentCandidates';
 import { useRecruitmentPositions } from '@/hooks/recruitment/useRecruitmentPositions';
@@ -7,6 +7,8 @@ import { CreatePositionDialog } from '@/components/recruitment/CreatePositionDia
 import { CreateCandidateDialog } from '@/components/recruitment/CreateCandidateDialog';
 import { RecruitmentPipelineView } from '@/components/recruitment/RecruitmentPipelineView';
 import { PositionsList } from '@/components/recruitment/PositionsList';
+import { RejectedCandidatesList } from '@/components/recruitment/RejectedCandidatesList';
+import { HiredCandidatesList } from '@/components/recruitment/HiredCandidatesList';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Briefcase, Users, Calendar, CheckCircle } from 'lucide-react';
@@ -15,10 +17,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export const RecruitmentDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedPosition, setSelectedPosition] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState('pipeline');
   const { stages, isLoading: stagesLoading, initializeDefaultStages, isInitializing } = useRecruitmentPipeline();
-  const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates({ positionId: selectedPosition });
+  const { candidates, isLoading: candidatesLoading } = useRecruitmentCandidates({ positionId: selectedPosition, status: 'active' });
+  const { candidates: rejectedCandidates } = useRecruitmentCandidates({ status: 'rejected' });
+  const { candidates: hiredCandidates } = useRecruitmentCandidates({ status: 'hired' });
   const { positions, isLoading: positionsLoading } = useRecruitmentPositions();
 
   // Initialize pipeline stages if none exist
@@ -31,11 +36,17 @@ export const RecruitmentDashboard = () => {
   const isLoading = stagesLoading || candidatesLoading || positionsLoading;
 
   const openPositions = positions.filter(p => p.status === 'open');
-  const activeCandidates = candidates.filter(c => c.status === 'active');
+  const activeCandidates = candidates; // Already filtered to active only
   const interviewsThisWeek = 0; // TODO: Calculate from interviews table
   const pendingApprovals = candidates.filter(c => 
     c.current_stage?.stage_name === 'Manager Approval'
   );
+
+  const handleCandidateClick = (candidateId: string) => {
+    navigate(`/dashboard/recruitment/candidate/${candidateId}`, {
+      state: { from: location.pathname }
+    });
+  };
 
   if (isLoading || isInitializing) {
     return (
@@ -136,21 +147,36 @@ export const RecruitmentDashboard = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="rejected">
+            Rejected ({rejectedCandidates.length})
+          </TabsTrigger>
+          <TabsTrigger value="hired">
+            Hired ({hiredCandidates.length})
+          </TabsTrigger>
           <TabsTrigger value="positions">Positions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pipeline" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Pipeline Overview</CardTitle>
+              <CardTitle>Active Pipeline</CardTitle>
             </CardHeader>
             <CardContent>
               <RecruitmentPipelineView 
                 positionId={selectedPosition}
-                onCandidateClick={(candidateId) => navigate(`/dashboard/recruitment/candidate/${candidateId}`)}
+                onCandidateClick={handleCandidateClick}
+                statusFilter="active"
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="rejected" className="space-y-4">
+          <RejectedCandidatesList onCandidateClick={handleCandidateClick} />
+        </TabsContent>
+
+        <TabsContent value="hired" className="space-y-4">
+          <HiredCandidatesList onCandidateClick={handleCandidateClick} />
         </TabsContent>
 
         <TabsContent value="positions" className="space-y-4">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Mail, Phone, CheckCircle, XCircle, MoveRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,7 +24,9 @@ interface CandidateDetailHeaderProps {
 
 export function CandidateDetailHeader({ candidate }: CandidateDetailHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+  const fromPath = location.state?.from;
   const { stages } = useRecruitmentPipeline();
   const [isMoving, setIsMoving] = useState(false);
 
@@ -102,7 +104,13 @@ export function CandidateDetailHeader({ candidate }: CandidateDetailHeaderProps)
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/dashboard/recruitment')}
+          onClick={() => {
+            if (fromPath) {
+              navigate(fromPath);
+            } else {
+              navigate('/dashboard/recruitment');
+            }
+          }}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
