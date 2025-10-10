@@ -11647,6 +11647,7 @@ export type Database = {
           email: string
           emergency_contact_needed: boolean | null
           employee_id: string | null
+          employment_status: string | null
           expertise_tags: string[] | null
           google_calendar_sync_enabled: boolean | null
           google_calendar_token: string | null
@@ -11656,6 +11657,7 @@ export type Database = {
           google_tasks_token: string | null
           hire_date: string | null
           hourly_rate: number | null
+          hr_notes: string | null
           id: string
           job_title: string | null
           location: string | null
@@ -11666,6 +11668,7 @@ export type Database = {
           preferred_name: string | null
           push_token: string | null
           role: string
+          salary_type: string | null
           timezone: string | null
           workload_preference: string | null
         }
@@ -11679,6 +11682,7 @@ export type Database = {
           email: string
           emergency_contact_needed?: boolean | null
           employee_id?: string | null
+          employment_status?: string | null
           expertise_tags?: string[] | null
           google_calendar_sync_enabled?: boolean | null
           google_calendar_token?: string | null
@@ -11688,6 +11692,7 @@ export type Database = {
           google_tasks_token?: string | null
           hire_date?: string | null
           hourly_rate?: number | null
+          hr_notes?: string | null
           id: string
           job_title?: string | null
           location?: string | null
@@ -11698,6 +11703,7 @@ export type Database = {
           preferred_name?: string | null
           push_token?: string | null
           role: string
+          salary_type?: string | null
           timezone?: string | null
           workload_preference?: string | null
         }
@@ -11711,6 +11717,7 @@ export type Database = {
           email?: string
           emergency_contact_needed?: boolean | null
           employee_id?: string | null
+          employment_status?: string | null
           expertise_tags?: string[] | null
           google_calendar_sync_enabled?: boolean | null
           google_calendar_token?: string | null
@@ -11720,6 +11727,7 @@ export type Database = {
           google_tasks_token?: string | null
           hire_date?: string | null
           hourly_rate?: number | null
+          hr_notes?: string | null
           id?: string
           job_title?: string | null
           location?: string | null
@@ -11730,6 +11738,7 @@ export type Database = {
           preferred_name?: string | null
           push_token?: string | null
           role?: string
+          salary_type?: string | null
           timezone?: string | null
           workload_preference?: string | null
         }
