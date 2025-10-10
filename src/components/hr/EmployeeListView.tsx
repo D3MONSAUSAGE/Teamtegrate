@@ -4,6 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -15,6 +22,11 @@ import { Search, Edit, DollarSign } from 'lucide-react';
 import { User } from '@/types';
 import { format } from 'date-fns';
 import UserJobRolesCell from '@/components/organization/user-management/UserJobRolesCell';
+import UserTeamsCell from '@/components/hr/UserTeamsCell';
+import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EmployeeListViewProps {
   employees: User[];
@@ -27,24 +39,57 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
   isLoading,
   onEditEmployee,
 }) => {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [teamFilter, setTeamFilter] = useState<string>('all');
+
+  const { teams } = useTeamsByOrganization(user?.organizationId);
+
+  // Fetch team memberships for filtering
+  const { data: teamMemberships = [] } = useQuery({
+    queryKey: ['team-memberships-for-filter', user?.organizationId],
+    queryFn: async () => {
+      if (!user?.organizationId) return [];
+      const { data, error } = await supabase
+        .from('team_memberships')
+        .select('user_id, team_id');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.organizationId,
+  });
+
+  // Map employee IDs to their team IDs
+  const employeeTeamMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    teamMemberships.forEach((membership) => {
+      if (!map[membership.user_id]) {
+        map[membership.user_id] = [];
+      }
+      map[membership.user_id].push(membership.team_id);
+    });
+    return map;
+  }, [teamMemberships]);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       const matchesSearch =
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        // @ts-ignore
-        (emp.department && emp.department.toLowerCase().includes(searchTerm.toLowerCase()));
+        emp.email.toLowerCase().includes(searchTerm.toLowerCase());
 
       // @ts-ignore
       const empStatus = emp.employment_status || 'active';
       const matchesStatus = statusFilter === 'all' || empStatus === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const matchesTeam = 
+        teamFilter === 'all' || 
+        (employeeTeamMap[emp.id] && employeeTeamMap[emp.id].includes(teamFilter));
+
+      return matchesSearch && matchesStatus && matchesTeam;
     });
-  }, [employees, searchTerm, statusFilter]);
+  }, [employees, searchTerm, statusFilter, teamFilter, employeeTeamMap]);
 
   const getStatusBadge = (status?: string) => {
     const empStatus = status || 'active';
@@ -87,6 +132,19 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
             />
           </div>
           <div className="flex gap-2">
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Teams" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               variant={statusFilter === 'all' ? 'default' : 'outline'}
               onClick={() => setStatusFilter('all')}
@@ -118,7 +176,6 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Department</TableHead>
                 <TableHead>Job Roles</TableHead>
                 <TableHead>Teams</TableHead>
                 <TableHead>Hourly Rate</TableHead>
@@ -129,7 +186,7 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
             <TableBody>
               {filteredEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No employees found
                   </TableCell>
                 </TableRow>
@@ -139,14 +196,10 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
                     <TableCell className="font-medium">{employee.name}</TableCell>
                     <TableCell>{employee.email}</TableCell>
                     <TableCell>
-                      {/* @ts-ignore */}
-                      <span className="text-sm">{employee.department || 'Not set'}</span>
-                    </TableCell>
-                    <TableCell>
                       <UserJobRolesCell userId={employee.id} />
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">View in profile</span>
+                      <UserTeamsCell userId={employee.id} />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 font-mono">

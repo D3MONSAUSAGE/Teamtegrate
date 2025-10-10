@@ -35,7 +35,6 @@ interface EmployeeProfileDialogProps {
 interface EmployeeFormData {
   name: string;
   email: string;
-  department: string;
   hourly_rate: number;
   hire_date: string;
   employment_status: string;
@@ -52,7 +51,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
   const [formData, setFormData] = useState<EmployeeFormData>({
     name: '',
     email: '',
-    department: '',
     hourly_rate: 15,
     hire_date: '',
     employment_status: 'active',
@@ -84,7 +82,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
       setFormData({
         name: employee.name || '',
         email: employee.email || '',
-        department: employee.department || '',
         hourly_rate: employee.hourly_rate || 15,
         hire_date: employee.hire_date || '',
         employment_status: employee.employment_status || 'active',
@@ -106,7 +103,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
         .from('users')
         .update({
           name: formData.name,
-          department: formData.department,
           hourly_rate: formData.hourly_rate,
           hire_date: formData.hire_date || null,
           employment_status: formData.employment_status,
@@ -202,15 +198,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-muted-foreground">Job Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      placeholder="Sales, Operations, etc."
-                    />
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="hire_date">Hire Date</Label>
                     <Input
