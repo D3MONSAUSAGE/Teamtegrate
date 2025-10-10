@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedUserManagement } from '@/hooks/useEnhancedUserManagement';
 import ModernPageHeader from '@/components/ui/ModernPageHeader';
-import { Users, UserPlus, DollarSign } from 'lucide-react';
+import { Users, UserPlus, DollarSign, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmployeeListView from '@/components/hr/EmployeeListView';
 import EmployeeProfileDialog from '@/components/hr/EmployeeProfileDialog';
 import PayrollOverview from '@/components/hr/PayrollOverview';
 import EmployeeRecordsTab from '@/components/hr/EmployeeRecordsTab';
+import { RecruitmentDashboard } from '@/pages/RecruitmentDashboard';
 import { User } from '@/types';
 
 const HRManagementPage = () => {
@@ -55,9 +56,10 @@ const HRManagementPage = () => {
       />
 
       <Tabs defaultValue="employees" className="space-y-4">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsList className="grid w-full max-w-4xl grid-cols-4">
           <TabsTrigger value="employees">Employees</TabsTrigger>
           <TabsTrigger value="records">Employee Records</TabsTrigger>
+          <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
           <TabsTrigger value="payroll">Payroll Overview</TabsTrigger>
         </TabsList>
 
@@ -71,6 +73,10 @@ const HRManagementPage = () => {
 
         <TabsContent value="records" className="space-y-4">
           <EmployeeRecordsTab />
+        </TabsContent>
+
+        <TabsContent value="recruitment" className="space-y-4">
+          <RecruitmentDashboard />
         </TabsContent>
 
         <TabsContent value="payroll" className="space-y-4">
