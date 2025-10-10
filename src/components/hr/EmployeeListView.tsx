@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Edit, DollarSign, Briefcase } from 'lucide-react';
+import { Search, Edit, DollarSign } from 'lucide-react';
 import { User } from '@/types';
 import { format } from 'date-fns';
 import UserJobRolesCell from '@/components/organization/user-management/UserJobRolesCell';
@@ -36,7 +36,7 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         // @ts-ignore
-        (emp.job_title && emp.job_title.toLowerCase().includes(searchTerm.toLowerCase()));
+        (emp.department && emp.department.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // @ts-ignore
       const empStatus = emp.employment_status || 'active';
@@ -118,7 +118,7 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Job Title</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Job Roles</TableHead>
                 <TableHead>Teams</TableHead>
                 <TableHead>Hourly Rate</TableHead>
@@ -139,17 +139,13 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
                     <TableCell className="font-medium">{employee.name}</TableCell>
                     <TableCell>{employee.email}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        {/* @ts-ignore */}
-                        {employee.job_title || 'Not set'}
-                      </div>
+                      {/* @ts-ignore */}
+                      <span className="text-sm">{employee.department || 'Not set'}</span>
                     </TableCell>
                     <TableCell>
                       <UserJobRolesCell userId={employee.id} />
                     </TableCell>
                     <TableCell>
-                      {/* Teams placeholder - will show team count */}
                       <span className="text-sm text-muted-foreground">View in profile</span>
                     </TableCell>
                     <TableCell>

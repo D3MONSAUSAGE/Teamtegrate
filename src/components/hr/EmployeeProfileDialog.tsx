@@ -20,9 +20,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Briefcase, DollarSign, FileText, UserCog, Users } from 'lucide-react';
+import { Loader2, Briefcase, DollarSign, FileText, UserCog, Users, Crown } from 'lucide-react';
 import { UserJobRoleManager } from '@/components/organization/UserJobRoleManager';
 import { UserTeamManager } from '@/components/hr/UserTeamManager';
+import { UserManagerDisplay } from '@/components/hr/UserManagerDisplay';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface EmployeeProfileDialogProps {
@@ -34,14 +35,12 @@ interface EmployeeProfileDialogProps {
 interface EmployeeFormData {
   name: string;
   email: string;
-  job_title: string;
   department: string;
   hourly_rate: number;
   hire_date: string;
   employment_status: string;
   salary_type: string;
   hr_notes: string;
-  manager_id: string;
 }
 
 const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
@@ -53,14 +52,12 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
   const [formData, setFormData] = useState<EmployeeFormData>({
     name: '',
     email: '',
-    job_title: '',
     department: '',
     hourly_rate: 15,
     hire_date: '',
     employment_status: 'active',
     salary_type: 'hourly',
     hr_notes: '',
-    manager_id: '',
   });
 
   const queryClient = useQueryClient();
@@ -81,36 +78,18 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
     enabled: !!userId && open,
   });
 
-  // Fetch potential managers
-  const { data: potentialManagers = [] } = useQuery({
-    queryKey: ['potential-managers', employee?.organization_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role')
-        .eq('organization_id', employee?.organization_id!)
-        .in('role', ['admin', 'superadmin', 'manager'])
-        .order('name');
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!employee?.organization_id,
-  });
 
   useEffect(() => {
     if (employee) {
       setFormData({
         name: employee.name || '',
         email: employee.email || '',
-        job_title: employee.job_title || '',
         department: employee.department || '',
         hourly_rate: employee.hourly_rate || 15,
         hire_date: employee.hire_date || '',
         employment_status: employee.employment_status || 'active',
         salary_type: employee.salary_type || 'hourly',
         hr_notes: employee.hr_notes || '',
-        manager_id: employee.manager_id || '',
       });
     }
   }, [employee]);
@@ -127,14 +106,12 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
         .from('users')
         .update({
           name: formData.name,
-          job_title: formData.job_title,
           department: formData.department,
           hourly_rate: formData.hourly_rate,
           hire_date: formData.hire_date || null,
           employment_status: formData.employment_status,
           salary_type: formData.salary_type,
           hr_notes: formData.hr_notes,
-          manager_id: formData.manager_id === 'none' || !formData.manager_id ? null : formData.manager_id,
         })
         .eq('id', userId);
 
@@ -168,7 +145,7 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
           </div>
         ) : (
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="basic">
                 <Briefcase className="h-4 w-4 mr-2" />
                 Basic Info
@@ -180,6 +157,10 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
               <TabsTrigger value="teams">
                 <Users className="h-4 w-4 mr-2" />
                 Teams
+              </TabsTrigger>
+              <TabsTrigger value="manager">
+                <Crown className="h-4 w-4 mr-2" />
+                Manager
               </TabsTrigger>
               <TabsTrigger value="compensation">
                 <DollarSign className="h-4 w-4 mr-2" />
@@ -222,15 +203,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                 <h3 className="text-sm font-semibold text-muted-foreground">Job Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="job_title">Job Title</Label>
-                    <Input
-                      id="job_title"
-                      value={formData.job_title}
-                      onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                      placeholder="Manager, Cashier, etc."
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
                     <Input
                       id="department"
@@ -264,27 +236,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="manager">Manager</Label>
-                    <Select
-                      value={formData.manager_id || 'none'}
-                      onValueChange={(value) => setFormData({ ...formData, manager_id: value === 'none' ? '' : value })}
-                    >
-                      <SelectTrigger id="manager">
-                        <SelectValue placeholder="Select manager (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Manager</SelectItem>
-                        {potentialManagers
-                          .filter(m => m.id !== userId)
-                          .map((manager) => (
-                            <SelectItem key={manager.id} value={manager.id}>
-                              {manager.name} ({manager.role})
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
               </div>
 
@@ -313,6 +264,16 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
             <TabsContent value="teams" className="space-y-4">
               {employee && (
                 <UserTeamManager 
+                  userId={employee.id} 
+                  userName={employee.name}
+                />
+              )}
+            </TabsContent>
+
+            {/* Manager Tab */}
+            <TabsContent value="manager" className="space-y-4">
+              {employee && (
+                <UserManagerDisplay 
                   userId={employee.id} 
                   userName={employee.name}
                 />
