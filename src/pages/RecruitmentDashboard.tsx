@@ -5,7 +5,7 @@ import { useRecruitmentCandidates } from '@/hooks/recruitment/useRecruitmentCand
 import { useRecruitmentPositions } from '@/hooks/recruitment/useRecruitmentPositions';
 import { CreatePositionDialog } from '@/components/recruitment/CreatePositionDialog';
 import { CreateCandidateDialog } from '@/components/recruitment/CreateCandidateDialog';
-import { RecruitmentKanbanBoard } from '@/components/recruitment/RecruitmentKanbanBoard';
+import { RecruitmentPipelineView } from '@/components/recruitment/RecruitmentPipelineView';
 import { PositionsList } from '@/components/recruitment/PositionsList';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -145,7 +145,7 @@ export const RecruitmentDashboard = () => {
               <CardTitle>Pipeline Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <RecruitmentKanbanBoard 
+              <RecruitmentPipelineView 
                 positionId={selectedPosition}
                 onCandidateClick={(candidateId) => navigate(`/dashboard/recruitment/candidate/${candidateId}`)}
               />
