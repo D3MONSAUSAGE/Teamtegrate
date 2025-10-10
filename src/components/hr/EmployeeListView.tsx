@@ -14,6 +14,7 @@ import {
 import { Search, Edit, DollarSign, Briefcase } from 'lucide-react';
 import { User } from '@/types';
 import { format } from 'date-fns';
+import UserJobRolesCell from '@/components/organization/user-management/UserJobRolesCell';
 
 interface EmployeeListViewProps {
   employees: User[];
@@ -118,7 +119,8 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Job Title</TableHead>
-                <TableHead>Department</TableHead>
+                <TableHead>Job Roles</TableHead>
+                <TableHead>Teams</TableHead>
                 <TableHead>Hourly Rate</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -127,7 +129,7 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
             <TableBody>
               {filteredEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No employees found
                   </TableCell>
                 </TableRow>
@@ -144,8 +146,11 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      {/* @ts-ignore */}
-                      {employee.department || 'Not assigned'}
+                      <UserJobRolesCell userId={employee.id} />
+                    </TableCell>
+                    <TableCell>
+                      {/* Teams placeholder - will show team count */}
+                      <span className="text-sm text-muted-foreground">View in profile</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 font-mono">
