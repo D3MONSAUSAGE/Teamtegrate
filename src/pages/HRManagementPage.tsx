@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmployeeListView from '@/components/hr/EmployeeListView';
 import EmployeeProfileDialog from '@/components/hr/EmployeeProfileDialog';
 import PayrollOverview from '@/components/hr/PayrollOverview';
+import EmployeeRecordsTab from '@/components/hr/EmployeeRecordsTab';
 import { User } from '@/types';
 
 const HRManagementPage = () => {
@@ -54,8 +55,9 @@ const HRManagementPage = () => {
       />
 
       <Tabs defaultValue="employees" className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="employees">Employee Records</TabsTrigger>
+        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsTrigger value="employees">Employees</TabsTrigger>
+          <TabsTrigger value="records">Employee Records</TabsTrigger>
           <TabsTrigger value="payroll">Payroll Overview</TabsTrigger>
         </TabsList>
 
@@ -65,6 +67,10 @@ const HRManagementPage = () => {
             isLoading={isLoading}
             onEditEmployee={handleEditEmployee}
           />
+        </TabsContent>
+
+        <TabsContent value="records" className="space-y-4">
+          <EmployeeRecordsTab />
         </TabsContent>
 
         <TabsContent value="payroll" className="space-y-4">

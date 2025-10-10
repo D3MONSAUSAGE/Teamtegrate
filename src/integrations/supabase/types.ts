@@ -2346,6 +2346,66 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_records: {
+        Row: {
+          created_at: string | null
+          document_date: string | null
+          document_name: string
+          document_type: string
+          employee_id: string
+          expiry_date: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          notes: string | null
+          organization_id: string
+          tags: string[] | null
+          updated_at: string | null
+          uploader_id: string
+          uploader_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_date?: string | null
+          document_name: string
+          document_type: string
+          employee_id: string
+          expiry_date?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          tags?: string[] | null
+          updated_at?: string | null
+          uploader_id: string
+          uploader_name: string
+        }
+        Update: {
+          created_at?: string | null
+          document_date?: string | null
+          document_name?: string
+          document_type?: string
+          employee_id?: string
+          expiry_date?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          uploader_id?: string
+          uploader_name?: string
+        }
+        Relationships: []
+      }
       employee_schedules: {
         Row: {
           actual_end_time: string | null
