@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/sonner';
@@ -84,6 +85,32 @@ export const useRecruitmentCandidates = (filters?: { positionId?: string; stageI
       toast.error('Failed to update candidate status');
     },
   });
+
+  // Subscribe to realtime updates for recruitment candidates
+  useEffect(() => {
+    if (!user?.organizationId) return;
+
+    const channel = supabase
+      .channel('recruitment-candidates-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'recruitment_candidates',
+          filter: `organization_id=eq.${user.organizationId}`
+        },
+        () => {
+          // Refetch candidates when any change occurs
+          queryClient.invalidateQueries({ queryKey: ['recruitment-candidates'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.organizationId, queryClient]);
 
   return {
     candidates,
