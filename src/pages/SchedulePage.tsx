@@ -8,9 +8,11 @@ import { MyScheduleView } from '@/components/schedule/MyScheduleView';
 import { TeamManagementView } from '@/components/schedule/TeamManagementView';
 import ModernScheduleHeader from '@/components/schedule/modern/ModernScheduleHeader';
 import { useState } from 'react';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 
 const SchedulePage: React.FC = () => {
   const { hasRoleAccess, user, loading } = useAuth();
+  const { isTeamManager } = useTeamAccess();
   const [activeTab, setActiveTab] = useState('my-schedule');
 
   // Show loading state while auth is being determined
@@ -35,7 +37,7 @@ const SchedulePage: React.FC = () => {
     );
   }
 
-  const isManager = hasRoleAccess('manager');
+  const isManager = hasRoleAccess('manager') || isTeamManager;
 
   return (
     <ErrorBoundary>
