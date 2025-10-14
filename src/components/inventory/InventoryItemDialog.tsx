@@ -156,15 +156,20 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
   };
 
   const onSubmit = async (values: InventoryItemFormData) => {
+    console.log('📝 Form submission started', { itemId, values, isSubmitting, loading });
+    
     if (isSubmitting || loading) {
+      console.warn('⚠️ Submission blocked: already submitting or loading');
       return;
     }
     
     // Validate SKU uniqueness before submission
     if (values.sku && values.sku.trim() !== '') {
       try {
+        console.log('🔍 Validating SKU uniqueness:', values.sku);
         const skuValidation = await validateSKUUniqueness(values.sku, itemId || undefined);
         if (!skuValidation.isUnique) {
+          console.error('❌ SKU validation failed:', skuValidation);
           form.setError('sku', {
             type: 'manual',
             message: skuValidation.message || 'SKU must be unique'
@@ -172,14 +177,16 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
           toast.error(skuValidation.message || 'SKU is already in use');
           return;
         }
+        console.log('✅ SKU validation passed');
       } catch (skuError) {
-        console.error('SKU validation error:', skuError);
+        console.error('❌ SKU validation error:', skuError);
         toast.error('Failed to validate SKU. Please try again.');
         return;
       }
     }
     
     setIsSubmitting(true);
+    console.log('🚀 Starting item save operation...');
     
     try {
       const itemData = {
@@ -208,12 +215,18 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         shelf_life_days: values.shelf_life_days || null,
       };
 
+      console.log('📦 Item data prepared:', itemData);
+
       let result;
       if (itemId) {
+        console.log('🔄 Updating existing item:', itemId);
         result = await updateItem(itemId, itemData);
       } else {
+        console.log('➕ Creating new item');
         result = await createItem(itemData);
       }
+      
+      console.log('✅ Save operation completed successfully:', result);
       
       if (itemId) {
         toast.success('Item updated successfully');
@@ -225,24 +238,37 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       form.reset();
       setCalculatedUnitPrice(null);
     } catch (error) {
-      console.error('Error saving item:', error);
+      console.error('❌ Error saving item:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error
+      });
       
       let errorMessage = 'Failed to save item';
       if (error instanceof Error) {
-        if (error.message.includes('permission')) {
-          errorMessage = 'Permission denied. Please check your user role.';
+        if (error.message.includes('permission') || error.message.includes('Access Denied')) {
+          errorMessage = 'Permission denied: ' + error.message;
         } else if (error.message.includes('required')) {
-          errorMessage = 'Required fields are missing.';
-        } else if (error.message.includes('unique')) {
-          errorMessage = 'Duplicate value detected. Please check SKU and barcode.';
+          errorMessage = 'Required fields are missing: ' + error.message;
+        } else if (error.message.includes('unique') || error.message.includes('duplicate')) {
+          errorMessage = 'Duplicate value detected: ' + error.message;
+        } else if (error.message.includes('SKU')) {
+          errorMessage = error.message;
+        } else if (error.message.includes('barcode')) {
+          errorMessage = error.message;
         } else {
-          errorMessage = `Failed to save item: ${error.message}`;
+          errorMessage = `Failed to save: ${error.message}`;
         }
       }
       
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        description: 'Check the console for more details',
+        duration: 6000
+      });
     } finally {
       setIsSubmitting(false);
+      console.log('🏁 Form submission ended');
     }
   };
 
