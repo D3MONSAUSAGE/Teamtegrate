@@ -33,11 +33,12 @@ const inventoryItemSchema = z.object({
   purchase_price: z.coerce.number().min(0, 'Package price must be 0 or greater').optional(),
   sale_price: z.coerce.number().min(0, 'Sale price must be 0 or greater').optional(),
   vendor_id: z.string().nullable().optional(),
-  sku: z.string().optional().refine(async (sku) => {
-    if (!sku || sku.trim() === '') return true;
-    return true;
-  }, 'SKU validation failed'),
-  barcode: z.string().optional(),
+  sku: z.string()
+    .transform(val => val?.trim() || '')
+    .optional(),
+  barcode: z.string()
+    .transform(val => val?.trim() || '')
+    .optional(),
   location: z.string().optional(),
   team_id: z.string().nullable().optional(),
   image_url: z.string().nullable().optional(),
@@ -197,8 +198,8 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
         purchase_unit: values.purchase_unit || null,
         conversion_factor: values.conversion_factor || null,
         purchase_price: values.purchase_price || null,
-        sku: values.sku,
-        barcode: values.barcode,
+        sku: values.sku?.trim() || null,
+        barcode: values.barcode?.trim() || null,
         current_stock: 0,
         minimum_threshold: null,
         maximum_threshold: null,

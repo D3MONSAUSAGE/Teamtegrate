@@ -13106,11 +13106,16 @@ export type Database = {
         Returns: {
           clock_in: string
           clock_out: string
+          created_at: string
           duration_minutes: number
           id: string
+          notes: string
+          team_id: string
+          team_name: string
           user_email: string
           user_id: string
           user_name: string
+          work_date: string
         }[]
       }
       get_project_comment_stats: {
