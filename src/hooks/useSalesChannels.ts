@@ -1,44 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import type { SalesChannel, CreateSalesChannelData, SalesChannelTransaction } from '@/types/salesChannels';
+import type { SalesChannel, CreateSalesChannelData } from '@/types/salesChannels';
+
+const fetchChannels = async (): Promise<SalesChannel[]> => {
+  const { data, error } = await supabase
+    .from('sales_channels')
+    .select('*')
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching sales channels:', error);
+    throw new Error('Failed to load sales channels');
+  }
+
+  return data as SalesChannel[] || [];
+};
 
 export const useSalesChannels = () => {
-  const [channels, setChannels] = useState<SalesChannel[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const fetchChannels = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const { data: channels = [], isLoading, error } = useQuery({
+    queryKey: ['sales-channels'],
+    queryFn: fetchChannels,
+  });
 
-      const { data, error } = await supabase
-        .from('sales_channels')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching sales channels:', error);
-        setError('Failed to load sales channels');
-        toast.error('Failed to load sales channels');
-        return;
-      }
-
-      setChannels(data as SalesChannel[] || []);
-    } catch (error) {
-      console.error('Error fetching sales channels:', error);
-      setError('Failed to load sales channels');
-      toast.error('Failed to load sales channels');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const createChannel = async (channelData: CreateSalesChannelData): Promise<boolean> => {
-    try {
+  const createChannelMutation = useMutation({
+    mutationFn: async (channelData: CreateSalesChannelData) => {
       if (!user?.id) throw new Error('User not authenticated');
       
       const { error } = await supabase
@@ -49,25 +39,29 @@ export const useSalesChannels = () => {
           organization_id: user.organizationId
         });
 
-      if (error) {
-        console.error('Error creating sales channel:', error);
-        toast.error('Failed to create sales channel');
-        return false;
-      }
-
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-channels'] });
       toast.success('Sales channel created successfully');
-      await fetchChannels();
-      return true;
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error creating sales channel:', error);
       toast.error('Failed to create sales channel');
+    },
+  });
+
+  const createChannel = async (channelData: CreateSalesChannelData): Promise<boolean> => {
+    try {
+      await createChannelMutation.mutateAsync(channelData);
+      return true;
+    } catch {
       return false;
     }
   };
 
-  const updateChannel = async (id: string, updates: Partial<CreateSalesChannelData>): Promise<boolean> => {
-    try {
-      // Convert team_id explicitly - if it's 'all' or null/undefined, set to null
+  const updateChannelMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateSalesChannelData> }) => {
       const updateData = {
         ...updates,
         team_id: !updates.team_id || updates.team_id === 'all' ? null : updates.team_id,
@@ -78,80 +72,96 @@ export const useSalesChannels = () => {
         .update(updateData)
         .eq('id', id);
 
-      if (error) {
-        console.error('Error updating sales channel:', error);
-        toast.error('Failed to update sales channel');
-        return false;
-      }
-
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-channels'] });
       toast.success('Sales channel updated successfully');
-      await fetchChannels();
-      return true;
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error updating sales channel:', error);
       toast.error('Failed to update sales channel');
+    },
+  });
+
+  const updateChannel = async (id: string, updates: Partial<CreateSalesChannelData>): Promise<boolean> => {
+    try {
+      await updateChannelMutation.mutateAsync({ id, updates });
+      return true;
+    } catch {
       return false;
     }
   };
 
-  const toggleChannelStatus = async (id: string, isActive: boolean): Promise<boolean> => {
-    try {
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from('sales_channels')
         .update({ is_active: isActive })
         .eq('id', id);
 
-      if (error) {
-        console.error('Error toggling channel status:', error);
-        toast.error('Failed to update channel status');
-        return false;
-      }
-
+      if (error) throw error;
+      return isActive;
+    },
+    onSuccess: (isActive) => {
+      queryClient.invalidateQueries({ queryKey: ['sales-channels'] });
       toast.success(`Channel ${isActive ? 'activated' : 'deactivated'} successfully`);
-      await fetchChannels();
-      return true;
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error toggling channel status:', error);
       toast.error('Failed to update channel status');
+    },
+  });
+
+  const toggleChannelStatus = async (id: string, isActive: boolean): Promise<boolean> => {
+    try {
+      await toggleStatusMutation.mutateAsync({ id, isActive });
+      return true;
+    } catch {
       return false;
     }
   };
 
-  const deleteChannel = async (id: string): Promise<boolean> => {
-    try {
+  const deleteChannelMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('sales_channels')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting sales channel:', error);
-        toast.error('Failed to delete sales channel');
-        return false;
-      }
-
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-channels'] });
       toast.success('Sales channel deleted successfully');
-      await fetchChannels();
-      return true;
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error deleting sales channel:', error);
       toast.error('Failed to delete sales channel');
+    },
+  });
+
+  const deleteChannel = async (id: string): Promise<boolean> => {
+    try {
+      await deleteChannelMutation.mutateAsync(id);
+      return true;
+    } catch {
       return false;
     }
   };
 
-  useEffect(() => {
-    fetchChannels();
-  }, []);
+  const refetchChannels = () => {
+    queryClient.invalidateQueries({ queryKey: ['sales-channels'] });
+  };
 
   return {
     channels,
     isLoading,
-    error,
+    error: error ? String(error) : null,
     createChannel,
     updateChannel,
     toggleChannelStatus,
     deleteChannel,
-    refetchChannels: fetchChannels
+    refetchChannels
   };
 };
