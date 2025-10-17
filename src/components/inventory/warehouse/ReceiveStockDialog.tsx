@@ -15,7 +15,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode, DollarSign, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Minus, Package, Search, Loader2, Scan, Zap, Calendar, QrCode, DollarSign, X, Receipt } from 'lucide-react';
 import { useInventory } from '@/contexts/inventory';
 import { warehouseApi } from '@/contexts/warehouse/api/warehouseApi';
 import { useWarehouse } from '@/contexts/warehouse/WarehouseContext';
@@ -23,6 +24,8 @@ import { ScannerOverlay } from '@/components/inventory/ScannerOverlay';
 import { useScanGun } from '@/hooks/useScanGun';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { VendorSelector } from '@/components/inventory/VendorSelector';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ReceiveStockDialogProps {
@@ -52,12 +55,19 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
 }) => {
   const { items: inventoryItems, vendors } = useInventory();
   const { refreshWarehouseItems } = useWarehouse();
+  const { user } = useAuth();
   const [receiveItems, setReceiveItems] = useState<ReceiveItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string>();
   const [invoiceNumber, setInvoiceNumber] = useState('');
+  
+  // Invoice tracking fields
+  const [createInvoiceRecord, setCreateInvoiceRecord] = useState(false);
+  const [invoiceTotal, setInvoiceTotal] = useState<number>(0);
+  const [paymentDueDate, setPaymentDueDate] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'unpaid' | 'partial' | 'paid' | 'void'>('unpaid');
   
   // Scanner state
   const [showScanner, setShowScanner] = useState(false);
@@ -177,6 +187,13 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
   // Calculate total cost
   const totalCost = receiveItems.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
 
+  // Auto-populate invoice total when items change
+  useEffect(() => {
+    if (createInvoiceRecord && receiveItems.length > 0) {
+      setInvoiceTotal(totalCost);
+    }
+  }, [receiveItems, totalCost, createInvoiceRecord]);
+
   const handleSubmit = async () => {
     if (receiveItems.length === 0) {
       toast.error('Please add at least one item to receive');
@@ -190,10 +207,62 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       return;
     }
 
+    // Validate invoice creation if enabled
+    if (createInvoiceRecord && !selectedVendor) {
+      toast.error('Please select a vendor to create an invoice record');
+      return;
+    }
+
+    if (createInvoiceRecord && !invoiceNumber) {
+      toast.error('Please enter an invoice number to create an invoice record');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
-      // Prepare items for the API with lot tracking and vendor information
+      // Step 1: Create invoice record if requested
+      if (createInvoiceRecord && selectedVendor && invoiceNumber) {
+        const { data: warehouseData } = await supabase
+          .from('warehouses')
+          .select('team_id')
+          .eq('id', warehouseId)
+          .single();
+
+        const invoiceRecord = {
+          invoice_number: invoiceNumber,
+          invoice_date: new Date().toISOString().split('T')[0],
+          branch: warehouseData?.team_id || '',
+          team_id: warehouseData?.team_id,
+          vendor_id: selectedVendor,
+          invoice_total: invoiceTotal || totalCost,
+          currency: 'USD',
+          payment_status: paymentStatus,
+          payment_due_date: paymentDueDate || null,
+          paid_amount: 0,
+          reference_number: invoiceNumber,
+          notes: notes,
+          file_path: '',
+          file_name: `Stock Receipt ${invoiceNumber}`,
+          file_type: 'application/octet-stream',
+          file_size: 0,
+          uploader_name: user?.name || user?.email || 'Unknown',
+          user_id: user?.id,
+          organization_id: user?.organizationId
+        };
+
+        const { error: invoiceError } = await supabase
+          .from('invoices')
+          .insert([invoiceRecord]);
+
+        if (invoiceError) {
+          console.error('Invoice creation error:', invoiceError);
+          toast.error(`Failed to create invoice: ${invoiceError.message}`);
+          return;
+        }
+      }
+
+      // Step 2: Prepare items for the API with lot tracking and vendor information
       const items = receiveItems.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
@@ -203,13 +272,17 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
         invoice_number: invoiceNumber
       }));
 
-      // Call the receiveStock API which handles creating warehouse_items if they don't exist
+      // Step 3: Call the receiveStock API which handles creating warehouse_items if they don't exist
       await warehouseApi.receiveStock(warehouseId, items);
       
-      // Refresh warehouse items to show updated stock levels
+      // Step 4: Refresh warehouse items to show updated stock levels
       await refreshWarehouseItems();
 
-      toast.success(`Successfully received ${receiveItems.length} item${receiveItems.length !== 1 ? 's' : ''}!`);
+      toast.success(
+        createInvoiceRecord
+          ? `Successfully received stock and created expense invoice ${invoiceNumber}!`
+          : `Successfully received ${receiveItems.length} item${receiveItems.length !== 1 ? 's' : ''}!`
+      );
       
       // Reset form
       setReceiveItems([]);
@@ -217,6 +290,10 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
       setSearchQuery('');
       setSelectedVendor(undefined);
       setInvoiceNumber('');
+      setCreateInvoiceRecord(false);
+      setInvoiceTotal(0);
+      setPaymentDueDate('');
+      setPaymentStatus('unpaid');
       
       // Close dialog (no manual refresh needed - warehouse context handles updates)
       onOpenChange(false);
@@ -275,6 +352,112 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Invoice Tracking Toggle */}
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <Receipt className="h-4 w-4 text-primary" />
+                          <Label className="text-base font-semibold cursor-pointer" htmlFor="invoice-toggle">
+                            Save as Expense Invoice
+                          </Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Track this receiving as an expense invoice for financial reporting
+                        </p>
+                      </div>
+                      <Switch
+                        id="invoice-toggle"
+                        checked={createInvoiceRecord}
+                        onCheckedChange={setCreateInvoiceRecord}
+                      />
+                    </div>
+
+                    {/* Invoice Fields - Show when toggle is ON */}
+                    {createInvoiceRecord && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label htmlFor="invoice-total">
+                            Invoice Total
+                            <span className="text-xs text-muted-foreground ml-1">(optional)</span>
+                          </Label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="invoice-total"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="Auto-calculated"
+                              value={invoiceTotal || ''}
+                              onChange={(e) => setInvoiceTotal(parseFloat(e.target.value) || 0)}
+                              className="pl-9 font-semibold"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            From items: {formatCurrency(totalCost)}
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="payment-due-date">
+                            Payment Due Date
+                            <span className="text-xs text-muted-foreground ml-1">(optional)</span>
+                          </Label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="payment-due-date"
+                              type="date"
+                              value={paymentDueDate}
+                              onChange={(e) => setPaymentDueDate(e.target.value)}
+                              className="pl-9"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="payment-status">Payment Status</Label>
+                          <Select value={paymentStatus} onValueChange={(val: any) => setPaymentStatus(val)}>
+                            <SelectTrigger id="payment-status">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unpaid">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                                  <span>Unpaid</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="partial">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                  <span>Partially Paid</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="paid">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                                  <span>Paid</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="void">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                                  <span>Void</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Items Section */}
               <div className="space-y-4">
