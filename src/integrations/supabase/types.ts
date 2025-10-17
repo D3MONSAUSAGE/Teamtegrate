@@ -1618,6 +1618,7 @@ export type Database = {
       }
       created_invoices: {
         Row: {
+          balance_due: number | null
           client_id: string
           created_at: string
           created_by: string
@@ -1628,7 +1629,9 @@ export type Database = {
           issue_date: string
           notes: string | null
           organization_id: string
+          paid_amount: number | null
           paid_at: string | null
+          payment_status: string | null
           payment_terms: string | null
           sent_at: string | null
           status: string | null
@@ -1642,6 +1645,7 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          balance_due?: number | null
           client_id: string
           created_at?: string
           created_by: string
@@ -1652,7 +1656,9 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           organization_id: string
+          paid_amount?: number | null
           paid_at?: string | null
+          payment_status?: string | null
           payment_terms?: string | null
           sent_at?: string | null
           status?: string | null
@@ -1666,6 +1672,7 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          balance_due?: number | null
           client_id?: string
           created_at?: string
           created_by?: string
@@ -1676,7 +1683,9 @@ export type Database = {
           issue_date?: string
           notes?: string | null
           organization_id?: string
+          paid_amount?: number | null
           paid_at?: string | null
+          payment_status?: string | null
           payment_terms?: string | null
           sent_at?: string | null
           status?: string | null
@@ -6094,10 +6103,12 @@ export type Database = {
           created_at: string
           id: string
           invoice_id: string
+          is_cash_payment: boolean | null
           notes: string | null
           organization_id: string
           payment_date: string
           payment_method: string | null
+          payment_type_id: string | null
           recorded_by: string
           reference_number: string | null
           stripe_payment_id: string | null
@@ -6107,10 +6118,12 @@ export type Database = {
           created_at?: string
           id?: string
           invoice_id: string
+          is_cash_payment?: boolean | null
           notes?: string | null
           organization_id: string
           payment_date?: string
           payment_method?: string | null
+          payment_type_id?: string | null
           recorded_by: string
           reference_number?: string | null
           stripe_payment_id?: string | null
@@ -6120,10 +6133,12 @@ export type Database = {
           created_at?: string
           id?: string
           invoice_id?: string
+          is_cash_payment?: boolean | null
           notes?: string | null
           organization_id?: string
           payment_date?: string
           payment_method?: string | null
+          payment_type_id?: string | null
           recorded_by?: string
           reference_number?: string | null
           stripe_payment_id?: string | null
@@ -6134,6 +6149,71 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "created_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_payment_type_id_fkey"
+            columns: ["payment_type_id"]
+            isOneToOne: false
+            referencedRelation: "payment_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_types: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_cash_equivalent: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_cash_equivalent?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_cash_equivalent?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -12546,6 +12626,49 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_on_hand_summary: {
+        Row: {
+          cash_collected: number | null
+          organization_id: string | null
+          payment_count: number | null
+          payment_methods_used: string[] | null
+          team_id: string | null
+          total_collected: number | null
+          warehouse_id: string | null
+          week_end: string | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "created_invoices_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_warehouse_items: {
         Row: {
           item_id: string | null
@@ -12762,6 +12885,55 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_sales_summary: {
+        Row: {
+          organization_id: string | null
+          overdue_count: number | null
+          overdue_invoices_total: number | null
+          paid_count: number | null
+          paid_invoices_total: number | null
+          pending_count: number | null
+          pending_invoices_total: number | null
+          team_id: string | null
+          total_collected: number | null
+          total_invoices: number | null
+          total_outstanding: number | null
+          total_sales: number | null
+          warehouse_id: string | null
+          week_end: string | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "created_invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "created_invoices_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -13319,6 +13491,10 @@ export type Database = {
           | { action_param?: string; meeting_id_param: string }
           | { force_sync?: boolean; meeting_id: string }
         Returns: Json
+      }
+      mark_overdue_invoices: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       migrate_legacy_folders_to_database: {
         Args: { target_organization_id: string }

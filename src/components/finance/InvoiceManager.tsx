@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InvoiceUpload from './InvoiceUpload';
 import InvoiceList from './InvoiceList';
 import { InvoiceBuilder } from './invoices/InvoiceBuilder';
+import { WeeklySalesDashboard } from './weekly-sales/WeeklySalesDashboard';
+import { PaymentTypesManager } from './payment-types/PaymentTypesManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasRoleAccess } from '@/contexts/auth/roleUtils';
 
@@ -22,15 +24,23 @@ const InvoiceManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="upload" className="w-full">
-        <TabsList className={`grid w-full ${canManageData ? 'grid-cols-3' : 'grid-cols-2'}`}>
+      <Tabs defaultValue="weekly" className="w-full">
+        <TabsList className={`grid w-full ${canManageData ? 'grid-cols-5' : 'grid-cols-2'}`}>
+          <TabsTrigger value="weekly">Weekly Sales</TabsTrigger>
           <TabsTrigger value="upload">Upload Invoice</TabsTrigger>
           <TabsTrigger value="manage">Manage Invoices</TabsTrigger>
           {canManageData && (
-            <TabsTrigger value="create">Create Invoice</TabsTrigger>
+            <>
+              <TabsTrigger value="create">Create Invoice</TabsTrigger>
+              <TabsTrigger value="payment-types">Payment Types</TabsTrigger>
+            </>
           )}
         </TabsList>
         
+        <TabsContent value="weekly" className="space-y-4">
+          <WeeklySalesDashboard />
+        </TabsContent>
+
         <TabsContent value="upload" className="space-y-4">
           <InvoiceUpload onUploadSuccess={handleUploadSuccess} />
         </TabsContent>
@@ -40,9 +50,15 @@ const InvoiceManager: React.FC = () => {
         </TabsContent>
 
         {canManageData && (
-          <TabsContent value="create" className="space-y-4">
-            <InvoiceBuilder onInvoiceCreated={handleInvoiceCreated} />
-          </TabsContent>
+          <>
+            <TabsContent value="create" className="space-y-4">
+              <InvoiceBuilder onInvoiceCreated={handleInvoiceCreated} />
+            </TabsContent>
+
+            <TabsContent value="payment-types" className="space-y-4">
+              <PaymentTypesManager />
+            </TabsContent>
+          </>
         )}
       </Tabs>
     </div>

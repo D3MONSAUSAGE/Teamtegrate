@@ -59,6 +59,18 @@ export interface UploadedInvoice {
   tags?: string[];
 }
 
+export interface PaymentType {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  is_cash_equivalent: boolean;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CreatedInvoice {
   id: string;
   organization_id: string;
@@ -69,11 +81,14 @@ export interface CreatedInvoice {
   warehouse_id?: string;
   invoice_number: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  payment_status: 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled';
   issue_date: string;
   due_date: string;
   subtotal: number;
   tax_amount: number;
   total_amount: number;
+  paid_amount: number;
+  balance_due: number;
   payment_terms: string;
   notes?: string;
   footer_text?: string;
@@ -106,12 +121,45 @@ export interface PaymentRecord {
   invoice_id: string;
   amount: number;
   payment_method: 'stripe' | 'wire_transfer' | 'check' | 'cash' | 'other';
+  payment_type_id?: string;
+  payment_type?: PaymentType;
+  is_cash_payment: boolean;
   payment_date: string;
   reference_number?: string;
   stripe_payment_id?: string;
   notes?: string;
   recorded_by: string;
   created_at: string;
+}
+
+export interface WeeklySalesSummary {
+  organization_id: string;
+  warehouse_id?: string;
+  team_id?: string;
+  week_start: string;
+  week_end: string;
+  total_invoices: number;
+  total_sales: number;
+  total_collected: number;
+  total_outstanding: number;
+  paid_invoices_total: number;
+  pending_invoices_total: number;
+  overdue_invoices_total: number;
+  paid_count: number;
+  pending_count: number;
+  overdue_count: number;
+}
+
+export interface CashOnHandSummary {
+  organization_id: string;
+  warehouse_id?: string;
+  team_id?: string;
+  week_start: string;
+  week_end: string;
+  cash_collected: number;
+  total_collected: number;
+  payment_count: number;
+  payment_methods_used: string[];
 }
 
 export interface OrganizationPaymentSettings {
