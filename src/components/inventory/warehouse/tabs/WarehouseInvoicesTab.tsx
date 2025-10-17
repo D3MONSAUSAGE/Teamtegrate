@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Receipt, FileText, DollarSign, TrendingDown } from 'lucide-react';
+import { Receipt, FileText, DollarSign, TrendingDown, BarChart3 } from 'lucide-react';
 import { SalesInvoicesDisplay } from './SalesInvoicesDisplay';
 import { ExpenseInvoicesDisplay } from './ExpenseInvoicesDisplay';
+import { WarehouseDailySalesDisplay } from './WarehouseDailySalesDisplay';
 
 interface WarehouseInvoicesTabProps {
   warehouseId: string;
@@ -25,7 +26,11 @@ export const WarehouseInvoicesTab: React.FC<WarehouseInvoicesTabProps> = ({ ware
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsTrigger value="daily-sales" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Daily Sales
+          </TabsTrigger>
           <TabsTrigger value="sales" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Sales Invoices
@@ -35,6 +40,10 @@ export const WarehouseInvoicesTab: React.FC<WarehouseInvoicesTabProps> = ({ ware
             Expense Invoices
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="daily-sales" className="space-y-4">
+          <WarehouseDailySalesDisplay warehouseId={warehouseId} />
+        </TabsContent>
 
         <TabsContent value="sales" className="space-y-4">
           <SalesInvoicesDisplay warehouseId={warehouseId} />
