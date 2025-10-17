@@ -117,7 +117,7 @@ serve(async (req) => {
 
     const emailResult = await sendViaResend({
       apiKey: resendApiKey,
-      from: 'Schedule Manager <noreply@teamtegrate.com>',
+      from: 'Schedule Manager <noreply@requests.teamtegrate.com>',
       to: [user.email],
       subject: `Your Schedule for ${new Date(week_start).toLocaleDateString()} - ${new Date(week_end).toLocaleDateString()}`,
       html: emailHtml
