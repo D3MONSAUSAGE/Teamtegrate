@@ -10,12 +10,12 @@ import {
   Clock, 
   Users, 
   Plus,
-  Copy,
   AlertTriangle,
   CheckCircle,
   Save,
   Sparkles,
-  Zap
+  Zap,
+  Send
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,9 +215,64 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
     setHasUnsavedChanges(true);
   };
 
-  const copyPreviousWeekSchedule = () => {
-    // This would fetch the previous week's schedule and copy it
-    toast.info('Copy from previous week feature coming soon');
+  const sendWeeklySchedule = async () => {
+    if (!selectedTeamId || !user) {
+      toast.error('Please select a team');
+      return;
+    }
+
+    try {
+      // First save the schedule
+      await saveWeeklySchedule();
+      
+      // Get all unique employees who have schedules this week
+      const affectedEmployees = new Set<string>();
+      Object.values(scheduleData).forEach(daySchedule => {
+        Object.entries(daySchedule).forEach(([employeeId, shift]) => {
+          if (shift?.startTime && shift?.endTime) {
+            affectedEmployees.add(employeeId);
+          }
+        });
+      });
+      
+      if (affectedEmployees.size === 0) {
+        toast.error('No employees have been scheduled');
+        return;
+      }
+
+      // Send notifications to each employee
+      let notificationsSent = 0;
+      let emailsSent = 0;
+
+      for (const employeeId of affectedEmployees) {
+        // Create in-app notification
+        const { error: notifError } = await supabase.from('notifications').insert({
+          user_id: employeeId,
+          title: 'Your Schedule Has Been Updated',
+          content: `Your schedule for the week of ${format(weekStart, 'MMM d')} has been published.`,
+          type: 'schedule_update',
+          organization_id: user.organizationId
+        });
+
+        if (!notifError) notificationsSent++;
+        
+        // Trigger email edge function
+        const { error: emailError } = await supabase.functions.invoke('send-schedule-email', {
+          body: { 
+            user_id: employeeId,
+            week_start: format(weekStart, 'yyyy-MM-dd'),
+            week_end: format(weekEnd, 'yyyy-MM-dd')
+          }
+        });
+
+        if (!emailError) emailsSent++;
+      }
+      
+      toast.success(`Schedule sent to ${affectedEmployees.size} employees (${notificationsSent} notifications, ${emailsSent} emails)`);
+    } catch (error) {
+      console.error('Error sending schedule:', error);
+      toast.error('Failed to send schedule');
+    }
   };
 
   const applyShiftTemplate = (startTime: string, endTime: string) => {
@@ -461,13 +516,13 @@ export const WeeklyScheduleCreator: React.FC<WeeklyScheduleCreatorProps> = ({ se
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={copyPreviousWeekSchedule} className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Previous Week
-              </Button>
-              <Button onClick={saveWeeklySchedule} disabled={isLoading || isLoadingExisting} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
+              <Button variant="outline" onClick={saveWeeklySchedule} disabled={isLoading || isLoadingExisting}>
                 <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Saving...' : isLoadingExisting ? 'Loading...' : 'Save Schedule'}
+                {isLoading ? 'Saving...' : isLoadingExisting ? 'Loading...' : 'Save Draft'}
+              </Button>
+              <Button onClick={sendWeeklySchedule} disabled={isLoading || isLoadingExisting} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg">
+                <Send className="h-4 w-4 mr-2" />
+                Send Schedule
               </Button>
             </div>
           </div>

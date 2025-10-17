@@ -101,6 +101,9 @@ verify_jwt = true
 [functions.send-meeting-notifications]
 verify_jwt = true
 
+[functions.send-schedule-email]
+verify_jwt = false
+
 [functions.validate-checklist-time]
 verify_jwt = true
 
