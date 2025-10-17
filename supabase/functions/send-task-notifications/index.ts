@@ -243,7 +243,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Get configuration from environment variables
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@requests.teamtegrate.com>';
     
     // Validate sender domain
     if (!fromEmail.includes('@') || fromEmail.includes('example.com')) {
@@ -313,7 +313,7 @@ const handler = async (req: Request): Promise<Response> => {
               })
             : '';
 
-          const legacyFromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+          const legacyFromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@requests.teamtegrate.com>';
           const success = await sendEmailWithRetry(resendApiKey, legacyFromEmail, {
             to,
             subject: `📋 New Task Assignment: ${task.title}`,
@@ -358,7 +358,7 @@ const handler = async (req: Request): Promise<Response> => {
               year: vars.year || String(new Date().getFullYear())
             };
 
-            const statusFromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+            const statusFromEmail = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@requests.teamtegrate.com>';
             const success = await sendEmailWithRetry(resendApiKey, statusFromEmail, {
             to,
             subject: `🔄 Task Status Updated: ${safeVars.taskTitle}`,
@@ -369,7 +369,7 @@ const handler = async (req: Request): Promise<Response> => {
           console.log(`[Email Status] Task status update email result: ${success ? 'SUCCESS' : 'FAILED'}`);
         } else if (to && actor && oldStatus && newStatus && task) {
           // Legacy fallback for backward compatibility
-          const legacyFromEmail2 = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@teamtegrate.com>';
+          const legacyFromEmail2 = Deno.env.get('FROM_EMAIL') || 'Teamtegrate <notifications@requests.teamtegrate.com>';
           const success = await sendEmailWithRetry(resendApiKey, legacyFromEmail2, {
             to,
             subject: `🔄 Task Status Updated: ${task.title}`,
