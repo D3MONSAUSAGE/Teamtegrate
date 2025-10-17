@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useScheduleManagement, EmployeeSchedule } from '@/hooks/useScheduleManagement';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours, addWeeks, startOfDay, endOfDay } from 'date-fns';
 import ModernMetricCard from './modern/ModernMetricCard';
 import { EmployeeTimeStatusBadge } from '@/components/employee/EmployeeTimeStatusBadge';
@@ -40,7 +40,7 @@ export const MyScheduleView: React.FC = () => {
     endBreak,
     fetchWeeklyEntries,
     isLoading: timeTrackingLoading
-  } = useEmployeeTimeTracking();
+  } = useTimeTracking();
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrTokenType, setQrTokenType] = useState<'clock_in' | 'clock_out'>('clock_in');

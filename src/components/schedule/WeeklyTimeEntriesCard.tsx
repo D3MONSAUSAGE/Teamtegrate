@@ -14,7 +14,7 @@ import {
   CalendarX,
   Plus
 } from 'lucide-react';
-import { TimeEntry } from '@/hooks/useEmployeeTimeTracking';
+import { TimeEntry } from '@/contexts/TimeTrackingContext';
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, isToday } from 'date-fns';
 import TimeEntryRow from './TimeEntryRow';
 import { TimeEntryCorrectionRequestForm } from '@/components/time-entries/TimeEntryCorrectionRequestForm';

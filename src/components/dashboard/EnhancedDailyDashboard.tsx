@@ -13,7 +13,7 @@ import {
   Timer,
   Award
 } from 'lucide-react';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ const EnhancedDailyDashboard: React.FC = () => {
     dailySummary,
     isLoading,
     lastError 
-  } = useEmployeeTimeTracking();
+  } = useTimeTracking();
 
   // Map to sessionState format for compatibility
   const sessionState = {

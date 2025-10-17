@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 import EmployeeTimeControls from './employee-time/EmployeeTimeControls';
 import EmployeeDailySummary from './employee-time/EmployeeDailySummary';
 import EmployeeComplianceAlert from './employee-time/EmployeeComplianceAlert';
@@ -21,7 +21,7 @@ const EmployeeTimeTracking: React.FC = () => {
     startBreak,
     endBreak,
     autoCloseStaleSessionsAPI
-  } = useEmployeeTimeTracking();
+  } = useTimeTracking();
 
   const hasComplianceIssues = dailySummary?.compliance_notes;
   const isOvertime = (dailySummary?.overtime_minutes || 0) > 0;

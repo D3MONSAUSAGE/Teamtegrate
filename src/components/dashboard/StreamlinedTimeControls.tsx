@@ -13,7 +13,7 @@ import {
   QrCode
 } from 'lucide-react';
 import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 import { formatTimeWithSeconds } from '@/utils/timeUtils';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ const StreamlinedTimeControls: React.FC = () => {
     isLoading,
     lastError,
     startBreak
-  } = useEmployeeTimeTracking();
+  } = useTimeTracking();
 
   const isWorking = currentSession.isActive && !currentSession.isOnBreak;
   const isOnBreak = currentSession.isActive && currentSession.isOnBreak;

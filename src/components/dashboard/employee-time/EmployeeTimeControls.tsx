@@ -14,7 +14,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { CurrentSession } from '@/hooks/useEmployeeTimeTracking';
+import { CurrentSession } from '@/contexts/TimeTrackingContext';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 
 interface EmployeeTimeControlsProps {

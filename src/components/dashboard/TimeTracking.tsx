@@ -4,12 +4,12 @@ import StreamlinedTimeControls from './StreamlinedTimeControls';
 import EnhancedDailyDashboard from './EnhancedDailyDashboard';
 import WeeklyTimeReport from './WeeklyTimeReport';
 import TimeTrackingErrorBoundary from './time/TimeTrackingErrorBoundary';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 
 const TimeTracking: React.FC = () => {
-  const { weeklyEntries, currentSession, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries, realtimeConnected } = useEmployeeTimeTracking();
+  const { weeklyEntries, currentSession, fetchCurrentSession, fetchDailySummary, fetchWeeklyEntries, realtimeConnected } = useTimeTracking();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleRefresh = async () => {

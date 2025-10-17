@@ -7,14 +7,14 @@ import { useScheduleManagement, EmployeeSchedule } from '@/hooks/useScheduleMana
 import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfWeek, endOfWeek, addDays, isToday, differenceInHours } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 
 import ModernMetricCard from './modern/ModernMetricCard';
 
 const ScheduleEmployeeDashboard: React.FC = () => {
   const { user } = useAuth();
   const { employeeSchedules, fetchEmployeeSchedules, isLoading } = useScheduleManagement();
-  const { weeklyEntries } = useEmployeeTimeTracking();
+  const { weeklyEntries } = useTimeTracking();
   const [selectedWeek, setSelectedWeek] = useState(new Date());
 
   useEffect(() => {

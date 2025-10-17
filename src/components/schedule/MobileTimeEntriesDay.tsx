@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Clock, Plus, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, isToday } from 'date-fns';
-import { TimeEntry } from '@/hooks/useEmployeeTimeTracking';
+import { TimeEntry } from '@/contexts/TimeTrackingContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 

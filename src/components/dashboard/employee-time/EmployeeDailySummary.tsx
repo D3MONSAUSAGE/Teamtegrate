@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react';
-import { DailySummary, CurrentSession } from '@/hooks/useEmployeeTimeTracking';
+import { DailySummary, CurrentSession } from '@/contexts/TimeTrackingContext';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 
 interface EmployeeDailySummaryProps {

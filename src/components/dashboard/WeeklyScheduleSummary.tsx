@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Clock, Calendar, Target, TrendingUp } from 'lucide-react';
 import { useEmployeeWeeklySchedule } from '@/hooks/useEmployeeWeeklySchedule';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 import { formatHoursMinutes } from '@/utils/timeUtils';
 import { startOfWeek, format } from 'date-fns';
 
@@ -15,7 +15,7 @@ export const WeeklyScheduleSummary: React.FC<WeeklyScheduleSummaryProps> = ({
   weekDate = new Date() 
 }) => {
   const { scheduledHours, isLoading: scheduleLoading } = useEmployeeWeeklySchedule(weekDate);
-  const { weeklyEntries, isLoading: timeLoading } = useEmployeeTimeTracking();
+  const { weeklyEntries, isLoading: timeLoading } = useTimeTracking();
 
   // Get the Monday of the week
   const weekStart = startOfWeek(weekDate, { weekStartsOn: 1 });

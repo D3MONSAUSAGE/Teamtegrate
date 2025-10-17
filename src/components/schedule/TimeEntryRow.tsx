@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
-import { TimeEntry } from '@/hooks/useEmployeeTimeTracking';
+import { TimeEntry } from '@/contexts/TimeTrackingContext';
 import { CorrectionRequest } from '@/hooks/useTimeEntryCorrectionRequests';
 import { format, differenceInMinutes } from 'date-fns';
 

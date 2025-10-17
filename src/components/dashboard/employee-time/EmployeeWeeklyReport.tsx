@@ -9,7 +9,7 @@ import {
   TrendingUp, 
   AlertCircle 
 } from 'lucide-react';
-import { TimeEntry } from '@/hooks/useEmployeeTimeTracking';
+import { TimeEntry } from '@/contexts/TimeTrackingContext';
 import { formatHoursMinutes, formatTime12Hour } from '@/utils/timeUtils';
 import { format, parseISO, startOfWeek, addDays } from 'date-fns';
 

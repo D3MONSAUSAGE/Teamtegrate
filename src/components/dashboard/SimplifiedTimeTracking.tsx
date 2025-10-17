@@ -4,7 +4,7 @@ import StreamlinedTimeControls from './StreamlinedTimeControls';
 import { EmployeeTimeStatusCard } from '@/components/employee/EmployeeTimeStatusCard';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import MobileTimeTrackingWidget from '@/components/mobile/MobileTimeTrackingWidget';
-import { useEmployeeTimeTracking } from '@/hooks/useEmployeeTimeTracking';
+import { useTimeTracking } from '@/contexts/TimeTrackingContext';
 
 export const SimplifiedTimeTracking: React.FC = () => {
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -19,7 +19,7 @@ export const SimplifiedTimeTracking: React.FC = () => {
     clockOut,
     startBreak,
     endBreak
-  } = useEmployeeTimeTracking();
+  } = useTimeTracking();
 
   // Format elapsed time for mobile widget
   const formatElapsedTime = (seconds: number): string => {
