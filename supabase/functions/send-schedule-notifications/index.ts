@@ -187,7 +187,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         const emailResult = await sendViaResend({
           apiKey: resendApiKey,
-          from: "Teamtegrate <notifications@teamtegrate.com>",
+          from: "Teamtegrate <notifications@requests.teamtegrate.com>",
           to: [recipient.email],
           subject,
           html: personalizedContent

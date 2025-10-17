@@ -106,7 +106,7 @@ serve(async (req) => {
 
     const emailResult = await sendViaResend({
       apiKey: resendApiKey,
-      from: 'TaskManager <noreply@teamtegrate.com>',
+      from: 'TaskManager <noreply@requests.teamtegrate.com>',
       to: [user.email],
       subject: `Daily Task Summary - ${new Date().toLocaleDateString()}`,
       html: emailHtml

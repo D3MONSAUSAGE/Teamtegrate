@@ -193,7 +193,7 @@ async function sendEmail(to: string, subject: string, html: string, correlationI
 
     const result = await sendViaResend({
       apiKey: resendApiKey,
-      from: "Teamtegrate <notifications@teamtegrate.com>",
+      from: "Teamtegrate <notifications@requests.teamtegrate.com>",
       to: [to],
       subject,
       html
