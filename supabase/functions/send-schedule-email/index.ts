@@ -93,8 +93,7 @@ serve(async (req) => {
         scheduled_start_time,
         scheduled_end_time,
         area,
-        notes,
-        shift_name
+        notes
       `)
       .eq('employee_id', user_id)
       .gte('scheduled_date', week_start)
