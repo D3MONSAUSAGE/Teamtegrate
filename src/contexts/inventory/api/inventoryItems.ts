@@ -135,11 +135,26 @@ export const inventoryItemsApi = {
 
     console.log('✅ Server-side security checks passed');
     
+    console.log('📤 BEFORE normalization:', {
+      updates,
+      sku: updates.sku,
+      skuType: typeof updates.sku,
+      skuInUpdates: 'sku' in updates
+    });
+
     const normalizedUpdates = {
       ...updates,
+      ...(updates.sku !== undefined && { sku: updates.sku?.trim() || null }),
       ...(updates.barcode !== undefined && { barcode: updates.barcode?.trim() || null }),
       ...(updates.image_url !== undefined && { image_url: updates.image_url || null })
     };
+
+    console.log('📤 AFTER normalization:', {
+      normalizedUpdates,
+      sku: normalizedUpdates.sku,
+      skuType: typeof normalizedUpdates.sku,
+      skuInNormalized: 'sku' in normalizedUpdates
+    });
     
     const { data, error } = await supabase
       .from('inventory_items')

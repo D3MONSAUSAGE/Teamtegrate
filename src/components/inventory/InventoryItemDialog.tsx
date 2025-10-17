@@ -217,6 +217,13 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
       };
 
       console.log('📦 Item data prepared:', itemData);
+      console.log('📦 SKU in itemData:', {
+        sku: itemData.sku,
+        skuValue: values.sku,
+        skuOriginal: currentItem?.sku,
+        skuChanged: currentItem?.sku !== values.sku,
+        itemDataHasSku: 'sku' in itemData
+      });
 
       let result;
       if (itemId) {
