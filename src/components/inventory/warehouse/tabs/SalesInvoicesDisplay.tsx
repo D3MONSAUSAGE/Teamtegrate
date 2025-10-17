@@ -1,52 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Eye, DollarSign, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
+import { Eye, Loader2, DollarSign, FileText, TrendingUp, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { toast } from "sonner";
+import { InvoiceDetailsModal } from "./InvoiceDetailsModal";
 import type { CreatedInvoice } from '@/types/invoices';
-import { RecordPaymentDialog } from './RecordPaymentDialog';
-import { PaymentHistoryPanel } from './PaymentHistoryPanel';
 
 interface SalesInvoicesDisplayProps {
   warehouseId: string;
 }
 
-export const SalesInvoicesDisplay: React.FC<SalesInvoicesDisplayProps> = ({ warehouseId }) => {
+export function SalesInvoicesDisplay({ warehouseId }: SalesInvoicesDisplayProps) {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<CreatedInvoice[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [paymentFilter, setPaymentFilter] = useState<string>('all');
-  const [selectedInvoice, setSelectedInvoice] = useState<CreatedInvoice | null>(null);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   const fetchInvoices = async () => {
     if (!user?.organizationId || !warehouseId) return;
 
     try {
-      setIsLoading(true);
+      setLoading(true);
       const { data, error } = await supabase
         .from('created_invoices')
         .select(`
           *,
-          client:invoice_clients(id, name)
+          invoice_clients!inner(name, email)
         `)
         .eq('organization_id', user.organizationId)
         .eq('warehouse_id', warehouseId)
         .order('issue_date', { ascending: false });
 
       if (error) throw error;
-      setInvoices((data as CreatedInvoice[]) || []);
+      
+      const mappedInvoices = data?.map((inv: any) => ({
+        ...inv,
+        client_name: inv.invoice_clients?.name || 'Unknown'
+      })) || [];
+      
+      setInvoices(mappedInvoices as any);
     } catch (error: any) {
       console.error('Error fetching invoices:', error);
       toast.error('Failed to load invoices');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -54,13 +58,9 @@ export const SalesInvoicesDisplay: React.FC<SalesInvoicesDisplayProps> = ({ ware
     fetchInvoices();
   }, [warehouseId, user?.organizationId]);
 
-  const handleRecordPayment = (invoice: CreatedInvoice) => {
-    setSelectedInvoice(invoice);
-    setShowPaymentDialog(true);
-  };
-
-  const handlePaymentRecorded = () => {
-    fetchInvoices();
+  const handleViewDetails = (invoiceId: string) => {
+    setSelectedInvoiceId(invoiceId);
+    setShowInvoiceModal(true);
   };
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -68,172 +68,155 @@ export const SalesInvoicesDisplay: React.FC<SalesInvoicesDisplayProps> = ({ ware
     return invoice.payment_status === paymentFilter;
   });
 
-  const getPaymentStatusBadge = (invoice: CreatedInvoice) => {
-    const status = invoice.payment_status;
-    const paidAmount = invoice.paid_amount || 0;
-    const totalAmount = invoice.total_amount || 0;
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { variant: any; label: string; icon: any }> = {
+      paid: { variant: "default", label: "Paid", icon: CheckCircle },
+      partial: { variant: "secondary", label: "Partial", icon: Clock },
+      unpaid: { variant: "outline", label: "Pending", icon: Clock },
+      overdue: { variant: "destructive", label: "Overdue", icon: AlertCircle }
+    };
 
-    if (status === 'paid' || paidAmount >= totalAmount) {
-      return <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" />Paid</Badge>;
-    } else if (status === 'partial' && paidAmount > 0) {
-      return <Badge variant="secondary" className="bg-yellow-600"><Clock className="h-3 w-3 mr-1" />Partial</Badge>;
-    } else if (status === 'overdue') {
-      return <Badge variant="destructive"><AlertCircle className="h-3 w-3 mr-1" />Overdue</Badge>;
-    } else {
-      return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-    }
+    const config = statusMap[status] || statusMap.unpaid;
+    const Icon = config.icon;
+    
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
   };
 
   const stats = {
-    total: invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
+    totalRevenue: invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
     collected: invoices.reduce((sum, inv) => sum + (inv.paid_amount || 0), 0),
-    outstanding: invoices.reduce((sum, inv) => sum + (inv.balance_due || inv.total_amount || 0), 0)
+    outstanding: invoices.reduce((sum, inv) => sum + (inv.balance_due || 0), 0)
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.total.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground mt-1">{invoices.length} invoices</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-600">Collected</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Collected</CardTitle>
+            <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${stats.collected.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-primary">${stats.collected.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.totalRevenue > 0 ? ((stats.collected / stats.totalRevenue) * 100).toFixed(1) : 0}% collected
+            </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-orange-600">Outstanding</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+            <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">${stats.outstanding.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${stats.outstanding.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground mt-1">Pending payment</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Sales Invoices (Outgoing)
-            </CardTitle>
-            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Invoices</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="partial">Partial</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Sales Invoices (Outgoing)</CardTitle>
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Invoices</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="partial">Partial</SelectItem>
+              <SelectItem value="unpaid">Pending</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading invoices...
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredInvoices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {paymentFilter === 'all' 
-                ? 'No sales invoices found for this warehouse'
-                : `No ${paymentFilter} invoices found`
-              }
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">
+                {paymentFilter === "all" ? "No sales invoices found" : `No ${paymentFilter} invoices`}
+              </p>
+              <p className="text-sm">
+                {paymentFilter === "all" 
+                  ? "Create invoices to track your warehouse sales"
+                  : "Try changing the filter"}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredInvoices.map((invoice) => {
-                const isExpanded = expandedInvoice === invoice.id;
-                const balance = invoice.balance_due || invoice.total_amount;
-                const paidAmount = invoice.paid_amount || 0;
-                
-                return (
-                  <div key={invoice.id} className="border rounded-lg">
-                    <div className="flex items-center justify-between p-4">
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">#{invoice.invoice_number}</span>
-                          {getPaymentStatusBadge(invoice)}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {invoice.client?.name || 'Unknown Client'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Issued: {format(new Date(invoice.issue_date), 'MMM dd, yyyy')} • 
-                          Due: {format(new Date(invoice.due_date), 'MMM dd, yyyy')}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs mt-2">
-                          <span className="text-muted-foreground">
-                            Total: <span className="font-semibold">${invoice.total_amount.toFixed(2)}</span>
-                          </span>
-                          {paidAmount > 0 && (
-                            <span className="text-green-600">
-                              Paid: <span className="font-semibold">${paidAmount.toFixed(2)}</span>
-                            </span>
-                          )}
-                          {balance > 0 && (
-                            <span className="text-orange-600">
-                              Balance: <span className="font-semibold">${balance.toFixed(2)}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {balance > 0 && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleRecordPayment(invoice)}
-                          >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            Record Payment
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setExpandedInvoice(isExpanded ? null : invoice.id)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          {isExpanded ? 'Hide' : 'Details'}
-                        </Button>
-                      </div>
+              {filteredInvoices.map((invoice) => (
+                <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <p className="font-medium">Invoice #{invoice.invoice_number}</p>
+                      {getStatusBadge(invoice.payment_status)}
                     </div>
-                    
-                    {isExpanded && (
-                      <div className="border-t p-4 bg-muted/50">
-                        <PaymentHistoryPanel invoiceId={invoice.id} />
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{(invoice as any).client_name || 'Unknown Client'}</span>
+                      <span>•</span>
+                      <span>{format(new Date(invoice.issue_date), 'MMM dd, yyyy')}</span>
+                      <span>•</span>
+                      <span className="font-medium text-foreground">
+                        ${invoice.total_amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    {invoice.balance_due > 0 && (
+                      <div className="mt-2 text-sm">
+                        <span className="text-muted-foreground">Paid: </span>
+                        <span className="font-medium text-primary">${invoice.paid_amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-muted-foreground mx-2">•</span>
+                        <span className="text-muted-foreground">Balance Due: </span>
+                        <span className="font-medium">${invoice.balance_due.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                     )}
                   </div>
-                );
-              })}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewDetails(invoice.id)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {selectedInvoice && (
-        <RecordPaymentDialog
-          open={showPaymentDialog}
-          onOpenChange={setShowPaymentDialog}
-          invoice={selectedInvoice}
-          onPaymentRecorded={handlePaymentRecorded}
-        />
-      )}
+      <InvoiceDetailsModal
+        invoiceId={selectedInvoiceId}
+        open={showInvoiceModal}
+        onOpenChange={setShowInvoiceModal}
+        onPaymentRecorded={fetchInvoices}
+      />
     </div>
   );
-};
+}
