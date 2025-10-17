@@ -52,6 +52,47 @@ export const productionRecipesApi = {
   },
 
   /**
+   * Get all recipes with ingredients and item details in bulk (optimized)
+   */
+  async getAllWithDetails(): Promise<RecipeWithIngredients[]> {
+    // Get all active recipes
+    const { data: recipes, error: recipesError } = await supabase
+      .from('production_recipes')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (recipesError) throw recipesError;
+    if (!recipes || recipes.length === 0) return [];
+
+    // Get all ingredients for these recipes with item names in one query
+    const recipeIds = recipes.map(r => r.id);
+    const { data: ingredients, error: ingredientsError } = await supabase
+      .from('recipe_ingredients')
+      .select(`
+        *,
+        inventory_items!inner(name)
+      `)
+      .in('recipe_id', recipeIds)
+      .order('sort_order', { ascending: true });
+
+    if (ingredientsError) throw ingredientsError;
+
+    // Group ingredients by recipe_id
+    const ingredientsByRecipe = (ingredients || []).reduce((acc, ing) => {
+      if (!acc[ing.recipe_id]) acc[ing.recipe_id] = [];
+      acc[ing.recipe_id].push(ing);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // Combine recipes with their ingredients
+    return recipes.map(recipe => ({
+      ...recipe,
+      ingredients: ingredientsByRecipe[recipe.id] || [],
+    }));
+  },
+
+  /**
    * Get a single recipe with its ingredients
    */
   async getById(id: string): Promise<RecipeWithIngredients | null> {

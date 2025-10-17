@@ -69,7 +69,7 @@ export async function getItemPackagingInfo(itemId: string) {
 /**
  * Calculate the cost for a single ingredient using unit conversion
  */
-async function calculateIngredientCost(ingredient: any): Promise<RecipeIngredientWithCost> {
+function calculateIngredientCost(ingredient: any, itemsMap: Map<string, any>): RecipeIngredientWithCost {
   let unitCost = 0;
 
   // 1. Check for manual override first
@@ -79,29 +79,22 @@ async function calculateIngredientCost(ingredient: any): Promise<RecipeIngredien
     // 2. Use historical snapshot if available
     unitCost = ingredient.cost_per_base_unit;
   } else {
-    // 3. Calculate from current inventory data
-    try {
-      const packagingInfo = await getItemPackagingInfo(ingredient.item_id);
-      unitCost = packagingInfo.costPerBaseUnit;
-    } catch (error) {
-      console.error('Error fetching packaging info:', error);
-      unitCost = 0;
+    // 3. Calculate from current inventory data (pre-fetched)
+    const item = itemsMap.get(ingredient.item_id);
+    if (item?.purchase_price && item?.conversion_factor && item.conversion_factor > 0) {
+      unitCost = item.purchase_price / item.conversion_factor;
+    } else if (item?.purchase_price) {
+      unitCost = item.purchase_price;
     }
   }
 
-  // Get item name
-  const { data: item } = await supabase
-    .from('inventory_items')
-    .select('name')
-    .eq('id', ingredient.item_id)
-    .single();
-
   const totalCost = ingredient.quantity_needed * unitCost;
+  const itemName = ingredient.inventory_items?.name || itemsMap.get(ingredient.item_id)?.name || 'Unknown Item';
 
   return {
     id: ingredient.id,
     item_id: ingredient.item_id,
-    item_name: item?.name || 'Unknown Item',
+    item_name: itemName,
     quantity_needed: ingredient.quantity_needed,
     unit: ingredient.unit,
     manual_unit_cost: ingredient.manual_unit_cost,
@@ -115,20 +108,17 @@ async function calculateIngredientCost(ingredient: any): Promise<RecipeIngredien
 /**
  * Calculate costs for a recipe with all its ingredients and other costs
  */
-async function calculateRecipeCosts(recipe: RecipeWithIngredients): Promise<RecipeWithCosts> {
-  const ingredientsWithCosts = await Promise.all(
-    recipe.ingredients.map(calculateIngredientCost)
+function calculateRecipeCosts(
+  recipe: RecipeWithIngredients, 
+  itemsMap: Map<string, any>,
+  otherCostsMap: Map<string, number>
+): RecipeWithCosts {
+  const ingredientsWithCosts = recipe.ingredients.map(ing => 
+    calculateIngredientCost(ing, itemsMap)
   );
 
   const ingredientTotal = ingredientsWithCosts.reduce((sum, ing) => sum + ing.total_cost, 0);
-
-  // Fetch and sum other costs
-  const { data: otherCosts } = await supabase
-    .from('recipe_other_costs')
-    .select('cost_amount')
-    .eq('recipe_id', recipe.id);
-  
-  const otherCostsTotal = otherCosts?.reduce((sum, cost) => sum + cost.cost_amount, 0) || 0;
+  const otherCostsTotal = otherCostsMap.get(recipe.id) || 0;
 
   // Calculate totals
   const totalCost = ingredientTotal + otherCostsTotal;
@@ -151,20 +141,46 @@ export function useRecipes(teamId?: string) {
   return useQuery({
     queryKey: [...RECIPES_QUERY_KEY, teamId],
     queryFn: async () => {
-      let recipes = await productionRecipesApi.getAll();
+      // Fetch all recipes with ingredients in bulk (optimized)
+      let recipes = await productionRecipesApi.getAllWithDetails();
       
       // Filter by team if provided
       if (teamId) {
         recipes = recipes.filter(r => r.team_id === teamId);
       }
-      
-      const recipesWithIngredients = await Promise.all(
-        recipes.map(async (recipe) => {
-          const full = await productionRecipesApi.getById(recipe.id);
-          return full!;
-        })
-      );
-      return Promise.all(recipesWithIngredients.map(calculateRecipeCosts));
+
+      if (recipes.length === 0) return [];
+
+      // Get all unique item IDs from all recipes
+      const itemIds = new Set<string>();
+      recipes.forEach(recipe => {
+        recipe.ingredients.forEach(ing => itemIds.add(ing.item_id));
+      });
+
+      // Fetch all items in bulk
+      const { data: items } = await supabase
+        .from('inventory_items')
+        .select('id, name, purchase_price, conversion_factor')
+        .in('id', Array.from(itemIds));
+
+      const itemsMap = new Map((items || []).map(item => [item.id, item]));
+
+      // Fetch all other costs in bulk
+      const recipeIds = recipes.map(r => r.id);
+      const { data: allOtherCosts } = await supabase
+        .from('recipe_other_costs')
+        .select('recipe_id, cost_amount')
+        .in('recipe_id', recipeIds);
+
+      // Sum other costs by recipe
+      const otherCostsMap = new Map<string, number>();
+      (allOtherCosts || []).forEach(cost => {
+        const current = otherCostsMap.get(cost.recipe_id) || 0;
+        otherCostsMap.set(cost.recipe_id, current + cost.cost_amount);
+      });
+
+      // Calculate costs for all recipes
+      return recipes.map(recipe => calculateRecipeCosts(recipe, itemsMap, otherCostsMap));
     },
   });
 }
@@ -178,7 +194,28 @@ export function useRecipeById(id: string) {
     queryFn: async () => {
       const recipe = await productionRecipesApi.getById(id);
       if (!recipe) return null;
-      return calculateRecipeCosts(recipe);
+
+      // Get all item IDs from ingredients
+      const itemIds = recipe.ingredients.map(ing => ing.item_id);
+
+      // Fetch items in bulk
+      const { data: items } = await supabase
+        .from('inventory_items')
+        .select('id, name, purchase_price, conversion_factor')
+        .in('id', itemIds);
+
+      const itemsMap = new Map((items || []).map(item => [item.id, item]));
+
+      // Fetch other costs
+      const { data: otherCosts } = await supabase
+        .from('recipe_other_costs')
+        .select('cost_amount')
+        .eq('recipe_id', id);
+
+      const otherCostsTotal = otherCosts?.reduce((sum, cost) => sum + cost.cost_amount, 0) || 0;
+      const otherCostsMap = new Map([[id, otherCostsTotal]]);
+
+      return calculateRecipeCosts(recipe, itemsMap, otherCostsMap);
     },
     enabled: !!id,
   });
