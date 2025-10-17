@@ -334,15 +334,12 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
             <div className="p-4 space-y-6">
               {/* Header Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Vendor</Label>
-                  <VendorSelector
-                    vendors={vendors}
-                    value={selectedVendor}
-                    onValueChange={setSelectedVendor}
-                    placeholder="Select vendor..."
-                  />
-                </div>
+                <VendorSelector
+                  vendors={vendors}
+                  value={selectedVendor}
+                  onValueChange={setSelectedVendor}
+                  placeholder="Select vendor..."
+                />
                 <div className="space-y-2">
                   <Label>Invoice/Reference Number</Label>
                   <Input
@@ -353,111 +350,82 @@ export const ReceiveStockDialog: React.FC<ReceiveStockDialogProps> = ({
                 </div>
               </div>
 
-              {/* Invoice Tracking Toggle */}
-              <Card className="bg-muted/30 border-dashed">
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <Receipt className="h-4 w-4 text-primary" />
-                          <Label className="text-base font-semibold cursor-pointer" htmlFor="invoice-toggle">
-                            Save as Expense Invoice
-                          </Label>
+              {/* Invoice Tracking Toggle - Compact */}
+              {createInvoiceRecord && (
+                <Card className="bg-muted/30 border-dashed">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="invoice-total" className="text-sm">
+                          Invoice Total <span className="text-xs text-muted-foreground">(optional)</span>
+                        </Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            id="invoice-total"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Auto-calculated"
+                            value={invoiceTotal || ''}
+                            onChange={(e) => setInvoiceTotal(parseFloat(e.target.value) || 0)}
+                            className="pl-8 h-9 text-sm"
+                          />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Track this receiving as an expense invoice for financial reporting
+                          From items: {formatCurrency(totalCost)}
                         </p>
                       </div>
-                      <Switch
-                        id="invoice-toggle"
-                        checked={createInvoiceRecord}
-                        onCheckedChange={setCreateInvoiceRecord}
-                      />
-                    </div>
 
-                    {/* Invoice Fields - Show when toggle is ON */}
-                    {createInvoiceRecord && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                        <div className="space-y-2">
-                          <Label htmlFor="invoice-total">
-                            Invoice Total
-                            <span className="text-xs text-muted-foreground ml-1">(optional)</span>
-                          </Label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="invoice-total"
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="Auto-calculated"
-                              value={invoiceTotal || ''}
-                              onChange={(e) => setInvoiceTotal(parseFloat(e.target.value) || 0)}
-                              className="pl-9 font-semibold"
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            From items: {formatCurrency(totalCost)}
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="payment-due-date">
-                            Payment Due Date
-                            <span className="text-xs text-muted-foreground ml-1">(optional)</span>
-                          </Label>
-                          <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="payment-due-date"
-                              type="date"
-                              value={paymentDueDate}
-                              onChange={(e) => setPaymentDueDate(e.target.value)}
-                              className="pl-9"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="payment-status">Payment Status</Label>
-                          <Select value={paymentStatus} onValueChange={(val: any) => setPaymentStatus(val)}>
-                            <SelectTrigger id="payment-status">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="unpaid">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-destructive" />
-                                  <span>Unpaid</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="partial">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                                  <span>Partially Paid</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="paid">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                                  <span>Paid</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="void">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                                  <span>Void</span>
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="payment-due-date" className="text-sm">
+                          Due Date <span className="text-xs text-muted-foreground">(optional)</span>
+                        </Label>
+                        <Input
+                          id="payment-due-date"
+                          type="date"
+                          value={paymentDueDate}
+                          onChange={(e) => setPaymentDueDate(e.target.value)}
+                          className="h-9 text-sm"
+                        />
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="payment-status" className="text-sm">Payment Status</Label>
+                        <Select value={paymentStatus} onValueChange={(val: any) => setPaymentStatus(val)}>
+                          <SelectTrigger id="payment-status" className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unpaid">Unpaid</SelectItem>
+                            <SelectItem value="partial">Partially Paid</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="void">Void</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Toggle at bottom of header section */}
+              <div className="flex items-center justify-between py-2 px-3 bg-muted/20 rounded-lg border border-dashed">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium cursor-pointer" htmlFor="invoice-toggle">
+                    Save as Expense Invoice
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    (Track for financial reporting)
+                  </span>
+                </div>
+                <Switch
+                  id="invoice-toggle"
+                  checked={createInvoiceRecord}
+                  onCheckedChange={setCreateInvoiceRecord}
+                />
+              </div>
 
               {/* Items Section */}
               <div className="space-y-4">
