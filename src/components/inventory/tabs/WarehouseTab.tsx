@@ -17,6 +17,7 @@ import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { useAuth } from '@/contexts/AuthContext';
 import { warehouseApi, type Warehouse } from '@/contexts/warehouse/api/warehouseApi';
 import { useInventory } from '@/contexts/inventory';
+import { useWarehouseSelection } from '@/contexts/inventory/WarehouseSelectionContext';
 import { InvoiceClient } from '@/types/invoices';
 import { toast } from 'sonner';
 import { WarehouseProvider } from '@/contexts/warehouse/WarehouseContext';
@@ -32,6 +33,7 @@ export const WarehouseTab: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, isSuperAdmin, availableTeams } = useTeamAccess();
   const { items: inventoryItems, getItemById, createTransaction, refreshTransactions } = useInventory();
+  const { setSelectedTeamId: setContextTeamId } = useWarehouseSelection();
   const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -216,6 +218,7 @@ export const WarehouseTab: React.FC = () => {
               onTeamChange={(teamId) => {
                 console.log('Team selector changed to:', teamId);
                 setSelectedTeamId(teamId);
+                setContextTeamId(teamId); // Sync with WarehouseSelectionContext
                 if (teamId === null) {
                   setShowOverview(true);
                   setWarehouse(null);
