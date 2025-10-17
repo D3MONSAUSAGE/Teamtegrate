@@ -161,9 +161,9 @@ function App() {
                    <Route path="reports/checklists" element={<RoleProtectedRoute requiredRole="manager"><ChecklistReportsPage /></RoleProtectedRoute>} />
                     
                     {/* Finance Routes - Keep original + add new nested routes */}
-                    <Route path="finance" element={<FinancePage />} />
-                    <Route path="finance/dashboard" element={<FinanceDashboardPage />} />
-                    <Route path="finance/invoices" element={<InvoiceManagementPage />} />
+                    <Route path="finance" element={<RoleProtectedRoute requiredRole="manager"><FinancePage /></RoleProtectedRoute>} />
+                    <Route path="finance/dashboard" element={<RoleProtectedRoute requiredRole="manager"><FinanceDashboardPage /></RoleProtectedRoute>} />
+                    <Route path="finance/invoices" element={<RoleProtectedRoute requiredRole="manager"><InvoiceManagementPage /></RoleProtectedRoute>} />
                     <Route path="finance/create-invoice" element={<RoleProtectedRoute requiredRole="manager"><InvoiceCreationPage /></RoleProtectedRoute>} />
                     <Route path="finance/clients" element={<RoleProtectedRoute requiredRole="manager"><ClientsPage /></RoleProtectedRoute>} />
                     <Route path="finance/reports" element={<RoleProtectedRoute requiredRole="manager"><ReportsPage /></RoleProtectedRoute>} />
