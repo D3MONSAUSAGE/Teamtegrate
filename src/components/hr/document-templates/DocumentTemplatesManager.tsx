@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useDocumentTemplates } from '@/hooks/document-templates';
 import { CreateTemplateDialog } from './CreateTemplateDialog';
 import { EditTemplateDialog } from './EditTemplateDialog';
+import { AssignTemplateDialog } from './AssignTemplateDialog';
+import { TemplateUserGuide } from './TemplateUserGuide';
 import { toast } from 'sonner';
 
 export const DocumentTemplatesManager = () => {
   const { templates, isLoading, deleteTemplate } = useDocumentTemplates();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [assigningTemplate, setAssigningTemplate] = useState<{ id: string; name: string } | null>(null);
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete template "${name}"? This cannot be undone.`)) {
@@ -21,6 +24,15 @@ export const DocumentTemplatesManager = () => {
 
   if (isLoading) {
     return <div className="text-center py-8">Loading templates...</div>;
+  }
+
+  if (templates.length === 0) {
+    return (
+      <>
+        <TemplateUserGuide onCreateTemplate={() => setCreateDialogOpen(true)} />
+        <CreateTemplateDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      </>
+    );
   }
 
   return (
@@ -36,22 +48,7 @@ export const DocumentTemplatesManager = () => {
         </Button>
       </div>
 
-      {templates.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No templates yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first document template to start tracking employee documents
-            </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Template
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
             <Card key={template.id} className={!template.is_active ? 'opacity-50' : ''}>
               <CardHeader>
@@ -76,6 +73,14 @@ export const DocumentTemplatesManager = () => {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => setAssigningTemplate({ id: template.id, name: template.name })}
+                      title="Assign to employees"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setEditingTemplate(template)}
                       className="flex-1"
                     >
@@ -96,7 +101,6 @@ export const DocumentTemplatesManager = () => {
             </Card>
           ))}
         </div>
-      )}
 
       <CreateTemplateDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       {editingTemplate && (
@@ -104,6 +108,14 @@ export const DocumentTemplatesManager = () => {
           template={editingTemplate}
           open={!!editingTemplate}
           onOpenChange={(open) => !open && setEditingTemplate(null)}
+        />
+      )}
+      {assigningTemplate && (
+        <AssignTemplateDialog
+          templateId={assigningTemplate.id}
+          templateName={assigningTemplate.name}
+          open={!!assigningTemplate}
+          onOpenChange={(open) => !open && setAssigningTemplate(null)}
         />
       )}
     </div>
