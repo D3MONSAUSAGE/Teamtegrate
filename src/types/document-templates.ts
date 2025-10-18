@@ -48,6 +48,7 @@ export interface DocumentComplianceTracking {
   organization_id: string;
   requirement_id: string;
   document_name: string;
+  document_type: string;
   is_required: boolean;
   requires_expiry: boolean;
   default_validity_days?: number;
