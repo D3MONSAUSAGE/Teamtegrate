@@ -268,6 +268,13 @@ export type Database = {
             foreignKeyName: "archive_settings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "archive_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -373,6 +380,13 @@ export type Database = {
             foreignKeyName: "attendance_scan_logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "attendance_scan_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -438,6 +452,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expense_categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "budgets_created_by_fkey"
@@ -578,6 +599,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meeting_requests"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "calendar_sync_log_user_id_fkey"
@@ -855,6 +883,13 @@ export type Database = {
             foreignKeyName: "checklist_comments_user_fk"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "checklist_comments_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -924,6 +959,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "checklist_items"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_execution_items_verified_by_fk"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "checklist_execution_items_verified_by_fk"
@@ -1008,6 +1050,13 @@ export type Database = {
             foreignKeyName: "checklist_executions_user_fk"
             columns: ["assigned_to_user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "checklist_executions_user_fk"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -1017,6 +1066,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_executions_verified_by_fk"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "checklist_executions_verified_by_fk"
@@ -1868,6 +1924,13 @@ export type Database = {
             foreignKeyName: "data_validation_log_resolved_by_fkey"
             columns: ["resolved_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "data_validation_log_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -2391,6 +2454,13 @@ export type Database = {
             foreignKeyName: "employee_document_assignments_assigned_by_fkey"
             columns: ["assigned_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -2400,6 +2470,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "employee_document_assignments_employee_id_fkey"
@@ -2447,6 +2524,13 @@ export type Database = {
             foreignKeyName: "employee_document_assignments_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["template_id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "employee_document_templates"
             referencedColumns: ["id"]
           },
@@ -2488,6 +2572,13 @@ export type Database = {
             foreignKeyName: "employee_document_templates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_document_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -2520,12 +2611,18 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          is_verified: boolean | null
+          last_reminder_date: string | null
           notes: string | null
           organization_id: string
+          renewal_reminder_sent: boolean | null
+          requirement_id: string | null
           tags: string[] | null
           updated_at: string | null
           uploader_id: string
           uploader_name: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           created_at?: string | null
@@ -2539,12 +2636,18 @@ export type Database = {
           file_size: number
           file_type: string
           id?: string
+          is_verified?: boolean | null
+          last_reminder_date?: string | null
           notes?: string | null
           organization_id: string
+          renewal_reminder_sent?: boolean | null
+          requirement_id?: string | null
           tags?: string[] | null
           updated_at?: string | null
           uploader_id: string
           uploader_name: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           created_at?: string | null
@@ -2558,14 +2661,56 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          is_verified?: boolean | null
+          last_reminder_date?: string | null
           notes?: string | null
           organization_id?: string
+          renewal_reminder_sent?: boolean | null
+          requirement_id?: string | null
           tags?: string[] | null
           updated_at?: string | null
           uploader_id?: string
           uploader_name?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employee_records_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["requirement_id"]
+          },
+          {
+            foreignKeyName: "employee_records_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "template_document_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employee_schedules: {
         Row: {
@@ -2650,6 +2795,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "weekly_payroll_summary"
             referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "fk_employee_schedules_employee_id"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "fk_employee_schedules_employee_id"
@@ -2857,6 +3009,13 @@ export type Database = {
             foreignKeyName: "expenses_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "expenses_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -2901,6 +3060,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "weekly_payroll_summary"
             referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "expenses_user_id_fkey"
@@ -3127,6 +3293,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_google_sync_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "fk_google_sync_user"
@@ -3362,6 +3535,13 @@ export type Database = {
             foreignKeyName: "inventory_counts_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -3399,6 +3579,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inventory_templates"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "inventory_counts_voided_by_fkey"
@@ -6057,6 +6244,13 @@ export type Database = {
             foreignKeyName: "organization_invites_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "organization_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -6237,6 +6431,13 @@ export type Database = {
             foreignKeyName: "parsed_data_staging_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "parsed_data_staging_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -6347,6 +6548,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_types_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "payment_types_created_by_fkey"
             columns: ["created_by"]
@@ -6463,6 +6671,13 @@ export type Database = {
             foreignKeyName: "permission_audit_log_changed_by_fkey"
             columns: ["changed_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -6493,6 +6708,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "job_roles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_audit_log_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "permission_audit_log_target_user_id_fkey"
@@ -6682,6 +6904,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pos_system_configs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "pos_system_configs_created_by_fkey"
             columns: ["created_by"]
@@ -6965,6 +7194,13 @@ export type Database = {
             foreignKeyName: "project_team_members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "project_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -7000,6 +7236,13 @@ export type Database = {
           team_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_teams_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "project_teams_assigned_by_fkey"
             columns: ["assigned_by"]
@@ -7153,6 +7396,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_attendance_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "qr_attendance_tokens_user_id_fkey"
@@ -7667,6 +7917,13 @@ export type Database = {
             foreignKeyName: "recruitment_candidate_stages_moved_by_fkey"
             columns: ["moved_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidate_stages_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -7759,6 +8016,13 @@ export type Database = {
             foreignKeyName: "recruitment_candidates_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_candidates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -7840,6 +8104,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "recruitment_documents_uploaded_by_fkey"
@@ -7979,6 +8250,13 @@ export type Database = {
             foreignKeyName: "recruitment_interview_feedback_interviewer_id_fkey"
             columns: ["interviewer_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_interview_feedback_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -8059,6 +8337,13 @@ export type Database = {
             foreignKeyName: "recruitment_interviews_interviewer_id_fkey"
             columns: ["interviewer_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -8075,6 +8360,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_interviews_scheduled_by_fkey"
+            columns: ["scheduled_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "recruitment_interviews_scheduled_by_fkey"
@@ -8147,6 +8439,13 @@ export type Database = {
             foreignKeyName: "recruitment_manager_approvals_manager_id_fkey"
             columns: ["manager_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -8163,6 +8462,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_manager_approvals_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "recruitment_manager_approvals_requested_by_fkey"
@@ -8228,6 +8534,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "recruitment_notes_user_id_fkey"
@@ -8352,6 +8665,13 @@ export type Database = {
             foreignKeyName: "recruitment_positions_hiring_manager_id_fkey"
             columns: ["hiring_manager_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_hiring_manager_id_fkey"
+            columns: ["hiring_manager_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -8361,6 +8681,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_positions_hr_recruiter_id_fkey"
+            columns: ["hr_recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "recruitment_positions_hr_recruiter_id_fkey"
@@ -8455,6 +8782,13 @@ export type Database = {
             foreignKeyName: "recruitment_references_called_by_fkey"
             columns: ["called_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "recruitment_references_called_by_fkey"
+            columns: ["called_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -8529,6 +8863,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "recruitment_pipeline_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_stage_transitions_moved_by_fkey"
+            columns: ["moved_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "recruitment_stage_transitions_moved_by_fkey"
@@ -9023,6 +9364,13 @@ export type Database = {
             foreignKeyName: "fk_request_comments_user_id"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "fk_request_comments_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -9361,6 +9709,13 @@ export type Database = {
             foreignKeyName: "fk_request_updates_user_id"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "fk_request_updates_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -9478,6 +9833,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "requests_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -9911,6 +10273,13 @@ export type Database = {
             foreignKeyName: "shared_folders_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "shared_folders_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -9920,6 +10289,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_folders_shared_with_user_id_fkey"
+            columns: ["shared_with_user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "shared_folders_shared_with_user_id_fkey"
@@ -10150,6 +10526,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inventory_items"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_receipts_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "stock_receipts_received_by_fkey"
@@ -10625,6 +11008,13 @@ export type Database = {
             foreignKeyName: "team_job_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "team_job_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -10726,6 +11116,13 @@ export type Database = {
             foreignKeyName: "team_memberships_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "team_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -10773,6 +11170,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "teams_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "teams_manager_id_fkey"
             columns: ["manager_id"]
@@ -10840,6 +11244,13 @@ export type Database = {
           template_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "template_document_requirements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["template_id"]
+          },
           {
             foreignKeyName: "template_document_requirements_template_id_fkey"
             columns: ["template_id"]
@@ -11125,6 +11536,13 @@ export type Database = {
             foreignKeyName: "training_assignment_audit_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "training_assignment_audit_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -11235,6 +11653,13 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "training_assignments_reassigned_by_fkey"
+            columns: ["reassigned_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "training_assignments_reassigned_by_fkey"
             columns: ["reassigned_by"]
@@ -11623,6 +12048,13 @@ export type Database = {
             foreignKeyName: "upload_batches_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "upload_batches_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -11719,6 +12151,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_job_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "user_job_roles_user_id_fkey"
@@ -11833,6 +12272,13 @@ export type Database = {
             foreignKeyName: "user_permission_overrides_granted_by_fkey"
             columns: ["granted_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -11856,6 +12302,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "user_permission_overrides_user_id_fkey"
@@ -12423,6 +12876,13 @@ export type Database = {
             foreignKeyName: "warehouse_stock_adjustments_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_adjustments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "organization_user_hierarchy"
             referencedColumns: ["id"]
           },
@@ -12874,6 +13334,60 @@ export type Database = {
           },
         ]
       }
+      document_compliance_tracking: {
+        Row: {
+          compliance_status: string | null
+          default_validity_days: number | null
+          document_name: string | null
+          document_type: string | null
+          employee_id: string | null
+          employee_name: string | null
+          employee_role: string | null
+          expiry_date: string | null
+          file_path: string | null
+          is_required: boolean | null
+          is_verified: boolean | null
+          organization_id: string | null
+          record_id: string | null
+          requirement_id: string | null
+          requires_expiry: boolean | null
+          template_id: string | null
+          template_name: string | null
+          uploaded_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_warehouse_items: {
         Row: {
           item_id: string | null
@@ -12990,6 +13504,13 @@ export type Database = {
           updated_at: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "teams_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "teams_manager_id_fkey"
             columns: ["manager_id"]
