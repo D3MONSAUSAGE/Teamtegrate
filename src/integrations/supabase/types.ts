@@ -2355,6 +2355,158 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_document_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          employee_id: string | null
+          id: string
+          organization_id: string
+          role: string | null
+          team_id: string | null
+          template_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          employee_id?: string | null
+          id?: string
+          organization_id: string
+          role?: string | null
+          team_id?: string | null
+          template_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          employee_id?: string | null
+          id?: string
+          organization_id?: string
+          role?: string | null
+          team_id?: string | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_document_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "employee_document_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "employee_document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_document_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_document_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_document_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_records: {
         Row: {
           created_at: string | null
@@ -10640,6 +10792,59 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_document_requirements: {
+        Row: {
+          allowed_file_types: string[]
+          created_at: string
+          default_validity_days: number | null
+          display_order: number
+          document_name: string
+          document_type: string
+          id: string
+          instructions: string | null
+          is_required: boolean
+          max_file_size_mb: number
+          requires_expiry: boolean
+          template_id: string
+        }
+        Insert: {
+          allowed_file_types?: string[]
+          created_at?: string
+          default_validity_days?: number | null
+          display_order?: number
+          document_name: string
+          document_type: string
+          id?: string
+          instructions?: string | null
+          is_required?: boolean
+          max_file_size_mb?: number
+          requires_expiry?: boolean
+          template_id: string
+        }
+        Update: {
+          allowed_file_types?: string[]
+          created_at?: string
+          default_validity_days?: number | null
+          display_order?: number
+          document_name?: string
+          document_type?: string
+          id?: string
+          instructions?: string | null
+          is_required?: boolean
+          max_file_size_mb?: number
+          requires_expiry?: boolean
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_document_requirements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "employee_document_templates"
             referencedColumns: ["id"]
           },
         ]
