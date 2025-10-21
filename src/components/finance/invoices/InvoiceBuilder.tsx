@@ -5,11 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ClientSelector } from './ClientSelector';
 import { InvoiceLineItems, LineItem } from './InvoiceLineItems';
-import { ArrowLeft, Save, Send } from 'lucide-react';
-import { InvoiceClient } from '@/types/invoices';
+import { CompanyBrandingForm } from './CompanyBrandingForm';
+import { InvoicePreviewDialog } from './InvoicePreviewDialog';
+import { ArrowLeft, Save, Send, Building2, FileDown, Eye } from 'lucide-react';
+import { InvoiceClient, CreatedInvoice } from '@/types/invoices';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrganizationBranding } from '@/hooks/finance/useOrganizationBranding';
+import { supabase } from '@/integrations/supabase/client';
+import { generateInvoicePDF } from '@/utils/generateInvoicePDF';
 
 interface InvoiceBuilderProps {
   onBack?: () => void;
@@ -18,6 +25,8 @@ interface InvoiceBuilderProps {
 
 export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoiceCreated }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { branding } = useOrganizationBranding();
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [invoiceData, setInvoiceData] = useState({
@@ -29,6 +38,10 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
     footer_text: 'Thank you for your business!'
   });
   const [taxRate, setTaxRate] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showBrandingDialog, setShowBrandingDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [savedInvoice, setSavedInvoice] = useState<CreatedInvoice | null>(null);
 
   const calculations = useMemo(() => {
     const subtotal = lineItems.reduce((sum, item) => sum + item.total_price, 0);
@@ -59,15 +72,116 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       return;
     }
 
-    // TODO: Implement save to database
-    toast({
-      title: 'Draft Saved',
-      description: 'Invoice has been saved as draft'
-    });
-    onInvoiceCreated?.();
+    if (!user?.organizationId) {
+      toast({
+        title: 'Error',
+        description: 'Organization not found',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      // 1. Insert invoice into created_invoices table
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('created_invoices')
+        .insert({
+          organization_id: user.organizationId,
+          client_id: selectedClient.id,
+          created_by: user.id,
+          invoice_number: invoiceData.invoice_number,
+          status: 'draft',
+          payment_status: 'pending',
+          issue_date: invoiceData.issue_date,
+          due_date: invoiceData.due_date,
+          subtotal: calculations.subtotal,
+          tax_amount: calculations.tax_amount,
+          total_amount: calculations.total,
+          paid_amount: 0,
+          balance_due: calculations.total,
+          payment_terms: invoiceData.payment_terms,
+          notes: invoiceData.notes,
+          footer_text: invoiceData.footer_text,
+          // Snapshot company branding
+          company_logo_url: branding?.logo_url,
+          company_name: user.organizationName,
+          company_address: branding?.company_address 
+            ? `${branding.company_address}${branding.company_city ? `, ${branding.company_city}` : ''}${branding.company_state ? `, ${branding.company_state}` : ''} ${branding.company_postal_code || ''}`.trim()
+            : undefined,
+          company_phone: branding?.company_phone,
+          company_email: branding?.company_email,
+        })
+        .select()
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      // 2. Insert line items
+      const lineItemsData = lineItems.map((item, index) => ({
+        invoice_id: invoice.id,
+        organization_id: user.organizationId,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        sort_order: index,
+      }));
+
+      const { error: lineItemsError } = await supabase
+        .from('invoice_line_items')
+        .insert(lineItemsData);
+
+      if (lineItemsError) throw lineItemsError;
+
+      // 3. Prepare full invoice for PDF
+      const fullInvoice: CreatedInvoice = {
+        ...invoice,
+        client: selectedClient,
+        line_items: lineItems.map((item, index) => ({
+          id: '', // Temporary ID
+          invoice_id: invoice.id,
+          organization_id: user.organizationId,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          sort_order: index,
+          created_at: new Date().toISOString(),
+        })),
+      };
+
+      setSavedInvoice(fullInvoice);
+
+      // 4. Generate and save PDF
+      generateInvoicePDF(fullInvoice);
+
+      toast({
+        title: 'Success!',
+        description: 'Invoice saved and PDF generated',
+      });
+
+      onInvoiceCreated?.();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save invoice',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSendInvoice = async () => {
+    // For now, just save as sent instead of draft
+    // TODO: Implement email sending functionality
+    await handleSaveDraft();
+  };
+
+  const handlePreview = () => {
     if (!selectedClient || lineItems.length === 0) {
       toast({
         title: 'Validation Error',
@@ -77,12 +191,50 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       return;
     }
 
-    // TODO: Implement send invoice functionality
-    toast({
-      title: 'Invoice Sent',
-      description: 'Invoice has been sent to client'
-    });
-    onInvoiceCreated?.();
+    // Create preview invoice object
+    const previewInvoice: CreatedInvoice = {
+      id: 'preview',
+      organization_id: user?.organizationId || '',
+      client_id: selectedClient.id,
+      created_by: user?.id || '',
+      invoice_number: invoiceData.invoice_number,
+      status: 'draft',
+      payment_status: 'pending',
+      issue_date: invoiceData.issue_date,
+      due_date: invoiceData.due_date,
+      subtotal: calculations.subtotal,
+      tax_amount: calculations.tax_amount,
+      total_amount: calculations.total,
+      paid_amount: 0,
+      balance_due: calculations.total,
+      payment_terms: invoiceData.payment_terms,
+      notes: invoiceData.notes,
+      footer_text: invoiceData.footer_text,
+      company_logo_url: branding?.logo_url,
+      company_name: user?.organizationName,
+      company_address: branding?.company_address 
+        ? `${branding.company_address}${branding.company_city ? `, ${branding.company_city}` : ''}${branding.company_state ? `, ${branding.company_state}` : ''} ${branding.company_postal_code || ''}`.trim()
+        : undefined,
+      company_phone: branding?.company_phone,
+      company_email: branding?.company_email,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      client: selectedClient,
+      line_items: lineItems.map((item, index) => ({
+        id: `temp-${index}`,
+        invoice_id: 'preview',
+        organization_id: user?.organizationId || '',
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        sort_order: index,
+        created_at: new Date().toISOString(),
+      })),
+    };
+
+    setSavedInvoice(previewInvoice);
+    setShowPreview(true);
   };
 
   return (
@@ -101,11 +253,15 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSaveDraft}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Draft
+          <Button variant="outline" onClick={handlePreview}>
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
           </Button>
-          <Button onClick={handleSendInvoice}>
+          <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save & Download PDF'}
+          </Button>
+          <Button onClick={handleSendInvoice} disabled={isSaving}>
             <Send className="h-4 w-4 mr-2" />
             Send Invoice
           </Button>
@@ -115,6 +271,66 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Invoice Form */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Company Branding */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Company Information
+                <Dialog open={showBrandingDialog} onOpenChange={setShowBrandingDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Edit Branding
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Company Branding</DialogTitle>
+                    </DialogHeader>
+                    <CompanyBrandingForm />
+                  </DialogContent>
+                </Dialog>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-4">
+                {branding?.logo_url ? (
+                  <img
+                    src={branding.logo_url}
+                    alt="Company Logo"
+                    className="h-16 w-16 object-contain rounded border"
+                  />
+                ) : (
+                  <div className="h-16 w-16 bg-muted rounded flex items-center justify-center border">
+                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 text-sm">
+                  <p className="font-semibold">{user?.organizationName || 'Company Name'}</p>
+                  {branding?.company_address && (
+                    <p className="text-muted-foreground">{branding.company_address}</p>
+                  )}
+                  {branding?.company_city && branding?.company_state && (
+                    <p className="text-muted-foreground">
+                      {branding.company_city}, {branding.company_state} {branding.company_postal_code}
+                    </p>
+                  )}
+                  {branding?.company_phone && (
+                    <p className="text-muted-foreground">{branding.company_phone}</p>
+                  )}
+                  {branding?.company_email && (
+                    <p className="text-muted-foreground">{branding.company_email}</p>
+                  )}
+                  {!branding?.logo_url && !branding?.company_address && (
+                    <p className="text-muted-foreground text-xs mt-2">
+                      Click "Edit Branding" to add your company logo and information
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Invoice Details */}
           <Card>
             <CardHeader>
@@ -275,6 +491,15 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           </Card>
         </div>
       </div>
+
+      {/* Invoice Preview Dialog */}
+      {savedInvoice && (
+        <InvoicePreviewDialog
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          invoice={savedInvoice}
+        />
+      )}
     </div>
   );
 };

@@ -97,6 +97,13 @@ export interface CreatedInvoice {
   paid_at?: string;
   created_at: string;
   updated_at: string;
+  // Company branding snapshot
+  company_logo_url?: string;
+  company_name?: string;
+  company_address?: string;
+  company_phone?: string;
+  company_email?: string;
+  // Relations
   client?: InvoiceClient;
   template?: InvoiceTemplate;
   line_items?: InvoiceLineItem[];

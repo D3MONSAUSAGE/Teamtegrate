@@ -1676,6 +1676,11 @@ export type Database = {
         Row: {
           balance_due: number | null
           client_id: string
+          company_address: string | null
+          company_email: string | null
+          company_logo_url: string | null
+          company_name: string | null
+          company_phone: string | null
           created_at: string
           created_by: string
           due_date: string
@@ -1703,6 +1708,11 @@ export type Database = {
         Insert: {
           balance_due?: number | null
           client_id: string
+          company_address?: string | null
+          company_email?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          company_phone?: string | null
           created_at?: string
           created_by: string
           due_date: string
@@ -1730,6 +1740,11 @@ export type Database = {
         Update: {
           balance_due?: number | null
           client_id?: string
+          company_address?: string | null
+          company_email?: string | null
+          company_logo_url?: string | null
+          company_name?: string | null
+          company_phone?: string | null
           created_at?: string
           created_by?: string
           due_date?: string
@@ -6344,23 +6359,50 @@ export type Database = {
       }
       organizations: {
         Row: {
+          company_address: string | null
+          company_city: string | null
+          company_country: string | null
+          company_email: string | null
+          company_phone: string | null
+          company_postal_code: string | null
+          company_state: string | null
+          company_website: string | null
           created_at: string
           created_by: string
           id: string
+          logo_url: string | null
           name: string
           timezone: string | null
         }
         Insert: {
+          company_address?: string | null
+          company_city?: string | null
+          company_country?: string | null
+          company_email?: string | null
+          company_phone?: string | null
+          company_postal_code?: string | null
+          company_state?: string | null
+          company_website?: string | null
           created_at?: string
           created_by: string
           id?: string
+          logo_url?: string | null
           name: string
           timezone?: string | null
         }
         Update: {
+          company_address?: string | null
+          company_city?: string | null
+          company_country?: string | null
+          company_email?: string | null
+          company_phone?: string | null
+          company_postal_code?: string | null
+          company_state?: string | null
+          company_website?: string | null
           created_at?: string
           created_by?: string
           id?: string
+          logo_url?: string | null
           name?: string
           timezone?: string | null
         }
