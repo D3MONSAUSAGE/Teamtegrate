@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOrganizationBranding } from '@/hooks/finance/useOrganizationBranding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,22 @@ export const CompanyBrandingForm = () => {
     company_email: branding?.company_email || '',
     company_website: branding?.company_website || '',
   });
+
+  // Sync form data with branding when it changes
+  useEffect(() => {
+    if (branding) {
+      setFormData({
+        company_address: branding.company_address || '',
+        company_city: branding.company_city || '',
+        company_state: branding.company_state || '',
+        company_postal_code: branding.company_postal_code || '',
+        company_country: branding.company_country || 'USA',
+        company_phone: branding.company_phone || '',
+        company_email: branding.company_email || '',
+        company_website: branding.company_website || '',
+      });
+    }
+  }, [branding]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

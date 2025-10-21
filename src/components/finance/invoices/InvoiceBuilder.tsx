@@ -26,7 +26,7 @@ interface InvoiceBuilderProps {
 export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoiceCreated }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { branding } = useOrganizationBranding();
+  const { branding, refreshBranding } = useOrganizationBranding();
   const [organizationName, setOrganizationName] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -293,7 +293,16 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Company Information
-                <Dialog open={showBrandingDialog} onOpenChange={setShowBrandingDialog}>
+              <Dialog 
+                open={showBrandingDialog} 
+                onOpenChange={(open) => {
+                  setShowBrandingDialog(open);
+                  if (!open) {
+                    // Refresh branding when dialog closes
+                    refreshBranding();
+                  }
+                }}
+              >
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Building2 className="h-4 w-4 mr-2" />
