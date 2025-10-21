@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
   const { toast } = useToast();
   const { user } = useAuth();
   const { branding } = useOrganizationBranding();
+  const [organizationName, setOrganizationName] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [invoiceData, setInvoiceData] = useState({
@@ -42,6 +43,20 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
   const [showBrandingDialog, setShowBrandingDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [savedInvoice, setSavedInvoice] = useState<CreatedInvoice | null>(null);
+
+  // Fetch organization name
+  useEffect(() => {
+    const fetchOrgName = async () => {
+      if (!user?.organizationId) return;
+      const { data } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', user.organizationId)
+        .maybeSingle();
+      if (data) setOrganizationName(data.name);
+    };
+    fetchOrgName();
+  }, [user?.organizationId]);
 
   const calculations = useMemo(() => {
     const subtotal = lineItems.reduce((sum, item) => sum + item.total_price, 0);
@@ -106,8 +121,8 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           footer_text: invoiceData.footer_text,
           // Snapshot company branding
           company_logo_url: branding?.logo_url,
-          company_name: user.organizationName,
-          company_address: branding?.company_address 
+          company_name: organizationName,
+          company_address: branding?.company_address
             ? `${branding.company_address}${branding.company_city ? `, ${branding.company_city}` : ''}${branding.company_state ? `, ${branding.company_state}` : ''} ${branding.company_postal_code || ''}`.trim()
             : undefined,
           company_phone: branding?.company_phone,
@@ -138,6 +153,8 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       // 3. Prepare full invoice for PDF
       const fullInvoice: CreatedInvoice = {
         ...invoice,
+        status: 'draft' as const,
+        payment_status: 'pending' as const,
         client: selectedClient,
         line_items: lineItems.map((item, index) => ({
           id: '', // Temporary ID
@@ -211,8 +228,8 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       notes: invoiceData.notes,
       footer_text: invoiceData.footer_text,
       company_logo_url: branding?.logo_url,
-      company_name: user?.organizationName,
-      company_address: branding?.company_address 
+      company_name: organizationName,
+      company_address: branding?.company_address
         ? `${branding.company_address}${branding.company_city ? `, ${branding.company_city}` : ''}${branding.company_state ? `, ${branding.company_state}` : ''} ${branding.company_postal_code || ''}`.trim()
         : undefined,
       company_phone: branding?.company_phone,
@@ -306,7 +323,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
                   </div>
                 )}
                 <div className="flex-1 text-sm">
-                  <p className="font-semibold">{user?.organizationName || 'Company Name'}</p>
+                  <p className="font-semibold">{organizationName || 'Company Name'}</p>
                   {branding?.company_address && (
                     <p className="text-muted-foreground">{branding.company_address}</p>
                   )}
