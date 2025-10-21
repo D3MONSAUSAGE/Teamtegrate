@@ -172,7 +172,13 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       setSavedInvoice(fullInvoice);
 
       // 4. Generate and save PDF
-      generateInvoicePDF(fullInvoice);
+      console.log('Generating PDF for invoice:', invoice.invoice_number);
+      try {
+        generateInvoicePDF(fullInvoice);
+        console.log('PDF generation completed successfully');
+      } catch (pdfError) {
+        console.error('PDF generation failed:', pdfError);
+      }
 
       toast({
         title: 'Success!',
@@ -276,7 +282,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           </Button>
           <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save & Download PDF'}
+            {isSaving ? 'Saving...' : 'Save & Download'}
           </Button>
           <Button onClick={handleSendInvoice} disabled={isSaving}>
             <Send className="h-4 w-4 mr-2" />
@@ -331,15 +337,18 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
                     <Building2 className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
-                <div className="flex-1 text-sm">
-                  <p className="font-semibold">{organizationName || 'Company Name'}</p>
+                <div className="flex-1 text-sm space-y-0.5">
+                  <p className="font-semibold text-base">{organizationName || 'Company Name'}</p>
                   {branding?.company_address && (
-                    <p className="text-muted-foreground">{branding.company_address}</p>
-                  )}
-                  {branding?.company_city && branding?.company_state && (
                     <p className="text-muted-foreground">
-                      {branding.company_city}, {branding.company_state} {branding.company_postal_code}
+                      {branding.company_address}
+                      {branding?.company_city && `, ${branding.company_city}`}
+                      {branding?.company_state && `, ${branding.company_state}`}
+                      {branding?.company_postal_code && ` ${branding.company_postal_code}`}
                     </p>
+                  )}
+                  {branding?.company_country && (
+                    <p className="text-muted-foreground">{branding.company_country}</p>
                   )}
                   {branding?.company_phone && (
                     <p className="text-muted-foreground">{branding.company_phone}</p>
@@ -347,7 +356,10 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
                   {branding?.company_email && (
                     <p className="text-muted-foreground">{branding.company_email}</p>
                   )}
-                  {!branding?.logo_url && !branding?.company_address && (
+                  {branding?.company_website && (
+                    <p className="text-muted-foreground">{branding.company_website}</p>
+                  )}
+                  {!branding?.logo_url && !branding?.company_address && !branding?.company_phone && !branding?.company_email && (
                     <p className="text-muted-foreground text-xs mt-2">
                       Click "Edit Branding" to add your company logo and information
                     </p>
