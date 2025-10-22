@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, FileText, Warehouse } from 'lucide-react';
+import { Eye, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, DollarSign, FileText, Warehouse, Plus } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import InvoiceStatusBadge from './InvoiceStatusBadge';
 import PaymentHistoryModal from './PaymentHistoryModal';
@@ -14,6 +14,7 @@ interface UnifiedInvoiceTableProps {
   onView: (invoice: UnifiedInvoice) => void;
   onDownload: (invoice: UnifiedInvoice) => void;
   onDelete: (invoice: UnifiedInvoice) => void;
+  onRecordPayment?: (invoice: UnifiedInvoice) => void;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   onSort?: (field: string) => void;
@@ -31,6 +32,7 @@ const UnifiedInvoiceTable: React.FC<UnifiedInvoiceTableProps> = ({
   onView, 
   onDownload, 
   onDelete,
+  onRecordPayment,
   sortBy,
   sortDirection,
   onSort
@@ -121,22 +123,35 @@ const UnifiedInvoiceTable: React.FC<UnifiedInvoiceTableProps> = ({
                   <InvoiceStatusBadge status={invoice.payment_status as any} size="sm" />
                 </TableCell>
                 <TableCell>
-                  {invoice.payment_count > 0 ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedInvoice(invoice);
-                        setPaymentHistoryOpen(true);
-                      }}
-                      className="h-7 text-xs"
-                    >
-                      <DollarSign className="h-3 w-3 mr-1" />
-                      {invoice.payment_count} payment{invoice.payment_count !== 1 ? 's' : ''}
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">No payments</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {invoice.payment_count > 0 ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedInvoice(invoice);
+                          setPaymentHistoryOpen(true);
+                        }}
+                        className="h-7 text-xs"
+                      >
+                        <DollarSign className="h-3 w-3 mr-1" />
+                        {invoice.payment_count} payment{invoice.payment_count !== 1 ? 's' : ''}
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No payments</span>
+                    )}
+                    {invoice.source === 'created' && invoice.balance_due > 0 && onRecordPayment && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onRecordPayment(invoice)}
+                        className="h-7 text-xs"
+                        title="Record payment"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">

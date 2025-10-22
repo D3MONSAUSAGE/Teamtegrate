@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import InvoiceFilters from './invoice-list/InvoiceFilters';
@@ -6,6 +5,7 @@ import UnifiedInvoiceTable from './invoice-list/UnifiedInvoiceTable';
 import EmptyState from './invoice-list/EmptyState';
 import ImageViewerModal from './invoice-list/ImageViewerModal';
 import InvoiceSummaryStats from './invoice-list/InvoiceSummaryStats';
+import { RecordPaymentModal } from './invoice-list/RecordPaymentModal';
 import { useUnifiedInvoiceData } from './invoice-list/useUnifiedInvoiceData';
 import { useInvoiceFilters } from './invoice-list/useInvoiceFilters';
 import { useInvoiceActions } from './invoice-list/useInvoiceActions';
@@ -30,6 +30,8 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<UnifiedInvoice | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState<UnifiedInvoice | null>(null);
 
   const { invoices, isLoading, refetchInvoices } = useUnifiedInvoiceData(refreshTrigger);
   const {
@@ -91,6 +93,15 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
 
   const handleDelete = (invoice: UnifiedInvoice) => {
     deleteInvoice(invoice as any, refetchInvoices);
+  };
+
+  const handleRecordPayment = (invoice: UnifiedInvoice) => {
+    setPaymentInvoice(invoice);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentRecorded = () => {
+    refetchInvoices();
   };
 
   if (isLoading) {
@@ -176,6 +187,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
                 onView={handleView}
                 onDownload={(inv) => downloadInvoice(inv as any)}
                 onDelete={handleDelete}
+                onRecordPayment={handleRecordPayment}
                 sortBy={sortBy}
                 sortDirection={sortDirection}
                 onSort={handleSort}
@@ -237,6 +249,13 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
         onClose={() => setViewModalOpen(false)}
         invoice={viewingInvoice as any}
         imageUrl={imageUrl}
+      />
+
+      <RecordPaymentModal
+        open={paymentModalOpen}
+        onOpenChange={setPaymentModalOpen}
+        invoice={paymentInvoice}
+        onPaymentRecorded={handlePaymentRecorded}
       />
     </div>
   );
