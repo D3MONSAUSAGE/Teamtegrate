@@ -10,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useInventory } from '@/contexts/inventory';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
@@ -140,6 +141,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const [templateName, setTemplateName] = useState('');
   const [savingToDatabase, setSavingToDatabase] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [editModeTemplateName, setEditModeTemplateName] = useState<string>('');
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [barcodeValue, setBarcodeValue] = useState<string>('');
 
   // Cache current template to prevent re-renders during typing
@@ -386,6 +389,14 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     }
   };
 
+  // Cancel edit mode
+  const cancelEdit = () => {
+    setEditingTemplateId(null);
+    setEditModeTemplateName('');
+    setTemplateName('');
+    toast.info('Edit mode cancelled');
+  };
+
   // Load template function (Database-backed)
   const loadTemplate = async (template: SavedTemplate, forEditing: boolean = false) => {
     setCompanyName(template.companyName);
@@ -436,10 +447,14 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     
     if (forEditing) {
       setEditingTemplateId(template.id);
+      setEditModeTemplateName(template.name);
       setTemplateName(template.name);
-      toast.info(`Editing template "${template.name}"`);
+      toast.info(`Editing template "${template.name}". Make changes and click "Update Template".`, {
+        duration: 4000
+      });
     } else {
       setEditingTemplateId(null);
+      setEditModeTemplateName('');
       const batchMessage = batchData?.batchNumber 
         ? ` (Batch #${batchData.batchNumber})` 
         : '';
@@ -449,7 +464,12 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
   // Delete template function (Database-backed)
   const deleteTemplate = async (templateId: string) => {
-    await deleteTemplateFromDb(templateId);
+    try {
+      setDeletingTemplateId(templateId);
+      await deleteTemplateFromDb(templateId);
+    } finally {
+      setDeletingTemplateId(null);
+    }
   };
 
   // Input handlers
@@ -1091,6 +1111,25 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         </Card>
       )}
 
+      {/* Edit Mode Banner */}
+      {editingTemplateId && (
+        <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950/30">
+          <Edit className="h-4 w-4" />
+          <AlertTitle>Editing Template</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>You are editing: <strong>{editModeTemplateName}</strong></span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={cancelEdit}
+              className="ml-4"
+            >
+              Cancel Edit
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Success Message */}
       <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
         <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
@@ -1194,8 +1233,17 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive" title="Delete template">
-                                  <Trash2 className="h-4 w-4" />
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive" 
+                                  title="Delete template"
+                                  disabled={deletingTemplateId === template.id}
+                                >
+                                  {deletingTemplateId === template.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -1207,8 +1255,18 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteTemplate(template.id)}>
-                                    Delete
+                                  <AlertDialogAction 
+                                    onClick={() => deleteTemplate(template.id)}
+                                    disabled={deletingTemplateId === template.id}
+                                  >
+                                    {deletingTemplateId === template.id ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Deleting...
+                                      </>
+                                    ) : (
+                                      'Delete'
+                                    )}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -1220,23 +1278,26 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                   </div>
 
               <div>
-                <Label className="text-sm font-medium">Save Current Configuration</Label>
+                <Label className="text-sm font-medium">
+                  {editingTemplateId ? 'Template Name (Editing)' : 'Save Current Configuration'}
+                  {editingTemplateId && <Badge variant="secondary" className="ml-2">Editing</Badge>}
+                </Label>
                 <div className="flex flex-col sm:flex-row gap-2 mt-1">
                   <Input
                     value={templateName}
                     onChange={handleTemplateNameChange}
                     placeholder="Template name (e.g., 'Organic Products')"
-                    className="flex-1"
+                    className={editingTemplateId ? "flex-1 border-blue-500" : "flex-1"}
                   />
                   <Button
                     onClick={saveTemplate}
-                    disabled={!templateName.trim() || !companyName.trim()}
-                    variant="outline"
+                    disabled={!templateName.trim() || !companyName.trim() || savingToDatabase}
+                    variant={editingTemplateId ? "default" : "outline"}
                     size="sm"
                     className="w-full sm:w-auto"
                   >
                     <Save className="h-4 w-4 mr-1" />
-                    Save
+                    {editingTemplateId ? 'Update Template' : 'Save as Template'}
                   </Button>
                 </div>
               </div>

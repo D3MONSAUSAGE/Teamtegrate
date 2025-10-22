@@ -218,12 +218,22 @@ export function useLabelTemplates() {
   const deleteTemplate = async (templateId: string): Promise<boolean> => {
     try {
       await labelTemplatesApi.delete(templateId);
-      await loadTemplates(); // Refresh list
-      toast.success('Template deleted successfully!');
+      
+      // Refresh list first
+      await loadTemplates();
+      
+      // Then show success toast
+      toast.success('Template deleted successfully!', {
+        description: 'The template has been removed from your library.',
+        duration: 4000
+      });
+      
       return true;
     } catch (error) {
       console.error('Error deleting template:', error);
-      toast.error('Failed to delete template');
+      toast.error('Failed to delete template', {
+        description: 'Please try again or contact support if the issue persists.'
+      });
       return false;
     }
   };
