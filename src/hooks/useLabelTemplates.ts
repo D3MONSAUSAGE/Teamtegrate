@@ -142,16 +142,34 @@ export function useLabelTemplates() {
     templateData: Omit<SavedTemplate, 'id' | 'createdAt'>,
     logoFile?: File
   ): Promise<string | null> => {
-    if (!user?.organizationId || !user?.id) return null;
+    console.log('🔵 SAVE TEMPLATE STARTED', {
+      user: user?.id,
+      orgId: user?.organizationId,
+      hasLogo: !!logoFile,
+      templateName: templateData.name
+    });
+
+    if (!user?.organizationId || !user?.id) {
+      console.error('❌ SAVE FAILED: Missing user data', { 
+        hasUser: !!user,
+        userId: user?.id,
+        orgId: user?.organizationId 
+      });
+      toast.error('Cannot save: User session invalid');
+      return null;
+    }
 
     try {
       let logoUrl: string | undefined;
       
       // Upload logo if provided
       if (logoFile) {
+        console.log('📸 Uploading logo...', { fileName: logoFile.name, size: logoFile.size });
         logoUrl = await uploadLogo(logoFile) || undefined;
+        console.log('📸 Logo upload result:', { logoUrl });
       }
 
+      console.log('💾 Creating template in database...');
       const dbTemplate: Omit<DBLabelTemplate, 'id' | 'created_at' | 'updated_at'> = {
         organization_id: user.organizationId,
         name: templateData.name,
@@ -168,14 +186,46 @@ export function useLabelTemplates() {
         created_by: user.id
       };
 
+      console.log('💾 Template data prepared:', { 
+        name: dbTemplate.name,
+        category: dbTemplate.category,
+        orgId: dbTemplate.organization_id
+      });
+
       const created = await labelTemplatesApi.create(dbTemplate);
-      await loadTemplates(); // Refresh list
+      console.log('✅ Template created:', { id: created.id });
       
-      toast.success('Template saved successfully!');
+      await loadTemplates(); // Refresh list
+      console.log('🔄 Templates list refreshed');
+      
+      toast.success('Template saved successfully!', {
+        description: `"${templateData.name}" has been saved to your library.`,
+        duration: 4000
+      });
       return created.id;
     } catch (error) {
-      console.error('Error saving template:', error);
-      toast.error('Failed to save template');
+      console.error('❌ SAVE TEMPLATE ERROR:', error);
+      
+      // More specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('permission')) {
+          toast.error('Permission denied', {
+            description: 'You do not have permission to save templates.'
+          });
+        } else if (error.message.includes('unique')) {
+          toast.error('Template name already exists', {
+            description: 'Please choose a different name.'
+          });
+        } else {
+          toast.error('Failed to save template', {
+            description: error.message
+          });
+        }
+      } else {
+        toast.error('Failed to save template', {
+          description: 'An unknown error occurred.'
+        });
+      }
       return null;
     }
   };

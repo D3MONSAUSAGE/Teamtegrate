@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,6 +92,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const shouldUseDraft = !batchData && !preSelectedItemId;
   const { draftData, isLoading: draftLoading, lastSaved, updateDraft, clearDraft } = useLabelDraftPersistence('label-generator');
   
+  // Track if draft has been restored to prevent toast spam
+  const hasRestoredDraft = useRef(false);
+  
   const [isMobile, setIsMobile] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>(
     preSelectedItemId || batchData?.itemId || ''
@@ -180,7 +183,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
   // Restore draft data on mount (only if no batch/preselected data)
   useEffect(() => {
-    if (shouldUseDraft && draftData && !draftLoading) {
+    if (shouldUseDraft && draftData && !draftLoading && !hasRestoredDraft.current) {
       console.log('📄 Restoring label draft data...');
       
       // Restore all fields from draft
@@ -213,6 +216,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       if (draftData.quantityToPrint) setQuantityToPrint(draftData.quantityToPrint);
       if (draftData.barcodeValue) setBarcodeValue(draftData.barcodeValue);
       
+      // Mark as restored and show toast only once
+      hasRestoredDraft.current = true;
       toast.success('Draft restored! Your previous work has been recovered.', {
         duration: 3000,
       });
@@ -338,6 +343,14 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       return;
     }
 
+    console.log('🎯 Save template button clicked', { 
+      templateName, 
+      editingTemplateId,
+      hasUser: !!user,
+      userId: user?.id,
+      orgId: user?.organizationId
+    });
+
     setSavingToDatabase(true);
     
     const templateData: Omit<SavedTemplate, 'id' | 'createdAt'> = {
@@ -374,18 +387,31 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     };
 
     try {
+      let result;
       if (editingTemplateId) {
-        // Update existing template
-        await updateTemplateInDb(editingTemplateId, templateData, logoFile || undefined);
+        console.log('📝 Updating existing template:', editingTemplateId);
+        result = await updateTemplateInDb(editingTemplateId, templateData, logoFile || undefined);
+        console.log('📝 Update result:', result);
         setEditingTemplateId(null);
+        setEditModeTemplateName('');
       } else {
-        // Create new template
-        await saveTemplateToDb(templateData, logoFile || undefined);
+        console.log('➕ Creating new template');
+        result = await saveTemplateToDb(templateData, logoFile || undefined);
+        console.log('➕ Create result:', result);
       }
       
-      setTemplateName('');
+      if (result) {
+        setTemplateName('');
+        console.log('✅ Template save successful');
+      } else {
+        console.warn('⚠️ Template save returned null/false');
+      }
+    } catch (error) {
+      console.error('❌ Template save exception:', error);
+      toast.error('Template save failed with exception');
     } finally {
       setSavingToDatabase(false);
+      console.log('🏁 Save template process completed');
     }
   };
 
