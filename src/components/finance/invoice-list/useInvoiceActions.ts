@@ -1,6 +1,9 @@
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { Invoice } from '@/types/invoice';
+import type { UnifiedInvoice } from '@/types/unifiedInvoice';
+import type { CreatedInvoice } from '@/types/invoices';
+import { generateInvoicePDF } from '@/utils/generateInvoicePDF';
 
 export const useInvoiceActions = () => {
   const downloadInvoice = async (invoice: Invoice) => {
@@ -90,9 +93,62 @@ export const useInvoiceActions = () => {
     }
   };
 
+  const downloadUnifiedInvoice = async (invoice: UnifiedInvoice) => {
+    try {
+      if (invoice.source === 'uploaded') {
+        // Download uploaded file from storage
+        const { data: urlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(invoice.uploaded_data!.file_path);
+
+        if (!urlData?.publicUrl) {
+          toast.error(`Failed to generate download URL for: ${invoice.uploaded_data?.file_name}`);
+          return;
+        }
+
+        const link = document.createElement('a');
+        link.href = urlData.publicUrl;
+        link.download = invoice.uploaded_data!.file_name;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success(`Downloaded ${invoice.uploaded_data!.file_name}`);
+      } else {
+        // Generate PDF for created invoices
+        toast.info('Generating PDF...');
+
+        const { data: fullInvoice, error } = await supabase
+          .from('created_invoices')
+          .select(`
+            *,
+            line_items:invoice_line_items(*),
+            client:invoice_clients(*)
+          `)
+          .eq('id', invoice.id)
+          .single();
+
+        if (error || !fullInvoice) {
+          console.error('Failed to load invoice data:', error);
+          toast.error('Failed to load invoice data for PDF generation');
+          return;
+        }
+
+        // Invoice already has company branding snapshot fields
+        await generateInvoicePDF(fullInvoice as CreatedInvoice);
+        toast.success('Invoice PDF downloaded successfully');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download invoice. Please try again.');
+    }
+  };
+
   return {
     downloadInvoice,
     viewInvoice,
-    deleteInvoice
+    deleteInvoice,
+    downloadUnifiedInvoice
   };
 };

@@ -85,7 +85,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     hasPreviousPage
   } = useInvoicePagination(sortedInvoices);
   
-  const { downloadInvoice, viewInvoice, deleteInvoice } = useInvoiceActions();
+  const { viewInvoice, deleteInvoice, downloadUnifiedInvoice } = useInvoiceActions();
 
   const handleView = (invoice: UnifiedInvoice) => {
     viewInvoice(invoice as any, setImageUrl, setViewingInvoice as any, setViewModalOpen);
@@ -185,7 +185,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
               <UnifiedInvoiceTable
                 invoices={paginatedInvoices}
                 onView={handleView}
-                onDownload={(inv) => downloadInvoice(inv as any)}
+                onDownload={downloadUnifiedInvoice}
                 onDelete={handleDelete}
                 onRecordPayment={handleRecordPayment}
                 sortBy={sortBy}
