@@ -2834,6 +2834,74 @@ export type Database = {
           },
         ]
       }
+      employee_time_off_balances: {
+        Row: {
+          accrual_rate: number | null
+          created_at: string | null
+          id: string
+          leave_type: string
+          organization_id: string
+          total_hours: number | null
+          updated_at: string | null
+          used_hours: number | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          accrual_rate?: number | null
+          created_at?: string | null
+          id?: string
+          leave_type: string
+          organization_id: string
+          total_hours?: number | null
+          updated_at?: string | null
+          used_hours?: number | null
+          user_id: string
+          year?: number
+        }
+        Update: {
+          accrual_rate?: number | null
+          created_at?: string | null
+          id?: string
+          leave_type?: string
+          organization_id?: string
+          total_hours?: number | null
+          updated_at?: string | null
+          used_hours?: number | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_time_off_balances_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_time_off_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_time_off_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_time_off_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -11341,7 +11409,7 @@ export type Database = {
           shift_id: string | null
           task_id: string | null
           team_id: string | null
-          total_paused_duration: unknown | null
+          total_paused_duration: unknown
           user_id: string
         }
         Insert: {
@@ -11367,7 +11435,7 @@ export type Database = {
           shift_id?: string | null
           task_id?: string | null
           team_id?: string | null
-          total_paused_duration?: unknown | null
+          total_paused_duration?: unknown
           user_id: string
         }
         Update: {
@@ -11393,7 +11461,7 @@ export type Database = {
           shift_id?: string | null
           task_id?: string | null
           team_id?: string | null
-          total_paused_duration?: unknown | null
+          total_paused_duration?: unknown
           user_id?: string
         }
         Relationships: [
@@ -11528,6 +11596,107 @@ export type Database = {
             columns: ["correction_request_id"]
             isOneToOne: false
             referencedRelation: "time_entry_correction_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_off_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          denial_reason: string | null
+          end_date: string
+          hours_requested: number
+          id: string
+          leave_type: string
+          notes: string | null
+          organization_id: string
+          start_date: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          denial_reason?: string | null
+          end_date: string
+          hours_requested: number
+          id?: string
+          leave_type: string
+          notes?: string | null
+          organization_id: string
+          start_date: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          denial_reason?: string | null
+          end_date?: string
+          hours_requested?: number
+          id?: string
+          leave_type?: string
+          notes?: string | null
+          organization_id?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_off_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -12483,10 +12652,15 @@ export type Database = {
           created_at: string
           daily_email_enabled: boolean | null
           daily_email_time: string | null
+          date_of_birth: string | null
           department: string | null
           email: string
+          emergency_contact_name: string | null
           emergency_contact_needed: boolean | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
           employee_id: string | null
+          employee_number: string | null
           employment_status: string | null
           expertise_tags: string[] | null
           google_calendar_sync_enabled: boolean | null
@@ -12509,6 +12683,8 @@ export type Database = {
           push_token: string | null
           role: string
           salary_type: string | null
+          start_date: string | null
+          termination_date: string | null
           timezone: string | null
           workload_preference: string | null
         }
@@ -12518,10 +12694,15 @@ export type Database = {
           created_at?: string
           daily_email_enabled?: boolean | null
           daily_email_time?: string | null
+          date_of_birth?: string | null
           department?: string | null
           email: string
+          emergency_contact_name?: string | null
           emergency_contact_needed?: boolean | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
           employee_id?: string | null
+          employee_number?: string | null
           employment_status?: string | null
           expertise_tags?: string[] | null
           google_calendar_sync_enabled?: boolean | null
@@ -12544,6 +12725,8 @@ export type Database = {
           push_token?: string | null
           role: string
           salary_type?: string | null
+          start_date?: string | null
+          termination_date?: string | null
           timezone?: string | null
           workload_preference?: string | null
         }
@@ -12553,10 +12736,15 @@ export type Database = {
           created_at?: string
           daily_email_enabled?: boolean | null
           daily_email_time?: string | null
+          date_of_birth?: string | null
           department?: string | null
           email?: string
+          emergency_contact_name?: string | null
           emergency_contact_needed?: boolean | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
           employee_id?: string | null
+          employee_number?: string | null
           employment_status?: string | null
           expertise_tags?: string[] | null
           google_calendar_sync_enabled?: boolean | null
@@ -12579,6 +12767,8 @@ export type Database = {
           push_token?: string | null
           role?: string
           salary_type?: string | null
+          start_date?: string | null
+          termination_date?: string | null
           timezone?: string | null
           workload_preference?: string | null
         }
@@ -13733,17 +13923,14 @@ export type Database = {
         Returns: Json
       }
       audit_organization_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           orphaned_records: number
           records_without_org: number
           table_name: string
         }[]
       }
-      auto_close_stale_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      auto_close_stale_sessions: { Args: never; Returns: undefined }
       bulk_approve_time_entries: {
         Args: {
           approval_notes_text?: string
@@ -13752,15 +13939,25 @@ export type Database = {
         }
         Returns: Json
       }
-      bump_count_item_actual: {
-        Args:
-          | { p_count_id: string; p_count_item_id: string; p_delta: number }
-          | { p_count_id: string; p_delta: number; p_item_id: string }
-        Returns: {
-          count_item_id: string
-          new_actual: number
-        }[]
-      }
+      bump_count_item_actual:
+        | {
+            Args: { p_count_id: string; p_delta: number; p_item_id: string }
+            Returns: {
+              count_item_id: string
+              new_actual: number
+            }[]
+          }
+        | {
+            Args: {
+              p_count_id: string
+              p_count_item_id: string
+              p_delta: number
+            }
+            Returns: {
+              actual_quantity: number
+              id: string
+            }[]
+          }
       calculate_execution_score: {
         Args: { execution_id_param: string }
         Returns: number
@@ -13781,12 +13978,19 @@ export type Database = {
         Args: { new_role: string; requester_id: string; target_user_id: string }
         Returns: Json
       }
-      can_manage_user_role: {
-        Args:
-          | { manager_role: string; target_role: string }
-          | { new_role: string; requester_role: string; target_role: string }
-        Returns: boolean
-      }
+      can_manage_user_role:
+        | {
+            Args: {
+              new_role: string
+              requester_role: string
+              target_role: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: { manager_role: string; target_role: string }
+            Returns: boolean
+          }
       can_user_access_project: {
         Args: { project_id_param: string; user_id_param: string }
         Returns: boolean
@@ -13812,25 +14016,16 @@ export type Database = {
         Returns: boolean
       }
       check_and_create_retraining_assignments: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: undefined
       }
       check_reference_threshold: {
         Args: { p_candidate_id: string }
         Returns: boolean
       }
-      cleanup_expired_qr_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_fcm_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_orphaned_training_assignments: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      cleanup_expired_qr_tokens: { Args: never; Returns: undefined }
+      cleanup_fcm_tokens: { Args: never; Returns: undefined }
+      cleanup_orphaned_training_assignments: { Args: never; Returns: Json }
       create_inventory_transaction_from_receipt_line: {
         Args: { p_receipt_line_id: string }
         Returns: undefined
@@ -13873,16 +14068,10 @@ export type Database = {
         }
         Returns: string
       }
-      debug_auth_status: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      end_of_day_auto_close: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      debug_auth_status: { Args: never; Returns: Json }
+      end_of_day_auto_close: { Args: never; Returns: undefined }
       find_missing_users: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           auth_created_at: string
           auth_email: string
@@ -13918,10 +14107,7 @@ export type Database = {
         Args: { filename: string; org_id: string; user_id: string }
         Returns: string
       }
-      generate_invoice_number: {
-        Args: { org_id: string }
-        Returns: string
-      }
+      generate_invoice_number: { Args: { org_id: string }; Returns: string }
       generate_next_sku: {
         Args: { p_category_prefix?: string; p_organization_id: string }
         Returns: string
@@ -13930,14 +14116,8 @@ export type Database = {
         Args: { organization_id_param: string; parent_task_id: string }
         Returns: string
       }
-      generate_shipment_number: {
-        Args: { org_id: string }
-        Returns: string
-      }
-      generate_ticket_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_shipment_number: { Args: { org_id: string }; Returns: string }
+      generate_ticket_number: { Args: never; Returns: string }
       get_archive_threshold_days: {
         Args: { user_id_param: string }
         Returns: number
@@ -13946,14 +14126,8 @@ export type Database = {
         Args: { p_candidate_id: string }
         Returns: number
       }
-      get_current_user_organization_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_organization_id: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
       get_daily_movements: {
         Args: {
           p_date?: string
@@ -14031,73 +14205,106 @@ export type Database = {
           reorder_min: number
         }[]
       }
-      get_organization_stats: {
-        Args: { org_id: string }
-        Returns: Json
-      }
-      get_orphaned_assignments_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_pending_time_approvals: {
-        Args:
-          | { manager_id: string }
-          | { manager_user_id: string; team_filter_id?: string }
-        Returns: {
-          clock_in: string
-          clock_out: string
-          created_at: string
-          duration_minutes: number
-          id: string
-          notes: string
-          team_id: string
-          team_name: string
-          user_email: string
-          user_id: string
-          user_name: string
-          work_date: string
-        }[]
-      }
+      get_organization_stats: { Args: { org_id: string }; Returns: Json }
+      get_orphaned_assignments_count: { Args: never; Returns: number }
+      get_pending_time_approvals:
+        | {
+            Args: { manager_user_id: string; team_filter_id?: string }
+            Returns: {
+              clock_in: string
+              clock_out: string
+              created_at: string
+              duration_minutes: number
+              id: string
+              notes: string
+              team_id: string
+              team_name: string
+              user_email: string
+              user_id: string
+              user_name: string
+              work_date: string
+            }[]
+          }
+        | {
+            Args: { manager_id: string }
+            Returns: {
+              clock_in: string
+              clock_out: string
+              duration_minutes: number
+              id: string
+              user_email: string
+              user_id: string
+              user_name: string
+            }[]
+          }
       get_project_comment_stats: {
         Args: { project_id_param: string }
         Returns: Json
       }
-      get_quiz_attempts_with_final_scores: {
-        Args:
-          | { organization_id_param: string; quiz_id_param: string }
-          | { quiz_id_param: string }
-        Returns: {
-          answers: Json
-          attempt_number: number
-          completed_at: string
-          email: string
-          final_passed: boolean
-          final_score: number
-          has_overrides: boolean
-          id: string
-          max_score: number
-          name: string
-          organization_id: string
-          original_passed: boolean
-          original_score: number
-          override_count: number
-          quiz_id: string
-          role: string
-          started_at: string
-          total_adjustment: number
-          user_id: string
-        }[]
-      }
-      get_real_time_inventory_value: {
-        Args:
-          | {
+      get_quiz_attempts_with_final_scores:
+        | {
+            Args: { organization_id_param: string; quiz_id_param: string }
+            Returns: {
+              answers: Json
+              attempt_number: number
+              completed_at: string
+              email: string
+              final_passed: boolean
+              final_score: number
+              has_overrides: boolean
+              id: string
+              max_score: number
+              name: string
+              organization_id: string
+              original_passed: boolean
+              original_score: number
+              override_count: number
+              quiz_id: string
+              role: string
+              started_at: string
+              total_adjustment: number
+              user_id: string
+            }[]
+          }
+        | {
+            Args: { quiz_id_param: string }
+            Returns: {
+              adjusted_passed: boolean
+              adjusted_score: number
+              answers: Json
+              attempt_number: number
+              completed_at: string
+              email: string
+              has_overrides: boolean
+              id: string
+              max_score: number
+              name: string
+              organization_id: string
+              override_count: number
+              passed: boolean
+              quiz_id: string
+              role: string
+              score: number
+              started_at: string
+              total_adjustment: number
+              user_id: string
+            }[]
+          }
+      get_real_time_inventory_value:
+        | { Args: { p_warehouse_id: string }; Returns: Json }
+        | {
+            Args: {
               p_organization_id: string
               p_team_id?: string
               p_warehouse_id?: string
             }
-          | { p_warehouse_id: string }
-        Returns: Json
-      }
+            Returns: {
+              item_count: number
+              low_stock_items: number
+              overstock_items: number
+              total_value: number
+            }[]
+          }
       get_request_notification_recipients: {
         Args: { request_id_param: string }
         Returns: {
@@ -14108,38 +14315,39 @@ export type Database = {
         }[]
       }
       get_role_hierarchy: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           hierarchy_level: number
           role_name: string
         }[]
       }
-      get_team_inventory_summary: {
-        Args:
-          | { p_organization_id: string }
-          | { p_organization_id: string; p_team_id?: string }
-        Returns: {
-          low_stock_items: number
-          out_of_stock_count: number
-          team_name: string
-          total_items: number
-          total_value: number
-        }[]
-      }
-      get_team_name_for_sales: {
-        Args: { p_team_id: string }
-        Returns: string
-      }
-      get_team_stats: {
-        Args: { org_id: string }
-        Returns: Json
-      }
-      get_template_code: {
-        Args: { template_id: string }
-        Returns: string
-      }
+      get_team_inventory_summary:
+        | {
+            Args: { p_organization_id: string; p_team_id?: string }
+            Returns: {
+              low_stock_items: number
+              out_of_stock_count: number
+              team_name: string
+              total_items: number
+              total_value: number
+            }[]
+          }
+        | {
+            Args: { p_organization_id: string }
+            Returns: {
+              item_count: number
+              low_stock_count: number
+              overstock_count: number
+              team_id: string
+              team_name: string
+              total_value: number
+            }[]
+          }
+      get_team_name_for_sales: { Args: { p_team_id: string }; Returns: string }
+      get_team_stats: { Args: { org_id: string }; Returns: Json }
+      get_template_code: { Args: { template_id: string }; Returns: string }
       get_user_accessible_projects: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           budget: number | null
           budget_spent: number | null
@@ -14158,6 +14366,12 @@ export type Database = {
           title: string | null
           updated_at: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "projects"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_deletion_impact: {
         Args: { target_user_id: string }
@@ -14171,10 +14385,9 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
-      get_user_role: {
-        Args: Record<PropertyKey, never> | { _user_id: string }
-        Returns: string
-      }
+      get_user_role:
+        | { Args: never; Returns: string }
+        | { Args: { _user_id: string }; Returns: string }
       get_user_team_manager: {
         Args: { target_user_id: string }
         Returns: string
@@ -14187,22 +14400,31 @@ export type Database = {
           team_name: string
         }[]
       }
-      get_warehouse_daily_movements: {
-        Args:
-          | {
+      get_warehouse_daily_movements:
+        | {
+            Args: { p_date?: string; p_warehouse_id?: string }
+            Returns: {
+              po_numbers: string[]
+              total_quantity: number
+              total_value: number
+              transaction_count: number
+              transaction_type: string
+            }[]
+          }
+        | {
+            Args: {
               p_date?: string
               p_organization_id: string
               p_warehouse_id: string
             }
-          | { p_date?: string; p_warehouse_id?: string }
-        Returns: {
-          po_numbers: string[]
-          total_quantity: number
-          total_value: number
-          transaction_count: number
-          transaction_type: string
-        }[]
-      }
+            Returns: {
+              po_numbers: string[]
+              total_quantity: number
+              total_value: number
+              transaction_count: number
+              transaction_type: string
+            }[]
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -14210,10 +14432,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin_or_superadmin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin_or_superadmin: { Args: never; Returns: boolean }
       is_meeting_organizer: {
         Args: { meeting_id: string; user_id: string }
         Returns: boolean
@@ -14238,12 +14457,19 @@ export type Database = {
         Args: { team_id_param: string; user_id_param: string }
         Returns: boolean
       }
-      log_data_access: {
-        Args:
-          | { action_type: string; record_count: number; table_name: string }
-          | { operation: string; table_name: string; user_id: string }
-        Returns: undefined
-      }
+      log_data_access:
+        | {
+            Args: {
+              action_type: string
+              record_count: number
+              table_name: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: { operation: string; table_name: string; user_id: string }
+            Returns: undefined
+          }
       manage_time_entry_approval: {
         Args: {
           approval_notes_text?: string
@@ -14254,16 +14480,13 @@ export type Database = {
         }
         Returns: Json
       }
-      manual_sync_meeting_to_google: {
-        Args:
-          | { action_param?: string; meeting_id_param: string }
-          | { force_sync?: boolean; meeting_id: string }
-        Returns: Json
-      }
-      mark_overdue_invoices: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      manual_sync_meeting_to_google:
+        | {
+            Args: { action_param?: string; meeting_id_param: string }
+            Returns: Json
+          }
+        | { Args: { force_sync?: boolean; meeting_id: string }; Returns: Json }
+      mark_overdue_invoices: { Args: never; Returns: undefined }
       migrate_legacy_folders_to_database: {
         Args: { target_organization_id: string }
         Returns: Json
@@ -14272,10 +14495,7 @@ export type Database = {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
-      process_calendar_sync_queue: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      process_calendar_sync_queue: { Args: never; Returns: undefined }
       purge_sales_data: {
         Args: { p_date_from?: string; p_date_to?: string; p_location?: string }
         Returns: Json
@@ -14284,33 +14504,9 @@ export type Database = {
         Args: { p_quiz_attempt_id: string }
         Returns: undefined
       }
-      receive_stock: {
-        Args:
-          | {
-              p_expiration_date?: string
-              p_invoice_number?: string
-              p_item_id: string
-              p_lot_number?: string
-              p_manufacturing_date?: string
-              p_notes?: string
-              p_quantity: number
-              p_unit_cost: number
-              p_user_id?: string
-              p_vendor_id?: string
-              p_warehouse_id: string
-            }
-          | {
-              p_expiration_date?: string
-              p_item_id: string
-              p_lot_number?: string
-              p_manufacturing_date?: string
-              p_notes?: string
-              p_quantity: number
-              p_unit_cost: number
-              p_user_id?: string
-              p_warehouse_id: string
-            }
-          | {
+      receive_stock:
+        | {
+            Args: {
               p_invoice_number?: string
               p_item_id: string
               p_lot_number?: string
@@ -14319,7 +14515,10 @@ export type Database = {
               p_vendor_id?: string
               p_warehouse_id: string
             }
-          | {
+            Returns: Json
+          }
+        | {
+            Args: {
               p_invoice_number?: string
               p_item_id: string
               p_lot_number?: string
@@ -14327,8 +14526,38 @@ export type Database = {
               p_unit_cost?: number
               p_vendor_id?: string
             }
-        Returns: Json
-      }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_expiration_date?: string
+              p_invoice_number?: string
+              p_item_id: string
+              p_lot_number?: string
+              p_manufacturing_date?: string
+              p_notes?: string
+              p_quantity: number
+              p_unit_cost: number
+              p_user_id?: string
+              p_vendor_id?: string
+              p_warehouse_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_expiration_date?: string
+              p_item_id: string
+              p_lot_number?: string
+              p_manufacturing_date?: string
+              p_notes?: string
+              p_quantity: number
+              p_unit_cost: number
+              p_user_id?: string
+              p_warehouse_id: string
+            }
+            Returns: undefined
+          }
       receive_warehouse_transfer: {
         Args: { p_transfer_id: string; p_user: string }
         Returns: undefined
@@ -14341,10 +14570,7 @@ export type Database = {
         Args: { p_task_id?: string; p_user_id: string }
         Returns: Json
       }
-      retry_failed_sync_operations: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      retry_failed_sync_operations: { Args: never; Returns: Json }
       rpc_checklist_report_daily_scores: {
         Args: { p_date?: string; p_org: string; p_team?: string; p_tz?: string }
         Returns: {
@@ -14511,10 +14737,7 @@ export type Database = {
           workload_balance_score: number
         }[]
       }
-      send_daily_emails_and_reminders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      send_daily_emails_and_reminders: { Args: never; Returns: undefined }
       send_notification_to_multiple: {
         Args: {
           metadata_json?: Json
@@ -14528,18 +14751,9 @@ export type Database = {
         }
         Returns: number
       }
-      send_reminders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      send_timezone_aware_reminders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      send_upcoming_checklist_reminders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      send_reminders: { Args: never; Returns: undefined }
+      send_timezone_aware_reminders: { Args: never; Returns: undefined }
+      send_upcoming_checklist_reminders: { Args: never; Returns: undefined }
       send_warehouse_transfer: {
         Args: { p_transfer_id: string; p_user: string }
         Returns: undefined
@@ -14588,14 +14802,8 @@ export type Database = {
         Args: { project_id_val: string; user_id_val: string }
         Returns: boolean
       }
-      validate_and_use_invite_code: {
-        Args: { code: string }
-        Returns: Json
-      }
-      validate_assigned_to_ids: {
-        Args: { ids: string[] }
-        Returns: boolean
-      }
+      validate_and_use_invite_code: { Args: { code: string }; Returns: Json }
+      validate_assigned_to_ids: { Args: { ids: string[] }; Returns: boolean }
       validate_invite_code_without_consuming: {
         Args: { code: string }
         Returns: Json
