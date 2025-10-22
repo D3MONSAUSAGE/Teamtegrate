@@ -21,6 +21,7 @@ import { convertFlatToSimple } from '../SimpleNutritionalForm';
 import { LabelPreview } from './LabelPreview';
 import { useLabelGeneration } from '@/hooks/useLabelGeneration';
 import { useLabelTemplates, SavedTemplate as DBSavedTemplate } from '@/hooks/useLabelTemplates';
+import { useLabelDraftPersistence } from '@/hooks/useLabelDraftPersistence';
 import jsPDF from 'jspdf';
 
 interface LabelTemplate {
@@ -85,6 +86,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     updateTemplate: updateTemplateInDb,
     deleteTemplate: deleteTemplateFromDb
   } = useLabelTemplates();
+
+  // Draft persistence - skip if we have batch or pre-selected data (those take precedence)
+  const shouldUseDraft = !batchData && !preSelectedItemId;
+  const { draftData, isLoading: draftLoading, lastSaved, updateDraft, clearDraft } = useLabelDraftPersistence('label-generator');
   
   const [isMobile, setIsMobile] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>(
@@ -169,6 +174,47 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       setLotCode(batchData.lotNumber);
     }
   }, [batchData?.batchNumber, batchData?.lotNumber]);
+
+  // Restore draft data on mount (only if no batch/preselected data)
+  useEffect(() => {
+    if (shouldUseDraft && draftData && !draftLoading) {
+      console.log('📄 Restoring label draft data...');
+      
+      // Restore all fields from draft
+      if (draftData.selectedItemId) setSelectedItemId(draftData.selectedItemId);
+      if (draftData.selectedTemplate) setSelectedTemplate(draftData.selectedTemplate);
+      if (draftData.companyName) setCompanyName(draftData.companyName);
+      if (draftData.companyAddress) setCompanyAddress(draftData.companyAddress);
+      if (draftData.netWeight) setNetWeight(draftData.netWeight);
+      if (draftData.lotCode) setLotCode(draftData.lotCode);
+      if (draftData.expirationDate) setExpirationDate(draftData.expirationDate);
+      if (draftData.ingredients) setIngredients(draftData.ingredients);
+      if (draftData.servingSize) setServingSize(draftData.servingSize);
+      if (draftData.servingsPerContainer) setServingsPerContainer(draftData.servingsPerContainer);
+      if (draftData.calories) setCalories(draftData.calories);
+      if (draftData.totalFat) setTotalFat(draftData.totalFat);
+      if (draftData.saturatedFat) setSaturatedFat(draftData.saturatedFat);
+      if (draftData.transFat) setTransFat(draftData.transFat);
+      if (draftData.cholesterol) setCholesterol(draftData.cholesterol);
+      if (draftData.sodium) setSodium(draftData.sodium);
+      if (draftData.totalCarbs) setTotalCarbs(draftData.totalCarbs);
+      if (draftData.dietaryFiber) setDietaryFiber(draftData.dietaryFiber);
+      if (draftData.totalSugars) setTotalSugars(draftData.totalSugars);
+      if (draftData.addedSugars) setAddedSugars(draftData.addedSugars);
+      if (draftData.protein) setProtein(draftData.protein);
+      if (draftData.vitaminD) setVitaminD(draftData.vitaminD);
+      if (draftData.calcium) setCalcium(draftData.calcium);
+      if (draftData.iron) setIron(draftData.iron);
+      if (draftData.potassium) setPotassium(draftData.potassium);
+      if (draftData.allergens) setAllergens(draftData.allergens);
+      if (draftData.quantityToPrint) setQuantityToPrint(draftData.quantityToPrint);
+      if (draftData.barcodeValue) setBarcodeValue(draftData.barcodeValue);
+      
+      toast.success('Draft restored! Your previous work has been recovered.', {
+        duration: 3000,
+      });
+    }
+  }, [draftData, draftLoading, shouldUseDraft]);
 
   // Handle item selection and auto-calculate expiration date
   useEffect(() => {
@@ -410,107 +456,154 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const handleCompanyNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setCompanyName(newValue);
-  }, []);
+    updateDraft({ companyName: newValue });
+  }, [updateDraft]);
 
   const handleItemSelect = useCallback((value: string) => {
     setSelectedItemId(value);
-  }, []);
+    updateDraft({ selectedItemId: value });
+  }, [updateDraft]);
 
   const handleTemplateSelect = useCallback((templateId: string) => {
     setSelectedTemplate(templateId);
-  }, []);
+    updateDraft({ selectedTemplate: templateId });
+  }, [updateDraft]);
 
   const handleIngredientsChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setIngredients(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setIngredients(value);
+    updateDraft({ ingredients: value });
+  }, [updateDraft]);
 
   const handleServingSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setServingSize(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setServingSize(value);
+    updateDraft({ servingSize: value });
+  }, [updateDraft]);
 
   const handleCaloriesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCalories(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setCalories(value);
+    updateDraft({ calories: value });
+  }, [updateDraft]);
 
   const handleTotalFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTotalFat(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setTotalFat(value);
+    updateDraft({ totalFat: value });
+  }, [updateDraft]);
 
   const handleSodiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSodium(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setSodium(value);
+    updateDraft({ sodium: value });
+  }, [updateDraft]);
 
   const handleTotalCarbsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTotalCarbs(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setTotalCarbs(value);
+    updateDraft({ totalCarbs: value });
+  }, [updateDraft]);
 
   const handleProteinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setProtein(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setProtein(value);
+    updateDraft({ protein: value });
+  }, [updateDraft]);
 
   const handleAllergensChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setAllergens(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setAllergens(value);
+    updateDraft({ allergens: value });
+  }, [updateDraft]);
 
   const handleCompanyAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCompanyAddress(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setCompanyAddress(value);
+    updateDraft({ companyAddress: value });
+  }, [updateDraft]);
 
   const handleNetWeightChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNetWeight(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setNetWeight(value);
+    updateDraft({ netWeight: value });
+  }, [updateDraft]);
 
   const handleSaturatedFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSaturatedFat(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setSaturatedFat(value);
+    updateDraft({ saturatedFat: value });
+  }, [updateDraft]);
 
   const handleTransFatChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTransFat(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setTransFat(value);
+    updateDraft({ transFat: value });
+  }, [updateDraft]);
 
   const handleCholesterolChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCholesterol(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setCholesterol(value);
+    updateDraft({ cholesterol: value });
+  }, [updateDraft]);
 
   const handleDietaryFiberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setDietaryFiber(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setDietaryFiber(value);
+    updateDraft({ dietaryFiber: value });
+  }, [updateDraft]);
 
   const handleTotalSugarsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTotalSugars(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setTotalSugars(value);
+    updateDraft({ totalSugars: value });
+  }, [updateDraft]);
 
   const handleAddedSugarsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setAddedSugars(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setAddedSugars(value);
+    updateDraft({ addedSugars: value });
+  }, [updateDraft]);
 
   const handleVitaminDChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setVitaminD(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setVitaminD(value);
+    updateDraft({ vitaminD: value });
+  }, [updateDraft]);
 
   const handleCalciumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCalcium(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setCalcium(value);
+    updateDraft({ calcium: value });
+  }, [updateDraft]);
 
   const handleIronChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setIron(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setIron(value);
+    updateDraft({ iron: value });
+  }, [updateDraft]);
 
   const handlePotassiumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setPotassium(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setPotassium(value);
+    updateDraft({ potassium: value });
+  }, [updateDraft]);
 
   const handleTemplateNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setTemplateName(e.target.value);
   }, []);
 
   const handleExpirationDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setExpirationDate(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setExpirationDate(value);
+    updateDraft({ expirationDate: value });
+  }, [updateDraft]);
 
   const handleServingsPerContainerChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setServingsPerContainer(e.target.value);
-  }, []);
+    const value = e.target.value;
+    setServingsPerContainer(value);
+    updateDraft({ servingsPerContainer: value });
+  }, [updateDraft]);
 
   // Calculate % Daily Value for nutrition facts
   const calculateDailyValue = (nutrient: string, value: string): string => {
@@ -937,9 +1030,11 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         
         const batchInfo = batchData?.batchNumber ? ` for Batch #${batchData.batchNumber}` : '';
         toast.success(`Label generated and ${quantityToPrint} unit(s) recorded successfully${batchInfo}!`);
+        clearDraft(); // Clear saved draft after successful generation
       } catch (dbError) {
         console.error('Failed to record in database:', dbError);
         toast.warning('Label generated but failed to record in tracking system');
+        clearDraft(); // Still clear draft even if DB recording fails
       }
       
     } catch (error) {
@@ -968,6 +1063,29 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                   <span className="ml-2 text-muted-foreground">• Available: {batchData.maxQuantity} units</span>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Draft Status Indicator */}
+      {shouldUseDraft && lastSaved && (
+        <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <Save className="h-4 w-4" />
+                <span>Draft auto-saved {new Date(lastSaved).toLocaleTimeString()}</span>
+              </div>
+              <Button
+                onClick={clearDraft}
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear Draft
+              </Button>
             </div>
           </CardContent>
         </Card>
