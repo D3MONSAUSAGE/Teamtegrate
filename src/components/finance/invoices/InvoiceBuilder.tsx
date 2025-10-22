@@ -43,6 +43,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
   });
   const [taxRate, setTaxRate] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [showBrandingDialog, setShowBrandingDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [savedInvoice, setSavedInvoice] = useState<CreatedInvoice | null>(null);
@@ -112,6 +113,17 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
     try {
       setIsSaving(true);
 
+      // Validate calculations before saving
+      const subtotal = parseFloat(calculations.subtotal.toFixed(2));
+      const taxAmount = parseFloat(calculations.tax_amount.toFixed(2));
+      const total = parseFloat(calculations.total.toFixed(2));
+
+      if (isNaN(subtotal) || isNaN(taxAmount) || isNaN(total)) {
+        throw new Error('Invalid calculation values. Please check line items.');
+      }
+
+      console.log('[Invoice Save] Calculations:', { subtotal, taxAmount, total });
+
       // 1. Insert invoice into created_invoices table
       const { data: invoice, error: invoiceError } = await supabase
         .from('created_invoices')
@@ -125,11 +137,11 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           payment_status: 'pending',
           issue_date: invoiceData.issue_date,
           due_date: invoiceData.due_date,
-          subtotal: calculations.subtotal,
-          tax_amount: calculations.tax_amount,
-          total_amount: calculations.total,
+          subtotal,
+          tax_amount: taxAmount,
+          total_amount: total,
           paid_amount: 0,
-          balance_due: calculations.total,
+          balance_due: total,
           payment_terms: invoiceData.payment_terms,
           notes: invoiceData.notes,
           footer_text: invoiceData.footer_text,
@@ -145,7 +157,12 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
         .select()
         .single();
 
-      if (invoiceError) throw invoiceError;
+      if (invoiceError) {
+        console.error('[Invoice Save] Database error:', invoiceError);
+        throw invoiceError;
+      }
+
+      console.log('[Invoice Save] Invoice created:', invoice.id);
 
       // 2. Insert line items
       const lineItemsData = lineItems.map((item, index) => ({
@@ -213,9 +230,184 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
   };
 
   const handleSendInvoice = async () => {
-    // For now, just save as sent instead of draft
-    // TODO: Implement email sending functionality
-    await handleSaveDraft();
+    if (!selectedClient?.email) {
+      toast({
+        title: 'Error',
+        description: 'Client must have an email address to send invoice',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!selectedClient || lineItems.length === 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a client and add at least one line item',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (user?.role === 'manager' && !selectedTeamId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a team for this invoice',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!user?.organizationId) {
+      toast({
+        title: 'Error',
+        description: 'Organization not found',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsSending(true);
+
+      // Validate calculations
+      const subtotal = parseFloat(calculations.subtotal.toFixed(2));
+      const taxAmount = parseFloat(calculations.tax_amount.toFixed(2));
+      const total = parseFloat(calculations.total.toFixed(2));
+
+      if (isNaN(subtotal) || isNaN(taxAmount) || isNaN(total)) {
+        throw new Error('Invalid calculation values. Please check line items.');
+      }
+
+      console.log('[Invoice Send] Creating invoice for:', selectedClient.email);
+
+      // 1. Save invoice as 'sent'
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('created_invoices')
+        .insert({
+          organization_id: user.organizationId,
+          client_id: selectedClient.id,
+          created_by: user.id,
+          team_id: selectedTeamId && selectedTeamId !== 'unassigned' ? selectedTeamId : null,
+          invoice_number: invoiceData.invoice_number,
+          status: 'sent',
+          payment_status: 'pending',
+          issue_date: invoiceData.issue_date,
+          due_date: invoiceData.due_date,
+          subtotal,
+          tax_amount: taxAmount,
+          total_amount: total,
+          paid_amount: 0,
+          balance_due: total,
+          payment_terms: invoiceData.payment_terms,
+          notes: invoiceData.notes,
+          footer_text: invoiceData.footer_text,
+          sent_at: new Date().toISOString(),
+          company_logo_url: branding?.logo_url,
+          company_name: organizationName,
+          company_address: branding?.company_address
+            ? `${branding.company_address}${branding.company_city ? `, ${branding.company_city}` : ''}${branding.company_state ? `, ${branding.company_state}` : ''} ${branding.company_postal_code || ''}`.trim()
+            : undefined,
+          company_phone: branding?.company_phone,
+          company_email: branding?.company_email,
+        })
+        .select()
+        .single();
+
+      if (invoiceError) {
+        console.error('[Invoice Send] Database error:', invoiceError);
+        throw invoiceError;
+      }
+
+      // 2. Insert line items
+      const lineItemsData = lineItems.map((item, index) => ({
+        invoice_id: invoice.id,
+        organization_id: user.organizationId,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        sort_order: index,
+      }));
+
+      const { error: lineItemsError } = await supabase
+        .from('invoice_line_items')
+        .insert(lineItemsData);
+
+      if (lineItemsError) throw lineItemsError;
+
+      console.log('[Invoice Send] Sending email to:', selectedClient.email);
+
+      // 3. Send email via edge function
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invoice-email', {
+        body: {
+          invoiceId: invoice.id,
+          clientEmail: selectedClient.email,
+          clientName: selectedClient.name,
+          invoiceNumber: invoiceData.invoice_number,
+          issueDate: invoiceData.issue_date,
+          dueDate: invoiceData.due_date,
+          totalAmount: total,
+          companyName: organizationName,
+          companyEmail: branding?.company_email,
+          paymentTerms: invoiceData.payment_terms,
+          notes: invoiceData.notes,
+          lineItems: lineItems.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+          })),
+        }
+      });
+
+      if (emailError) {
+        console.error('[Invoice Send] Email error:', emailError);
+        toast({
+          title: 'Partial Success',
+          description: 'Invoice saved but email failed to send. You can resend from the invoice list.',
+          variant: 'destructive',
+        });
+      } else {
+        console.log('[Invoice Send] Email sent successfully');
+        toast({
+          title: 'Success!',
+          description: `Invoice sent to ${selectedClient.email}`,
+        });
+      }
+
+      // 4. Generate PDF
+      const fullInvoice: CreatedInvoice = {
+        ...invoice,
+        status: 'sent' as const,
+        payment_status: 'pending' as const,
+        client: selectedClient,
+        line_items: lineItems.map((item, index) => ({
+          id: '',
+          invoice_id: invoice.id,
+          organization_id: user.organizationId,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          sort_order: index,
+          created_at: new Date().toISOString(),
+        })),
+      };
+
+      setSavedInvoice(fullInvoice);
+      generateInvoicePDF(fullInvoice);
+
+      onInvoiceCreated?.();
+    } catch (error: any) {
+      console.error('[Invoice Send] Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send invoice',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handlePreview = () => {
@@ -294,13 +486,13 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+          <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving || isSending}>
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save & Download'}
           </Button>
-          <Button onClick={handleSendInvoice} disabled={isSaving}>
+          <Button onClick={handleSendInvoice} disabled={isSaving || isSending}>
             <Send className="h-4 w-4 mr-2" />
-            Send Invoice
+            {isSending ? 'Sending...' : 'Send Invoice'}
           </Button>
         </div>
       </div>

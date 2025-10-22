@@ -104,6 +104,9 @@ verify_jwt = true
 [functions.send-schedule-email]
 verify_jwt = false
 
+[functions.send-invoice-email]
+verify_jwt = true
+
 [functions.validate-checklist-time]
 verify_jwt = true
 
