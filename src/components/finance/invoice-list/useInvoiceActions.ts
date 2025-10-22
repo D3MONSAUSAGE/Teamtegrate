@@ -69,7 +69,13 @@ export const useInvoiceActions = () => {
     setViewModalOpen: (open: boolean) => void
   ) => {
     try {
+      console.log('viewUnifiedInvoice called for:', invoice.invoice_number, 'source:', invoice.source);
+      
+      // Set viewing invoice first
+      setViewingInvoice(invoice);
+      
       if (invoice.source === 'uploaded') {
+        console.log('Fetching public URL for uploaded invoice...');
         // For uploaded invoices, fetch the public URL
         const { data: urlData } = supabase.storage
           .from('documents')
@@ -80,9 +86,11 @@ export const useInvoiceActions = () => {
           return;
         }
 
+        console.log('Public URL fetched:', urlData.publicUrl);
         setImageUrl(urlData.publicUrl);
         setInvoiceData(null);
       } else {
+        console.log('Fetching full invoice data for created invoice...');
         // For created invoices, fetch full invoice data with relations
         const { data: fullInvoice, error } = await supabase
           .from('created_invoices')
@@ -100,11 +108,12 @@ export const useInvoiceActions = () => {
           return;
         }
 
+        console.log('Invoice data fetched successfully:', fullInvoice);
         setInvoiceData(fullInvoice as CreatedInvoice);
         setImageUrl('');
       }
 
-      setViewingInvoice(invoice);
+      console.log('Opening modal...');
       setViewModalOpen(true);
     } catch (error) {
       console.error('View failed:', error);

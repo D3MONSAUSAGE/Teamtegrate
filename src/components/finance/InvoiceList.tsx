@@ -90,6 +90,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const { viewUnifiedInvoice, deleteInvoice, downloadUnifiedInvoice } = useInvoiceActions();
 
   const handleView = (invoice: UnifiedInvoice) => {
+    console.log('handleView called for invoice:', invoice.invoice_number);
     viewUnifiedInvoice(invoice, setImageUrl, setInvoiceData, setViewingInvoice, setViewModalOpen);
   };
 
