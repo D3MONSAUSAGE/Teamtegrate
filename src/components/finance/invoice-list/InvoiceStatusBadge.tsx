@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
 
 interface InvoiceStatusBadgeProps {
-  status: 'unpaid' | 'partial' | 'paid' | 'void';
+  status: 'unpaid' | 'partial' | 'paid' | 'void' | 'pending' | 'overdue' | 'cancelled';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -28,10 +28,25 @@ const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({ status, size = 
       label: 'Void',
       icon: XCircle,
       className: 'bg-muted text-muted-foreground border-border'
+    },
+    pending: {
+      label: 'Pending',
+      icon: Clock,
+      className: 'bg-blue-500/10 text-blue-700 dark:text-blue-500 border-blue-500/20'
+    },
+    overdue: {
+      label: 'Overdue',
+      icon: AlertCircle,
+      className: 'bg-destructive/10 text-destructive border-destructive/20'
+    },
+    cancelled: {
+      label: 'Cancelled',
+      icon: XCircle,
+      className: 'bg-muted text-muted-foreground border-border'
     }
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.unpaid; // Fallback to unpaid if status not found
   const Icon = config.icon;
   
   const sizeClasses = {
