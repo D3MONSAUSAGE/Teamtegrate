@@ -25,6 +25,9 @@ import { UserJobRoleManager } from '@/components/organization/UserJobRoleManager
 import { UserTeamManager } from '@/components/hr/UserTeamManager';
 import { UserManagerDisplay } from '@/components/hr/UserManagerDisplay';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import TimeOffTab from './profile/TimeOffTab';
+import EmergencyContactTab from './profile/EmergencyContactTab';
+import DepartmentTab from './profile/DepartmentTab';
 
 interface EmployeeProfileDialogProps {
   userId: string | null;
@@ -141,31 +144,16 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
           </div>
         ) : (
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="basic">
-                <Briefcase className="h-4 w-4 mr-2" />
-                Basic Info
-              </TabsTrigger>
-              <TabsTrigger value="job-roles">
-                <UserCog className="h-4 w-4 mr-2" />
-                Job Roles
-              </TabsTrigger>
-              <TabsTrigger value="teams">
-                <Users className="h-4 w-4 mr-2" />
-                Teams
-              </TabsTrigger>
-              <TabsTrigger value="manager">
-                <Crown className="h-4 w-4 mr-2" />
-                Manager
-              </TabsTrigger>
-              <TabsTrigger value="compensation">
-                <DollarSign className="h-4 w-4 mr-2" />
-                Compensation
-              </TabsTrigger>
-              <TabsTrigger value="notes">
-                <FileText className="h-4 w-4 mr-2" />
-                HR Notes
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-9 text-xs">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="job-roles">Job Roles</TabsTrigger>
+              <TabsTrigger value="teams">Teams</TabsTrigger>
+              <TabsTrigger value="manager">Manager</TabsTrigger>
+              <TabsTrigger value="compensation">Pay</TabsTrigger>
+              <TabsTrigger value="time-off">Time Off</TabsTrigger>
+              <TabsTrigger value="emergency">Emergency</TabsTrigger>
+              <TabsTrigger value="department">Department</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
@@ -320,6 +308,21 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                   Save Changes
                 </Button>
               </div>
+            </TabsContent>
+
+            {/* Time Off Tab */}
+            <TabsContent value="time-off" className="space-y-4">
+              {employee && <TimeOffTab userId={employee.id} />}
+            </TabsContent>
+
+            {/* Emergency Contact Tab */}
+            <TabsContent value="emergency" className="space-y-4">
+              {employee && <EmergencyContactTab userId={employee.id} />}
+            </TabsContent>
+
+            {/* Department Tab */}
+            <TabsContent value="department" className="space-y-4">
+              {employee && <DepartmentTab userId={employee.id} />}
             </TabsContent>
 
             {/* HR Notes Tab */}

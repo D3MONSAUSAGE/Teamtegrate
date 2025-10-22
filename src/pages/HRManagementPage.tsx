@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmployeeListView from '@/components/hr/EmployeeListView';
 import EmployeeProfileDialog from '@/components/hr/EmployeeProfileDialog';
 import PayrollOverview from '@/components/hr/PayrollOverview';
+import CreateEmployeeWizard from '@/components/hr/wizard/CreateEmployeeWizard';
 import EmployeeRecordsTab from '@/components/hr/EmployeeRecordsTab';
 import { RecruitmentDashboard } from '@/pages/RecruitmentDashboard';
 import { User } from '@/types';
@@ -17,6 +18,7 @@ const HRManagementPage = () => {
   const { users, isLoading, refetchUsers } = useEnhancedUserManagement();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
 
   const handleEditEmployee = (userId: string) => {
     setSelectedUserId(userId);
@@ -43,10 +45,7 @@ const HRManagementPage = () => {
         icon={Users}
         actionButton={{
           label: 'Add Employee',
-          onClick: () => {
-            setSelectedUserId(null);
-            setIsProfileDialogOpen(true);
-          },
+          onClick: () => setIsCreateWizardOpen(true),
           icon: UserPlus,
         }}
         stats={[
@@ -83,6 +82,12 @@ const HRManagementPage = () => {
           <PayrollOverview employees={activeEmployees} />
         </TabsContent>
       </Tabs>
+
+      <CreateEmployeeWizard
+        open={isCreateWizardOpen}
+        onOpenChange={setIsCreateWizardOpen}
+        onSuccess={refetchUsers}
+      />
 
       <EmployeeProfileDialog
         userId={selectedUserId}
