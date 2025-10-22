@@ -150,6 +150,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const [savingToDatabase, setSavingToDatabase] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [editModeTemplateName, setEditModeTemplateName] = useState<string>('');
+  const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
+  const [loadedTemplateName, setLoadedTemplateName] = useState<string>('');
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [barcodeValue, setBarcodeValue] = useState<string>('');
 
@@ -342,8 +344,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   }, []);
 
   // Save or update template function (Database-backed)
-  const saveTemplate = async () => {
-    if (!templateName.trim()) {
+  const saveTemplate = async (forceNew: boolean = false) => {
+    // Validate template name for new templates or when editing
+    if (!templateName.trim() && (!loadedTemplateId || forceNew)) {
       toast.error('Please enter a template name');
       return;
     }
@@ -356,6 +359,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     console.log('🎯 Save template button clicked', { 
       templateName, 
       editingTemplateId,
+      loadedTemplateId,
+      forceNew,
       selectedTeamId,
       hasUser: !!user,
       userId: user?.id,
@@ -365,7 +370,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     setSavingToDatabase(true);
     
     const templateData: Omit<SavedTemplate, 'id' | 'createdAt'> = {
-      name: templateName,
+      name: templateName || loadedTemplateName, // Use loadedTemplateName for updates
       companyName,
       companyAddress,
       netWeight,
@@ -399,16 +404,34 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
     try {
       let result;
+      
+      // Scenario 1: Explicitly editing (Edit button was clicked)
       if (editingTemplateId) {
-        console.log('📝 Updating existing template:', editingTemplateId);
+        console.log('📝 Updating existing template (edit mode):', editingTemplateId);
         result = await updateTemplateInDb(editingTemplateId, templateData, logoFile || undefined, selectedTeamId);
         console.log('📝 Update result:', result);
         setEditingTemplateId(null);
         setEditModeTemplateName('');
-      } else {
+        setLoadedTemplateId(null);
+        setLoadedTemplateName('');
+      } 
+      // Scenario 2: Template is loaded and we're updating it (not creating new)
+      else if (loadedTemplateId && !forceNew) {
+        console.log('📝 Updating loaded template:', loadedTemplateId);
+        result = await updateTemplateInDb(loadedTemplateId, templateData, logoFile || undefined, selectedTeamId);
+        console.log('📝 Update result:', result);
+        // Keep loadedTemplateId so user can continue making updates
+      }
+      // Scenario 3: Creating new template
+      else {
         console.log('➕ Creating new template');
         result = await saveTemplateToDb(templateData, logoFile || undefined, selectedTeamId);
         console.log('➕ Create result:', result);
+        // Set the newly created template as loaded
+        if (result) {
+          setLoadedTemplateId(result);
+          setLoadedTemplateName(templateData.name);
+        }
       }
       
       if (result) {
@@ -432,6 +455,13 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     setEditModeTemplateName('');
     setTemplateName('');
     toast.info('Edit mode cancelled');
+  };
+
+  // Unload template
+  const unloadTemplate = () => {
+    setLoadedTemplateId(null);
+    setLoadedTemplateName('');
+    toast.info('Template unloaded');
   };
 
   // Load template function (Database-backed)
@@ -482,6 +512,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       setSelectedItemId(template.selectedItemId);
     }
     
+    // Always track which template is loaded
+    setLoadedTemplateId(template.id);
+    setLoadedTemplateName(template.name);
+    
     if (forEditing) {
       setEditingTemplateId(template.id);
       setEditModeTemplateName(template.name);
@@ -495,7 +529,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       const batchMessage = batchData?.batchNumber 
         ? ` (Batch #${batchData.batchNumber})` 
         : '';
-      toast.success(`Template "${template.name}" loaded!${batchMessage}`);
+      toast.success(`Template "${template.name}" loaded! You can update it or save as new.`, {
+        duration: 4000
+      });
     }
   };
 
@@ -1314,28 +1350,110 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                     )}
                   </div>
 
+              {/* Show loaded template info */}
+              {loadedTemplateId && !editingTemplateId && (
+                <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Using template: {loadedTemplateName}
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-400">
+                        You can update this template or save your changes as a new one
+                      </p>
+                    </div>
+                    <Button
+                      onClick={unloadTemplate}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Editing mode indicator */}
+              {editingTemplateId && (
+                <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                      Editing: {editModeTemplateName}
+                    </p>
+                    <Button
+                      onClick={cancelEdit}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Cancel Edit
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <Label className="text-sm font-medium">
-                  {editingTemplateId ? 'Template Name (Editing)' : 'Save Current Configuration'}
-                  {editingTemplateId && <Badge variant="secondary" className="ml-2">Editing</Badge>}
+                  {editingTemplateId 
+                    ? 'Template Name (Editing)' 
+                    : loadedTemplateId 
+                      ? 'Save Changes' 
+                      : 'Save Current Configuration'}
                 </Label>
-                <div className="flex flex-col sm:flex-row gap-2 mt-1">
-                  <Input
-                    value={templateName}
-                    onChange={handleTemplateNameChange}
-                    placeholder="Template name (e.g., 'Organic Products')"
-                    className={editingTemplateId ? "flex-1 border-blue-500" : "flex-1"}
-                  />
-                  <Button
-                    onClick={saveTemplate}
-                    disabled={!templateName.trim() || !companyName.trim() || savingToDatabase}
-                    variant={editingTemplateId ? "default" : "outline"}
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    {editingTemplateId ? 'Update Template' : 'Save as Template'}
-                  </Button>
+
+                {/* Buttons based on state */}
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                  {loadedTemplateId && !editingTemplateId ? (
+                    <>
+                      {/* Update the loaded template */}
+                      <Button
+                        onClick={() => saveTemplate(false)}
+                        disabled={!companyName.trim() || savingToDatabase}
+                        variant="default"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Update {loadedTemplateName}
+                      </Button>
+                      
+                      {/* Save as new template */}
+                      <Input
+                        value={templateName}
+                        onChange={handleTemplateNameChange}
+                        placeholder="Enter name for new template"
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={() => saveTemplate(true)}
+                        disabled={!templateName.trim() || !companyName.trim() || savingToDatabase}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        Save as New
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Standard save/update when editing or creating new */}
+                      <Input
+                        value={templateName}
+                        onChange={handleTemplateNameChange}
+                        placeholder="Template name (e.g., 'Organic Products')"
+                        className={editingTemplateId ? "flex-1 border-blue-500" : "flex-1"}
+                      />
+                      <Button
+                        onClick={() => saveTemplate(false)}
+                        disabled={!templateName.trim() || !companyName.trim() || savingToDatabase}
+                        variant={editingTemplateId ? "default" : "outline"}
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        {editingTemplateId ? 'Update Template' : 'Save as Template'}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
