@@ -15,6 +15,7 @@ import { useInventory } from '@/contexts/inventory';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWarehouseSelection } from '@/contexts/inventory/WarehouseSelectionContext';
 import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
@@ -79,6 +80,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const location = useLocation();
   const { items, loading: inventoryLoading } = useInventory();
   const { user } = useAuth();
+  const { selectedTeamId } = useWarehouseSelection();
   const { recordLabelGeneration, saving: savingLabelToDb } = useLabelGeneration();
   const { 
     templates: savedTemplates, 
@@ -342,10 +344,16 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       toast.error('Please enter a template name');
       return;
     }
+    
+    if (!selectedTeamId) {
+      toast.error('Please select a team first');
+      return;
+    }
 
     console.log('🎯 Save template button clicked', { 
       templateName, 
       editingTemplateId,
+      selectedTeamId,
       hasUser: !!user,
       userId: user?.id,
       orgId: user?.organizationId
@@ -390,13 +398,13 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       let result;
       if (editingTemplateId) {
         console.log('📝 Updating existing template:', editingTemplateId);
-        result = await updateTemplateInDb(editingTemplateId, templateData, logoFile || undefined);
+        result = await updateTemplateInDb(editingTemplateId, templateData, logoFile || undefined, selectedTeamId);
         console.log('📝 Update result:', result);
         setEditingTemplateId(null);
         setEditModeTemplateName('');
       } else {
         console.log('➕ Creating new template');
-        result = await saveTemplateToDb(templateData, logoFile || undefined);
+        result = await saveTemplateToDb(templateData, logoFile || undefined, selectedTeamId);
         console.log('➕ Create result:', result);
       }
       

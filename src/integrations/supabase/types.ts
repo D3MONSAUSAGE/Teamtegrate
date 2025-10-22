@@ -4817,6 +4817,7 @@ export type Database = {
           name: string
           organization_id: string
           printer_type: string
+          team_id: string
           template_data: Json
           updated_at: string
         }
@@ -4832,6 +4833,7 @@ export type Database = {
           name: string
           organization_id: string
           printer_type?: string
+          team_id: string
           template_data?: Json
           updated_at?: string
         }
@@ -4847,10 +4849,33 @@ export type Database = {
           name?: string
           organization_id?: string
           printer_type?: string
+          team_id?: string
           template_data?: Json
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "label_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "team_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "label_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "label_templates_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_payroll_summary"
+            referencedColumns: ["team_id"]
+          },
+        ]
       }
       manufacturing_batches: {
         Row: {

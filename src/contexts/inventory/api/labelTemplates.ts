@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface LabelTemplate {
   id: string;
   organization_id: string;
+  team_id: string;
   name: string;
   description?: string;
   category: string;
@@ -119,9 +120,10 @@ export const labelTemplatesApi = {
   },
 
   // Create default food product template
-  async createDefaultFoodTemplate(organizationId: string, createdBy: string): Promise<LabelTemplate> {
+  async createDefaultFoodTemplate(organizationId: string, createdBy: string, teamId: string): Promise<LabelTemplate> {
     const foodTemplate = {
       organization_id: organizationId,
+      team_id: teamId,
       created_by: createdBy,
       name: 'Comprehensive Food Label',
       description: 'Complete food label with nutrition facts, ingredients, allergens, and lot tracking',

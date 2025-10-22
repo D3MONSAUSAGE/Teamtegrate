@@ -50,14 +50,37 @@ export function useLabelTemplates() {
     
     try {
       setLoading(true);
-      const allTemplates = await labelTemplatesApi.getAll();
-      const dbTemplates = allTemplates.filter(t => 
-        t.category === 'professional' && 
-        t.organization_id === user.organizationId
-      );
+      
+      // Get user's teams
+      const { data: memberships, error: membershipError } = await supabase
+        .from('team_memberships')
+        .select('team_id')
+        .eq('user_id', user.id);
+      
+      if (membershipError) throw membershipError;
+      
+      const userTeamIds = memberships?.map(m => m.team_id) || [];
+      
+      if (userTeamIds.length === 0) {
+        console.log('User has no team memberships');
+        setTemplates([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Get templates for user's teams only
+      const { data: dbTemplates, error: templatesError } = await supabase
+        .from('label_templates')
+        .select('*')
+        .eq('category', 'professional')
+        .eq('is_active', true)
+        .in('team_id', userTeamIds)
+        .order('name', { ascending: true });
+      
+      if (templatesError) throw templatesError;
       
       // Convert DB templates to SavedTemplate format
-      const converted: SavedTemplate[] = dbTemplates.map(template => {
+      const converted: SavedTemplate[] = (dbTemplates || []).map(template => {
         const data = template.template_data as any;
         return {
           id: template.id,
@@ -140,11 +163,13 @@ export function useLabelTemplates() {
   // Save template to database
   const saveTemplate = async (
     templateData: Omit<SavedTemplate, 'id' | 'createdAt'>,
-    logoFile?: File
+    logoFile?: File,
+    teamId?: string
   ): Promise<string | null> => {
     console.log('🔵 SAVE TEMPLATE STARTED', {
       user: user?.id,
       orgId: user?.organizationId,
+      teamId,
       hasLogo: !!logoFile,
       templateName: templateData.name
     });
@@ -156,6 +181,12 @@ export function useLabelTemplates() {
         orgId: user?.organizationId 
       });
       toast.error('Cannot save: User session invalid');
+      return null;
+    }
+    
+    if (!teamId) {
+      console.error('❌ SAVE FAILED: Missing team_id');
+      toast.error('Cannot save: No team selected');
       return null;
     }
 
@@ -172,6 +203,7 @@ export function useLabelTemplates() {
       console.log('💾 Creating template in database...');
       const dbTemplate: Omit<DBLabelTemplate, 'id' | 'created_at' | 'updated_at'> = {
         organization_id: user.organizationId,
+        team_id: teamId,
         name: templateData.name,
         description: `Professional label template`,
         category: 'professional',
@@ -234,9 +266,15 @@ export function useLabelTemplates() {
   const updateTemplate = async (
     templateId: string,
     templateData: Omit<SavedTemplate, 'id' | 'createdAt'>,
-    logoFile?: File
+    logoFile?: File,
+    teamId?: string
   ): Promise<boolean> => {
     if (!user?.organizationId) return false;
+    
+    if (!teamId) {
+      toast.error('Cannot update: No team selected');
+      return false;
+    }
 
     try {
       let logoUrl = templateData.logoUrl;
@@ -247,6 +285,7 @@ export function useLabelTemplates() {
       }
 
       await labelTemplatesApi.update(templateId, {
+        team_id: teamId,
         name: templateData.name,
         template_data: {
           ...templateData,
