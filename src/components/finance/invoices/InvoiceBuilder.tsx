@@ -119,7 +119,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           organization_id: user.organizationId,
           client_id: selectedClient.id,
           created_by: user.id,
-          team_id: selectedTeamId || null,
+          team_id: selectedTeamId && selectedTeamId !== 'unassigned' ? selectedTeamId : null,
           invoice_number: invoiceData.invoice_number,
           status: 'draft',
           payment_status: 'pending',
@@ -461,7 +461,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
                     </SelectTrigger>
                     <SelectContent>
                       {user?.role !== 'manager' && (
-                        <SelectItem value="">No team (organization-wide)</SelectItem>
+                        <SelectItem value="unassigned">No team (organization-wide)</SelectItem>
                       )}
                       {teams.map((team) => (
                         <SelectItem key={team.id} value={team.id}>
