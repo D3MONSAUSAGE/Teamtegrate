@@ -846,14 +846,12 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Net Weight: ${netWeight}`, 2, y + 0.15, { align: 'center' });
-        y += 0.2; // Reduced spacing
+        y += 0.25; // Extra spacing to prevent date overlap
       }
 
-      // SKU and Date (left/right aligned)
+      // Date (right aligned) - SKU moved to below barcode
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(`SKU: ${selectedItem.sku || 'N/A'}`, 0.2, y);
-      
       const currentDate = new Date().toLocaleDateString();
       pdf.text(`DATE: ${currentDate}`, 3.8, y, { align: 'right' });
       y += 0.2;
@@ -875,21 +873,27 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         y += 0.25;
       }
 
-      // Barcode (centered)
+      // Barcode (centered) with SKU below
       try {
         const barcodeValue = selectedItem.barcode || selectedItem.sku || lotCode;
         const barcodeImage = BarcodeGenerator.generateBarcode(barcodeValue, {
           format: 'CODE128',
           width: 2,
           height: 35,
-          displayValue: true,
+          displayValue: false, // We'll add SKU manually below
           background: '#ffffff',
           lineColor: '#000000'
         });
         
         if (barcodeImage) {
           pdf.addImage(barcodeImage, 'PNG', 0.5, y, 3, 0.5);
-          y += 0.7;
+          y += 0.55;
+          
+          // Add SKU text centered below barcode
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`SKU: ${barcodeValue}`, 2, y, { align: 'center' });
+          y += 0.2;
         }
       } catch (error) {
         console.error('Barcode generation failed:', error);
@@ -1067,7 +1071,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('INGREDIENTS:', 0.2, y);
-        y += 0.12;
+        y += 0.15; // Extra spacing so text doesn't touch line above
         
         pdf.setFontSize(useCompactFont ? 7 : 8);
         pdf.setFont('helvetica', 'normal');
@@ -1104,8 +1108,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       }
 
       // FDA-compliant footer with distributor info - Dynamic positioning
-      // Position footer based on content, but ensure it doesn't go below 5.7"
-      const footerY = Math.min(y + 0.15, 5.7);
+      // Position footer based on content, allow it to sit lower for better spacing
+      const footerY = Math.min(y + 0.2, 5.8);
       
       if (template.fields.includes('address') && companyAddress.trim()) {
         pdf.setFontSize(7);
