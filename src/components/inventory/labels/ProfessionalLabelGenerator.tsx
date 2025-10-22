@@ -1027,7 +1027,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                 pdf.text(dv, 3.7, rightY + 0.07, { align: 'right' });
                 pdf.setFont('helvetica', 'normal');
               }
-              rightY += 0.1;
+              rightY += 0.09; // Tighter spacing for compact layout
             }
           });
         }
@@ -1051,7 +1051,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
           pdf.setFontSize(4.5);
           pdf.setFont('helvetica', 'normal');
           pdf.text('*% Daily Value based on 2000 calorie diet', 3.7, y + 0.06, { align: 'right' });
-          y += 0.12;
+          y += 0.08; // Tighter spacing
         }
         
         console.log('[PDF_NUTRITION] Compact two-column nutrition facts table completed');
@@ -1059,48 +1059,64 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
       // Ingredients (if included)
       if (template.fields.includes('ingredients') && ingredients.trim()) {
+        // Check if we need to use smaller font due to space constraints
+        const remainingSpace = 5.3 - y; // Leave 0.7" for footer
+        const estimatedHeight = (ingredients.length / 50) * 0.1; // Rough estimate
+        const useCompactFont = estimatedHeight > remainingSpace;
+        
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('INGREDIENTS:', 0.2, y);
         y += 0.12;
         
-        pdf.setFontSize(8);
+        pdf.setFontSize(useCompactFont ? 7 : 8);
         pdf.setFont('helvetica', 'normal');
         const ingredientLines = pdf.splitTextToSize(ingredients, 3.6);
         pdf.text(ingredientLines, 0.2, y);
-        y += (ingredientLines.length * 0.09) + 0.1;
+        y += (ingredientLines.length * 0.1) + 0.12; // Better line spacing
       }
 
       // Allergens - Always show "CONTAINS:" section for FDA compliance
       if (template.fields.includes('allergens')) {
+        // Check if we need compact font due to space constraints
+        const remainingSpace = 5.3 - y;
+        const estimatedHeight = (allergens.length / 50) * 0.1;
+        const useCompactFont = estimatedHeight > remainingSpace;
+        
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         pdf.text('CONTAINS:', 0.2, y);
         y += 0.12;
         
         if (allergens.trim()) {
-          pdf.setFontSize(8);
+          pdf.setFontSize(useCompactFont ? 7 : 8);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(allergens.toUpperCase(), 0.2, y);
+          // Wrap allergen text properly for long lists
+          const allergenLines = pdf.splitTextToSize(allergens.toUpperCase(), 3.6);
+          pdf.text(allergenLines, 0.2, y);
+          y += (allergenLines.length * 0.1) + 0.12; // Proper multi-line spacing
         } else {
           pdf.setFontSize(7);
           pdf.setFont('helvetica', 'italic');
           pdf.text('(To be filled as applicable)', 0.2, y);
+          y += 0.15;
         }
-        y += 0.15;
       }
 
-      // FDA-compliant footer with distributor info
+      // FDA-compliant footer with distributor info - Dynamic positioning
+      // Position footer based on content, but ensure it doesn't go below 5.7"
+      const footerY = Math.min(y + 0.15, 5.7);
+      
       if (template.fields.includes('address') && companyAddress.trim()) {
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Distributed by ${companyName}`, 2, 5.7, { align: 'center' });
+        pdf.text(`Distributed by ${companyName}`, 2, footerY, { align: 'center' });
         pdf.setFontSize(6);
-        pdf.text(companyAddress, 2, 5.85, { align: 'center' });
+        pdf.text(companyAddress, 2, footerY + 0.15, { align: 'center' });
       } else {
         pdf.setFontSize(6);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`Distributed by ${companyName}`, 2, 5.85, { align: 'center' });
+        pdf.text(`Distributed by ${companyName}`, 2, footerY + 0.15, { align: 'center' });
       }
 
       // Save PDF
