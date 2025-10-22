@@ -24,9 +24,8 @@ const InvoiceManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="weekly" className="w-full">
-        <TabsList className={`grid w-full ${canManageData ? 'grid-cols-5' : 'grid-cols-2'}`}>
-          <TabsTrigger value="weekly">Weekly Sales</TabsTrigger>
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className={`grid w-full ${canManageData ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <TabsTrigger value="upload">Upload Invoice</TabsTrigger>
           <TabsTrigger value="manage">Manage Invoices</TabsTrigger>
           {canManageData && (
@@ -36,10 +35,6 @@ const InvoiceManager: React.FC = () => {
             </>
           )}
         </TabsList>
-        
-        <TabsContent value="weekly" className="space-y-4">
-          <WeeklySalesDashboard />
-        </TabsContent>
 
         <TabsContent value="upload" className="space-y-4">
           <InvoiceUpload onUploadSuccess={handleUploadSuccess} />
