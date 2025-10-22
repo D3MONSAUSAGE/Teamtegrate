@@ -15,7 +15,7 @@ import { useInventory } from '@/contexts/inventory';
 import { InventoryItem } from '@/contexts/inventory/types';
 import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWarehouseSelection } from '@/contexts/inventory/WarehouseSelectionContext';
+import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
@@ -80,8 +80,11 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const location = useLocation();
   const { items, loading: inventoryLoading } = useInventory();
   const { user } = useAuth();
-  const { selectedTeamId } = useWarehouseSelection();
+  const { availableTeams } = useTeamAccess();
   const { recordLabelGeneration, saving: savingLabelToDb } = useLabelGeneration();
+  
+  // Get the first available team for the user (for saving templates)
+  const selectedTeamId = availableTeams.length > 0 ? availableTeams[0].id : null;
   const { 
     templates: savedTemplates, 
     loading: templatesLoading,
