@@ -61,6 +61,57 @@ export const useInvoiceActions = () => {
     }
   };
 
+  const viewUnifiedInvoice = async (
+    invoice: UnifiedInvoice,
+    setImageUrl: (url: string) => void,
+    setInvoiceData: (data: CreatedInvoice | null) => void,
+    setViewingInvoice: (invoice: UnifiedInvoice) => void,
+    setViewModalOpen: (open: boolean) => void
+  ) => {
+    try {
+      if (invoice.source === 'uploaded') {
+        // For uploaded invoices, fetch the public URL
+        const { data: urlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(invoice.uploaded_data!.file_path);
+
+        if (!urlData?.publicUrl) {
+          toast.error(`Failed to generate view URL for: ${invoice.uploaded_data?.file_name}`);
+          return;
+        }
+
+        setImageUrl(urlData.publicUrl);
+        setInvoiceData(null);
+      } else {
+        // For created invoices, fetch full invoice data with relations
+        const { data: fullInvoice, error } = await supabase
+          .from('created_invoices')
+          .select(`
+            *,
+            line_items:invoice_line_items(*),
+            client:invoice_clients(*)
+          `)
+          .eq('id', invoice.id)
+          .single();
+
+        if (error || !fullInvoice) {
+          console.error('Failed to load invoice data:', error);
+          toast.error('Failed to load invoice data');
+          return;
+        }
+
+        setInvoiceData(fullInvoice as CreatedInvoice);
+        setImageUrl('');
+      }
+
+      setViewingInvoice(invoice);
+      setViewModalOpen(true);
+    } catch (error) {
+      console.error('View failed:', error);
+      toast.error(`Failed to view invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const deleteInvoice = async (invoice: Invoice, refetchInvoices: () => void) => {
     if (!confirm(`Are you sure you want to delete invoice "${invoice.invoice_number}"?`)) {
       return;
@@ -148,6 +199,7 @@ export const useInvoiceActions = () => {
   return {
     downloadInvoice,
     viewInvoice,
+    viewUnifiedInvoice,
     deleteInvoice,
     downloadUnifiedInvoice
   };

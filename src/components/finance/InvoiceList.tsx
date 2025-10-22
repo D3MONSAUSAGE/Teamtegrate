@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import InvoiceFilters from './invoice-list/InvoiceFilters';
 import UnifiedInvoiceTable from './invoice-list/UnifiedInvoiceTable';
 import EmptyState from './invoice-list/EmptyState';
-import ImageViewerModal from './invoice-list/ImageViewerModal';
+import UnifiedInvoiceViewerModal from './invoice-list/UnifiedInvoiceViewerModal';
+import type { CreatedInvoice } from '@/types/invoices';
 import InvoiceSummaryStats from './invoice-list/InvoiceSummaryStats';
 import { RecordPaymentModal } from './invoice-list/RecordPaymentModal';
 import { useUnifiedInvoiceData } from './invoice-list/useUnifiedInvoiceData';
@@ -30,6 +31,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState<UnifiedInvoice | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [invoiceData, setInvoiceData] = useState<CreatedInvoice | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentInvoice, setPaymentInvoice] = useState<UnifiedInvoice | null>(null);
 
@@ -85,10 +87,10 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     hasPreviousPage
   } = useInvoicePagination(sortedInvoices);
   
-  const { viewInvoice, deleteInvoice, downloadUnifiedInvoice } = useInvoiceActions();
+  const { viewUnifiedInvoice, deleteInvoice, downloadUnifiedInvoice } = useInvoiceActions();
 
   const handleView = (invoice: UnifiedInvoice) => {
-    viewInvoice(invoice as any, setImageUrl, setViewingInvoice as any, setViewModalOpen);
+    viewUnifiedInvoice(invoice, setImageUrl, setInvoiceData, setViewingInvoice, setViewModalOpen);
   };
 
   const handleDelete = (invoice: UnifiedInvoice) => {
@@ -244,11 +246,13 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
         </CardContent>
       </Card>
 
-      <ImageViewerModal
+      <UnifiedInvoiceViewerModal
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        invoice={viewingInvoice as any}
+        invoice={viewingInvoice}
         imageUrl={imageUrl}
+        invoiceData={invoiceData}
+        onDownload={downloadUnifiedInvoice}
       />
 
       <RecordPaymentModal
