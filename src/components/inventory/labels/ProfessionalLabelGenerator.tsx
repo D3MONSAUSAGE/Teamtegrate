@@ -77,6 +77,27 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   batchData,
   inModal = false
 }) => {
+  // Helper function to convert image URL to base64 for PDF generation
+  const convertUrlToBase64 = async (url: string): Promise<string> => {
+    try {
+      console.log('[PDF_LOGO] Converting URL to base64:', url);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          console.log('[PDF_LOGO] URL conversion successful');
+          resolve(reader.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('[PDF_LOGO] Failed to convert URL to base64:', error);
+      throw error;
+    }
+  };
+
   const location = useLocation();
   const { items, loading: inventoryLoading } = useInventory();
   const { user } = useAuth();
@@ -766,10 +787,17 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       if (logoData) {
         try {
           console.log('[PDF_LOGO] Attempting to add logo to PDF');
+          console.log('[PDF_LOGO] Logo data format:', logoData.substring(0, 50));
           
-          // Ensure logo data is in correct format
           let imageData = logoData;
-          if (!logoData.startsWith('data:')) {
+          
+          // If logoData is a URL (from template), convert to base64
+          if (logoData.startsWith('http://') || logoData.startsWith('https://')) {
+            console.log('[PDF_LOGO] Logo is URL from template, converting to base64...');
+            imageData = await convertUrlToBase64(logoData);
+            console.log('[PDF_LOGO] URL converted to base64 successfully');
+          } else if (!logoData.startsWith('data:')) {
+            // If it's raw base64 without data: prefix
             imageData = `data:image/png;base64,${logoData}`;
           }
           
@@ -846,7 +874,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Net Weight: ${netWeight}`, 2, y + 0.15, { align: 'center' });
-        y += 0.25; // Extra spacing to prevent date overlap
+        y += 0.35; // Increased spacing for clear visual separation from Net Weight
       }
 
       // Date (right aligned) - SKU moved to below barcode
