@@ -18,6 +18,39 @@ export function useExpenseCategories() {
   });
 }
 
+export function useCreateExpenseCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (category: { name: string; type: 'income' | 'expense'; color?: string; budget_amount?: number }) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('expense_categories')
+        .insert([{
+          name: category.name,
+          type: category.type,
+          color: category.color || '#6366f1',
+          budget_amount: category.budget_amount,
+          is_default: false,
+        }] as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+      toast.success('Expense category created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create expense category: ${error.message}`);
+    }
+  });
+}
+
 export function useExpenses(filters?: {
   startDate?: string;
   endDate?: string;
