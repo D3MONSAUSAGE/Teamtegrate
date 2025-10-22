@@ -461,6 +461,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const unloadTemplate = () => {
     setLoadedTemplateId(null);
     setLoadedTemplateName('');
+    setLogoPreview('');
+    setLogoData('');
+    setLogoFile(null);
+    setLogoUploadStatus('idle');
     toast.info('Template unloaded');
   };
 
@@ -474,9 +478,11 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     if (template.logoUrl) {
       setLogoPreview(template.logoUrl);
       setLogoData(template.logoUrl);
+      setLogoUploadStatus('success');
     } else {
       setLogoPreview('');
       setLogoData('');
+      setLogoUploadStatus('idle');
     }
     
     setIngredients(template.ingredients);
