@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrganizationBranding } from '@/hooks/finance/useOrganizationBranding';
 import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePDF } from '@/utils/generateInvoicePDF';
+import { useInvoiceTeams } from '@/hooks/useInvoiceTeams';
 
 interface InvoiceBuilderProps {
   onBack?: () => void;
@@ -27,8 +28,10 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
   const { toast } = useToast();
   const { user } = useAuth();
   const { branding, refreshBranding } = useOrganizationBranding();
+  const { teams, isLoading: teamsLoading } = useInvoiceTeams();
   const [organizationName, setOrganizationName] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<InvoiceClient | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [invoiceData, setInvoiceData] = useState({
     invoice_number: `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
@@ -87,6 +90,16 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
       return;
     }
 
+    // Validate team selection for managers
+    if (user?.role === 'manager' && !selectedTeamId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a team for this invoice',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!user?.organizationId) {
       toast({
         title: 'Error',
@@ -106,6 +119,7 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
           organization_id: user.organizationId,
           client_id: selectedClient.id,
           created_by: user.id,
+          team_id: selectedTeamId || null,
           invoice_number: invoiceData.invoice_number,
           status: 'draft',
           payment_status: 'pending',
@@ -425,6 +439,46 @@ export const InvoiceBuilder: React.FC<InvoiceBuilderProps> = ({ onBack, onInvoic
               </div>
             </CardContent>
           </Card>
+
+          {/* Team Selection */}
+          {teams.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Assignment</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="team">
+                    Team {user?.role === 'manager' && <span className="text-destructive">*</span>}
+                  </Label>
+                  <Select
+                    value={selectedTeamId}
+                    onValueChange={setSelectedTeamId}
+                    disabled={teamsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={teamsLoading ? 'Loading teams...' : 'Select a team'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {user?.role !== 'manager' && (
+                        <SelectItem value="">No team (organization-wide)</SelectItem>
+                      )}
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {user?.role === 'manager' && (
+                    <p className="text-xs text-muted-foreground">
+                      Required: Select the team this invoice belongs to
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Client Selection */}
           <Card>
