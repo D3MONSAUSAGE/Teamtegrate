@@ -1,23 +1,38 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { DollarSign, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
-import type { Invoice } from '@/types/invoice';
+import { DollarSign, FileText, AlertTriangle, TrendingUp, Upload, FileCheck, Warehouse, Edit } from 'lucide-react';
+import type { UnifiedInvoice } from '@/types/unifiedInvoice';
 
 interface InvoiceSummaryStatsProps {
-  invoices: Invoice[];
+  invoices: UnifiedInvoice[];
 }
 
 const InvoiceSummaryStats: React.FC<InvoiceSummaryStatsProps> = ({ invoices }) => {
   const totalInvoices = invoices.length;
+  const uploadedCount = invoices.filter(inv => inv.source === 'uploaded').length;
+  const createdCount = invoices.filter(inv => inv.source === 'created').length;
+  const manualCount = invoices.filter(inv => 
+    inv.source === 'created' && inv.created_data?.creation_method === 'manual'
+  ).length;
+  const warehouseCount = invoices.filter(inv => 
+    inv.source === 'created' && inv.created_data?.creation_method === 'warehouse_checkout'
+  ).length;
   
-  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.invoice_total || 0), 0);
+  const totalRevenue = invoices
+    .filter(inv => inv.source === 'created')
+    .reduce((sum, inv) => sum + inv.total_amount, 0);
+  
+  const totalExpenses = invoices
+    .filter(inv => inv.source === 'uploaded')
+    .reduce((sum, inv) => sum + inv.total_amount, 0);
+  
+  const totalAmount = totalRevenue + totalExpenses;
   
   const unpaidAmount = invoices
-    .filter(inv => inv.payment_status === 'unpaid' || inv.payment_status === 'partial')
-    .reduce((sum, inv) => {
-      const remaining = (inv.invoice_total || 0) - (inv.paid_amount || 0);
-      return sum + remaining;
-    }, 0);
+    .filter(inv => inv.payment_status === 'unpaid' || inv.payment_status === 'partial' || inv.payment_status === 'pending' || inv.payment_status === 'overdue')
+    .reduce((sum, inv) => sum + inv.balance_due, 0);
+  
+  const totalCollected = invoices.reduce((sum, inv) => sum + inv.paid_amount, 0);
   
   const overdueCount = invoices.filter(inv => {
     if (inv.payment_status === 'paid' || inv.payment_status === 'void') return false;
@@ -38,24 +53,28 @@ const InvoiceSummaryStats: React.FC<InvoiceSummaryStatsProps> = ({ invoices }) =
     {
       title: 'Total Invoices',
       value: totalInvoices.toString(),
+      subtitle: `${uploadedCount} uploaded, ${createdCount} created`,
       icon: FileText,
       color: 'text-primary'
     },
     {
-      title: 'Total Amount',
-      value: formatCurrency(totalAmount),
-      icon: DollarSign,
-      color: 'text-green-600 dark:text-green-500'
-    },
-    {
-      title: 'Unpaid Amount',
+      title: 'Total Outstanding',
       value: formatCurrency(unpaidAmount),
+      subtitle: overdueCount > 0 ? `${overdueCount} overdue` : undefined,
       icon: AlertTriangle,
       color: 'text-destructive'
     },
     {
-      title: 'Average Amount',
-      value: formatCurrency(avgAmount),
+      title: 'Total Collected',
+      value: formatCurrency(totalCollected),
+      subtitle: `${Math.round((totalCollected / (totalAmount || 1)) * 100)}% collection rate`,
+      icon: DollarSign,
+      color: 'text-green-600 dark:text-green-500'
+    },
+    {
+      title: 'Sales Revenue',
+      value: formatCurrency(totalRevenue),
+      subtitle: `${manualCount} manual, ${warehouseCount} warehouse`,
       icon: TrendingUp,
       color: 'text-blue-600 dark:text-blue-500'
     }
@@ -72,9 +91,9 @@ const InvoiceSummaryStats: React.FC<InvoiceSummaryStatsProps> = ({ invoices }) =
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.title}</p>
                   <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                  {stat.title === 'Unpaid Amount' && overdueCount > 0 && (
-                    <p className="text-xs text-destructive mt-1">
-                      {overdueCount} overdue
+                  {stat.subtitle && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stat.subtitle}
                     </p>
                   )}
                 </div>

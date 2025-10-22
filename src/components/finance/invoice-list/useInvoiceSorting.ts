@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import type { Invoice } from '@/types/invoice';
+import type { UnifiedInvoice } from '@/types/unifiedInvoice';
 
-type SortField = 'invoice_number' | 'invoice_date' | 'due_date' | 'vendor' | 'total' | 'status' | 'created_at';
+type SortField = 'invoice_number' | 'invoice_date' | 'due_date' | 'vendor' | 'client' | 'total' | 'status' | 'created_at' | 'source' | 'origin' | 'paid' | 'balance';
 type SortDirection = 'asc' | 'desc';
 
-export const useInvoiceSorting = (invoices: Invoice[]) => {
+export const useInvoiceSorting = (invoices: UnifiedInvoice[]) => {
   const [sortBy, setSortBy] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -35,13 +35,35 @@ export const useInvoiceSorting = (invoices: Invoice[]) => {
           aVal = a.payment_due_date ? new Date(a.payment_due_date).getTime() : 0;
           bVal = b.payment_due_date ? new Date(b.payment_due_date).getTime() : 0;
           break;
+        case 'source':
+          aVal = a.source;
+          bVal = b.source;
+          break;
+        case 'origin':
+          aVal = a.source === 'uploaded' ? a.uploaded_data?.branch : 
+                 (a.created_data?.warehouse_name || 'Manual');
+          bVal = b.source === 'uploaded' ? b.uploaded_data?.branch : 
+                 (b.created_data?.warehouse_name || 'Manual');
+          break;
         case 'vendor':
-          aVal = a.vendor?.name || '';
-          bVal = b.vendor?.name || '';
+          aVal = a.uploaded_data?.vendor?.name || '';
+          bVal = b.uploaded_data?.vendor?.name || '';
+          break;
+        case 'client':
+          aVal = a.created_data?.client_name || '';
+          bVal = b.created_data?.client_name || '';
           break;
         case 'total':
-          aVal = a.invoice_total || 0;
-          bVal = b.invoice_total || 0;
+          aVal = a.total_amount || 0;
+          bVal = b.total_amount || 0;
+          break;
+        case 'paid':
+          aVal = a.paid_amount || 0;
+          bVal = b.paid_amount || 0;
+          break;
+        case 'balance':
+          aVal = a.balance_due || 0;
+          bVal = b.balance_due || 0;
           break;
         case 'status':
           aVal = a.payment_status || '';

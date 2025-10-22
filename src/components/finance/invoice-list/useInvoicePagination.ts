@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import type { Invoice } from '@/types/invoice';
+import type { UnifiedInvoice } from '@/types/unifiedInvoice';
 
-export const useInvoicePagination = (invoices: Invoice[]) => {
+export const useInvoicePagination = (invoices: UnifiedInvoice[]) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
 

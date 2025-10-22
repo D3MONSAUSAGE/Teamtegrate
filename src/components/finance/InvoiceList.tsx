@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import InvoiceFilters from './invoice-list/InvoiceFilters';
-import InvoiceTable from './invoice-list/InvoiceTable';
+import UnifiedInvoiceTable from './invoice-list/UnifiedInvoiceTable';
 import EmptyState from './invoice-list/EmptyState';
 import ImageViewerModal from './invoice-list/ImageViewerModal';
 import InvoiceSummaryStats from './invoice-list/InvoiceSummaryStats';
-import { useInvoiceData } from './invoice-list/useInvoiceData';
+import { useUnifiedInvoiceData } from './invoice-list/useUnifiedInvoiceData';
 import { useInvoiceFilters } from './invoice-list/useInvoiceFilters';
 import { useInvoiceActions } from './invoice-list/useInvoiceActions';
 import { useInvoiceSorting } from './invoice-list/useInvoiceSorting';
@@ -20,7 +20,7 @@ import {
   PaginationPrevious 
 } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Invoice } from '@/types/invoice';
+import type { UnifiedInvoice } from '@/types/unifiedInvoice';
 
 interface InvoiceListProps {
   refreshTrigger: number;
@@ -28,10 +28,10 @@ interface InvoiceListProps {
 
 const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<UnifiedInvoice | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
 
-  const { invoices, isLoading, refetchInvoices } = useInvoiceData(refreshTrigger);
+  const { invoices, isLoading, refetchInvoices } = useUnifiedInvoiceData(refreshTrigger);
   const {
     searchTerm,
     setSearchTerm,
@@ -41,6 +41,10 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     setDateFilter,
     selectedVendor,
     setSelectedVendor,
+    selectedClient,
+    setSelectedClient,
+    selectedWarehouse,
+    setSelectedWarehouse,
     selectedCategory,
     setSelectedCategory,
     selectedPaymentStatus,
@@ -51,9 +55,15 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
     setMaxAmount,
     selectedTags,
     setSelectedTags,
+    sourceFilter,
+    setSourceFilter,
+    creationMethodFilter,
+    setCreationMethodFilter,
     filteredInvoices,
     clearFilters,
     getUniqueVendors,
+    getUniqueClients,
+    getUniqueWarehouses,
     getUniqueCategories,
     getUniqueTags,
     getActiveFilterCount
@@ -75,12 +85,12 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
   
   const { downloadInvoice, viewInvoice, deleteInvoice } = useInvoiceActions();
 
-  const handleView = (invoice: Invoice) => {
-    viewInvoice(invoice, setImageUrl, setViewingInvoice, setViewModalOpen);
+  const handleView = (invoice: UnifiedInvoice) => {
+    viewInvoice(invoice as any, setImageUrl, setViewingInvoice as any, setViewModalOpen);
   };
 
-  const handleDelete = (invoice: Invoice) => {
-    deleteInvoice(invoice, refetchInvoices);
+  const handleDelete = (invoice: UnifiedInvoice) => {
+    deleteInvoice(invoice as any, refetchInvoices);
   };
 
   if (isLoading) {
@@ -104,7 +114,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
         <CardHeader>
           <CardTitle>Invoice Management</CardTitle>
           <CardDescription>
-            Search, filter, view, download, and delete uploaded invoices
+            Manage all invoices: uploaded expense receipts, manually created sales invoices, and warehouse checkout invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -161,10 +171,10 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
             <EmptyState hasInvoices={invoices.length > 0} />
           ) : (
             <>
-              <InvoiceTable
+              <UnifiedInvoiceTable
                 invoices={paginatedInvoices}
                 onView={handleView}
-                onDownload={downloadInvoice}
+                onDownload={(inv) => downloadInvoice(inv as any)}
                 onDelete={handleDelete}
                 sortBy={sortBy}
                 sortDirection={sortDirection}
@@ -225,7 +235,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ refreshTrigger }) => {
       <ImageViewerModal
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        invoice={viewingInvoice}
+        invoice={viewingInvoice as any}
         imageUrl={imageUrl}
       />
     </div>
