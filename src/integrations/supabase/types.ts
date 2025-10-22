@@ -13923,6 +13923,13 @@ export type Database = {
       }
     }
     Functions: {
+      admin_force_update_user_role: {
+        Args: {
+          new_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+        }
+        Returns: Json
+      }
       admin_role_update: {
         Args: { new_role: string; target_user_id: string }
         Returns: Json
@@ -13931,14 +13938,22 @@ export type Database = {
         Args: { new_email: string; target_user_id: string }
         Returns: Json
       }
-      admin_update_user_role: {
-        Args: {
-          admin_user_id?: string
-          new_role: string
-          target_user_id: string
-        }
-        Returns: Json
-      }
+      admin_update_user_role:
+        | {
+            Args: {
+              admin_user_id?: string
+              new_role: string
+              target_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              new_role: Database["public"]["Enums"]["app_role"]
+              target_user_id: string
+            }
+            Returns: Json
+          }
       approve_time_entry: {
         Args: {
           approval_action: string
