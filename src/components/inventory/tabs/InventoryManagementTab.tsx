@@ -147,6 +147,49 @@ export const InventoryManagementTab: React.FC = () => {
     return filtered;
   }, [items, searchTerm, selectedCategory, sortBy, selectedTeamId]);
 
+  // Filter categories, units, vendors based on selected team's item usage
+  const filteredCategories = useMemo(() => {
+    if (!selectedTeamId) return categories; // Show all if no team selected
+    
+    // Get category IDs used by items in selected team
+    const usedCategoryIds = new Set(
+      items
+        .filter(item => item.team_id === selectedTeamId)
+        .map(item => item.category_id)
+        .filter(Boolean)
+    );
+    
+    return categories.filter(cat => usedCategoryIds.has(cat.id));
+  }, [categories, items, selectedTeamId]);
+
+  const filteredUnits = useMemo(() => {
+    if (!selectedTeamId) return units; // Show all if no team selected
+    
+    // Get unit IDs used by items in selected team
+    const usedUnitIds = new Set(
+      items
+        .filter(item => item.team_id === selectedTeamId)
+        .map(item => item.base_unit_id)
+        .filter(Boolean)
+    );
+    
+    return units.filter(unit => usedUnitIds.has(unit.id));
+  }, [units, items, selectedTeamId]);
+
+  const filteredVendors = useMemo(() => {
+    if (!selectedTeamId) return vendors; // Show all if no team selected
+    
+    // Get vendor IDs used by items in selected team
+    const usedVendorIds = new Set(
+      items
+        .filter(item => item.team_id === selectedTeamId)
+        .map(item => item.vendor_id)
+        .filter(Boolean)
+    );
+    
+    return vendors.filter(vendor => usedVendorIds.has(vendor.id));
+  }, [vendors, items, selectedTeamId]);
+
   // Get unique categories from items for filtering
   const itemCategories = useMemo(() => {
     const uniqueCategories = Array.from(new Set(
@@ -501,12 +544,15 @@ export const InventoryManagementTab: React.FC = () => {
             <CardContent>
               {categoriesLoading ? (
                 <LoadingState rows={3} showHeader={false} />
-              ) : categories.length === 0 ? (
+              ) : filteredCategories.length === 0 ? (
                 <div className="text-center py-12">
                   <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No categories yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create categories to organize your product catalog
+                    {selectedTeamId 
+                      ? "This team hasn't used any categories yet. Add products to see categories."
+                      : "Create categories to organize your product catalog"
+                    }
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddCategory}>
@@ -530,7 +576,7 @@ export const InventoryManagementTab: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {categories.map((category) => (
+                    {filteredCategories.map((category) => (
                       <TableRow key={category.id}>
                         <TableCell className="font-medium">{category.name}</TableCell>
                         <TableCell>{category.description || 'No description'}</TableCell>
@@ -576,12 +622,15 @@ export const InventoryManagementTab: React.FC = () => {
             <CardContent>
               {unitsLoading ? (
                 <LoadingState rows={3} showHeader={false} />
-              ) : units.length === 0 ? (
+              ) : filteredUnits.length === 0 ? (
                 <div className="text-center py-12">
                   <Ruler className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No units yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create units for your products (Box of bottles, Case of cans, etc.)
+                    {selectedTeamId
+                      ? "This team hasn't used any units yet. Add products to see units."
+                      : "Create units for your products (Box of bottles, Case of cans, etc.)"
+                    }
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddUnit}>
@@ -606,7 +655,7 @@ export const InventoryManagementTab: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {units.map((unit) => (
+                    {filteredUnits.map((unit) => (
                       <TableRow key={unit.id}>
                         <TableCell className="font-medium">{unit.name}</TableCell>
                         <TableCell>{unit.abbreviation}</TableCell>
@@ -654,12 +703,15 @@ export const InventoryManagementTab: React.FC = () => {
             <CardContent>
               {vendorsLoading ? (
                 <LoadingState rows={3} showHeader={false} />
-              ) : vendors.length === 0 ? (
+              ) : filteredVendors.length === 0 ? (
                 <div className="text-center py-12">
                   <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No vendors yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Add vendors to track supplier information and enhance your inventory management
+                    {selectedTeamId
+                      ? "This team hasn't used any vendors yet. Add products with vendors to see them."
+                      : "Add vendors to track supplier information and enhance your inventory management"
+                    }
                   </p>
                   <Button onClick={() => setIsVendorDialogOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -668,7 +720,7 @@ export const InventoryManagementTab: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {vendors.map((vendor) => (
+                  {filteredVendors.map((vendor) => (
                     <Card key={vendor.id} className="group hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
@@ -725,7 +777,7 @@ export const InventoryManagementTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="templates" className="mt-6">
-          <InventoryTemplatesPanel selectedTeam={null} />
+          <InventoryTemplatesPanel selectedTeam={selectedTeamId} />
         </TabsContent>
       </Tabs>
 
