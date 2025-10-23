@@ -184,40 +184,49 @@ export default function SimpleRequestTypeManager() {
   const inactiveTypes = filteredTypes.filter(type => !type.is_active);
 
   const renderCategoryCard = (type: SimpleRequestType, isSubcategory = false) => (
-    <Card key={type.id} className={`border-l-4 ${type.is_active ? 'border-l-green-500' : 'border-l-gray-300 opacity-75'} ${isSubcategory ? 'ml-6' : ''}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {isSubcategory ? <FileText className="h-4 w-4" /> : <FolderOpen className="h-4 w-4" />}
-              <h4 className={`font-semibold ${!type.is_active ? 'text-muted-foreground' : ''}`}>{type.name}</h4>
-              <Badge variant={type.is_active ? "default" : "secondary"}>
-                {type.is_active ? 'Active' : 'Inactive'}
-              </Badge>
-              {type.requires_approval && (
-                <Badge variant={type.is_active ? "secondary" : "outline"}>Requires Approval</Badge>
-              )}
-              {isSubcategory && (
-                <Badge variant="outline" className="text-xs">Subcategory</Badge>
-              )}
+    <Card key={type.id} className={`border-l-4 ${type.is_active ? 'border-l-green-500' : 'border-l-gray-300 opacity-75'} ${isSubcategory ? 'ml-0 sm:ml-6' : ''}`}>
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2 mb-2">
+              <div className="flex-shrink-0 mt-0.5">
+                {isSubcategory ? <FileText className="h-4 w-4" /> : <FolderOpen className="h-4 w-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className={`font-semibold mb-2 ${!type.is_active ? 'text-muted-foreground' : ''}`}>{type.name}</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={type.is_active ? "default" : "secondary"} className="text-xs">
+                    {type.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                  {type.requires_approval && (
+                    <Badge variant={type.is_active ? "secondary" : "outline"} className="text-xs whitespace-nowrap">
+                      Requires Approval
+                    </Badge>
+                  )}
+                  {isSubcategory && (
+                    <Badge variant="outline" className="text-xs">Subcategory</Badge>
+                  )}
+                </div>
+              </div>
             </div>
             {type.description && (
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-sm text-muted-foreground mb-2 break-words">
                 {type.description}
               </p>
             )}
             {type.requires_approval && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground break-words">
                 Approved by: {type.approval_roles.join(', ')}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex sm:flex-col items-center gap-1 sm:gap-2 flex-shrink-0">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => handleToggleActive(type)}
               disabled={!canManage}
+              className="h-8 w-8 p-0"
             >
               {type.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
             </Button>
@@ -226,6 +235,7 @@ export default function SimpleRequestTypeManager() {
               variant="ghost"
               onClick={() => handleEdit(type)}
               disabled={!canManage}
+              className="h-8 w-8 p-0"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -234,7 +244,7 @@ export default function SimpleRequestTypeManager() {
               variant="ghost"
               onClick={() => handleDelete(type)}
               disabled={!canManage}
-              className="text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive h-8 w-8 p-0"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -258,14 +268,14 @@ export default function SimpleRequestTypeManager() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1">
           <h2 className="text-xl font-semibold">Request Categories</h2>
           <p className="text-sm text-muted-foreground">
             Manage the types of requests users can submit with hierarchical organization
           </p>
         </div>
-        <Button onClick={handleCreate} disabled={!canManage}>
+        <Button onClick={handleCreate} disabled={!canManage} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
@@ -291,29 +301,29 @@ export default function SimpleRequestTypeManager() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{requestTypes.length}</div>
-            <p className="text-sm text-muted-foreground">Total Categories</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{requestTypes.length}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground">Total Categories</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{mainCategories.length}</div>
-            <p className="text-sm text-muted-foreground">Main Categories</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{mainCategories.length}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground">Main Categories</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{subcategories.length}</div>
-            <p className="text-sm text-muted-foreground">Subcategories</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{subcategories.length}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground">Subcategories</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{activeTypes.length}</div>
-            <p className="text-sm text-muted-foreground">Active Categories</p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{activeTypes.length}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground">Active Categories</p>
           </CardContent>
         </Card>
       </div>
