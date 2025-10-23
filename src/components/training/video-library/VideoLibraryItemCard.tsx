@@ -23,8 +23,8 @@ export const VideoLibraryItemCard: React.FC<VideoLibraryItemCardProps> = ({
   showManagement = false,
 }) => {
   return (
-    <Card className="group hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
+    <Card className="group hover:shadow-lg transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-3 h-[120px] flex-shrink-0">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-sm font-medium line-clamp-2">
@@ -48,8 +48,8 @@ export const VideoLibraryItemCard: React.FC<VideoLibraryItemCardProps> = ({
         )}
       </CardHeader>
       
-      <CardContent className="pt-0 space-y-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <CardContent className="pt-0 space-y-3 flex-1 flex flex-col justify-between">
+        <div className="flex items-center justify-between text-xs text-muted-foreground min-h-[20px]">
           <div className="flex items-center space-x-2">
             {video.duration_minutes && (
               <div className="flex items-center space-x-1">
@@ -66,23 +66,27 @@ export const VideoLibraryItemCard: React.FC<VideoLibraryItemCardProps> = ({
           </div>
         </div>
 
-        {video.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {video.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                <Tag className="h-2 w-2 mr-1" />
-                {tag}
-              </Badge>
-            ))}
-            {video.tags.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{video.tags.length - 3} more
-              </Badge>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-1 min-h-[28px]">
+          {video.tags.length > 0 ? (
+            <>
+              {video.tags.slice(0, 3).map((tag) => (
+                <Badge key={tag} variant="outline" className="text-xs">
+                  <Tag className="h-2 w-2 mr-1" />
+                  {tag}
+                </Badge>
+              ))}
+              {video.tags.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{video.tags.length - 3} more
+                </Badge>
+              )}
+            </>
+          ) : (
+            <div className="h-[24px]" />
+          )}
+        </div>
 
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 mt-auto">
           {onPlayVideo && (
             <Button
               size="sm"
