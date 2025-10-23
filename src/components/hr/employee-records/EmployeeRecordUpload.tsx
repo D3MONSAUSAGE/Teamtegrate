@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useEnhancedUserManagement } from '@/hooks/useEnhancedUserManagement';
+import { useEmployees } from '@/hooks/employees/useEmployees';
+import { useTeamsByOrganization } from '@/hooks/useTeamsByOrganization';
 
 interface EmployeeRecordUploadProps {
   onUploadSuccess: () => void;
@@ -26,9 +27,18 @@ const DOCUMENT_TYPES = [
 
 const EmployeeRecordUpload: React.FC<EmployeeRecordUploadProps> = ({ onUploadSuccess }) => {
   const { user } = useAuth();
-  const { users } = useEnhancedUserManagement();
+  const { teams } = useTeamsByOrganization(user?.organizationId);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  
+  const isAdmin = user?.role && ['admin', 'superadmin'].includes(user.role);
+
+  // Fetch employees with optional team filter
+  const { data: employees = [] } = useEmployees({
+    teamId: selectedTeam || undefined,
+    status: 'active'
+  });
   
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -157,6 +167,28 @@ const EmployeeRecordUpload: React.FC<EmployeeRecordUploadProps> = ({ onUploadSuc
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isAdmin && teams.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="team">Filter by Team</Label>
+              <Select
+                value={selectedTeam}
+                onValueChange={setSelectedTeam}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Teams</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="employee">Employee *</Label>
@@ -168,7 +200,7 @@ const EmployeeRecordUpload: React.FC<EmployeeRecordUploadProps> = ({ onUploadSuc
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((employee) => (
+                  {employees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.name || employee.email}
                     </SelectItem>

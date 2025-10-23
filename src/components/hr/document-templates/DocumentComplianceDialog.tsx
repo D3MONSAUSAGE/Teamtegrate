@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, AlertCircle, Clock, FileUp, FileText, Download } from 'lucide-react';
 import type { DocumentComplianceTracking } from '@/types/document-templates';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const statusConfig = {
   compliant: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50', label: 'Compliant' },
@@ -17,13 +19,17 @@ interface DocumentComplianceDialogProps {
   onOpenChange: (open: boolean) => void;
   compliance: DocumentComplianceTracking | null;
   employeeName: string;
+  onUploadClick?: (compliance: DocumentComplianceTracking, employeeName: string) => void;
+  onReplaceClick?: (compliance: DocumentComplianceTracking, employeeName: string) => void;
 }
 
 export const DocumentComplianceDialog = ({ 
   open, 
   onOpenChange, 
   compliance,
-  employeeName 
+  employeeName,
+  onUploadClick,
+  onReplaceClick
 }: DocumentComplianceDialogProps) => {
   if (!compliance) return null;
 
@@ -86,19 +92,49 @@ export const DocumentComplianceDialog = ({
           {/* Actions */}
           <div className="flex gap-3">
             {compliance.compliance_status === 'missing' ? (
-              <Button className="flex-1">
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  onUploadClick?.(compliance, employeeName);
+                  onOpenChange(false);
+                }}
+              >
                 <FileUp className="w-4 h-4 mr-2" />
                 Upload Document
               </Button>
             ) : (
               <>
                 {compliance.file_path && (
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={async () => {
+                      try {
+                        const { data } = await supabase.storage
+                          .from('employee-records')
+                          .createSignedUrl(compliance.file_path!, 3600);
+                        if (data?.signedUrl) {
+                          window.open(data.signedUrl, '_blank');
+                        } else {
+                          toast.error('Failed to load document');
+                        }
+                      } catch (error) {
+                        toast.error('Failed to load document');
+                      }
+                    }}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     View Document
                   </Button>
                 )}
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    onReplaceClick?.(compliance, employeeName);
+                    onOpenChange(false);
+                  }}
+                >
                   <FileUp className="w-4 h-4 mr-2" />
                   Replace Document
                 </Button>

@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useComplianceTracking } from '@/hooks/document-templates';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, XCircle, AlertCircle, Clock, Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DocumentComplianceDialog } from './DocumentComplianceDialog';
+import { ManagerDocumentUploadDialog } from './ManagerDocumentUploadDialog';
 import type { DocumentComplianceTracking } from '@/types/document-templates';
 import {
   Select,
@@ -24,6 +26,7 @@ const statusConfig = {
 
 export const ComplianceMatrixView = () => {
   const { matrixData, stats, isLoading } = useComplianceTracking();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectedCompliance, setSelectedCompliance] = useState<{
@@ -31,6 +34,11 @@ export const ComplianceMatrixView = () => {
     employeeName: string;
   } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [managerUploadOpen, setManagerUploadOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<{
+    compliance: DocumentComplianceTracking;
+    employeeName: string;
+  } | null>(null);
 
   // Group requirements by template (acting as category)
   const categorizedRequirements = useMemo(() => {
@@ -76,6 +84,22 @@ export const ComplianceMatrixView = () => {
   const handleCellClick = (compliance: DocumentComplianceTracking, employeeName: string) => {
     setSelectedCompliance({ compliance, employeeName });
     setDialogOpen(true);
+  };
+
+  const handleUploadClick = (compliance: DocumentComplianceTracking, employeeName: string) => {
+    setUploadTarget({ compliance, employeeName });
+    setManagerUploadOpen(true);
+  };
+
+  const handleReplaceClick = (compliance: DocumentComplianceTracking, employeeName: string) => {
+    setUploadTarget({ compliance, employeeName });
+    setManagerUploadOpen(true);
+  };
+
+  const handleUploadSuccess = () => {
+    setManagerUploadOpen(false);
+    setUploadTarget(null);
+    queryClient.invalidateQueries({ queryKey: ['compliance-tracking'] });
   };
 
   if (isLoading) return <div className="text-center py-8">Loading compliance data...</div>;
@@ -249,6 +273,17 @@ export const ComplianceMatrixView = () => {
         onOpenChange={setDialogOpen}
         compliance={selectedCompliance?.compliance || null}
         employeeName={selectedCompliance?.employeeName || ''}
+        onUploadClick={handleUploadClick}
+        onReplaceClick={handleReplaceClick}
+      />
+
+      {/* Manager Upload Dialog */}
+      <ManagerDocumentUploadDialog
+        open={managerUploadOpen}
+        onOpenChange={setManagerUploadOpen}
+        compliance={uploadTarget?.compliance || null}
+        employeeName={uploadTarget?.employeeName || ''}
+        onUploadSuccess={handleUploadSuccess}
       />
     </div>
   );
