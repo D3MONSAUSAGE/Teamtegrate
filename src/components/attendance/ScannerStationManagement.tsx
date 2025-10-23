@@ -115,20 +115,20 @@ export const ScannerStationManagement: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1">
             <CardTitle className="flex items-center gap-2">
               <Monitor className="h-5 w-5" />
               Scanner Stations
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="mt-1">
               Manage wall-mounted QR scanner stations for attendance tracking
             </CardDescription>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Station
               </Button>
@@ -185,17 +185,17 @@ export const ScannerStationManagement: React.FC = () => {
           <div className="space-y-4">
             {stations.map((station) => (
               <Card key={station.id} className="border-l-4 border-l-primary/50">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="p-2 rounded-lg bg-primary/10">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                         <Monitor className="h-5 w-5 text-primary" />
                       </div>
                       
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{station.station_name}</h3>
-                          <Badge variant={station.is_active ? 'secondary' : 'outline'} className={station.is_active ? 'bg-success/10 text-success border-success/20' : ''}>
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold break-words">{station.station_name}</h3>
+                          <Badge variant={station.is_active ? 'secondary' : 'outline'} className={`text-xs whitespace-nowrap ${station.is_active ? 'bg-success/10 text-success border-success/20' : ''}`}>
                             {station.is_active ? (
                               <><Wifi className="h-3 w-3 mr-1" /> Active</>
                             ) : (
@@ -204,38 +204,44 @@ export const ScannerStationManagement: React.FC = () => {
                           </Badge>
                         </div>
                         
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {station.location}
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground break-words">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="break-words">{station.location}</span>
                         </div>
 
                         {station.last_scan_at && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-words">
                             Last scan: {new Date(station.last_scan_at).toLocaleString()}
                           </p>
                         )}
 
                         {/* Scanner URL */}
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2">
                           <Input 
                             value={getScannerUrl(station.id)} 
                             readOnly 
-                            className="text-xs"
+                            className="text-xs flex-1 min-w-0"
                           />
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => copyToClipboard(getScannerUrl(station.id))}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => window.open(getScannerUrl(station.id), '_blank')}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => copyToClipboard(getScannerUrl(station.id))}
+                              className="flex-1 sm:flex-none"
+                            >
+                              <Copy className="h-3 w-3 sm:mr-0 mr-2" />
+                              <span className="sm:hidden">Copy</span>
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => window.open(getScannerUrl(station.id), '_blank')}
+                              className="flex-1 sm:flex-none"
+                            >
+                              <ExternalLink className="h-3 w-3 sm:mr-0 mr-2" />
+                              <span className="sm:hidden">Open</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -244,6 +250,7 @@ export const ScannerStationManagement: React.FC = () => {
                       variant={station.is_active ? 'outline' : 'default'}
                       size="sm"
                       onClick={() => toggleStationStatus(station.id, station.is_active)}
+                      className="w-full sm:w-auto"
                     >
                       {station.is_active ? 'Deactivate' : 'Activate'}
                     </Button>
