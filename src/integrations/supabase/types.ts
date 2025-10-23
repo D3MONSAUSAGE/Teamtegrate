@@ -2613,6 +2613,155 @@ export type Database = {
           },
         ]
       }
+      employee_offboarding: {
+        Row: {
+          access_revoked: boolean | null
+          access_revoked_at: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          eligible_for_rehire: boolean | null
+          equipment_notes: string | null
+          equipment_returned: boolean | null
+          exit_interview_completed: boolean | null
+          exit_interview_notes: string | null
+          final_payroll_processed: boolean | null
+          id: string
+          initiated_at: string | null
+          initiated_by: string | null
+          last_day_worked: string | null
+          offboarding_notes: string | null
+          organization_id: string
+          status: string | null
+          termination_date: string
+          termination_reason: string | null
+          termination_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_revoked?: boolean | null
+          access_revoked_at?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          eligible_for_rehire?: boolean | null
+          equipment_notes?: string | null
+          equipment_returned?: boolean | null
+          exit_interview_completed?: boolean | null
+          exit_interview_notes?: string | null
+          final_payroll_processed?: boolean | null
+          id?: string
+          initiated_at?: string | null
+          initiated_by?: string | null
+          last_day_worked?: string | null
+          offboarding_notes?: string | null
+          organization_id: string
+          status?: string | null
+          termination_date: string
+          termination_reason?: string | null
+          termination_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_revoked?: boolean | null
+          access_revoked_at?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          eligible_for_rehire?: boolean | null
+          equipment_notes?: string | null
+          equipment_returned?: boolean | null
+          exit_interview_completed?: boolean | null
+          exit_interview_notes?: string | null
+          final_payroll_processed?: boolean | null
+          id?: string
+          initiated_at?: string | null
+          initiated_by?: string | null
+          last_day_worked?: string | null
+          offboarding_notes?: string | null
+          organization_id?: string
+          status?: string | null
+          termination_date?: string
+          termination_reason?: string | null
+          termination_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_offboarding_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_offboarding_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_records: {
         Row: {
           created_at: string | null
@@ -12679,6 +12828,7 @@ export type Database = {
           daily_email_time: string | null
           date_of_birth: string | null
           department: string | null
+          eligible_for_rehire: boolean | null
           email: string
           emergency_contact_name: string | null
           emergency_contact_needed: boolean | null
@@ -12700,9 +12850,11 @@ export type Database = {
           id: string
           is_pending_invite: boolean | null
           job_title: string | null
+          last_day_worked: string | null
           location: string | null
           manager_id: string | null
           name: string
+          offboarding_completed: boolean | null
           organization_id: string
           phone: string | null
           preferred_name: string | null
@@ -12711,6 +12863,8 @@ export type Database = {
           salary_type: string | null
           start_date: string | null
           termination_date: string | null
+          termination_notes: string | null
+          termination_reason: string | null
           timezone: string | null
           workload_preference: string | null
         }
@@ -12722,6 +12876,7 @@ export type Database = {
           daily_email_time?: string | null
           date_of_birth?: string | null
           department?: string | null
+          eligible_for_rehire?: boolean | null
           email: string
           emergency_contact_name?: string | null
           emergency_contact_needed?: boolean | null
@@ -12743,9 +12898,11 @@ export type Database = {
           id: string
           is_pending_invite?: boolean | null
           job_title?: string | null
+          last_day_worked?: string | null
           location?: string | null
           manager_id?: string | null
           name: string
+          offboarding_completed?: boolean | null
           organization_id: string
           phone?: string | null
           preferred_name?: string | null
@@ -12754,6 +12911,8 @@ export type Database = {
           salary_type?: string | null
           start_date?: string | null
           termination_date?: string | null
+          termination_notes?: string | null
+          termination_reason?: string | null
           timezone?: string | null
           workload_preference?: string | null
         }
@@ -12765,6 +12924,7 @@ export type Database = {
           daily_email_time?: string | null
           date_of_birth?: string | null
           department?: string | null
+          eligible_for_rehire?: boolean | null
           email?: string
           emergency_contact_name?: string | null
           emergency_contact_needed?: boolean | null
@@ -12786,9 +12946,11 @@ export type Database = {
           id?: string
           is_pending_invite?: boolean | null
           job_title?: string | null
+          last_day_worked?: string | null
           location?: string | null
           manager_id?: string | null
           name?: string
+          offboarding_completed?: boolean | null
           organization_id?: string
           phone?: string | null
           preferred_name?: string | null
@@ -12797,6 +12959,8 @@ export type Database = {
           salary_type?: string | null
           start_date?: string | null
           termination_date?: string | null
+          termination_notes?: string | null
+          termination_reason?: string | null
           timezone?: string | null
           workload_preference?: string | null
         }
@@ -14614,6 +14778,7 @@ export type Database = {
         Returns: Json
       }
       retry_failed_sync_operations: { Args: never; Returns: Json }
+      revoke_user_access: { Args: { target_user_id: string }; Returns: boolean }
       rpc_checklist_report_daily_scores: {
         Args: { p_date?: string; p_org: string; p_team?: string; p_tz?: string }
         Returns: {

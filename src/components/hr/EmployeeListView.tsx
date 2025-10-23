@@ -166,6 +166,13 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
             >
               On Leave
             </Button>
+            <Button
+              variant={statusFilter === 'terminated' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('terminated')}
+              size="sm"
+            >
+              Terminated
+            </Button>
           </div>
         </div>
 

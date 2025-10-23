@@ -28,6 +28,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import TimeOffTab from './profile/TimeOffTab';
 import EmergencyContactTab from './profile/EmergencyContactTab';
 import DepartmentTab from './profile/DepartmentTab';
+import OffboardingTab from './profile/OffboardingTab';
 
 interface EmployeeProfileDialogProps {
   userId: string | null;
@@ -144,7 +145,7 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
           </div>
         ) : (
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-9 text-xs">
+            <TabsList className="grid w-full grid-cols-10 text-xs">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="job-roles">Job Roles</TabsTrigger>
               <TabsTrigger value="teams">Teams</TabsTrigger>
@@ -153,6 +154,7 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
               <TabsTrigger value="time-off">Time Off</TabsTrigger>
               <TabsTrigger value="emergency">Emergency</TabsTrigger>
               <TabsTrigger value="department">Department</TabsTrigger>
+              <TabsTrigger value="offboarding">Offboarding</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
@@ -323,6 +325,11 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
             {/* Department Tab */}
             <TabsContent value="department" className="space-y-4">
               {employee && <DepartmentTab userId={employee.id} />}
+            </TabsContent>
+
+            {/* Offboarding Tab */}
+            <TabsContent value="offboarding" className="space-y-4">
+              {employee && <OffboardingTab userId={employee.id} userName={employee.name} />}
             </TabsContent>
 
             {/* HR Notes Tab */}
