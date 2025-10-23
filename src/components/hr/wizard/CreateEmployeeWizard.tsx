@@ -108,6 +108,9 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
 
     setIsLoading(true);
     try {
+      // Generate UUID for the new employee
+      const newUserId = crypto.randomUUID();
+      
       // Generate employee number if not provided
       const employeeNumber = formData.employee_number || `EMP-${Date.now()}`;
 
@@ -115,6 +118,7 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
       const { data: userRecord, error: userError } = await supabase
         .from('users')
         .insert([{
+          id: newUserId,
           organization_id: user.organizationId,
           email: formData.email,
           name: formData.name,
@@ -139,8 +143,6 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
 
       if (userError) throw userError;
       if (!userRecord) throw new Error('Failed to create employee record');
-
-      const newUserId = userRecord.id;
 
       // Assign job roles
       if (formData.job_role_ids && formData.job_role_ids.length > 0) {
