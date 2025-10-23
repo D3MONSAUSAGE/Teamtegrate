@@ -29,7 +29,7 @@ export const ManagerDailyStats: React.FC = () => {
   const pendingVerifications = executions?.filter(e => e.status === 'completed').length || 0;
 
   const executionPercentage = totalExecutions > 0 ? Math.round((completedExecutions / totalExecutions) * 100) : 0;
-  const verificationPercentage = completedExecutions > 0 ? Math.round((verifiedExecutions / completedExecutions) * 100) : 0;
+  const verificationPercentage = totalExecutions > 0 ? Math.round((verifiedExecutions / totalExecutions) * 100) : 0;
 
   // Get unique team members
   const uniqueUsers = new Set(executions?.map(e => e.assigned_to_user_id)).size;
@@ -77,7 +77,7 @@ export const ManagerDailyStats: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {verifiedExecutions}/{completedExecutions} verified
+                {verifiedExecutions}/{totalExecutions} verified
               </span>
               <Badge variant={verificationPercentage >= 80 ? "default" : "outline"} className="text-xs">
                 {verificationPercentage}%

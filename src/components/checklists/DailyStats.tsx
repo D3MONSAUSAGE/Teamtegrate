@@ -28,7 +28,7 @@ export const DailyStats: React.FC = () => {
   const verifiedExecutions = executions?.filter(e => e.status === 'verified').length || 0;
 
   const executionPercentage = totalExecutions > 0 ? Math.round((completedExecutions / totalExecutions) * 100) : 0;
-  const verificationPercentage = completedExecutions > 0 ? Math.round((verifiedExecutions / completedExecutions) * 100) : 0;
+  const verificationPercentage = totalExecutions > 0 ? Math.round((verifiedExecutions / totalExecutions) * 100) : 0;
 
   return (
     <Card className="border-primary/20">
@@ -73,7 +73,7 @@ export const DailyStats: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {verifiedExecutions}/{completedExecutions} verified
+                {verifiedExecutions}/{totalExecutions} verified
               </span>
               <Badge variant={verificationPercentage >= 80 ? "default" : "outline"} className="text-xs">
                 {verificationPercentage}%

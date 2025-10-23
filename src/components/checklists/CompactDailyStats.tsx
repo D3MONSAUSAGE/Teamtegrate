@@ -28,7 +28,7 @@ export const CompactDailyStats: React.FC = () => {
   const verifiedExecutions = executions?.filter(e => e.status === 'verified').length || 0;
 
   const executionPercentage = totalExecutions > 0 ? Math.round((completedExecutions / totalExecutions) * 100) : 0;
-  const verificationPercentage = completedExecutions > 0 ? Math.round((verifiedExecutions / completedExecutions) * 100) : 0;
+  const verificationPercentage = totalExecutions > 0 ? Math.round((verifiedExecutions / totalExecutions) * 100) : 0;
 
   return (
     <Card className="flex-1 border-primary/20">
