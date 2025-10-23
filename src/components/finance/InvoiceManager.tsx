@@ -24,10 +24,10 @@ const InvoiceManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="upload" className="w-full">
+      <Tabs defaultValue="manage" className="w-full">
         <TabsList className={`grid w-full ${canManageData ? 'grid-cols-4' : 'grid-cols-2'}`}>
-          <TabsTrigger value="upload">Upload Invoice</TabsTrigger>
           <TabsTrigger value="manage">Manage Invoices</TabsTrigger>
+          <TabsTrigger value="upload">Upload Invoice</TabsTrigger>
           {canManageData && (
             <>
               <TabsTrigger value="create">Create Invoice</TabsTrigger>
