@@ -483,7 +483,7 @@ export const InventoryManagementTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="labels" className="mt-6">
-          <LabelsAndBarcodesTab />
+          <LabelsAndBarcodesTab selectedTeamId={selectedTeamId} />
         </TabsContent>
 
         <TabsContent value="categories" className="mt-6">

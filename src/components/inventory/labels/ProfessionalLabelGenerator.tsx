@@ -71,12 +71,14 @@ interface ProfessionalLabelGeneratorProps {
   preSelectedItemId?: string;
   batchData?: BatchData;
   inModal?: boolean;
+  selectedTeamId?: string | null;
 }
 
 const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({ 
   preSelectedItemId, 
   batchData,
-  inModal = false
+  inModal = false,
+  selectedTeamId: propSelectedTeamId
 }) => {
   // Helper function to convert image URL to base64 for PDF generation
   const convertUrlToBase64 = async (url: string): Promise<string> => {
@@ -105,13 +107,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const { availableTeams } = useTeamAccess();
   const { recordLabelGeneration, saving: savingLabelToDb } = useLabelGeneration();
   
-  // Team selection for template management
-  const [selectedTemplateTeamId, setSelectedTemplateTeamId] = useState<string | null>(
-    availableTeams.length > 0 ? availableTeams[0].id : null
-  );
-  
-  // Get the selected team for saving templates (defaults to first available)
-  const selectedTeamId = selectedTemplateTeamId || (availableTeams.length > 0 ? availableTeams[0].id : null);
+  // Use the team selection from parent (page-level selector) or fall back to first available team
+  const selectedTeamId = propSelectedTeamId || (availableTeams.length > 0 ? availableTeams[0].id : null);
   const { 
     templates: savedTemplates, 
     loading: templatesLoading,
@@ -182,18 +179,14 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [barcodeValue, setBarcodeValue] = useState<string>('');
 
-  // Check if user is admin or superadmin for team selector
-  const isAdmin = user?.role === 'admin';
-  const isSuperAdmin = user?.role === 'superadmin';
-  const showTeamSelector = isAdmin || isSuperAdmin;
-
-  // Filter templates by selected team (for admins/superadmins)
+  // Filter templates based on page-level team selection
   const filteredSavedTemplates = useMemo(() => {
-    if (!showTeamSelector || !selectedTemplateTeamId) {
-      return savedTemplates; // Show all if not filtering or no team selected
-    }
-    return savedTemplates.filter(t => t.team_id === selectedTemplateTeamId);
-  }, [savedTemplates, selectedTemplateTeamId, showTeamSelector]);
+    // If no team selected (viewing "All Teams"), show all templates
+    if (!selectedTeamId) return savedTemplates;
+    
+    // Filter to show only selected team's templates
+    return savedTemplates.filter(t => t.team_id === selectedTeamId);
+  }, [savedTemplates, selectedTeamId]);
 
   // Cache current template to prevent re-renders during typing
   const currentTemplate = useMemo(() => 
@@ -1335,23 +1328,6 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Team Selector for Admins/Superadmins */}
-              {showTeamSelector && (
-                <div className="mb-4">
-                  <Label className="text-sm font-medium mb-2 block">Filter by Team</Label>
-                  <UnifiedTeamSelector
-                    selectedTeamId={selectedTemplateTeamId}
-                    onTeamChange={setSelectedTemplateTeamId}
-                    variant="inline"
-                    showAllOption={true}
-                    placeholder="All Teams"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {isSuperAdmin ? 'Viewing templates from all teams' : 'Select a team to filter templates'}
-                  </p>
-                </div>
-              )}
-              
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {templatesLoading ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -1359,7 +1335,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
                   </p>
                 ) : filteredSavedTemplates.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    {showTeamSelector && selectedTemplateTeamId 
+                    {selectedTeamId 
                       ? 'No templates found for the selected team' 
                       : 'No saved templates yet'}
                   </p>
