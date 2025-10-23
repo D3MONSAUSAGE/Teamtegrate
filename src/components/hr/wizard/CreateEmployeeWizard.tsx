@@ -52,7 +52,6 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
     email: '',
     employee_number: '',
     role: 'user',
-    temporary_password: '',
     team_assignments: [],
     employment_status: 'active',
     salary_type: 'hourly',
@@ -71,7 +70,7 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
       case 1: // Basic Info
         return !!(formData.name && formData.email && formData.hire_date);
       case 2: // Role & Access
-        return !!(formData.role && formData.temporary_password);
+        return !!formData.role; // Password no longer required
       case 3: // Team & Department
         return true; // Optional
       case 4: // Compensation
@@ -112,30 +111,14 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
       // Generate employee number if not provided
       const employeeNumber = formData.employee_number || `EMP-${Date.now()}`;
 
-      // Create user via edge function
-      const { data: userData, error: userError } = await supabase.functions.invoke(
-        'admin-create-user',
-        {
-          body: {
-            email: formData.email,
-            name: formData.name,
-            role: formData.role,
-            temporaryPassword: formData.temporary_password,
-          },
-        }
-      );
-
-      if (userError) throw userError;
-      if (!userData?.success || !userData?.user) {
-        throw new Error(userData?.error || 'Failed to create user');
-      }
-
-      const newUserId = userData.user.id;
-
-      // Update user profile with additional fields
-      const { error: profileError } = await supabase
+      // Create employee record WITHOUT auth account
+      const { data: userRecord, error: userError } = await supabase
         .from('users')
-        .update({
+        .insert([{
+          organization_id: user.organizationId,
+          email: formData.email,
+          name: formData.name,
+          role: formData.role,
           employee_number: employeeNumber,
           hire_date: formData.hire_date,
           start_date: formData.start_date || formData.hire_date,
@@ -150,10 +133,31 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
           emergency_contact_name: formData.emergency_contact_name,
           emergency_contact_phone: formData.emergency_contact_phone,
           emergency_contact_relationship: formData.emergency_contact_relationship,
-        })
-        .eq('id', newUserId);
+          is_pending_invite: true, // Mark as pending invitation
+        } as any])
+        .select()
+        .single();
 
-      if (profileError) throw profileError;
+      if (userError) throw userError;
+      if (!userRecord) throw new Error('Failed to create employee record');
+
+      const newUserId = userRecord.id;
+
+      // Assign job roles
+      if (formData.job_role_ids && formData.job_role_ids.length > 0) {
+        const jobRoleInserts = formData.job_role_ids.map((roleId) => ({
+          organization_id: user.organizationId,
+          user_id: newUserId,
+          job_role_id: roleId,
+          is_primary: false, // Can be updated later
+        }));
+
+        const { error: jobRoleError } = await supabase
+          .from('user_job_roles')
+          .insert(jobRoleInserts);
+
+        if (jobRoleError) throw jobRoleError;
+      }
 
       // Create team assignments
       if (formData.team_assignments.length > 0) {
@@ -208,7 +212,7 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
 
       if (timeOffError) throw timeOffError;
 
-      toast.success(`Employee ${formData.name} created successfully!`);
+      toast.success(`Employee ${formData.name} created successfully! Use "Invite Users" to give them platform access.`);
       onSuccess();
       onOpenChange(false);
       
@@ -219,7 +223,6 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
         email: '',
         employee_number: '',
         role: 'user',
-        temporary_password: '',
         team_assignments: [],
         employment_status: 'active',
         salary_type: 'hourly',

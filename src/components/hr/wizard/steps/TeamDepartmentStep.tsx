@@ -24,13 +24,13 @@ interface TeamDepartmentStepProps {
 
 const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onChange }) => {
   const { user } = useAuth();
-  const { teams } = useTeamsByOrganization(user?.organizationId);
+  const { teams, isLoading: teamsLoading } = useTeamsByOrganization(user?.organizationId);
 
   const [selectedTeamId, setSelectedTeamId] = React.useState('');
   const [selectedTeamRole, setSelectedTeamRole] = React.useState<'member' | 'manager'>('member');
 
   // Fetch managers
-  const { data: managers = [] } = useQuery({
+  const { data: managers = [], isLoading: managersLoading, error: managersError } = useQuery({
     queryKey: ['managers', user?.organizationId],
     queryFn: async () => {
       if (!user?.organizationId) return [];
@@ -102,9 +102,10 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
           <Select
             value={formData.manager_id || ''}
             onValueChange={(value) => onChange({ manager_id: value })}
+            disabled={managersLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a manager (optional)" />
+              <SelectValue placeholder={managersLoading ? "Loading managers..." : "Select a manager (optional)"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">No Manager</SelectItem>
@@ -115,14 +116,21 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
               ))}
             </SelectContent>
           </Select>
+          {managersError && (
+            <p className="text-xs text-destructive">Failed to load managers</p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label>Team Assignments</Label>
           <div className="flex gap-2">
-            <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+            <Select 
+              value={selectedTeamId} 
+              onValueChange={setSelectedTeamId}
+              disabled={teamsLoading}
+            >
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a team" />
+                <SelectValue placeholder={teamsLoading ? "Loading teams..." : teams.length === 0 ? "No teams available" : "Select a team"} />
               </SelectTrigger>
               <SelectContent>
                 {teams.map((team) => (
@@ -150,11 +158,17 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
               type="button"
               variant="outline"
               onClick={addTeamAssignment}
-              disabled={!selectedTeamId}
+              disabled={!selectedTeamId || teamsLoading}
             >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
+          
+          {teams.length === 0 && !teamsLoading && (
+            <p className="text-xs text-muted-foreground">
+              No teams available. Create teams in the Organization page first.
+            </p>
+          )}
 
           {formData.team_assignments.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">

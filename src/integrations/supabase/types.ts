@@ -12698,6 +12698,7 @@ export type Database = {
           hourly_rate: number | null
           hr_notes: string | null
           id: string
+          is_pending_invite: boolean | null
           job_title: string | null
           location: string | null
           manager_id: string | null
@@ -12740,6 +12741,7 @@ export type Database = {
           hourly_rate?: number | null
           hr_notes?: string | null
           id: string
+          is_pending_invite?: boolean | null
           job_title?: string | null
           location?: string | null
           manager_id?: string | null
@@ -12782,6 +12784,7 @@ export type Database = {
           hourly_rate?: number | null
           hr_notes?: string | null
           id?: string
+          is_pending_invite?: boolean | null
           job_title?: string | null
           location?: string | null
           manager_id?: string | null

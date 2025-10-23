@@ -13,7 +13,7 @@ export interface EmployeeFormData {
   
   // Role & Access
   role: UserRole;
-  temporary_password: string;
+  temporary_password?: string; // Optional - only needed when creating via invite
   job_role_ids?: string[];
   
   // Team & Department
