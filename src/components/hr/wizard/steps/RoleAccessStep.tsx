@@ -21,7 +21,7 @@ interface RoleAccessStepProps {
 
 const RoleAccessStep: React.FC<RoleAccessStepProps> = ({ formData, onChange }) => {
   const { jobRoles, isLoading: jobRolesLoading } = useJobRoles();
-  const [selectedJobRoleId, setSelectedJobRoleId] = useState('');
+  const [selectedJobRoleId, setSelectedJobRoleId] = useState<string | undefined>(undefined);
 
   const addJobRole = () => {
     if (!selectedJobRoleId) return;
@@ -30,7 +30,7 @@ const RoleAccessStep: React.FC<RoleAccessStepProps> = ({ formData, onChange }) =
     if (currentRoles.includes(selectedJobRoleId)) return;
     
     onChange({ job_role_ids: [...currentRoles, selectedJobRoleId] });
-    setSelectedJobRoleId('');
+    setSelectedJobRoleId(undefined);
   };
 
   const removeJobRole = (roleId: string) => {
@@ -90,7 +90,7 @@ const RoleAccessStep: React.FC<RoleAccessStepProps> = ({ formData, onChange }) =
                 <SelectValue placeholder="Select job role" />
               </SelectTrigger>
               <SelectContent>
-                {jobRoles.map((role) => (
+                {jobRoles.filter(role => role.id && role.id.trim() !== '').map((role) => (
                   <SelectItem key={role.id} value={role.id}>
                     {role.name}
                   </SelectItem>
