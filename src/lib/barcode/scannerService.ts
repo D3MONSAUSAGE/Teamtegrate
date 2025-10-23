@@ -1,4 +1,7 @@
 // Unified scanner service: Native BarcodeDetector → Quagga fallback → Manual
+import { Camera } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
+
 export type BarcodeHit = { text: string; format: string };
 
 export type StartNativeOpts = {
@@ -150,6 +153,33 @@ export async function toggleTorch(videoEl: HTMLVideoElement, on: boolean): Promi
     }
   } catch {}
   return false;
+}
+
+export async function requestCameraPermission(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    // Web - browser will prompt automatically
+    return true;
+  }
+
+  try {
+    const status = await Camera.checkPermissions();
+    
+    if (status.camera === 'granted') {
+      return true;
+    }
+    
+    if (status.camera === 'denied') {
+      // User previously denied, can't request again
+      return false;
+    }
+    
+    // Request permission
+    const result = await Camera.requestPermissions({ permissions: ['camera'] });
+    return result.camera === 'granted';
+  } catch (error) {
+    console.error('Camera permission error:', error);
+    return false;
+  }
 }
 
 export async function getCameraStream(constraints?: MediaStreamConstraints): Promise<MediaStream> {

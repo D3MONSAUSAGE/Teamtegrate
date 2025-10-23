@@ -9,6 +9,7 @@ import {
   toggleTorch, 
   getCameraStream, 
   stopStream,
+  requestCameraPermission,
   type BarcodeHit 
 } from '@/lib/barcode/scannerService';
 
@@ -102,6 +103,12 @@ export const ScannerOverlay: React.FC<ScannerOverlayProps> = ({
     await cleanup();
 
     try {
+      // Check/request camera permission on native platforms
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) {
+        throw new Error('Camera permission denied');
+      }
+      
       // Get camera stream
       const stream = await getCameraStream();
       const video = videoRef.current;
