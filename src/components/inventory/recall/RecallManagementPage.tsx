@@ -35,6 +35,15 @@ export const RecallManagementPage: React.FC = () => {
     toast.success('Manufacturing batch created successfully!');
   };
 
+  const handleBatchCreatedWithPrint = (batch: any) => {
+    setBatchDialogOpen(false);
+    setRefreshKey(prev => prev + 1);
+    
+    // Open label modal with batch data
+    setSelectedBatch(batch);
+    setLabelModalOpen(true);
+  };
+
   const handleBatchesLoaded = (loadedBatches: ManufacturingBatch[]) => {
     setBatches(loadedBatches);
   };
@@ -219,6 +228,7 @@ export const RecallManagementPage: React.FC = () => {
         open={batchDialogOpen}
         onOpenChange={setBatchDialogOpen}
         onSuccess={handleBatchCreated}
+        onBatchCreatedWithPrint={handleBatchCreatedWithPrint}
       />
 
       <BulkBatchOperations
@@ -239,10 +249,10 @@ export const RecallManagementPage: React.FC = () => {
         batchData={selectedBatch ? {
           batchId: selectedBatch.id,
           batchNumber: selectedBatch.batch_number,
-          itemId: selectedBatch.inventory_lot?.item_id,
+          itemId: selectedBatch.item_id || selectedBatch.inventory_lot?.item_id,
           lotId: selectedBatch.lot_id,
           lotNumber: selectedBatch.inventory_lot?.lot_number,
-          itemName: selectedBatch.inventory_item?.name,
+          itemName: (selectedBatch as any).inventory_items?.name || selectedBatch.inventory_item?.name,
           maxQuantity: selectedBatch.quantity_remaining,
         } : undefined}
       />

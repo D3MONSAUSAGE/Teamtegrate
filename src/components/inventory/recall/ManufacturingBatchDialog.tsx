@@ -14,7 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { useBatchAutoGeneration } from '@/hooks/useBatchAutoGeneration';
 
 const formSchema = z.object({
-  lot_id: z.string().optional(),
+  item_id: z.string().min(1, 'Product selection is required'),
   batch_number: z.string().min(1, 'Batch number is required'),
   total_quantity_manufactured: z.coerce.number().positive('Quantity must be positive'),
   manufacturing_date: z.string().min(1, 'Manufacturing date is required'),
@@ -27,24 +27,26 @@ interface ManufacturingBatchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
-  defaultLotId?: string;
+  onBatchCreatedWithPrint?: (batch: any) => void;
+  defaultItemId?: string;
 }
 
 export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> = ({
   open,
   onOpenChange,
   onSuccess,
-  defaultLotId,
+  onBatchCreatedWithPrint,
+  defaultItemId,
 }) => {
   const { user } = useAuth();
+  const { items } = useInventory();
   const { generateBatchNumber, getCurrentShift } = useBatchAutoGeneration();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [lots, setLots] = React.useState<any[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      lot_id: '',
+      item_id: '',
       batch_number: '',
       total_quantity_manufactured: 0,
       manufacturing_date: new Date().toISOString().split('T')[0],
@@ -55,34 +57,14 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
   });
 
   React.useEffect(() => {
-    const loadLots = async () => {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data } = await supabase
-          .from('inventory_lots')
-          .select(`
-            *,
-            inventory_items(name, sku)
-          `)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-        
-        setLots(data || []);
-      } catch (error) {
-        console.error('Error loading lots:', error);
-      }
-    };
-
     const initializeForm = async () => {
       if (open) {
-        await loadLots();
-        
         // Auto-generate batch number
         const batchNumber = await generateBatchNumber();
         const shift = getCurrentShift();
         
         form.reset({
-          lot_id: defaultLotId || '',
+          item_id: defaultItemId || '',
           batch_number: batchNumber,
           total_quantity_manufactured: 0,
           manufacturing_date: new Date().toISOString().split('T')[0],
@@ -94,7 +76,7 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
     };
 
     initializeForm();
-  }, [open, defaultLotId, generateBatchNumber, getCurrentShift, form]);
+  }, [open, defaultItemId, generateBatchNumber, getCurrentShift, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user?.organizationId) return;
@@ -103,27 +85,48 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      await supabase.from('manufacturing_batches').insert([{
-        organization_id: user.organizationId,
-        lot_id: values.lot_id || null,
-        batch_number: values.batch_number,
-        total_quantity_manufactured: values.total_quantity_manufactured,
-        quantity_remaining: values.total_quantity_manufactured,
-        manufacturing_date: values.manufacturing_date,
-        manufacturing_shift: values.manufacturing_shift || null,
-        production_line: values.production_line || null,
-        production_notes: values.production_notes || null,
-        created_by: user.id,
-      }]);
+      const { data: newBatch, error } = await supabase
+        .from('manufacturing_batches')
+        .insert([{
+          organization_id: user.organizationId,
+          item_id: values.item_id,
+          lot_id: null,
+          batch_number: values.batch_number,
+          total_quantity_manufactured: values.total_quantity_manufactured,
+          quantity_remaining: values.total_quantity_manufactured,
+          manufacturing_date: values.manufacturing_date,
+          manufacturing_shift: values.manufacturing_shift || null,
+          production_line: values.production_line || null,
+          production_notes: values.production_notes || null,
+          created_by: user.id,
+        }])
+        .select(`
+          *,
+          inventory_items (
+            id,
+            name,
+            sku,
+            category_id
+          )
+        `)
+        .single();
+
+      if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Manufacturing batch created successfully',
+        description: 'Batch created! Opening label printer...',
       });
 
       form.reset();
       onOpenChange(false);
-      onSuccess?.();
+      
+      // Trigger automatic label printing if callback provided
+      if (onBatchCreatedWithPrint && newBatch) {
+        onBatchCreatedWithPrint(newBatch);
+      } else {
+        onSuccess?.();
+      }
     } catch (error) {
       console.error('Error creating batch:', error);
       toast({
@@ -166,24 +169,30 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
 
             <FormField
               control={form.control}
-              name="lot_id"
+              name="item_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Associated Lot (Optional)</FormLabel>
+                  <FormLabel>Product *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a lot" />
+                        <SelectValue placeholder="Select a product" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {lots.map((lot: any) => (
-                        <SelectItem key={lot.id} value={lot.id}>
-                          {lot.lot_number} - {lot.inventory_items?.name || 'Unknown'}
-                        </SelectItem>
-                      ))}
+                      {items
+                        .filter(item => item.is_active)
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name} {item.sku ? `(${item.sku})` : ''}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the product for this manufacturing batch
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

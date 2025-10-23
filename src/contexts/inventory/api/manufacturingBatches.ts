@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ManufacturingBatch {
   id: string;
   organization_id: string;
+  item_id?: string;
   lot_id?: string;
   batch_number: string;
   total_quantity_manufactured: number;
@@ -25,13 +26,27 @@ export interface ManufacturingBatch {
     name: string;
     sku: string;
   };
+  inventory_items?: {
+    id: string;
+    name: string;
+    sku: string;
+    category_id?: string;
+  };
 }
 
 export const manufacturingBatchesApi = {
   async getAll(): Promise<ManufacturingBatch[]> {
     const { data, error } = await supabase
       .from('manufacturing_batches')
-      .select('*')
+      .select(`
+        *,
+        inventory_items (
+          id,
+          name,
+          sku,
+          category_id
+        )
+      `)
       .order('manufacturing_date', { ascending: false });
 
     if (error) throw error;

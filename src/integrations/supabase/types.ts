@@ -5032,6 +5032,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          item_id: string | null
           lot_id: string | null
           manufacturing_date: string
           manufacturing_shift: string | null
@@ -5049,6 +5050,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          item_id?: string | null
           lot_id?: string | null
           manufacturing_date: string
           manufacturing_shift?: string | null
@@ -5066,6 +5068,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          item_id?: string | null
           lot_id?: string | null
           manufacturing_date?: string
           manufacturing_shift?: string | null
@@ -5079,6 +5082,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "manufacturing_batches_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "manufacturing_batches_lot_id_fkey"
             columns: ["lot_id"]

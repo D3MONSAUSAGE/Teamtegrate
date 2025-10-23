@@ -309,6 +309,35 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     }
   }, [selectedItemId, filteredItems, selectedItem?.id, companyName, batchData?.batchNumber]);
 
+  // Auto-detect and select label template when batch data is provided
+  useEffect(() => {
+    if (batchData?.itemId && selectedItem && !loadedTemplateId && filteredSavedTemplates.length > 0) {
+      console.log('🔍 Auto-detecting label template for batch item...');
+      
+      // Try to find a template that matches the item's category or is named after the item
+      const matchingTemplate = filteredSavedTemplates.find(template => {
+        // Check if template name contains the item name
+        const nameMatch = template.name.toLowerCase().includes(selectedItem.name.toLowerCase());
+        // Check if template has same item ID in its saved data
+        const itemMatch = template.selectedItemId === selectedItem.id;
+        return nameMatch || itemMatch;
+      });
+      
+      if (matchingTemplate) {
+        console.log('✅ Found matching template:', matchingTemplate.name);
+        loadTemplate(matchingTemplate, false);
+        toast.success(`Template "${matchingTemplate.name}" auto-selected for ${selectedItem.name}`, {
+          duration: 4000,
+        });
+      } else {
+        console.log('⚠️ No matching template found for item');
+        toast.info(`No label template found for "${selectedItem.name}". Please select a template or configure a new one.`, {
+          duration: 5000,
+        });
+      }
+    }
+  }, [batchData?.itemId, selectedItem, loadedTemplateId, filteredSavedTemplates]);
+
   // Logo upload handling optimized for thermal printing
   const onLogoDrop = useCallback((acceptedFiles: File[]) => {
     console.log('🔍 Logo upload started - Files received:', acceptedFiles.length);
