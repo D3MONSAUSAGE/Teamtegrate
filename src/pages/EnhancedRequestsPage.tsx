@@ -126,42 +126,48 @@ export default function EnhancedRequestsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Requests</h1>
-          <p className="text-muted-foreground">Track and manage organizational requests with visual indicators and ticket numbers</p>
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Requests</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">Track and manage organizational requests with visual indicators and ticket numbers</p>
         </div>
-        <div className="flex gap-2">
-          {activeTab === 'requests' && (
-            <>
-              <Button
-                variant={viewMode === 'dashboard' ? 'default' : 'outline'}
-                onClick={() => setViewMode('dashboard')}
-                size="sm"
-              >
-                <LayoutDashboard className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                onClick={() => setViewMode('list')}
-                size="sm"
-              >
-                <List className="mr-2 h-4 w-4" />
-                List View
-              </Button>
-              <Button onClick={() => setShowCreateForm(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                New Request
-              </Button>
-            </>
-          )}
-        </div>
+        {activeTab === 'requests' && (
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+            <Button
+              variant={viewMode === 'dashboard' ? 'default' : 'outline'}
+              onClick={() => setViewMode('dashboard')}
+              size="sm"
+              className="flex-1 sm:flex-none"
+            >
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              onClick={() => setViewMode('list')}
+              size="sm"
+              className="flex-1 sm:flex-none"
+            >
+              <List className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">List View</span>
+              <span className="sm:hidden">List</span>
+            </Button>
+            <Button 
+              onClick={() => setShowCreateForm(true)}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Request
+            </Button>
+          </div>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'requests' | 'types')}>
-        <TabsList className={`grid w-full ${canManageTypes ? 'grid-cols-2 lg:w-[400px]' : 'grid-cols-1 lg:w-[200px]'}`}>
+        <TabsList className={`grid w-full ${canManageTypes ? 'grid-cols-2 max-w-full sm:max-w-[400px]' : 'grid-cols-1 max-w-full sm:max-w-[200px]'}`}>
           <TabsTrigger value="requests" className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4" />
             Requests
