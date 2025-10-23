@@ -188,6 +188,15 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     return savedTemplates.filter(t => t.team_id === selectedTeamId);
   }, [savedTemplates, selectedTeamId]);
 
+  // Filter items based on page-level team selection
+  const filteredItems = useMemo(() => {
+    // If no team selected (admin viewing "All Teams"), show all items
+    if (!selectedTeamId) return items;
+    
+    // Filter to show only selected team's items
+    return items.filter(item => item.team_id === selectedTeamId);
+  }, [items, selectedTeamId]);
+
   // Cache current template to prevent re-renders during typing
   const currentTemplate = useMemo(() => 
     LABEL_TEMPLATES.find(t => t.id === selectedTemplate), 
@@ -271,7 +280,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       return;
     }
 
-    const selectedItemFromList = items.find(i => i.id === selectedItemId) || null;
+    const selectedItemFromList = filteredItems.find(i => i.id === selectedItemId) || null;
     
     if (selectedItemFromList?.id !== selectedItem?.id) {
       setSelectedItem(selectedItemFromList);
@@ -298,7 +307,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         }
       }
     }
-  }, [selectedItemId, items, selectedItem?.id, companyName]);
+  }, [selectedItemId, filteredItems, selectedItem?.id, companyName, batchData?.batchNumber]);
 
   // Logo upload handling optimized for thermal printing
   const onLogoDrop = useCallback((acceptedFiles: File[]) => {
@@ -1294,16 +1303,23 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
               <SelectValue placeholder="Choose a product..." />
             </SelectTrigger>
             <SelectContent className="bg-background">
-              {items.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="truncate">{item.name}</span>
-                    <Badge variant="outline" className="ml-2 shrink-0">
-                      {item.sku || 'No SKU'}
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
+              {filteredItems.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  <p>No products found for this team.</p>
+                  <p className="text-sm mt-1">Add products in the Product Catalog tab.</p>
+                </div>
+              ) : (
+                filteredItems.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span className="truncate">{item.name}</span>
+                      <Badge variant="outline" className="ml-2 shrink-0">
+                        {item.sku || 'No SKU'}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {selectedItem?.shelf_life_days && (
