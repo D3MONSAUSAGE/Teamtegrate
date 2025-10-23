@@ -29,6 +29,16 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
   const [selectedTeamId, setSelectedTeamId] = React.useState<string | undefined>(undefined);
   const [selectedTeamRole, setSelectedTeamRole] = React.useState<'member' | 'manager'>('member');
 
+  // Auto-reset to 'member' if selected team already has a manager
+  React.useEffect(() => {
+    if (selectedTeamId) {
+      const selectedTeam = teams.find(t => t.id === selectedTeamId);
+      if (selectedTeam?.manager_id && selectedTeamRole === 'manager') {
+        setSelectedTeamRole('member');
+      }
+    }
+  }, [selectedTeamId, teams, selectedTeamRole]);
+
   // Fetch managers
   const { data: managers = [], isLoading: managersLoading, error: managersError } = useQuery({
     queryKey: ['managers', user?.organizationId],
@@ -77,12 +87,21 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
     return teams.find((t) => t.id === teamId)?.name || 'Unknown Team';
   };
 
+  const getManagerName = (managerId: string | null | undefined) => {
+    if (!managerId) return null;
+    return managers.find((m) => m.id === managerId)?.name || null;
+  };
+
+  // Check if selected team has a manager
+  const selectedTeam = teams.find(t => t.id === selectedTeamId);
+  const teamHasManager = selectedTeam?.manager_id != null;
+
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-4">Team & Department</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          Assign the employee to teams and set their department and manager.
+          Assign the employee to teams and optionally set their department.
         </p>
       </div>
 
@@ -95,30 +114,6 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
             onChange={(e) => onChange({ department: e.target.value })}
             placeholder="e.g., Engineering, Sales, HR"
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="manager_id">Manager</Label>
-          <Select
-            value={formData.manager_id || 'none'}
-            onValueChange={(value) => onChange({ manager_id: value === 'none' ? null : value })}
-            disabled={managersLoading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={managersLoading ? "Loading managers..." : "Select a manager (optional)"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No Manager</SelectItem>
-              {managers.map((manager) => (
-                <SelectItem key={manager.id} value={manager.id}>
-                  {manager.name} ({manager.email})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {managersError && (
-            <p className="text-xs text-destructive">Failed to load managers</p>
-          )}
         </div>
 
         <div className="space-y-2">
@@ -150,7 +145,9 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="manager" disabled={teamHasManager}>
+                  Manager {teamHasManager && '(Assigned)'}
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -172,18 +169,26 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
 
           {formData.team_assignments.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
-              {formData.team_assignments.map((assignment) => (
-                <Badge key={assignment.team_id} variant="secondary" className="gap-2">
-                  {getTeamName(assignment.team_id)} ({assignment.role})
-                  <button
-                    type="button"
-                    onClick={() => removeTeamAssignment(assignment.team_id)}
-                    className="ml-1 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
+              {formData.team_assignments.map((assignment) => {
+                const team = teams.find(t => t.id === assignment.team_id);
+                const managerName = getManagerName(team?.manager_id);
+                
+                return (
+                  <Badge key={assignment.team_id} variant="secondary" className="gap-2">
+                    <span>
+                      {getTeamName(assignment.team_id)} ({assignment.role})
+                      {managerName && ` • Manager: ${managerName}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeTeamAssignment(assignment.team_id)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                );
+              })}
             </div>
           )}
         </div>

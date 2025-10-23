@@ -126,7 +126,6 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
           phone: formData.phone,
           address: formData.address,
           department: formData.department,
-          manager_id: formData.manager_id,
           employment_status: formData.employment_status,
           salary_type: formData.salary_type,
           hourly_rate: formData.hourly_rate,
