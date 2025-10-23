@@ -7,6 +7,7 @@ import { labelTemplatesApi, LabelTemplate as DBLabelTemplate } from '@/contexts/
 export interface SavedTemplate {
   id: string;
   name: string;
+  team_id?: string; // Team this template belongs to
   companyName: string;
   companyAddress: string;
   netWeight: string;
@@ -51,33 +52,49 @@ export function useLabelTemplates() {
     try {
       setLoading(true);
       
-      // Get user's teams
-      const { data: memberships, error: membershipError } = await supabase
-        .from('team_memberships')
-        .select('team_id')
-        .eq('user_id', user.id);
+      let dbTemplates;
       
-      if (membershipError) throw membershipError;
-      
-      const userTeamIds = memberships?.map(m => m.team_id) || [];
-      
-      if (userTeamIds.length === 0) {
-        console.log('User has no team memberships');
-        setTemplates([]);
-        setLoading(false);
-        return;
+      // SUPERADMINS see ALL templates in the organization
+      if (user.role === 'superadmin') {
+        const { data, error } = await supabase
+          .from('label_templates')
+          .select('*')
+          .eq('category', 'professional')
+          .eq('is_active', true)
+          .eq('organization_id', user.organizationId)
+          .order('name', { ascending: true });
+        
+        if (error) throw error;
+        dbTemplates = data;
+      } else {
+        // REGULAR USERS see only their team's templates
+        const { data: memberships, error: membershipError } = await supabase
+          .from('team_memberships')
+          .select('team_id')
+          .eq('user_id', user.id);
+        
+        if (membershipError) throw membershipError;
+        
+        const userTeamIds = memberships?.map(m => m.team_id) || [];
+        
+        if (userTeamIds.length === 0) {
+          console.log('User has no team memberships');
+          setTemplates([]);
+          setLoading(false);
+          return;
+        }
+        
+        const { data, error: templatesError } = await supabase
+          .from('label_templates')
+          .select('*')
+          .eq('category', 'professional')
+          .eq('is_active', true)
+          .in('team_id', userTeamIds)
+          .order('name', { ascending: true });
+        
+        if (templatesError) throw templatesError;
+        dbTemplates = data;
       }
-      
-      // Get templates for user's teams only
-      const { data: dbTemplates, error: templatesError } = await supabase
-        .from('label_templates')
-        .select('*')
-        .eq('category', 'professional')
-        .eq('is_active', true)
-        .in('team_id', userTeamIds)
-        .order('name', { ascending: true });
-      
-      if (templatesError) throw templatesError;
       
       // Convert DB templates to SavedTemplate format
       const converted: SavedTemplate[] = (dbTemplates || []).map(template => {
@@ -85,6 +102,7 @@ export function useLabelTemplates() {
         return {
           id: template.id,
           name: template.name,
+          team_id: template.team_id,
           companyName: data.companyName || '',
           companyAddress: data.companyAddress || '',
           netWeight: data.netWeight || '',
