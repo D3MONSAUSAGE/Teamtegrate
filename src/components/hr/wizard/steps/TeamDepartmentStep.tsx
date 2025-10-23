@@ -26,7 +26,7 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
   const { user } = useAuth();
   const { teams, isLoading: teamsLoading } = useTeamsByOrganization(user?.organizationId);
 
-  const [selectedTeamId, setSelectedTeamId] = React.useState('');
+  const [selectedTeamId, setSelectedTeamId] = React.useState<string | undefined>(undefined);
   const [selectedTeamRole, setSelectedTeamRole] = React.useState<'member' | 'manager'>('member');
 
   // Fetch managers
@@ -63,7 +63,7 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
       ],
     });
 
-    setSelectedTeamId('');
+    setSelectedTeamId(undefined);
     setSelectedTeamRole('member');
   };
 
@@ -100,15 +100,15 @@ const TeamDepartmentStep: React.FC<TeamDepartmentStepProps> = ({ formData, onCha
         <div className="space-y-2">
           <Label htmlFor="manager_id">Manager</Label>
           <Select
-            value={formData.manager_id || ''}
-            onValueChange={(value) => onChange({ manager_id: value })}
+            value={formData.manager_id || 'none'}
+            onValueChange={(value) => onChange({ manager_id: value === 'none' ? null : value })}
             disabled={managersLoading}
           >
             <SelectTrigger>
               <SelectValue placeholder={managersLoading ? "Loading managers..." : "Select a manager (optional)"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No Manager</SelectItem>
+              <SelectItem value="none">No Manager</SelectItem>
               {managers.map((manager) => (
                 <SelectItem key={manager.id} value={manager.id}>
                   {manager.name} ({manager.email})
