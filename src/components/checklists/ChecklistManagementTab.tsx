@@ -91,9 +91,9 @@ export const ChecklistManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Actions */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4 items-center">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search checklists..."
@@ -104,7 +104,7 @@ export const ChecklistManagementTab: React.FC = () => {
           </div>
           
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
@@ -118,7 +118,7 @@ export const ChecklistManagementTab: React.FC = () => {
           </Select>
         </div>
 
-        <Button onClick={() => setCreateDialogOpen(true)} className="flex items-center gap-2">
+        <Button onClick={() => setCreateDialogOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Create Checklist
         </Button>
