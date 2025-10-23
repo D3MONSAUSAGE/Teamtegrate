@@ -26,7 +26,6 @@ import InvoiceManager from '@/components/finance/InvoiceManager';
 import { InvoiceBuilder } from '@/components/finance/invoices/InvoiceBuilder';
 import { ClientsManager } from '@/components/finance/clients/ClientsManager';
 import { PaymentSettings } from '@/components/finance/settings/PaymentSettings';
-import PayrollTab from '@/components/finance/tabs/PayrollTab';
 
 type FinanceTab = 
   | 'dashboard' 
@@ -36,8 +35,7 @@ type FinanceTab =
   | 'sales-channels'
   | 'invoices'
   | 'clients'
-  | 'payment-settings'
-  | 'payroll';
+  | 'payment-settings';
 
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState<FinanceTab>('dashboard');
@@ -84,16 +82,10 @@ export default function FinancePage() {
             <span>Invoices</span>
           </TabsTrigger>
           {canManageData && (
-            <>
-              <TabsTrigger value="payroll" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span>Payroll</span>
-              </TabsTrigger>
-              <TabsTrigger value="clients" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span>Clients</span>
-              </TabsTrigger>
-            </>
+            <TabsTrigger value="clients" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>Clients</span>
+            </TabsTrigger>
           )}
           {isAdmin && (
             <TabsTrigger value="payment-settings" className="flex items-center gap-2">
@@ -128,15 +120,9 @@ export default function FinancePage() {
         </TabsContent>
 
         {canManageData && (
-          <>
-            <TabsContent value="payroll" className="space-y-6 mt-6">
-              <PayrollTab />
-            </TabsContent>
-            
-            <TabsContent value="clients" className="space-y-6 mt-6">
-              <ClientsManager />
-            </TabsContent>
-          </>
+          <TabsContent value="clients" className="space-y-6 mt-6">
+            <ClientsManager />
+          </TabsContent>
         )}
 
         {isAdmin && (
