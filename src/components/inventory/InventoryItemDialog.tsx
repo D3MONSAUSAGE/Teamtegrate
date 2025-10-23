@@ -382,18 +382,18 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                   )}
                 />
 
-                {/* Item Type and Unit Type */}
+                {/* Category and Unit Type */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="category_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Item Type</FormLabel>
+                        <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select item type" />
+                              <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -409,7 +409,7 @@ export const InventoryItemDialog: React.FC<InventoryItemDialogProps> = ({
                                 onClick={() => setIsCategoryDialogOpen(true)}
                               >
                                 <Plus className="h-3 w-3 mr-2" />
-                                Create New Item Type
+                                Create New Category
                               </Button>
                             </div>
                           </SelectContent>

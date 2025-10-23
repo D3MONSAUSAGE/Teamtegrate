@@ -314,7 +314,7 @@ export const InventoryManagementTab: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center gap-2 whitespace-nowrap">
               <FolderOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Item Types</span>
+              <span className="hidden sm:inline">Categories</span>
               <span className="sm:hidden">Types</span>
             </TabsTrigger>
             <TabsTrigger value="units" className="flex items-center gap-2 whitespace-nowrap">
@@ -375,7 +375,7 @@ export const InventoryManagementTab: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Item Types</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {itemCategories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -391,7 +391,7 @@ export const InventoryManagementTab: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="name">Name</SelectItem>
                     <SelectItem value="stock">Stock</SelectItem>
-                    <SelectItem value="category">Item Type</SelectItem>
+                    <SelectItem value="category">Category</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -452,11 +452,11 @@ export const InventoryManagementTab: React.FC = () => {
                 <div className="max-h-[600px] overflow-y-auto">
                    <Table>
                       <TableHeader>
-                         <TableRow>
+                          <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>SKU</TableHead>
                             <TableHead>Description</TableHead>
-                            <TableHead>Item Type</TableHead>
+                            <TableHead>Category</TableHead>
                             <TableHead>Units/Package</TableHead>
                             <TableHead>Purchase Unit</TableHead>
                             <TableHead>Package Price</TableHead>
@@ -491,11 +491,11 @@ export const InventoryManagementTab: React.FC = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FolderOpen className="h-5 w-5" />
-                Item Types
+                Categories
               </CardTitle>
               <Button onClick={handleAddCategory}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Item Type
+                Add Category
               </Button>
             </CardHeader>
             <CardContent>
@@ -504,14 +504,14 @@ export const InventoryManagementTab: React.FC = () => {
               ) : categories.length === 0 ? (
                 <div className="text-center py-12">
                   <FolderOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No item types yet</h3>
+                  <h3 className="text-lg font-medium mb-2">No categories yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create product types to organize your product catalog
+                    Create categories to organize your product catalog
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleAddCategory}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Create First Item Type
+                      Create First Category
                     </Button>
                     {units.length === 0 && (
                       <Button variant="outline" onClick={handleSeedDefaults}>

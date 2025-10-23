@@ -82,7 +82,7 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-primary" />
-            {categoryId ? 'Edit Item Type' : 'Create New Item Type'}
+            {categoryId ? 'Edit Category' : 'Create New Category'}
           </DialogTitle>
         </DialogHeader>
 
@@ -93,9 +93,9 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Item Type Name *</FormLabel>
+                  <FormLabel>Category Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter item type name" {...field} />
+                    <Input placeholder="Enter category name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,9 +110,9 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter item type description (optional)" 
+                      placeholder="Enter category description (optional)" 
                       className="min-h-[80px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -130,7 +130,7 @@ export const InventoryCategoryDialog: React.FC<InventoryCategoryDialogProps> = (
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : categoryId ? 'Update Item Type' : 'Create Item Type'}
+                {loading ? 'Saving...' : categoryId ? 'Update Category' : 'Create Category'}
               </Button>
             </div>
           </form>
