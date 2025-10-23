@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, Star, Plus } from 'lucide-react';
+import { X, Star, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserJobRoleManagerProps {
@@ -23,7 +23,8 @@ export const UserJobRoleManager: React.FC<UserJobRoleManagerProps> = ({ userId, 
     removeJobRole,
     setPrimaryJobRole,
     isAssigning,
-    isRemoving
+    isRemoving,
+    isLoading
   } = useUserJobRoles(userId);
 
   const [selectedJobRoleId, setSelectedJobRoleId] = useState<string>('');
@@ -67,7 +68,11 @@ export const UserJobRoleManager: React.FC<UserJobRoleManagerProps> = ({ userId, 
         {/* Current Job Roles */}
         <div className="space-y-3">
           <h4 className="font-medium">Current Job Roles</h4>
-          {userJobRoles.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : userJobRoles.length === 0 ? (
             <p className="text-sm text-muted-foreground">No job roles assigned</p>
           ) : (
             <div className="space-y-2">
