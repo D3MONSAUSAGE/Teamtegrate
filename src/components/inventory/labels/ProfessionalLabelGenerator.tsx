@@ -1359,7 +1359,11 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
           {/* Print Button */}
           {loadedTemplateId && (
             <Button 
-              onClick={generateLabel}
+              onClick={() => {
+                console.log('👆 [USER_ACTION] Generate Labels button clicked (BATCH MODE)');
+                console.log('👆 [USER_ACTION] Opening preview dialog instead of direct generation');
+                setShowPreview(true);
+              }}
               disabled={
                 isGenerating || 
                 savingToDatabase || 
