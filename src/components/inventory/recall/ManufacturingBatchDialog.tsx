@@ -184,7 +184,7 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
                         >
                           {field.value
                             ? (() => {
-                                const selectedItem = items.find(item => item.id === field.value);
+                                const selectedItem = (items || []).find(item => item.id === field.value);
                                 return selectedItem 
                                   ? `${selectedItem.name}${selectedItem.sku ? ` (${selectedItem.sku})` : ''}`
                                   : "Select a product";
@@ -199,7 +199,7 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
                         <CommandInput placeholder="Search products by name or SKU..." />
                         <CommandEmpty>No product found.</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
-                          {items
+                          {(items || [])
                             .filter(item => item.is_active)
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map((item) => (
