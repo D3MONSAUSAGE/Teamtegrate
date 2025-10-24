@@ -1196,40 +1196,19 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         pdf.text(`Distributed by ${companyName}`, 2, footerY + 0.15, { align: 'center' });
       }
 
-      // Generate PDF as data URI (more reliable than blob URL)
-      const pdfDataUri = pdf.output('datauristring');
-
-      // Create hidden iframe for printing
-      const printFrame = document.createElement('iframe');
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = 'none';
-      document.body.appendChild(printFrame);
-
-      // Load PDF and trigger print dialog
-      printFrame.onload = function() {
-        try {
-          printFrame.contentWindow?.focus();
-          printFrame.contentWindow?.print();
-          
-          // Clean up iframe after printing (with delay)
-          setTimeout(() => {
-            document.body.removeChild(printFrame);
-          }, 1000);
-        } catch (error) {
-          console.error('Print error:', error);
-          // Fallback to download
-          const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
-          pdf.save(filename);
-          document.body.removeChild(printFrame);
-          toast.error('Print failed. PDF downloaded instead.');
-        }
-      };
-
-      printFrame.src = pdfDataUri;
+      // Open PDF in new tab for preview and printing
+      const pdfBlob = pdf.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const printWindow = window.open(blobUrl, '_blank');
+      
+      if (!printWindow) {
+        // Fallback: If popup blocked, download the PDF
+        const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${batchData?.batchNumber || 'label'}.pdf`;
+        pdf.save(filename);
+        toast.success('PDF downloaded! Open it to preview and print.');
+      } else {
+        toast.success('PDF opened in new tab. Preview and print from there.');
+      }
       
       // Record in database
       try {
