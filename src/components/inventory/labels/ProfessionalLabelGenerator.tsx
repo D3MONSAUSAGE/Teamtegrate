@@ -17,7 +17,7 @@ import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2 } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2, Eye, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
@@ -1242,29 +1242,151 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
     }
   };
 
-  const renderLabelForm = () => (
-    <div className="space-y-6">
-      {/* Batch Information Banner */}
-      {batchData && (
-        <Card className="border-primary bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Package className="h-4 w-4 text-primary" />
-              <div>
-                <span className="font-semibold">Manufacturing Batch:</span>
-                <span className="ml-2">{batchData.itemName}</span>
-                {batchData.lotNumber && (
-                  <span className="ml-2 text-muted-foreground">• Lot: {batchData.lotNumber}</span>
-                )}
-                {batchData.maxQuantity && (
-                  <span className="ml-2 text-muted-foreground">• Available: {batchData.maxQuantity} units</span>
-                )}
+  const renderLabelForm = () => {
+    // SIMPLIFIED BATCH PRINT MODE - Only show preview, quantity, and print button
+    if (batchData && selectedItem) {
+      return (
+        <div className="space-y-6">
+          {/* Batch Info Card */}
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground mb-1">
+                    Manufacturing Batch #{batchData.batchNumber}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Product: <span className="font-medium text-foreground">{selectedItem.name}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    <span>{batchData.maxQuantity} units remaining</span>
+                    <span>•</span>
+                    <span>Batch ID: {batchData.batchId.slice(0, 8)}...</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
 
+          {/* Template Auto-Detection Status */}
+          {!loadedTemplateId && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No Template Found</AlertTitle>
+              <AlertDescription>
+                No label template was found for {selectedItem.name}. Please create a label template for this product in the Labels & Barcodes tab before printing batch labels.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Label Preview */}
+          {loadedTemplateId && (
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Eye className="h-5 w-5 text-primary" />
+                  Label Preview
+                </CardTitle>
+                <CardDescription>
+                  Preview of the label that will be printed for this batch
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
+                  <LabelPreview
+                    selectedItem={selectedItem}
+                    companyName={companyName}
+                    companyAddress={companyAddress}
+                    netWeight={netWeight}
+                    logoPreview={logoPreview}
+                    lotCode={lotCode}
+                    expirationDate={expirationDate}
+                    servingSize={servingSize}
+                    calories={calories}
+                    ingredients={ingredients}
+                    allergens={allergens}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quantity to Print */}
+          {loadedTemplateId && (
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Hash className="h-5 w-5 text-primary" />
+                  Quantity to Print
+                </CardTitle>
+                <CardDescription>
+                  Up to {batchData.maxQuantity} labels can be printed for this batch
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <Label htmlFor="quantity" className="text-sm font-medium min-w-[100px]">
+                    Quantity:
+                  </Label>
+                  <Input
+                    id="quantity"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder={`Enter quantity (max: ${batchData.maxQuantity})`}
+                    value={quantityToPrint}
+                    onChange={(e) => {
+                      const input = e.target.value.replace(/\D/g, '');
+                      if (input === '') {
+                        setQuantityToPrint(1);
+                        return;
+                      }
+                      const val = Math.max(1, parseInt(input) || 1);
+                      setQuantityToPrint(Math.min(val, batchData.maxQuantity || val));
+                    }}
+                    className="max-w-[200px]"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    label{quantityToPrint !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                {quantityToPrint > (batchData.maxQuantity || 0) && (
+                  <p className="text-sm text-destructive mt-2">
+                    Cannot print more than {batchData.maxQuantity} labels (remaining unlabeled units)
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Print Button */}
+          {loadedTemplateId && (
+            <Button 
+              onClick={generateLabel}
+              disabled={
+                isGenerating || 
+                savingToDatabase || 
+                quantityToPrint > (batchData.maxQuantity || 0) ||
+                !loadedTemplateId
+              }
+              className="w-full py-8 text-xl"
+              size="lg"
+            >
+              <Download className="mr-3 h-6 w-6" />
+              {isGenerating || savingToDatabase 
+                ? 'Generating Labels...' 
+                : `Generate ${quantityToPrint} Label${quantityToPrint !== 1 ? 's' : ''}`
+              }
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    // REGULAR FULL EDITING MODE
+    return (
+    <div className="space-y-6">
       {/* Draft Status Indicator */}
       {shouldUseDraft && lastSaved && (
         <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
@@ -2273,7 +2395,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         </DialogContent>
       </Dialog>
     </div>
-  );
+    );
+  };
 
   // If used inside a modal, skip the wrapper and drawer logic
   if (inModal) {
