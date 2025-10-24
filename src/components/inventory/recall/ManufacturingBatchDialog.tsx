@@ -8,9 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,7 +41,7 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
   const { items } = useInventory();
   const { generateBatchNumber, getCurrentShift } = useBatchAutoGeneration();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [productComboboxOpen, setProductComboboxOpen] = React.useState(false);
+  const [productSearchTerm, setProductSearchTerm] = React.useState('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -168,97 +165,99 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
               control={form.control}
               name="item_id"
               render={({ field }) => {
-                const safeItems = Array.isArray(items) ? items.filter(item => item && item.is_active) : [];
-                const isReady = Array.isArray(items) && safeItems.length > 0;
+                const safeItems = Array.isArray(items) 
+                  ? items.filter(item => item && item.is_active) 
+                  : [];
                 
+                const filteredItems = productSearchTerm
+                  ? safeItems.filter(item =>
+                      item.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                      (item.sku && item.sku.toLowerCase().includes(productSearchTerm.toLowerCase()))
+                    )
+                  : safeItems;
+
+                const selectedItem = safeItems.find(item => item.id === field.value);
+
                 return (
                   <FormItem className="flex flex-col">
                     <FormLabel>Product *</FormLabel>
-                    {!isReady ? (
-                      <>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            disabled={true}
-                            className="justify-between"
-                          >
-                            {!Array.isArray(items) ? "Loading products..." : "No products available"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          {!Array.isArray(items) ? "Please wait..." : "No active products to select"}
-                        </p>
-                        <FormMessage />
-                      </>
-                    ) : (
-                      <>
-                        <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={productComboboxOpen}
-                                className={cn(
-                                  "justify-between",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value
-                                  ? (() => {
-                                      const selectedItem = safeItems.find(item => item.id === field.value);
-                                      return selectedItem 
-                                        ? `${selectedItem.name}${selectedItem.sku ? ` (${selectedItem.sku})` : ''}`
-                                        : "Select a product";
-                                    })()
-                                  : "Select a product"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          {productComboboxOpen && (
-                            <PopoverContent className="w-[400px] p-0" align="start">
-                              <Command shouldFilter={false}>
-                                <CommandInput placeholder="Search products by name or SKU..." />
-                                <CommandEmpty>No product found.</CommandEmpty>
-                                <CommandGroup className="max-h-64 overflow-auto">
-                                  {safeItems
-                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map((item) => (
-                                      <CommandItem
-                                        key={item.id}
-                                        value={`${item.name} ${item.sku || ''}`}
-                                        onSelect={() => {
-                                          field.onChange(item.id);
-                                          setProductComboboxOpen(false);
-                                        }}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            field.value === item.id ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                        <div className="flex flex-col">
-                                          <span className="font-medium">{item.name}</span>
-                                          {item.sku && (
-                                            <span className="text-xs text-muted-foreground">{item.sku}</span>
-                                          )}
-                                        </div>
-                                      </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                              </Command>
-                            </PopoverContent>
+                    
+                    {/* Selected Product Display */}
+                    {field.value && selectedItem && (
+                      <div className="p-3 border rounded-md bg-muted/50 flex justify-between items-center">
+                        <div>
+                          <div className="font-medium">{selectedItem.name}</div>
+                          {selectedItem.sku && (
+                            <div className="text-xs text-muted-foreground">{selectedItem.sku}</div>
                           )}
-                        </Popover>
-                        <p className="text-xs text-muted-foreground">
-                          Select the product for this manufacturing batch
-                        </p>
-                        <FormMessage />
-                      </>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            field.onChange('');
+                            setProductSearchTerm('');
+                          }}
+                        >
+                          Change
+                        </Button>
+                      </div>
                     )}
+
+                    {/* Search Input */}
+                    {!field.value && (
+                      <FormControl>
+                        <Input
+                          placeholder="Search products by name or SKU..."
+                          value={productSearchTerm}
+                          onChange={(e) => setProductSearchTerm(e.target.value)}
+                          disabled={!Array.isArray(items) || safeItems.length === 0}
+                        />
+                      </FormControl>
+                    )}
+
+                    {/* Dropdown Results */}
+                    {!field.value && productSearchTerm && (
+                      <div className="max-h-64 overflow-y-auto border rounded-md bg-background">
+                        {filteredItems.length > 0 ? (
+                          filteredItems
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((item) => (
+                              <div
+                                key={item.id}
+                                className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0 transition-colors"
+                                onClick={() => {
+                                  field.onChange(item.id);
+                                  setProductSearchTerm('');
+                                }}
+                              >
+                                <div className="font-medium">{item.name}</div>
+                                {item.sku && (
+                                  <div className="text-xs text-muted-foreground">{item.sku}</div>
+                                )}
+                              </div>
+                            ))
+                        ) : (
+                          <div className="p-3 text-muted-foreground text-center text-sm">
+                            No products found matching "{productSearchTerm}"
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Loading/Empty State */}
+                    {!field.value && !productSearchTerm && (
+                      <p className="text-xs text-muted-foreground">
+                        {!Array.isArray(items) 
+                          ? "Loading products..." 
+                          : safeItems.length === 0 
+                            ? "No active products available"
+                            : "Start typing to search for a product"}
+                      </p>
+                    )}
+                    
+                    <FormMessage />
                   </FormItem>
                 );
               }}
