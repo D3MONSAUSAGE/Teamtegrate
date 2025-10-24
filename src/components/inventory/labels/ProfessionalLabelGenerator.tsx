@@ -1196,9 +1196,17 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         pdf.text(`Distributed by ${companyName}`, 2, footerY + 0.15, { align: 'center' });
       }
 
-      // Save PDF
-      const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
-      pdf.save(filename);
+      // Open print dialog instead of downloading
+      pdf.autoPrint(); // Enable auto-print
+      const pdfBlob = pdf.output('bloburl'); // Generate blob URL
+      const printWindow = window.open(pdfBlob, '_blank'); // Open in new tab
+
+      // Fallback: If popup is blocked, download instead
+      if (!printWindow) {
+        toast.error('Pop-up blocked! Please allow pop-ups for this site to print directly.');
+        const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
+        pdf.save(filename);
+      }
       
       // Record in database
       try {
