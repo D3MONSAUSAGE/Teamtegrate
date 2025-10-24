@@ -831,9 +831,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
       console.log('[PDF_GEN] PDF document created, starting content generation');
       pdf.setFont('helvetica');
-      let y = 0.05; // Start from top edge to utilize space better
+      let y = 0.1; // Start with small top margin
 
-      // Logo and Company Header - Optimized Layout
+      // Logo and Company Header - Compact Optimized Layout
       if (logoData) {
         try {
           console.log('[PDF_LOGO] Attempting to add logo to PDF');
@@ -851,28 +851,29 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
             imageData = `data:image/png;base64,${logoData}`;
           }
           
-          // Larger logo to better utilize top space
-          const logoSize = 1.0; // Increased from 0.6 to 1.0
-          const logoX = 1.5; // Center logo on 4-inch label (2" center - 0.5" logo half-width)
+          // Optimized logo size - balanced for space efficiency
+          const logoSize = 0.65;
+          const logoX = 2 - (logoSize / 2); // Center on 4" label
           const logoY = y;
           
-          // Add logo with better error handling
+          // Add logo
           pdf.addImage(imageData, 'PNG', logoX, logoY, logoSize, logoSize);
           console.log('[PDF_LOGO] Logo added successfully at size:', logoSize);
           
-          // Company name centered under logo
-          pdf.setFontSize(12);
+          // Company name centered under logo with proper spacing
+          pdf.setFontSize(11);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(companyName.toUpperCase(), 2, logoY + logoSize + 0.15, { align: 'center' });
+          pdf.text(companyName.toUpperCase(), 2, logoY + logoSize + 0.12, { align: 'center' });
           
-          // Company address under company name
+          // Company address - split to multiple lines if long
           if (companyAddress.trim()) {
-            pdf.setFontSize(8);
+            pdf.setFontSize(7);
             pdf.setFont('helvetica', 'normal');
-            pdf.text(companyAddress, 2, logoY + logoSize + 0.25, { align: 'center' });
-            y += logoSize + 0.35;
+            const addressLines = pdf.splitTextToSize(companyAddress, 3.6);
+            pdf.text(addressLines, 2, logoY + logoSize + 0.21, { align: 'center' });
+            y = logoY + logoSize + 0.21 + (addressLines.length * 0.08) + 0.08;
           } else {
-            y += logoSize + 0.25;
+            y = logoY + logoSize + 0.2;
           }
         } catch (error) {
           console.error('[PDF_LOGO] Failed to add logo to PDF:', error);
@@ -880,112 +881,116 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
           console.log('[PDF_LOGO] Logo data length:', logoData?.length || 0);
           
           // Fallback: Just company name and address
-          pdf.setFontSize(14);
+          pdf.setFontSize(12);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(companyName.toUpperCase(), 2, y + 0.15, { align: 'center' });
+          pdf.text(companyName.toUpperCase(), 2, y + 0.1, { align: 'center' });
           
           if (companyAddress.trim()) {
-            pdf.setFontSize(10);
+            pdf.setFontSize(8);
             pdf.setFont('helvetica', 'normal');
-            pdf.text(companyAddress, 2, y + 0.3, { align: 'center' });
-            y += 0.45;
+            const addressLines = pdf.splitTextToSize(companyAddress, 3.6);
+            pdf.text(addressLines, 2, y + 0.22, { align: 'center' });
+            y += 0.22 + (addressLines.length * 0.09) + 0.05;
           } else {
-            y += 0.25;
+            y += 0.2;
           }
         }
       } else if (companyName) {
-        pdf.setFontSize(14);
+        pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(companyName.toUpperCase(), 2, y + 0.15, { align: 'center' });
+        pdf.text(companyName.toUpperCase(), 2, y + 0.1, { align: 'center' });
         
         if (companyAddress.trim()) {
-          pdf.setFontSize(10);
+          pdf.setFontSize(8);
           pdf.setFont('helvetica', 'normal');
-          pdf.text(companyAddress, 2, y + 0.3, { align: 'center' });
-          y += 0.45;
+          const addressLines = pdf.splitTextToSize(companyAddress, 3.6);
+          pdf.text(addressLines, 2, y + 0.22, { align: 'center' });
+          y += 0.22 + (addressLines.length * 0.09) + 0.05;
         } else {
-          y += 0.25;
+          y += 0.2;
         }
       }
 
       // Divider line
       pdf.setLineWidth(0.01);
       pdf.line(0.2, y, 3.8, y);
-      y += 0.1; // Reduced spacing
+      y += 0.08;
 
-      // Product Name (larger, centered)
-      pdf.setFontSize(16);
+      // Product Name (large, centered)
+      pdf.setFontSize(15);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(selectedItem.name, 2, y + 0.15, { align: 'center' });
-      y += 0.25; // Reduced spacing
-
-      // Net Weight (centered, only if user entered it)
-      if (template.fields.includes('netweight') && netWeight && netWeight.trim()) {
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`Net Weight: ${netWeight}`, 2, y + 0.15, { align: 'center' });
-        y += 0.35; // Increased spacing for clear visual separation from Net Weight
-      }
-
-      // Date (right aligned) - SKU moved to below barcode
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      const currentDate = new Date().toLocaleDateString();
-      pdf.text(`DATE: ${currentDate}`, 3.8, y, { align: 'right' });
+      pdf.text(selectedItem.name, 2, y + 0.13, { align: 'center' });
       y += 0.2;
 
-      // Expiration Date (if provided)
-      if (expirationDate && expirationDate.trim()) {
+      // Net Weight (centered, compact)
+      if (template.fields.includes('netweight') && netWeight && netWeight.trim()) {
         pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(`EXP: ${expirationDate}`, 3.8, y, { align: 'right' });
-        y += 0.2;
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Net Weight: ${netWeight}`, 2, y + 0.12, { align: 'center' });
+        y += 0.18;
       }
 
-      // LOT/BATCH Code (if included) - Show BATCH if from manufacturing batch
+      // Date and Expiration on same line to save space
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      const currentDate = new Date().toLocaleDateString();
+      
+      if (expirationDate && expirationDate.trim()) {
+        // Both date and expiration
+        pdf.text(`DATE: ${currentDate}`, 0.2, y + 0.08);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`EXP: ${expirationDate}`, 3.8, y + 0.08, { align: 'right' });
+        y += 0.15;
+      } else {
+        // Just date, right aligned
+        pdf.text(`DATE: ${currentDate}`, 3.8, y + 0.08, { align: 'right' });
+        y += 0.15;
+      }
+
+      // LOT/BATCH Code - Show BATCH if from manufacturing batch
       if (template.fields.includes('lot') && lotCode) {
-        pdf.setFontSize(10);
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'bold');
         const codeLabel = batchData?.batchNumber ? 'BATCH' : 'LOT';
-        pdf.text(`${codeLabel}: ${lotCode}`, 0.2, y);
-        y += 0.25;
+        pdf.text(`${codeLabel}: ${lotCode}`, 0.2, y + 0.08);
+        y += 0.18;
       }
 
-      // Barcode (centered) with SKU below
+      // Barcode (centered, compact) with SKU below
       try {
         const barcodeValue = selectedItem.barcode || selectedItem.sku || lotCode;
         const barcodeImage = BarcodeGenerator.generateBarcode(barcodeValue, {
           format: 'CODE128',
           width: 2,
-          height: 35,
+          height: 30,
           displayValue: false, // We'll add SKU manually below
           background: '#ffffff',
           lineColor: '#000000'
         });
         
         if (barcodeImage) {
-          pdf.addImage(barcodeImage, 'PNG', 0.5, y, 3, 0.5);
-          y += 0.55;
+          pdf.addImage(barcodeImage, 'PNG', 0.5, y, 3, 0.45);
+          y += 0.48;
           
           // Add SKU text centered below barcode
-          pdf.setFontSize(9);
+          pdf.setFontSize(8);
           pdf.setFont('helvetica', 'bold');
           pdf.text(`SKU: ${barcodeValue}`, 2, y, { align: 'center' });
-          y += 0.2;
+          y += 0.15;
         }
       } catch (error) {
         console.error('Barcode generation failed:', error);
       }
 
-      // FDA-Compliant Nutrition Facts Table - Optimized Two-Column Layout
+      // FDA-Compliant Nutrition Facts Table - Compact Two-Column Layout
       if (template.fields.includes('nutrition') && (servingSize || calories)) {
         console.log('[PDF_NUTRITION] Starting compact two-column nutrition facts table generation');
         
         // Nutrition Facts header
-        pdf.setFontSize(14); // Increased from 12 for FDA compliance
+        pdf.setFontSize(13);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Nutrition Facts', 0.2, y + 0.1);
-        y += 0.25; // Increased spacing for prominence
+        pdf.text('Nutrition Facts', 0.2, y + 0.08);
+        y += 0.18;
 
         // Main nutrition facts box with borders
         const boxWidth = 3.6;
@@ -996,38 +1001,38 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         
         pdf.setLineWidth(0.03); // Thicker border for FDA compliance
         
-        // Servings per container (if provided)
+        // Servings per container (compact)
         if (servingsPerContainer) {
-          pdf.setFontSize(8);
+          pdf.setFontSize(7);
           pdf.setFont('helvetica', 'normal');
-          pdf.text(`Servings per container: ${servingsPerContainer}`, leftColX, y + 0.1);
-          y += 0.15;
+          pdf.text(`Servings per container: ${servingsPerContainer}`, leftColX, y + 0.08);
+          y += 0.12;
         }
         
         // Serving size section (compact)
         if (servingSize) {
-          pdf.setFontSize(8); // Smaller text
+          pdf.setFontSize(7);
           pdf.setFont('helvetica', 'normal');
-          pdf.text(`Serving size: ${servingSize}`, leftColX, y + 0.1);
-          y += 0.15; // Reduced spacing
+          pdf.text(`Serving size: ${servingSize}`, leftColX, y + 0.08);
+          y += 0.12;
           
           // Thick line under serving size
-          pdf.setLineWidth(0.03);
+          pdf.setLineWidth(0.02);
           pdf.line(0.2, y, 3.8, y);
-          y += 0.06;
+          y += 0.05;
         }
 
         // Calories (compact)
         if (calories) {
-          pdf.setFontSize(12); // Smaller than before
+          pdf.setFontSize(11);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(`Calories ${calories}`, leftColX, y + 0.12);
-          y += 0.2; // Reduced spacing
+          pdf.text(`Calories ${calories}`, leftColX, y + 0.1);
+          y += 0.16;
           
           // Thick line under calories
-          pdf.setLineWidth(0.03);
+          pdf.setLineWidth(0.02);
           pdf.line(0.2, y, 3.8, y);
-          y += 0.08;
+          y += 0.06;
         }
 
         // % Daily Value header
@@ -1139,64 +1144,53 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         console.log('[PDF_NUTRITION] Compact two-column nutrition facts table completed');
       }
 
-      // Ingredients (if included)
+      // Ingredients (compact)
       if (template.fields.includes('ingredients') && ingredients.trim()) {
-        // Check if we need to use smaller font due to space constraints
-        const remainingSpace = 5.3 - y; // Leave 0.7" for footer
-        const estimatedHeight = (ingredients.length / 50) * 0.1; // Rough estimate
-        const useCompactFont = estimatedHeight > remainingSpace;
-        
-        pdf.setFontSize(9);
+        pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
         pdf.text('INGREDIENTS:', 0.2, y);
-        y += 0.15; // Extra spacing so text doesn't touch line above
+        y += 0.12;
         
-        pdf.setFontSize(useCompactFont ? 7 : 8);
+        pdf.setFontSize(7);
         pdf.setFont('helvetica', 'normal');
         const ingredientLines = pdf.splitTextToSize(ingredients, 3.6);
         pdf.text(ingredientLines, 0.2, y);
-        y += (ingredientLines.length * 0.1) + 0.12; // Better line spacing
+        y += (ingredientLines.length * 0.09) + 0.08;
       }
 
-      // Allergens - Always show "CONTAINS:" section for FDA compliance
+      // Allergens - Compact FDA compliance section
       if (template.fields.includes('allergens')) {
-        // Check if we need compact font due to space constraints
-        const remainingSpace = 5.3 - y;
-        const estimatedHeight = (allergens.length / 50) * 0.1;
-        const useCompactFont = estimatedHeight > remainingSpace;
-        
-        pdf.setFontSize(9);
+        pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
         pdf.text('CONTAINS:', 0.2, y);
-        y += 0.12;
+        y += 0.1;
         
         if (allergens.trim()) {
-          pdf.setFontSize(useCompactFont ? 7 : 8);
+          pdf.setFontSize(7);
           pdf.setFont('helvetica', 'bold');
-          // Wrap allergen text properly for long lists
           const allergenLines = pdf.splitTextToSize(allergens.toUpperCase(), 3.6);
           pdf.text(allergenLines, 0.2, y);
-          y += (allergenLines.length * 0.1) + 0.12; // Proper multi-line spacing
+          y += (allergenLines.length * 0.09) + 0.08;
         } else {
-          pdf.setFontSize(7);
+          pdf.setFontSize(6);
           pdf.setFont('helvetica', 'italic');
           pdf.text('(To be filled as applicable)', 0.2, y);
-          y += 0.15;
+          y += 0.12;
         }
       }
 
-      // FDA-compliant footer with distributor info - Dynamic positioning
-      // Position footer based on content, allow it to sit lower for better spacing
-      const footerY = Math.min(y + 0.2, 5.8);
+      // FDA-compliant footer - Compact positioning
+      const footerY = Math.max(y + 0.15, 5.7);
       
       if (template.fields.includes('address') && companyAddress.trim()) {
-        pdf.setFontSize(7);
+        pdf.setFontSize(6);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Distributed by ${companyName}`, 2, footerY, { align: 'center' });
-        pdf.setFontSize(6);
-        pdf.text(companyAddress, 2, footerY + 0.15, { align: 'center' });
+        const footerAddressLines = pdf.splitTextToSize(companyAddress, 3.6);
+        pdf.setFontSize(5.5);
+        pdf.text(footerAddressLines, 2, footerY + 0.1, { align: 'center' });
       } else {
-        pdf.setFontSize(6);
+        pdf.setFontSize(5.5);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Distributed by ${companyName}`, 2, footerY + 0.15, { align: 'center' });
       }
