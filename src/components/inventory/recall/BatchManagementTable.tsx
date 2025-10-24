@@ -31,10 +31,11 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({
       const data = await manufacturingBatchesApi.getAll();
       
       // Filter by team if selectedTeamId is provided
-      const filteredData = selectedTeamId 
+      const filteredData = selectedTeamId && selectedTeamId !== 'all'
         ? data.filter(batch => {
             // Check if batch's item belongs to the selected team
-            const itemTeamId = (batch as any).inventory_items?.team_id;
+            const itemTeamId = batch.inventory_items?.team_id;
+            console.log(`Batch ${batch.batch_number} - Item team: ${itemTeamId}, Selected: ${selectedTeamId}`);
             return itemTeamId === selectedTeamId;
           })
         : data;

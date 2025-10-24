@@ -62,7 +62,7 @@ export const RecallManagementPage: React.FC = () => {
                 onTeamChange={setSelectedTeamId}
                 variant="simple"
                 placeholder="Select team..."
-                showAllOption={isAdminView}
+                showAllOption={true}
               />
             </div>
           </div>

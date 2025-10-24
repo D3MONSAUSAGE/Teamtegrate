@@ -31,6 +31,7 @@ export interface ManufacturingBatch {
     name: string;
     sku: string;
     category_id?: string;
+    team_id?: string;
   };
 }
 
@@ -44,43 +45,18 @@ export const manufacturingBatchesApi = {
           id,
           name,
           sku,
-          category_id
+          category_id,
+          team_id
         )
       `)
       .order('manufacturing_date', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching manufacturing batches:', error);
+      throw error;
+    }
     
-    // Manually fetch related data if lot_id exists
-    const batches = data || [];
-    const enrichedBatches = await Promise.all(
-      batches.map(async (batch) => {
-        if (batch.lot_id) {
-          const { data: lot } = await supabase
-            .from('inventory_lots')
-            .select('lot_number, item_id')
-            .eq('id', batch.lot_id)
-            .maybeSingle();
-          
-          if (lot) {
-            const { data: item } = await supabase
-              .from('inventory_items')
-              .select('name, sku')
-              .eq('id', lot.item_id)
-              .maybeSingle();
-            
-            return {
-              ...batch,
-              inventory_lot: lot,
-              inventory_item: item || undefined
-            };
-          }
-        }
-        return batch;
-      })
-    );
-    
-    return enrichedBatches;
+    return data || [];
   },
 
   async getByLotId(lotId: string): Promise<ManufacturingBatch[]> {
