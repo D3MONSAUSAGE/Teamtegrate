@@ -265,10 +265,10 @@ export const RecallManagementPage: React.FC = () => {
         batchData={selectedBatch ? {
           batchId: selectedBatch.id,
           batchNumber: selectedBatch.batch_number,
-          itemId: selectedBatch.item_id || selectedBatch.inventory_lot?.item_id,
+          itemId: selectedBatch.item_id || selectedBatch.item?.id,
           lotId: selectedBatch.lot_id,
           lotNumber: selectedBatch.inventory_lot?.lot_number,
-          itemName: (selectedBatch as any).inventory_items?.name || selectedBatch.inventory_item?.name,
+          itemName: selectedBatch.item?.name || 'Unknown Product',
           maxQuantity: selectedBatch.quantity_remaining,
         } : undefined}
       />

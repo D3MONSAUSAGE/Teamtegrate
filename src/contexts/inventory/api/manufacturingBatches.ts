@@ -22,11 +22,7 @@ export interface ManufacturingBatch {
     lot_number: string;
     item_id: string;
   };
-  inventory_item?: {
-    name: string;
-    sku: string;
-  };
-  inventory_items?: {
+  item?: {
     id: string;
     name: string;
     sku: string;
@@ -41,7 +37,7 @@ export const manufacturingBatchesApi = {
       .from('manufacturing_batches')
       .select(`
         *,
-        inventory_items (
+        item:inventory_items!item_id (
           id,
           name,
           sku,

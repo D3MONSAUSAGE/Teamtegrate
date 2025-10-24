@@ -171,7 +171,7 @@ export const BulkBatchOperations: React.FC<BulkBatchOperationsProps> = ({
                         <div className="flex-1">
                           <p className="font-medium">{batch.batch_number}</p>
                           <p className="text-xs text-muted-foreground">
-                            {batch.inventory_item?.name || 'Unknown Item'}
+                            {batch.item?.name || 'Unknown Item'}
                           </p>
                         </div>
                         <div className="text-right">

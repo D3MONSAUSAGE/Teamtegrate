@@ -34,7 +34,7 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({
       const filteredData = selectedTeamId && selectedTeamId !== 'all'
         ? data.filter(batch => {
             // Check if batch's item belongs to the selected team
-            const itemTeamId = batch.inventory_items?.team_id;
+            const itemTeamId = batch.item?.team_id;
             console.log(`Batch ${batch.batch_number} - Item team: ${itemTeamId}, Selected: ${selectedTeamId}`);
             return itemTeamId === selectedTeamId;
           })
@@ -85,7 +85,7 @@ export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({
     <div className="space-y-4">
       {batches.map((batch) => {
         const status = getBatchStatus(batch);
-        const itemName = batch.inventory_item?.name || 'Unknown Item';
+        const itemName = batch.item?.name || 'Unknown Item';
         const lotNumber = batch.inventory_lot?.lot_number || 'No Lot';
         
         return (
