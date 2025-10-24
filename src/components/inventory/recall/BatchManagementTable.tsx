@@ -10,25 +10,37 @@ import { format } from 'date-fns';
 interface BatchManagementTableProps {
   onPrintLabels: (batch: ManufacturingBatch) => void;
   onBatchesLoad?: (batches: ManufacturingBatch[]) => void;
+  selectedTeamId?: string | null;
 }
 
 export const BatchManagementTable: React.FC<BatchManagementTableProps> = ({ 
   onPrintLabels,
-  onBatchesLoad 
+  onBatchesLoad,
+  selectedTeamId
 }) => {
   const [batches, setBatches] = useState<ManufacturingBatch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadBatches();
-  }, []);
+  }, [selectedTeamId]);
 
   const loadBatches = async () => {
     try {
       setLoading(true);
       const data = await manufacturingBatchesApi.getAll();
-      setBatches(data);
-      onBatchesLoad?.(data);
+      
+      // Filter by team if selectedTeamId is provided
+      const filteredData = selectedTeamId 
+        ? data.filter(batch => {
+            // Check if batch's item belongs to the selected team
+            const itemTeamId = (batch as any).inventory_items?.team_id;
+            return itemTeamId === selectedTeamId;
+          })
+        : data;
+      
+      setBatches(filteredData);
+      onBatchesLoad?.(filteredData);
     } catch (error) {
       console.error('Failed to load batches:', error);
       toast.error('Failed to load manufacturing batches');

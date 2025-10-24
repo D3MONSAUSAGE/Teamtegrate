@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertTriangle, Package, Truck, Factory, Merge } from 'lucide-react';
+import { Plus, AlertTriangle, Package, Truck, Factory, Merge, Warehouse } from 'lucide-react';
 import { ManufacturingBatchDialog } from './ManufacturingBatchDialog';
 import { BatchManagementTable } from './BatchManagementTable';
 import { ProductionWorkflowGuide } from './ProductionWorkflowGuide';
@@ -12,9 +12,12 @@ import { BatchTraceability } from './BatchTraceability';
 import { BatchAnalytics } from './BatchAnalytics';
 import { UnifiedLabelModal } from '@/components/inventory/labels/UnifiedLabelModal';
 import { ManufacturingBatch } from '@/contexts/inventory/api';
+import { useWarehouseSelection } from '@/contexts/inventory/WarehouseSelectionContext';
+import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
 import { toast } from 'sonner';
 
 export const RecallManagementPage: React.FC = () => {
+  const { selectedTeamId, setSelectedTeamId, isAdminView } = useWarehouseSelection();
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [bulkOpsOpen, setBulkOpsOpen] = useState(false);
   const [labelModalOpen, setLabelModalOpen] = useState(false);
@@ -54,6 +57,27 @@ export const RecallManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Team Selector */}
+      <Card className="border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Warehouse className="h-5 w-5 text-primary" />
+              <span className="font-medium">Team Filter:</span>
+            </div>
+            <div className="flex-1 w-full sm:max-w-xs">
+              <UnifiedTeamSelector
+                selectedTeamId={selectedTeamId}
+                onTeamChange={setSelectedTeamId}
+                variant="simple"
+                placeholder="Select team..."
+                showAllOption={isAdminView}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <ScrollableTabs className="space-y-4">
         <ScrollableTabsList>
           <ScrollableTabsTrigger 
@@ -135,6 +159,7 @@ export const RecallManagementPage: React.FC = () => {
                 key={refreshKey} 
                 onPrintLabels={handlePrintLabels}
                 onBatchesLoad={handleBatchesLoaded}
+                selectedTeamId={selectedTeamId}
               />
             </CardContent>
           </Card>
@@ -246,6 +271,7 @@ export const RecallManagementPage: React.FC = () => {
             setRefreshKey(prev => prev + 1); // Refresh batch list after printing
           }
         }}
+        selectedTeamId={selectedTeamId}
         batchData={selectedBatch ? {
           batchId: selectedBatch.id,
           batchNumber: selectedBatch.batch_number,

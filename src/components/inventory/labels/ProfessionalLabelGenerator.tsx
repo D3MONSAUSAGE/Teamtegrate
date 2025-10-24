@@ -1318,8 +1318,36 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         </p>
       </div>
 
-      {/* Product Selection */}
-      <Card>
+      {/* Batch Info - Only show if FROM batch */}
+      {batchData && selectedItem && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground mb-1">
+                  Manufacturing Batch #{batchData.batchNumber}
+                </p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Product: <span className="font-medium text-foreground">{selectedItem.name}</span>
+                </p>
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <span>{batchData.maxQuantity} units remaining</span>
+                  <span>•</span>
+                  <span>Batch ID: {batchData.batchId.slice(0, 8)}...</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Product pre-selected from batch
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Product Selection - Only show if NOT from batch */}
+      {!batchData && (
+        <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5 text-primary" />
@@ -1358,6 +1386,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Template Management - MOVED TO TOP */}
       {selectedItem && (

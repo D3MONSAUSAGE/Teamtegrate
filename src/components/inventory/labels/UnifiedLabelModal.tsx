@@ -19,13 +19,15 @@ interface UnifiedLabelModalProps {
   onOpenChange: (open: boolean) => void;
   preSelectedItemId?: string;
   batchData?: BatchData;
+  selectedTeamId?: string | null;
 }
 
 export const UnifiedLabelModal: React.FC<UnifiedLabelModalProps> = ({
   open,
   onOpenChange,
   preSelectedItemId,
-  batchData
+  batchData,
+  selectedTeamId
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,6 +62,7 @@ export const UnifiedLabelModal: React.FC<UnifiedLabelModalProps> = ({
           preSelectedItemId={preSelectedItemId || batchData?.itemId}
           batchData={batchData}
           inModal={true}
+          selectedTeamId={selectedTeamId}
         />
       </DialogContent>
     </Dialog>
