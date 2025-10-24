@@ -1282,34 +1282,19 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
           {/* Label Preview */}
           {loadedTemplateId && (
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Eye className="h-5 w-5 text-primary" />
-                  Label Preview
-                </CardTitle>
-                <CardDescription>
-                  Preview of the label that will be printed for this batch
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
-                  <LabelPreview
-                    selectedItem={selectedItem}
-                    companyName={companyName}
-                    companyAddress={companyAddress}
-                    netWeight={netWeight}
-                    logoPreview={logoPreview}
-                    lotCode={lotCode}
-                    expirationDate={expirationDate}
-                    servingSize={servingSize}
-                    calories={calories}
-                    ingredients={ingredients}
-                    allergens={allergens}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <LabelPreview
+              selectedItem={selectedItem}
+              companyName={companyName}
+              companyAddress={companyAddress}
+              netWeight={netWeight}
+              logoPreview={logoPreview}
+              lotCode={lotCode}
+              expirationDate={expirationDate}
+              servingSize={servingSize}
+              calories={calories}
+              ingredients={ingredients}
+              allergens={allergens}
+            />
           )}
 
           {/* Quantity to Print */}
