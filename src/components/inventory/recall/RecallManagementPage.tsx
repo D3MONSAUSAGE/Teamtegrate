@@ -38,6 +38,15 @@ export const RecallManagementPage: React.FC = () => {
     toast.success('Manufacturing batch created successfully!');
   };
 
+  const handleBatchCreatedWithPrint = (batch: any) => {
+    setBatchDialogOpen(false);
+    setRefreshKey(prev => prev + 1);
+    
+    // Open label modal with batch data
+    setSelectedBatch(batch);
+    setLabelModalOpen(true);
+  };
+
   const handleBatchesLoaded = (loadedBatches: ManufacturingBatch[]) => {
     setBatches(loadedBatches);
   };
@@ -244,6 +253,7 @@ export const RecallManagementPage: React.FC = () => {
         open={batchDialogOpen}
         onOpenChange={setBatchDialogOpen}
         onSuccess={handleBatchCreated}
+        onBatchCreatedWithPrint={handleBatchCreatedWithPrint}
       />
 
       <BulkBatchOperations

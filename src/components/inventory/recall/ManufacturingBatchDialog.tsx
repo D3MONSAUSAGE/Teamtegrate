@@ -27,6 +27,7 @@ interface ManufacturingBatchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  onBatchCreatedWithPrint?: (batch: any) => void;
   defaultItemId?: string;
 }
 
@@ -34,6 +35,7 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
   open,
   onOpenChange,
   onSuccess,
+  onBatchCreatedWithPrint,
   defaultItemId,
 }) => {
   const { user } = useAuth();
@@ -113,12 +115,18 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
 
       toast({
         title: 'Success',
-        description: 'Manufacturing batch created successfully!',
+        description: 'Batch created! Opening label printer...',
       });
 
       form.reset();
       onOpenChange(false);
-      onSuccess?.();
+      
+      // Trigger automatic label printing if callback provided
+      if (onBatchCreatedWithPrint && newBatch) {
+        onBatchCreatedWithPrint(newBatch);
+      } else {
+        onSuccess?.();
+      }
     } catch (error) {
       console.error('Error creating batch:', error);
       toast({

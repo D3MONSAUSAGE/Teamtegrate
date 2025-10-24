@@ -1196,19 +1196,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         pdf.text(`Distributed by ${companyName}`, 2, footerY + 0.15, { align: 'center' });
       }
 
-      // Open PDF in new tab for preview and printing
-      const pdfBlob = pdf.output('blob');
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const printWindow = window.open(blobUrl, '_blank');
-      
-      if (!printWindow) {
-        // Fallback: If popup blocked, download the PDF
-        const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${batchData?.batchNumber || 'label'}.pdf`;
-        pdf.save(filename);
-        toast.success('PDF downloaded! Open it to preview and print.');
-      } else {
-        toast.success('PDF opened in new tab. Preview and print from there.');
-      }
+      // Save PDF
+      const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
+      pdf.save(filename);
       
       // Record in database
       try {
