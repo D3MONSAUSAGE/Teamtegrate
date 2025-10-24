@@ -8,6 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useInventory } from '@/contexts/inventory';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -40,6 +44,7 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
   const { items } = useInventory();
   const { generateBatchNumber, getCurrentShift } = useBatchAutoGeneration();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [productComboboxOpen, setProductComboboxOpen] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -163,25 +168,67 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
               control={form.control}
               name="item_id"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Product *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a product" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {items
-                        .filter(item => item.is_active)
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name} {item.sku ? `(${item.sku})` : ''}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={productComboboxOpen}
+                          className={cn(
+                            "justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value
+                            ? (() => {
+                                const selectedItem = items.find(item => item.id === field.value);
+                                return selectedItem 
+                                  ? `${selectedItem.name}${selectedItem.sku ? ` (${selectedItem.sku})` : ''}`
+                                  : "Select a product";
+                              })()
+                            : "Select a product"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search products by name or SKU..." />
+                        <CommandEmpty>No product found.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                          {items
+                            .filter(item => item.is_active)
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((item) => (
+                              <CommandItem
+                                key={item.id}
+                                value={`${item.name} ${item.sku || ''}`}
+                                onSelect={() => {
+                                  field.onChange(item.id);
+                                  setProductComboboxOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    field.value === item.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{item.name}</span>
+                                  {item.sku && (
+                                    <span className="text-xs text-muted-foreground">{item.sku}</span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <p className="text-xs text-muted-foreground">
                     Select the product for this manufacturing batch
                   </p>
