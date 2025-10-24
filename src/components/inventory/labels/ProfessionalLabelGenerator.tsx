@@ -1144,11 +1144,12 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
         console.log('[PDF_NUTRITION] Compact two-column nutrition facts table completed');
       }
 
-      // Ingredients (compact)
-      if (template.fields.includes('ingredients') && ingredients.trim()) {
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('INGREDIENTS:', 0.2, y);
+        // Ingredients (compact)
+        if (template.fields.includes('ingredients') && ingredients.trim()) {
+          y += 0.15; // Add proper spacing after nutrition box
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('INGREDIENTS:', 0.2, y);
         y += 0.12;
         
         pdf.setFontSize(7);
