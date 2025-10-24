@@ -80,6 +80,15 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   inModal = false,
   selectedTeamId: propSelectedTeamId
 }) => {
+  // INITIALIZATION LOGGING
+  console.log('🎬 [COMPONENT_INIT] ProfessionalLabelGenerator rendering');
+  console.log('🎬 [COMPONENT_INIT] Props:', { 
+    hasBatchData: !!batchData, 
+    batchNumber: batchData?.batchNumber,
+    preSelectedItemId, 
+    inModal 
+  });
+  
   // Helper function to convert image URL to base64 for PDF generation
   const convertUrlToBase64 = async (url: string): Promise<string> => {
     try {
@@ -313,6 +322,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   useEffect(() => {
     if (batchData?.itemId && selectedItem && !loadedTemplateId && filteredSavedTemplates.length > 0) {
       console.log('🔍 Auto-detecting label template for batch item...');
+      console.log('🔍 [BATCH_INIT] This is TEMPLATE DETECTION only - NOT triggering PDF generation');
       
       // Try to find a template that matches the item's category or is named after the item
       const matchingTemplate = filteredSavedTemplates.find(template => {
@@ -325,6 +335,7 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       
       if (matchingTemplate) {
         console.log('✅ Found matching template:', matchingTemplate.name);
+        console.log('✅ [BATCH_INIT] Loading template data - NO PDF GENERATION');
         loadTemplate(matchingTemplate, false);
         toast.success(`Template "${matchingTemplate.name}" auto-selected for ${selectedItem.name}`, {
           duration: 4000,
@@ -802,6 +813,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
   };
 
   const generateLabel = async () => {
+    console.log('🖨️ [LABEL_GENERATION] generateLabel() called');
+    console.log('🖨️ [LABEL_GENERATION] Current state - showPreview:', showPreview, 'batchData:', !!batchData);
+    
     if (!selectedItem) {
       toast.error('Please select a product first');
       return;
@@ -1198,7 +1212,9 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
 
       // Save PDF
       const filename = `${companyName.replace(/[^a-zA-Z0-9]/g, '-')}-${selectedItem.name.replace(/[^a-zA-Z0-9]/g, '-')}-${template.id}.pdf`;
+      console.log('🖨️ [LABEL_GENERATION] Saving PDF with filename:', filename);
       pdf.save(filename);
+      console.log('🖨️ [LABEL_GENERATION] PDF save() called successfully');
       
       // Record in database
       try {
@@ -2325,7 +2341,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
       {selectedItem && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Button 
-            onClick={() => setShowPreview(true)}
+            onClick={() => {
+              console.log('👆 [USER_ACTION] Preview Label button clicked');
+              setShowPreview(true);
+            }}
             disabled={!companyName.trim()}
             variant="outline"
             className="w-full py-6 text-lg"
@@ -2335,7 +2354,11 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
             Preview Label
           </Button>
           <Button 
-            onClick={() => setShowPreview(true)}
+            onClick={() => {
+              console.log('👆 [USER_ACTION] Generate Labels button clicked');
+              console.log('👆 [USER_ACTION] Opening preview dialog, NOT generating PDF yet');
+              setShowPreview(true);
+            }}
             disabled={
               !companyName.trim() || 
               (batchData?.maxQuantity ? quantityToPrint > batchData.maxQuantity : false)
@@ -2391,7 +2414,10 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
             <div className="flex gap-3 pt-4 border-t">
               <Button
                 variant="outline"
-                onClick={() => setShowPreview(false)}
+                onClick={() => {
+                  console.log('👆 [USER_ACTION] Cancel button clicked in preview dialog');
+                  setShowPreview(false);
+                }}
                 className="flex-1"
                 disabled={isGenerating || savingToDatabase}
               >
@@ -2399,6 +2425,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
               </Button>
               <Button
                 onClick={async () => {
+                  console.log('👆 [USER_ACTION] Print Labels button clicked in preview dialog');
+                  console.log('👆 [USER_ACTION] NOW calling generateLabel()');
                   await generateLabel();
                   setShowPreview(false);
                 }}
