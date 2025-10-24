@@ -17,7 +17,7 @@ import { BarcodeGenerator } from '@/lib/barcode/barcodeGenerator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTeamAccess } from '@/hooks/useTeamAccess';
 import { UnifiedTeamSelector } from '@/components/teams/UnifiedTeamSelector';
-import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2, Eye, AlertCircle } from 'lucide-react';
+import { Package, Barcode, FileText, Download, Building2, Hash, Calendar, Utensils, Save, FolderOpen, Trash2, ImageIcon, X, Edit, Loader2, Eye, AlertCircle, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { nutritionalInfoApi } from '@/contexts/inventory/api/nutritionalInfo';
 import { convertFlatToSimple } from '../SimpleNutritionalForm';
@@ -2335,10 +2335,8 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
             Preview Label
           </Button>
           <Button 
-            onClick={generateLabel}
+            onClick={() => setShowPreview(true)}
             disabled={
-              isGenerating || 
-              savingToDatabase || 
               !companyName.trim() || 
               (batchData?.maxQuantity ? quantityToPrint > batchData.maxQuantity : false)
             }
@@ -2346,32 +2344,81 @@ const ProfessionalLabelGenerator: React.FC<ProfessionalLabelGeneratorProps> = ({
             size="lg"
           >
             <Download className="mr-2 h-5 w-5" />
-            {isGenerating || savingToDatabase ? 'Generating...' : `Generate ${quantityToPrint} Label${quantityToPrint !== 1 ? 's' : ''}`}
+            Generate {quantityToPrint} Label{quantityToPrint !== 1 ? 's' : ''}
           </Button>
         </div>
       )}
 
-      {/* Preview Dialog */}
+      {/* Preview Dialog - Enhanced with quantity display and print button */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Label Preview</DialogTitle>
+            <DialogTitle>Label Preview (4×6 Thermal)</DialogTitle>
           </DialogHeader>
-          {selectedItem && (
-            <LabelPreview
-              selectedItem={selectedItem}
-              companyName={companyName}
-              companyAddress={companyAddress}
-              netWeight={netWeight}
-              logoPreview={logoPreview}
-              lotCode={lotCode}
-              expirationDate={expirationDate}
-              servingSize={servingSize}
-              calories={calories}
-              ingredients={ingredients}
-              allergens={allergens}
-            />
-          )}
+          
+          <div className="space-y-6">
+            {/* Label Preview */}
+            {selectedItem && (
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <LabelPreview
+                  selectedItem={selectedItem}
+                  companyName={companyName}
+                  companyAddress={companyAddress}
+                  netWeight={netWeight}
+                  logoPreview={logoPreview}
+                  lotCode={lotCode}
+                  expirationDate={expirationDate}
+                  servingSize={servingSize}
+                  calories={calories}
+                  ingredients={ingredients}
+                  allergens={allergens}
+                />
+              </div>
+            )}
+
+            {/* Quantity Display */}
+            <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2">
+                <Hash className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <span className="font-medium">Labels to Print:</span>
+              </div>
+              <Badge variant="default" className="text-lg px-4 py-1">
+                {quantityToPrint}
+              </Badge>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setShowPreview(false)}
+                className="flex-1"
+                disabled={isGenerating || savingToDatabase}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  await generateLabel();
+                  setShowPreview(false);
+                }}
+                disabled={isGenerating || savingToDatabase}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {isGenerating || savingToDatabase ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Printer className="mr-2 h-5 w-5" />
+                    Print {quantityToPrint} Label{quantityToPrint !== 1 ? 's' : ''}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
