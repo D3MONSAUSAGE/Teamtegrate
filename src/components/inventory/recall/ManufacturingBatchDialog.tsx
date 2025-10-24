@@ -167,74 +167,98 @@ export const ManufacturingBatchDialog: React.FC<ManufacturingBatchDialogProps> =
             <FormField
               control={form.control}
               name="item_id"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Product *</FormLabel>
-                  <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={productComboboxOpen}
-                          className={cn(
-                            "justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value
-                            ? (() => {
-                                const selectedItem = (items || []).find(item => item.id === field.value);
-                                return selectedItem 
-                                  ? `${selectedItem.name}${selectedItem.sku ? ` (${selectedItem.sku})` : ''}`
-                                  : "Select a product";
-                              })()
-                            : "Select a product"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search products by name or SKU..." />
-                        <CommandEmpty>No product found.</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {(items || [])
-                            .filter(item => item.is_active)
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((item) => (
-                              <CommandItem
-                                key={item.id}
-                                value={`${item.name} ${item.sku || ''}`}
-                                onSelect={() => {
-                                  field.onChange(item.id);
-                                  setProductComboboxOpen(false);
-                                }}
+              render={({ field }) => {
+                const safeItems = Array.isArray(items) ? items.filter(item => item.is_active) : [];
+                const isLoading = !Array.isArray(items);
+                
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Product *</FormLabel>
+                    {isLoading || safeItems.length === 0 ? (
+                      <>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            disabled={true}
+                            className="justify-between"
+                          >
+                            {isLoading ? "Loading products..." : "No products available"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          {isLoading ? "Please wait..." : "No active products to select"}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Popover open={productComboboxOpen} onOpenChange={setProductComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={productComboboxOpen}
+                                className={cn(
+                                  "justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    field.value === item.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{item.name}</span>
-                                  {item.sku && (
-                                    <span className="text-xs text-muted-foreground">{item.sku}</span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-xs text-muted-foreground">
-                    Select the product for this manufacturing batch
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
+                                {field.value
+                                  ? (() => {
+                                      const selectedItem = safeItems.find(item => item.id === field.value);
+                                      return selectedItem 
+                                        ? `${selectedItem.name}${selectedItem.sku ? ` (${selectedItem.sku})` : ''}`
+                                        : "Select a product";
+                                    })()
+                                  : "Select a product"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search products by name or SKU..." />
+                              <CommandEmpty>No product found.</CommandEmpty>
+                              <CommandGroup className="max-h-64 overflow-auto">
+                                {safeItems
+                                  .sort((a, b) => a.name.localeCompare(b.name))
+                                  .map((item) => (
+                                    <CommandItem
+                                      key={item.id}
+                                      value={`${item.name} ${item.sku || ''}`}
+                                      onSelect={() => {
+                                        field.onChange(item.id);
+                                        setProductComboboxOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          field.value === item.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{item.name}</span>
+                                        {item.sku && (
+                                          <span className="text-xs text-muted-foreground">{item.sku}</span>
+                                        )}
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <p className="text-xs text-muted-foreground">
+                          Select the product for this manufacturing batch
+                        </p>
+                      </>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
