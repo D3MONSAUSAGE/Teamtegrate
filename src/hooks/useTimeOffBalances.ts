@@ -76,11 +76,64 @@ export const useTimeOffBalances = (userId?: string) => {
     return Math.max(0, balance.total_hours - balance.used_hours);
   };
 
+  const initializeBalances = useMutation({
+    mutationFn: async ({ 
+      organizationId, 
+      userId, 
+      hireDate 
+    }: { 
+      organizationId: string; 
+      userId: string; 
+      hireDate: string;
+    }) => {
+      // Import calculation utilities
+      const { generateInitialBalances } = await import('@/lib/timeOffCalculations');
+      
+      const currentYear = new Date().getFullYear();
+      
+      // Check if balances already exist
+      const { data: existing } = await supabase
+        .from('employee_time_off_balances')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('year', currentYear);
+      
+      if (existing && existing.length > 0) {
+        throw new Error('Balances already exist for this year');
+      }
+      
+      // Generate balances based on hire date
+      const balancesToCreate = generateInitialBalances(
+        organizationId,
+        userId,
+        hireDate,
+        currentYear
+      );
+      
+      const { data, error } = await supabase
+        .from('employee_time_off_balances')
+        .insert(balancesToCreate)
+        .select();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['time-off-balances', targetUserId] });
+      toast.success('Time off balances initialized successfully');
+    },
+    onError: (error: Error) => {
+      console.error('Error initializing balances:', error);
+      toast.error(error.message || 'Failed to initialize time off balances');
+    },
+  });
+
   return {
     balances: balances || [],
     isLoading,
     createBalance: createBalance.mutate,
     updateBalance: updateBalance.mutate,
+    initializeBalances: initializeBalances.mutate,
     getAvailableHours,
   };
 };

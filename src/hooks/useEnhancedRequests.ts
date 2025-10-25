@@ -335,6 +335,73 @@ export function useEnhancedRequests() {
 
       if (updateError) throw updateError;
 
+      // Handle time off balance deductions for approved requests
+      if (newStatus === 'approved' && requestRecord.form_data) {
+        const formData = requestRecord.form_data as Record<string, any>;
+        const { leave_type, hours_requested } = formData;
+        
+        // Only deduct hours for paid leave types (not unpaid)
+        if (leave_type && leave_type !== 'unpaid' && hours_requested) {
+          try {
+            // Get the user's balance for this leave type
+            const { data: balance, error: balanceError } = await supabase
+              .from('employee_time_off_balances')
+              .select('*')
+              .eq('user_id', requestRecord.requested_by)
+              .eq('leave_type', leave_type)
+              .eq('year', new Date().getFullYear())
+              .single();
+            
+            if (balanceError) {
+              console.warn('No balance found for leave type:', leave_type);
+              toast.warning(`Warning: No ${leave_type} balance found for this employee`);
+            } else if (balance) {
+              const newUsedHours = balance.used_hours + hours_requested;
+              
+              // Check if sufficient balance is available
+              const available = balance.total_hours - balance.used_hours;
+              if (hours_requested > available) {
+                throw new Error(
+                  `Insufficient ${leave_type} balance. Available: ${available}h, Requested: ${hours_requested}h`
+                );
+              }
+              
+              // Update the balance
+              const { error: updateBalanceError } = await supabase
+                .from('employee_time_off_balances')
+                .update({ used_hours: newUsedHours })
+                .eq('id', balance.id);
+              
+              if (updateBalanceError) throw updateBalanceError;
+              
+              // Log the deduction in accrual history (if table exists)
+              try {
+                await supabase
+                  .from('accrual_history' as any)
+                  .insert({
+                    organization_id: requestRecord.organization_id,
+                    user_id: requestRecord.requested_by,
+                    leave_type: leave_type,
+                    hours_changed: -hours_requested,
+                    transaction_type: 'deduction',
+                    reason: `Time off approved: ${requestRecord.title}`,
+                    request_id: requestId,
+                    year: new Date().getFullYear(),
+                  });
+              } catch (historyError) {
+                console.warn('Failed to log accrual history (table may not exist):', historyError);
+              }
+              
+              console.log(`Deducted ${hours_requested}h from ${leave_type} balance`);
+            }
+          } catch (balanceErr) {
+            console.error('Error processing balance deduction:', balanceErr);
+            // Re-throw to prevent approval if balance check fails
+            throw balanceErr;
+          }
+        }
+      }
+
       // Update the approval record only for approval/rejection actions
       if (['approved', 'rejected'].includes(newStatus)) {
         const { error: approvalError } = await supabase

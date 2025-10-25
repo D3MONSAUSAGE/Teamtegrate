@@ -29,6 +29,7 @@ import TimeOffTab from './profile/TimeOffTab';
 import EmergencyContactTab from './profile/EmergencyContactTab';
 import DepartmentTab from './profile/DepartmentTab';
 import OffboardingTab from './profile/OffboardingTab';
+import { useTimeOffBalances } from '@/hooks/useTimeOffBalances';
 
 interface EmployeeProfileDialogProps {
   userId: string | null;
@@ -61,8 +62,10 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
     salary_type: 'hourly',
     hr_notes: '',
   });
+  const [originalHireDate, setOriginalHireDate] = useState<string>('');
 
   const queryClient = useQueryClient();
+  const { initializeBalances } = useTimeOffBalances(userId || undefined);
 
   // Fetch employee data
   const { data: employee, isLoading } = useQuery({
@@ -83,15 +86,17 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
 
   useEffect(() => {
     if (employee) {
+      const hireDate = employee.hire_date || '';
       setFormData({
         name: employee.name || '',
         email: employee.email || '',
         hourly_rate: employee.hourly_rate || 15,
-        hire_date: employee.hire_date || '',
+        hire_date: hireDate,
         employment_status: employee.employment_status || 'active',
         salary_type: employee.salary_type || 'hourly',
         hr_notes: employee.hr_notes || '',
       });
+      setOriginalHireDate(hireDate);
     }
   }, [employee]);
 
@@ -117,9 +122,43 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
 
       if (error) throw error;
 
-      toast.success('Employee record updated successfully');
+      // If hire date was added or changed, offer to initialize time off balances
+      const hireDateChanged = formData.hire_date && formData.hire_date !== originalHireDate;
+      
+      if (hireDateChanged && employee?.organization_id) {
+        // Check if balances exist
+        const { data: existingBalances } = await supabase
+          .from('employee_time_off_balances')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('year', new Date().getFullYear());
+        
+        if (!existingBalances || existingBalances.length === 0) {
+          toast.success('Employee record updated. Initializing time off balances...', {
+            duration: 3000,
+          });
+          
+          // Initialize balances based on new hire date
+          try {
+            initializeBalances({
+              organizationId: employee.organization_id,
+              userId: userId,
+              hireDate: formData.hire_date,
+            });
+          } catch (balanceError) {
+            console.error('Error initializing balances:', balanceError);
+            toast.info('Time off balances can be set up in the Time Off tab');
+          }
+        } else {
+          toast.info('Hire date updated. Review time off balances in the Time Off tab if needed.');
+        }
+      } else {
+        toast.success('Employee record updated successfully');
+      }
+
       queryClient.invalidateQueries({ queryKey: ['employee', userId] });
       queryClient.invalidateQueries({ queryKey: ['organization-users'] });
+      queryClient.invalidateQueries({ queryKey: ['time-off-balances', userId] });
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating employee:', error);
