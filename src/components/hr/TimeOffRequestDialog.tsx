@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTimeOffRequests } from '@/hooks/useTimeOffRequests';
+import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import { useTimeOffBalances } from '@/hooks/useTimeOffBalances';
 import { format, differenceInBusinessDays } from 'date-fns';
 import { Calendar as CalendarIcon, Loader2, AlertCircle } from 'lucide-react';
@@ -39,8 +39,13 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
   onOpenChange,
 }) => {
   const { user } = useAuth();
-  const { createRequest } = useTimeOffRequests(userId);
+  const { createRequestWithAutoAssignment, requestTypes } = useEnhancedRequests();
   const { getAvailableHours, balances } = useTimeOffBalances(userId);
+
+  // Find the Time Off Request type ID
+  const timeOffRequestType = requestTypes.find(
+    rt => rt.name === 'Time Off Request' || rt.category === 'time_schedule'
+  );
 
   const [leaveType, setLeaveType] = useState('vacation');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -91,17 +96,25 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
       return;
     }
 
+    if (!timeOffRequestType) {
+      toast.error('Time Off Request type not found. Please contact administrator.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      createRequest({
-        organization_id: user.organizationId,
-        user_id: userId,
-        leave_type: leaveType,
-        start_date: format(startDate, 'yyyy-MM-dd'),
-        end_date: format(endDate, 'yyyy-MM-dd'),
-        hours_requested: hoursRequested,
-        status: 'pending',
-        notes: notes || undefined,
+      await createRequestWithAutoAssignment({
+        request_type_id: timeOffRequestType.id,
+        title: `Time Off Request - ${leaveType}`,
+        description: `${hoursRequested} hours from ${format(startDate, 'MMM d')} to ${format(endDate, 'MMM d, yyyy')}`,
+        form_data: {
+          leave_type: leaveType,
+          start_date: format(startDate, 'yyyy-MM-dd'),
+          end_date: format(endDate, 'yyyy-MM-dd'),
+          hours_requested: hoursRequested,
+          notes: notes || ''
+        },
+        priority: 'medium'
       });
 
       onOpenChange(false);

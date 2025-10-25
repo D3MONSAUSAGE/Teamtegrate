@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTimeOffBalances } from '@/hooks/useTimeOffBalances';
-import { useTimeOffRequests } from '@/hooks/useTimeOffRequests';
+import { useEnhancedRequests } from '@/hooks/useEnhancedRequests';
 import { Clock, Calendar, Plus, Shield, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import TimeOffRequestDialog from '../TimeOffRequestDialog';
@@ -17,7 +17,27 @@ interface TimeOffTabProps {
 const TimeOffTab: React.FC<TimeOffTabProps> = ({ userId }) => {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const { balances, isLoading: balancesLoading } = useTimeOffBalances(userId);
-  const { requests, isLoading: requestsLoading } = useTimeOffRequests(userId);
+  const { requests: allRequests, loading: requestsLoading } = useEnhancedRequests();
+
+  // Filter for time off requests only
+  const requests = useMemo(() => 
+    allRequests
+      .filter(r => 
+        r.requested_by === userId && 
+        r.request_type?.name === 'Time Off Request'
+      )
+      .map(r => ({
+        id: r.id,
+        leave_type: r.form_data?.leave_type || r.request_type?.subcategory || 'vacation',
+        start_date: r.form_data?.start_date || r.created_at,
+        end_date: r.form_data?.end_date || r.created_at,
+        hours_requested: r.form_data?.hours_requested || 0,
+        status: r.status === 'approved' ? 'approved' : 
+                r.status === 'rejected' ? 'denied' : 'pending',
+        notes: r.form_data?.notes || r.description
+      })),
+    [allRequests, userId]
+  );
 
   const sickBalance = useMemo(() => 
     balances.find(b => b.leave_type === 'sick'), 
