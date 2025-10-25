@@ -30,13 +30,13 @@ const EmployeeRecordUpload: React.FC<EmployeeRecordUploadProps> = ({ onUploadSuc
   const { teams } = useTeamsByOrganization(user?.organizationId);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedTeam, setSelectedTeam] = useState<string>('all');
   
   const isAdmin = user?.role && ['admin', 'superadmin'].includes(user.role);
 
   // Fetch employees with optional team filter
   const { data: employees = [] } = useEmployees({
-    teamId: selectedTeam || undefined,
+    teamId: selectedTeam === 'all' ? undefined : selectedTeam,
     status: 'active'
   });
   
@@ -178,7 +178,7 @@ const EmployeeRecordUpload: React.FC<EmployeeRecordUploadProps> = ({ onUploadSuc
                   <SelectValue placeholder="All Teams" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Teams</SelectItem>
+                  <SelectItem value="all">All Teams</SelectItem>
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
