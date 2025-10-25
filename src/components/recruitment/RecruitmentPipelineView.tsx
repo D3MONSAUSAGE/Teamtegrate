@@ -4,6 +4,7 @@ import { useRecruitmentCandidates } from '@/hooks/recruitment/useRecruitmentCand
 import { CandidateCard } from './CandidateCard';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -50,87 +51,90 @@ export function RecruitmentPipelineView({
 
   return (
     <div className="space-y-6">
-      {/* Stage Stepper */}
-      <div className="relative">
-        <div className="flex items-center justify-between">
-          {stages.map((stage, index) => {
-            const stageCount = getCandidatesForStage(stage.id).length;
-            const isActive = stage.id === currentStageId;
-            const isPast = index < currentStageIndex;
-            const isLast = index === stages.length - 1;
+      {/* Stage Stepper - Horizontal Scrollable */}
+      <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+        <div className="relative p-4">
+          <div className="flex items-center gap-4 min-w-max">
+            {stages.map((stage, index) => {
+              const stageCount = getCandidatesForStage(stage.id).length;
+              const isActive = stage.id === currentStageId;
+              const isPast = index < currentStageIndex;
+              const isLast = index === stages.length - 1;
 
-            return (
-              <div key={stage.id} className="flex items-center flex-1">
-                <button
-                  onClick={() => setSelectedStageId(stage.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-2 flex-1 group transition-all",
-                    "hover:scale-105"
-                  )}
-                >
-                  {/* Stage Circle */}
-                  <div className="relative flex items-center justify-center">
-                    <div
-                      className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center transition-all",
-                        "border-2 relative z-10",
-                        isActive && "ring-4 ring-primary/20 scale-110",
-                        isPast && "bg-primary border-primary",
-                        !isPast && !isActive && "bg-background border-muted",
-                        isActive && "border-primary bg-primary/10"
-                      )}
-                      style={{
-                        borderColor: isActive || isPast ? stage.color_code : undefined,
-                        backgroundColor: isPast ? stage.color_code : isActive ? `${stage.color_code}20` : undefined,
-                      }}
-                    >
-                      {isPast ? (
-                        <Check className="w-5 h-5 text-white" />
-                      ) : (
-                        <Badge 
-                          variant="secondary" 
-                          className={cn(
-                            "h-6 w-6 rounded-full p-0 flex items-center justify-center",
-                            isActive && "bg-primary text-primary-foreground"
-                          )}
-                        >
-                          {stageCount}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stage Name */}
-                  <div className="text-center">
-                    <p className={cn(
-                      "text-sm font-medium transition-colors",
-                      isActive ? "text-foreground" : "text-muted-foreground"
-                    )}>
-                      {stage.stage_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {stageCount} {stageCount === 1 ? 'candidate' : 'candidates'}
-                    </p>
-                  </div>
-                </button>
-
-                {/* Connector Line */}
-                {!isLast && (
-                  <div className="flex-1 h-0.5 mx-2 mt-[-40px] relative">
-                    <div className="absolute inset-0 bg-muted" />
-                    {isPast && (
-                      <div 
-                        className="absolute inset-0 transition-all duration-500"
-                        style={{ backgroundColor: stage.color_code }}
-                      />
+              return (
+                <div key={stage.id} className="flex items-center">
+                  <button
+                    onClick={() => setSelectedStageId(stage.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 group transition-all",
+                      "hover:scale-105 min-w-[100px]"
                     )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  >
+                    {/* Stage Circle */}
+                    <div className="relative flex items-center justify-center">
+                      <div
+                        className={cn(
+                          "w-16 h-16 rounded-full flex items-center justify-center transition-all",
+                          "border-2 relative z-10",
+                          isActive && "ring-4 ring-primary/20 scale-110",
+                          isPast && "bg-primary border-primary",
+                          !isPast && !isActive && "bg-background border-muted",
+                          isActive && "border-primary bg-primary/10"
+                        )}
+                        style={{
+                          borderColor: isActive || isPast ? stage.color_code : undefined,
+                          backgroundColor: isPast ? stage.color_code : isActive ? `${stage.color_code}20` : undefined,
+                        }}
+                      >
+                        {isPast ? (
+                          <Check className="w-6 h-6 text-white" />
+                        ) : (
+                          <Badge 
+                            variant="secondary" 
+                            className={cn(
+                              "h-8 w-8 rounded-full p-0 flex items-center justify-center text-base font-bold",
+                              isActive && "bg-primary text-primary-foreground"
+                            )}
+                          >
+                            {stageCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Stage Name */}
+                    <div className="text-center">
+                      <p className={cn(
+                        "text-sm font-medium transition-colors whitespace-normal max-w-[100px]",
+                        isActive ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {stage.stage_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground whitespace-nowrap">
+                        {stageCount} {stageCount === 1 ? 'candidate' : 'candidates'}
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Connector Arrow */}
+                  {!isLast && (
+                    <div className="flex items-center justify-center w-8 h-16 -mx-2">
+                      <ArrowRight 
+                        className={cn(
+                          "w-5 h-5 transition-colors",
+                          isPast ? "text-primary" : "text-muted"
+                        )}
+                        style={{ color: isPast ? stage.color_code : undefined }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       {/* Candidates Grid */}
       <div>

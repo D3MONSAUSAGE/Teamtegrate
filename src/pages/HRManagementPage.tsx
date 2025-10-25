@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEnhancedUserManagement } from '@/hooks/useEnhancedUserManagement';
 import ModernPageHeader from '@/components/ui/ModernPageHeader';
-import { Users, UserPlus, DollarSign, Briefcase } from 'lucide-react';
+import { Users, UserPlus, DollarSign, Briefcase, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollableTabs, ScrollableTabsList, ScrollableTabsTrigger } from '@/components/ui/ScrollableTabs';
 import EmployeeListView from '@/components/hr/EmployeeListView';
 import EmployeeProfileDialog from '@/components/hr/EmployeeProfileDialog';
 import PayrollOverview from '@/components/hr/PayrollOverview';
@@ -19,6 +19,7 @@ const HRManagementPage = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('employees');
 
   const handleEditEmployee = (userId: string) => {
     setSelectedUserId(userId);
@@ -54,34 +55,66 @@ const HRManagementPage = () => {
         ]}
       />
 
-      <Tabs defaultValue="employees" className="space-y-4">
-        <TabsList className="grid w-full max-w-4xl grid-cols-4">
-          <TabsTrigger value="employees">Employees</TabsTrigger>
-          <TabsTrigger value="records">Employee Records</TabsTrigger>
-          <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll Overview</TabsTrigger>
-        </TabsList>
+      <ScrollableTabs className="space-y-4">
+        <ScrollableTabsList>
+          <ScrollableTabsTrigger
+            isActive={activeTab === 'employees'}
+            onClick={() => setActiveTab('employees')}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Employees
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger
+            isActive={activeTab === 'records'}
+            onClick={() => setActiveTab('records')}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Records
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger
+            isActive={activeTab === 'recruitment'}
+            onClick={() => setActiveTab('recruitment')}
+          >
+            <Briefcase className="h-4 w-4 mr-2" />
+            Recruitment
+          </ScrollableTabsTrigger>
+          <ScrollableTabsTrigger
+            isActive={activeTab === 'payroll'}
+            onClick={() => setActiveTab('payroll')}
+          >
+            <DollarSign className="h-4 w-4 mr-2" />
+            Payroll
+          </ScrollableTabsTrigger>
+        </ScrollableTabsList>
 
-        <TabsContent value="employees" className="space-y-4">
-          <EmployeeListView
-            employees={users}
-            isLoading={isLoading}
-            onEditEmployee={handleEditEmployee}
-          />
-        </TabsContent>
+        {activeTab === 'employees' && (
+          <div className="space-y-4">
+            <EmployeeListView
+              employees={users}
+              isLoading={isLoading}
+              onEditEmployee={handleEditEmployee}
+            />
+          </div>
+        )}
 
-        <TabsContent value="records" className="space-y-4">
-          <EmployeeRecordsTab />
-        </TabsContent>
+        {activeTab === 'records' && (
+          <div className="space-y-4">
+            <EmployeeRecordsTab />
+          </div>
+        )}
 
-        <TabsContent value="recruitment" className="space-y-4">
-          <RecruitmentDashboard />
-        </TabsContent>
+        {activeTab === 'recruitment' && (
+          <div className="space-y-4">
+            <RecruitmentDashboard />
+          </div>
+        )}
 
-        <TabsContent value="payroll" className="space-y-4">
-          <PayrollOverview employees={activeEmployees} />
-        </TabsContent>
-      </Tabs>
+        {activeTab === 'payroll' && (
+          <div className="space-y-4">
+            <PayrollOverview employees={activeEmployees} />
+          </div>
+        )}
+      </ScrollableTabs>
 
       <CreateEmployeeWizard
         open={isCreateWizardOpen}

@@ -75,17 +75,17 @@ export const RecruitmentDashboard = () => {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recruitment</h1>
-          <p className="text-muted-foreground">
-            Manage your hiring pipeline and track candidates
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <CreateCandidateDialog positionId={selectedPosition} />
-          <CreatePositionDialog />
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Recruitment</h1>
+        <p className="text-muted-foreground">
+          Manage your hiring pipeline and track candidates
+        </p>
+      </div>
+
+      {/* Centered Action Buttons */}
+      <div className="flex justify-center gap-2">
+        <CreateCandidateDialog positionId={selectedPosition} />
+        <CreatePositionDialog />
       </div>
 
       {/* Stats Cards */}
