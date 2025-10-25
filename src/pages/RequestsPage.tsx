@@ -20,7 +20,8 @@ import { TimeOffRequestDetails } from '@/components/requests/TimeOffRequestDetai
 
 export default function RequestsPage() {
   const { requests, requestTypes, loading, error, fetchRequests } = useEnhancedRequests();
-  const { requests: timeOffRequests } = useTimeOffRequests();
+  const isManager = useAuth().user?.role && ['manager', 'admin', 'superadmin', 'team_leader'].includes(useAuth().user.role);
+  const { requests: timeOffRequests } = useTimeOffRequests({ scope: isManager ? 'all-requests' : 'my-requests' });
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -55,6 +56,10 @@ export default function RequestsPage() {
       status: tor.status,
       priority: 'medium' as const,
       requested_by: tor.user_id,
+      requested_by_user: (tor as any).user ? {
+        name: (tor as any).user.name || (tor as any).user.email,
+        email: (tor as any).user.email
+      } : undefined,
       organization_id: tor.organization_id,
       created_at: tor.created_at,
       request_type: {

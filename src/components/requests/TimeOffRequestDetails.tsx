@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { Calendar, CheckCircle, XCircle } from 'lucide-react';
 
 interface TimeOffRequestDetailsProps {
-  request: TimeOffRequest;
+  request: TimeOffRequest & { user?: { id: string; name: string; email: string } };
   onClose: () => void;
 }
 
@@ -54,7 +54,9 @@ export function TimeOffRequestDetails({ request, onClose }: TimeOffRequestDetail
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">Time Off Request</h2>
-        <p className="text-muted-foreground">Review and manage time off request</p>
+        <p className="text-muted-foreground">
+          {request.user ? `Request from ${request.user.name || request.user.email}` : 'Review and manage time off request'}
+        </p>
       </div>
 
       {/* Request Details */}

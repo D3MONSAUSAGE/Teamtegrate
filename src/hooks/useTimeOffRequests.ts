@@ -4,26 +4,54 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { TimeOffRequest } from '@/types/employee';
 
-export const useTimeOffRequests = (userId?: string) => {
+interface UseTimeOffRequestsOptions {
+  userId?: string;
+  scope?: 'my-requests' | 'all-requests';
+}
+
+export const useTimeOffRequests = (options?: UseTimeOffRequestsOptions | string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Support both old API (string userId) and new API (options object)
+  const opts = typeof options === 'string' ? { userId: options } : (options || {});
+  const { userId, scope = 'my-requests' } = opts;
+  
   const targetUserId = userId || user?.id;
+  const isManager = user?.role && ['manager', 'admin', 'superadmin', 'team_leader'].includes(user.role);
+  const shouldFetchAll = scope === 'all-requests' && isManager;
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['time-off-requests', targetUserId],
+    queryKey: ['time-off-requests', shouldFetchAll ? 'all' : targetUserId, scope],
     queryFn: async () => {
-      if (!targetUserId) return [];
+      if (!user?.organizationId && !targetUserId) return [];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('time_off_requests')
-        .select('*')
-        .eq('user_id', targetUserId)
+        .select(`
+          *,
+          user:users!time_off_requests_user_id_fkey(
+            id,
+            name,
+            email
+          )
+        `)
         .order('created_at', { ascending: false });
 
+      // If fetching all requests for managers, filter by organization
+      // Otherwise, filter by specific user
+      if (shouldFetchAll) {
+        query = query.eq('organization_id', user.organizationId);
+      } else if (targetUserId) {
+        query = query.eq('user_id', targetUserId);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      return data as TimeOffRequest[];
+      return data as (TimeOffRequest & { user?: { id: string; name: string; email: string } })[];
     },
-    enabled: !!targetUserId,
+    enabled: !!(shouldFetchAll ? user?.organizationId : targetUserId),
   });
 
   const createRequest = useMutation({

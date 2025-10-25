@@ -1,11 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { TimeOffRequest } from '@/types/employee';
 
 interface TimeOffRequestCardProps {
-  request: TimeOffRequest;
+  request: TimeOffRequest & { user?: { id: string; name: string; email: string } };
   onClick: () => void;
 }
 
@@ -47,6 +47,12 @@ export function TimeOffRequestCard({ request, onClick }: TimeOffRequestCardProps
             </p>
             
             <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+              {request.user && (
+                <span className="flex items-center gap-1 font-medium">
+                  <User className="h-3 w-3" />
+                  {request.user.name || request.user.email}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
