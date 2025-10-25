@@ -44,7 +44,11 @@ export const useOptimizedUserData = () => {
           name,
           role,
           organizationId:organization_id,
-          createdAt:created_at
+          createdAt:created_at,
+          hourly_rate,
+          salary_type,
+          hire_date,
+          employment_status
         `)
         .eq('organization_id', currentUser.organizationId)
         .order('name', { ascending: true });
@@ -66,7 +70,11 @@ export const useOptimizedUserData = () => {
         name: user.name,
         email: user.email,
         role: user.role,
-        organization_id: user.organizationId
+        organization_id: user.organizationId,
+        hourly_rate: (user as any).hourly_rate,
+        salary_type: (user as any).salary_type,
+        hire_date: (user as any).hire_date,
+        employment_status: (user as any).employment_status
       }));
       userManagementCache.setOrganizationUsers(currentUser.organizationId, cacheData);
 
