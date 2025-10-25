@@ -134,6 +134,8 @@ export function useEnhancedRequests() {
     form_data: Record<string, any>;
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     due_date?: string;
+    status?: 'draft' | 'submitted';
+    submitted_at?: string;
   }) => {
     try {
       if (!user?.id || !user?.organizationId) throw new Error('User not authenticated');
@@ -146,7 +148,8 @@ export function useEnhancedRequests() {
           requested_by: user.id,
           organization_id: user.organizationId,
           priority: requestData.priority || 'medium',
-          status: 'draft'
+          status: requestData.status || 'draft',
+          submitted_at: requestData.submitted_at || (requestData.status === 'submitted' ? new Date().toISOString() : null)
         })
         .select(`
           *,

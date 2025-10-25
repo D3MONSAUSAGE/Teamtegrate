@@ -114,7 +114,9 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
           hours_requested: hoursRequested,
           notes: notes || ''
         },
-        priority: 'medium'
+        priority: 'medium',
+        status: 'submitted',
+        submitted_at: new Date().toISOString()
       });
 
       onOpenChange(false);
