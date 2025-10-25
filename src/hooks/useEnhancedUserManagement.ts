@@ -4,12 +4,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserData } from './userManagement/useUserData';
 import { useUserOperations } from './userManagement/useUserOperations';
 import { useRoleManagement } from './userManagement/useRoleManagement';
+import { useTeamAccess } from './useTeamAccess';
 
 export const useEnhancedUserManagement = () => {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Get team access info to determine if filtering is needed
+  const { availableTeams, isAdmin, isSuperAdmin } = useTeamAccess();
+  
+  // For managers (not admins), get only their team IDs
+  const managedTeamIds = (!isAdmin && !isSuperAdmin) 
+    ? availableTeams.map(team => team.id) 
+    : undefined;
 
-  const { users, isLoading: usersLoading, error } = useUserData();
+  const { users, isLoading: usersLoading, error } = useUserData(managedTeamIds);
 
   const refetchUsers = () => {
     queryClient.invalidateQueries({ queryKey: ['enhanced-organization-users'] });

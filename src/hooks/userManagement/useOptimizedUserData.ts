@@ -5,7 +5,7 @@ import { User } from '@/types';
 import { userManagementCache } from '@/services/userManagementCache';
 import { useCallback, useMemo } from 'react';
 
-export const useOptimizedUserData = () => {
+export const useOptimizedUserData = (teamIds?: string[]) => {
   const { user: currentUser } = useAuth();
 
   // Optimized query with caching
@@ -15,28 +15,30 @@ export const useOptimizedUserData = () => {
     error,
     refetch
   } = useQuery({
-    queryKey: ['enhanced-organization-users', currentUser?.organizationId],
+    queryKey: ['enhanced-organization-users', currentUser?.organizationId, teamIds],
     queryFn: async (): Promise<User[]> => {
       if (!currentUser?.organizationId) {
         throw new Error('No organization ID found');
       }
 
-      console.log('🔍 Fetching organization users with optimization...');
+      console.log('🔍 Fetching organization users with optimization...', teamIds ? `for teams: ${teamIds}` : 'all users');
 
-      // Check cache first
-      const cachedUsers = userManagementCache.getOrganizationUsers(currentUser.organizationId);
-      if (cachedUsers) {
-        console.log('🗄️ Using cached organization users');
-        // Convert cached data back to User format
-        return cachedUsers.map(cached => ({
-          ...cached,
-          organizationId: cached.organization_id,
-          createdAt: new Date(), // Convert to Date object
-        })) as User[];
+      // Check cache first (skip cache if filtering by teams)
+      if (!teamIds) {
+        const cachedUsers = userManagementCache.getOrganizationUsers(currentUser.organizationId);
+        if (cachedUsers) {
+          console.log('🗄️ Using cached organization users');
+          // Convert cached data back to User format
+          return cachedUsers.map(cached => ({
+            ...cached,
+            organizationId: cached.organization_id,
+            createdAt: new Date(), // Convert to Date object
+          })) as User[];
+        }
       }
 
       // Fetch from database with optimized query
-      const { data, error } = await supabase
+      let query = supabase
         .from('users')
         .select(`
           id,
@@ -50,8 +52,30 @@ export const useOptimizedUserData = () => {
           hire_date,
           employment_status
         `)
-        .eq('organization_id', currentUser.organizationId)
-        .order('name', { ascending: true });
+        .eq('organization_id', currentUser.organizationId);
+
+      // If teamIds provided, filter to only users in those teams
+      if (teamIds && teamIds.length > 0) {
+        const { data: teamMembers, error: teamError } = await supabase
+          .from('team_memberships')
+          .select('user_id')
+          .in('team_id', teamIds);
+
+        if (teamError) {
+          console.error('❌ Error fetching team memberships:', teamError);
+          throw teamError;
+        }
+
+        const userIds = teamMembers?.map(tm => tm.user_id) || [];
+        if (userIds.length === 0) {
+          console.log('⚠️ No users found in specified teams');
+          return [];
+        }
+
+        query = query.in('id', userIds);
+      }
+
+      const { data, error } = await query.order('name', { ascending: true });
 
       if (error) {
         console.error('❌ Error fetching organization users:', error);
@@ -62,21 +86,23 @@ export const useOptimizedUserData = () => {
         ...user,
         createdAt: new Date(user.createdAt) // Convert string to Date
       })) as User[];
-      console.log(`✅ Fetched ${users.length} organization users`);
+      console.log(`✅ Fetched ${users.length} organization users${teamIds ? ' (filtered by teams)' : ''}`);
 
-      // Cache the results
-      const cacheData = users.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        organization_id: user.organizationId,
-        hourly_rate: (user as any).hourly_rate,
-        salary_type: (user as any).salary_type,
-        hire_date: (user as any).hire_date,
-        employment_status: (user as any).employment_status
-      }));
-      userManagementCache.setOrganizationUsers(currentUser.organizationId, cacheData);
+      // Cache the results (only cache when not filtering by teams)
+      if (!teamIds) {
+        const cacheData = users.map(user => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          organization_id: user.organizationId,
+          hourly_rate: (user as any).hourly_rate,
+          salary_type: (user as any).salary_type,
+          hire_date: (user as any).hire_date,
+          employment_status: (user as any).employment_status
+        }));
+        userManagementCache.setOrganizationUsers(currentUser.organizationId, cacheData);
+      }
 
       return users;
     },

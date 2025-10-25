@@ -1,6 +1,6 @@
 
 import { useOptimizedUserData } from './useOptimizedUserData';
 
-export const useUserData = () => {
-  return useOptimizedUserData();
+export const useUserData = (teamIds?: string[]) => {
+  return useOptimizedUserData(teamIds);
 };
