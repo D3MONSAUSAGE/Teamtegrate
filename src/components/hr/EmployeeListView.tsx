@@ -185,7 +185,7 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
                 <TableHead>Email</TableHead>
                 <TableHead>Job Roles</TableHead>
                 <TableHead>Teams</TableHead>
-                <TableHead>Hourly Rate</TableHead>
+                <TableHead>Compensation</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -209,10 +209,16 @@ const EmployeeListView: React.FC<EmployeeListViewProps> = ({
                       <UserTeamsCell userId={employee.id} />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 font-mono">
+                      <div className="flex items-center gap-1 font-mono text-sm">
                         <DollarSign className="h-3 w-3" />
-                        {/* @ts-ignore */}
-                        {(employee.hourly_rate || 15).toFixed(2)}/hr
+                        {/* @ts-ignore - These fields exist on User from HR context */}
+                        {(employee as any).salary_type === 'salary' ? (
+                          <>{((employee as any).hourly_rate || 0).toFixed(2)}/yr</>
+                        ) : (employee as any).salary_type === 'contract' ? (
+                          <>{((employee as any).hourly_rate || 0).toFixed(2)}</>
+                        ) : (
+                          <>{((employee as any).hourly_rate || 15).toFixed(2)}/hr</>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
