@@ -141,11 +141,14 @@ export const useOptimizedUserData = (teamIds?: string[]) => {
   }, [users]);
 
   // Optimized refetch with cache invalidation
-  const optimizedRefetch = useCallback(() => {
+  const optimizedRefetch = useCallback(async () => {
     if (currentUser?.organizationId) {
       userManagementCache.invalidateOrganization(currentUser.organizationId);
+      userManagementCache.clear(); // Clear entire cache to ensure fresh data
     }
-    return refetch();
+    const result = await refetch();
+    console.log('✅ User data refetched successfully');
+    return result;
   }, [currentUser?.organizationId, refetch]);
 
   // User lookup helpers

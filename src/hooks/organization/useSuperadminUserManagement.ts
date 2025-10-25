@@ -34,10 +34,11 @@ export const useSuperadminUserManagement = () => {
   } = useResilientUserData();
 
   // Refetch function
-  const refetchUsers = () => {
-    queryClient.invalidateQueries({ queryKey: ['enhanced-organization-users'] });
-    queryClient.invalidateQueries({ queryKey: ['basic-organization-users'] });
-    queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+  const refetchUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['enhanced-organization-users'] });
+    await queryClient.invalidateQueries({ queryKey: ['basic-organization-users'] });
+    await queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+    console.log('✅ All user queries invalidated and refetching (superadmin)');
   };
 
   // Operations hooks
@@ -145,23 +146,23 @@ export const useSuperadminUserManagement = () => {
     }
   };
 
-  const onUserCreated = () => {
+  const onUserCreated = async () => {
     setCreateDialogOpen(false);
-    refetchUsers();
+    await refetchUsers();
     toast.success('User created successfully');
   };
 
-  const onUserUpdated = () => {
+  const onUserUpdated = async () => {
     setEditDialogOpen(false);
     setSelectedUser(null);
-    refetchUsers();
+    await refetchUsers();
     toast.success('User updated successfully');
   };
 
-  const onUserDeleted = () => {
+  const onUserDeleted = async () => {
     setDeleteDialogOpen(false);
     setSelectedUser(null);
-    refetchUsers();
+    await refetchUsers();
     toast.success('User deleted successfully');
   };
 

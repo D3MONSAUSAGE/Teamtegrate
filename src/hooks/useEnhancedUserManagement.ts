@@ -20,9 +20,10 @@ export const useEnhancedUserManagement = () => {
 
   const { users, isLoading: usersLoading, error } = useUserData(managedTeamIds);
 
-  const refetchUsers = () => {
-    queryClient.invalidateQueries({ queryKey: ['enhanced-organization-users'] });
-    queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+  const refetchUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['enhanced-organization-users'] });
+    await queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+    console.log('✅ All user queries invalidated and refetching');
   };
 
   const { 

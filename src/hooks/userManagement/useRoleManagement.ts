@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/sonner';
 import { userManagementService } from '@/services/userManagementService';
 import { RoleChangeValidation, SuperadminTransferData, TransferResponse } from './types';
 
-export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
+export const useRoleManagement = (users: any[], refetchUsers: () => Promise<void>) => {
   const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,7 +39,9 @@ export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
       await logUserAction('role_change', transferData.targetUserId, '', transferData.targetUserName, 
         { role: users?.find(u => u.id === transferData.targetUserId)?.role }, { role: 'superadmin' });
 
+      console.log('Superadmin role transferred, refetching data...');
       await refetchUsers();
+      console.log('✅ Superadmin transfer complete and data refreshed');
       toast.success(`Superadmin role transferred from ${transferData.currentSuperadminName} to ${transferData.targetUserName}`);
       return true;
     } catch (error) {
@@ -83,13 +85,16 @@ export const useRoleManagement = (users: any[], refetchUsers: () => void) => {
       // Proceed with normal role change using central service
       const oldUser = users?.find(u => u.id === userId);
 
+      console.log('Changing user role...');
       await userManagementService.changeUserRole(userId, newRole);
 
       // Log audit trail
       await logUserAction('role_change', userId, oldUser?.email || '', oldUser?.name || '', 
         { role: oldUser?.role }, { role: newRole });
 
+      console.log('Role changed, refetching data...');
       await refetchUsers();
+      console.log('✅ Role change complete and data refreshed');
       return { success: true };
     } catch (error) {
       console.error('Error changing role:', error);
