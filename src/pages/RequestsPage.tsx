@@ -21,7 +21,7 @@ import { TimeOffRequestDetails } from '@/components/requests/TimeOffRequestDetai
 export default function RequestsPage() {
   const { requests, requestTypes, loading, error, fetchRequests } = useEnhancedRequests();
   const isManager = useAuth().user?.role && ['manager', 'admin', 'superadmin', 'team_leader'].includes(useAuth().user.role);
-  const { requests: timeOffRequests } = useTimeOffRequests({ scope: isManager ? 'all-requests' : 'my-requests' });
+  const { requests: timeOffRequests, refetch: refetchTimeOff } = useTimeOffRequests({ scope: isManager ? 'all-requests' : 'my-requests' });
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -33,7 +33,10 @@ export default function RequestsPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchRequests();
+      await Promise.all([
+        fetchRequests(),
+        refetchTimeOff()
+      ]);
     } finally {
       setIsRefreshing(false);
     }

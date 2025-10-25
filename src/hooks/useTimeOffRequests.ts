@@ -21,7 +21,7 @@ export const useTimeOffRequests = (options?: UseTimeOffRequestsOptions | string)
   const isManager = user?.role && ['manager', 'admin', 'superadmin', 'team_leader'].includes(user.role);
   const shouldFetchAll = scope === 'all-requests' && isManager;
 
-  const { data: requests, isLoading } = useQuery({
+  const { data: requests, isLoading, refetch } = useQuery({
     queryKey: ['time-off-requests', shouldFetchAll ? 'all' : targetUserId, scope],
     queryFn: async () => {
       if (!user?.organizationId && !targetUserId) return [];
@@ -52,6 +52,9 @@ export const useTimeOffRequests = (options?: UseTimeOffRequestsOptions | string)
       return data as (TimeOffRequest & { user?: { id: string; name: string; email: string } })[];
     },
     enabled: !!(shouldFetchAll ? user?.organizationId : targetUserId),
+    staleTime: 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const createRequest = useMutation({
@@ -66,7 +69,10 @@ export const useTimeOffRequests = (options?: UseTimeOffRequestsOptions | string)
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['time-off-requests'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['time-off-requests'],
+        refetchType: 'active'
+      });
       toast.success('Time off request submitted');
     },
     onError: (error) => {
@@ -122,6 +128,7 @@ export const useTimeOffRequests = (options?: UseTimeOffRequestsOptions | string)
   return {
     requests: requests || [],
     isLoading,
+    refetch,
     createRequest: createRequest.mutate,
     approveRequest: approveRequest.mutate,
     denyRequest: denyRequest.mutate,
