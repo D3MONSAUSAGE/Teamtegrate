@@ -26,6 +26,7 @@ import { TimeEntryCorrectionManager } from './TimeEntryCorrectionManager';
 import { EmployeeQRGenerator } from '@/components/attendance/EmployeeQRGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileScheduleDay } from './MobileScheduleDay';
+import TimeOffRequestDialog from '@/components/hr/TimeOffRequestDialog';
 
 export const MyScheduleView: React.FC = () => {
   const isMobile = useIsMobile();
@@ -44,6 +45,7 @@ export const MyScheduleView: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState(new Date());
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrTokenType, setQrTokenType] = useState<'clock_in' | 'clock_out'>('clock_in');
+  const [showTimeOffDialog, setShowTimeOffDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -245,6 +247,7 @@ export const MyScheduleView: React.FC = () => {
 
         <Card 
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent"
+          onClick={() => setShowTimeOffDialog(true)}
         >
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -297,6 +300,13 @@ export const MyScheduleView: React.FC = () => {
         open={qrDialogOpen}
         onOpenChange={setQrDialogOpen}
         tokenType={qrTokenType}
+      />
+
+      {/* Time Off Request Dialog */}
+      <TimeOffRequestDialog
+        userId={user?.id || ''}
+        open={showTimeOffDialog}
+        onOpenChange={setShowTimeOffDialog}
       />
 
       {/* Metrics */}

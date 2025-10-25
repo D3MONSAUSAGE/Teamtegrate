@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, TrendingUp, Users, AlertCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, AlertCircle, Calendar } from 'lucide-react';
 import { User } from '@/types';
 
 interface PayrollOverviewProps {
@@ -144,6 +144,50 @@ const PayrollOverview: React.FC<PayrollOverviewProps> = ({ employees }) => {
         </CardContent>
       </Card>
 
+      {/* PTO Balances Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Time Off Balances Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground mb-4">
+            Individual employee PTO balances are tracked in their profile under the Time Off tab
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 border rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground">Vacation Hours</div>
+              <div className="text-2xl font-bold mt-1">
+                Track per employee
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Standard: 80 hours/year (2 weeks)
+              </p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground">Sick Leave</div>
+              <div className="text-2xl font-bold mt-1">
+                Track per employee
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Standard: 40 hours/year (5 days)
+              </p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground">Personal Days</div>
+              <div className="text-2xl font-bold mt-1">
+                Track per employee
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Standard: 16 hours/year (2 days)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Quick Tips */}
       <Card className="bg-muted/30">
         <CardHeader>
@@ -154,6 +198,7 @@ const PayrollOverview: React.FC<PayrollOverviewProps> = ({ employees }) => {
           <p>• Time tracking data automatically uses these rates for labor cost calculations</p>
           <p>• Review the Time Tracking page to see actual hours worked and labor costs</p>
           <p>• Set hire dates to track employee tenure and calculate benefits eligibility</p>
+          <p>• Time off requests automatically deduct from employee balances when approved</p>
         </CardContent>
       </Card>
     </div>

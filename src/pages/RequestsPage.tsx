@@ -14,9 +14,13 @@ import RequestForm from '@/components/requests/RequestForm';
 import EnhancedRequestDetails from '@/components/requests/EnhancedRequestDetails';
 import { EmailTestTool } from '@/components/admin/EmailTestTool';
 import { format } from 'date-fns';
+import { useTimeOffRequests } from '@/hooks/useTimeOffRequests';
+import { TimeOffRequestCard } from '@/components/requests/TimeOffRequestCard';
+import { TimeOffRequestDetails } from '@/components/requests/TimeOffRequestDetails';
 
 export default function RequestsPage() {
   const { requests, requestTypes, loading, error, fetchRequests } = useEnhancedRequests();
+  const { requests: timeOffRequests } = useTimeOffRequests();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -40,7 +44,31 @@ export default function RequestsPage() {
     console.log('Request types loaded:', requestTypes.length);
   }, [user, requests.length, requestTypes.length]);
 
-  const filteredRequests = requests.filter(request => {
+  // Combine regular requests with time off requests
+  const allRequests = [
+    ...requests,
+    ...timeOffRequests.map(tor => ({
+      id: `timeoff-${tor.id}`,
+      original_id: tor.id,
+      title: `Time Off Request - ${tor.leave_type}`,
+      description: tor.notes || `${tor.hours_requested} hours from ${format(new Date(tor.start_date), 'MMM d')} to ${format(new Date(tor.end_date), 'MMM d, yyyy')}`,
+      status: tor.status,
+      priority: 'medium' as const,
+      requested_by: tor.user_id,
+      organization_id: tor.organization_id,
+      created_at: tor.created_at,
+      request_type: {
+        id: 'time-off',
+        name: 'Time Off Request',
+        category: 'time_schedule',
+        subcategory: tor.leave_type
+      },
+      _isTimeOff: true,
+      _timeOffData: tor
+    } as any))
+  ];
+
+  const filteredRequests = allRequests.filter(request => {
     const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
@@ -239,51 +267,59 @@ export default function RequestsPage() {
             </CardContent>
           </Card>
         ) : (
-          filteredRequests.map((request) => (
-            <Card 
-              key={request.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedRequest(request)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{request.title}</h3>
-                      <Badge className={STATUS_COLORS[request.status]}>
-                        {request.status.replace('_', ' ')}
-                      </Badge>
-                      <Badge className={PRIORITY_COLORS[request.priority]}>
-                        {request.priority}
-                      </Badge>
-                    </div>
-                    
-                    {request.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {request.description}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {request.requested_by_user?.name || 'Unknown'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(request.created_at), 'MMM d, yyyy')}
-                      </span>
-                      {request.request_type && (
-                        <span>
-                          {REQUEST_CATEGORIES[request.request_type.category as keyof typeof REQUEST_CATEGORIES]}
-                        </span>
+          filteredRequests.map((request) => 
+            (request as any)._isTimeOff ? (
+              <TimeOffRequestCard
+                key={request.id}
+                request={(request as any)._timeOffData}
+                onClick={() => setSelectedRequest(request)}
+              />
+            ) : (
+              <Card 
+                key={request.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setSelectedRequest(request)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{request.title}</h3>
+                        <Badge className={STATUS_COLORS[request.status]}>
+                          {request.status.replace('_', ' ')}
+                        </Badge>
+                        <Badge className={PRIORITY_COLORS[request.priority]}>
+                          {request.priority}
+                        </Badge>
+                      </div>
+                      
+                      {request.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {request.description}
+                        </p>
                       )}
+                      
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {request.requested_by_user?.name || 'Unknown'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(request.created_at), 'MMM d, yyyy')}
+                        </span>
+                        {request.request_type && (
+                          <span>
+                            {REQUEST_CATEGORIES[request.request_type.category as keyof typeof REQUEST_CATEGORIES]}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardContent>
+              </Card>
+            )
+          )
         )}
       </div>
 
@@ -291,7 +327,17 @@ export default function RequestsPage() {
       {selectedRequest && (
         <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <EnhancedRequestDetails request={selectedRequest} onClose={() => setSelectedRequest(null)} />
+            {(selectedRequest as any)._isTimeOff ? (
+              <TimeOffRequestDetails 
+                request={(selectedRequest as any)._timeOffData} 
+                onClose={() => setSelectedRequest(null)} 
+              />
+            ) : (
+              <EnhancedRequestDetails 
+                request={selectedRequest} 
+                onClose={() => setSelectedRequest(null)} 
+              />
+            )}
           </DialogContent>
         </Dialog>
       )}
