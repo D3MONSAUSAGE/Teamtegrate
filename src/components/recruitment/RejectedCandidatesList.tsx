@@ -64,58 +64,64 @@ export const RejectedCandidatesList: React.FC<RejectedCandidatesListProps> = ({
             <div
               key={candidate.id}
               onClick={() => onCandidateClick?.(candidate.id)}
-              className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+              className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
             >
-              <Avatar className="h-12 w-12">
-                <AvatarFallback>
-                  {getInitials(candidate.first_name, candidate.last_name)}
-                </AvatarFallback>
-              </Avatar>
+              {/* Header: Avatar + Name + Status Badge */}
+              <div className="flex items-start gap-3 mb-3">
+                <Avatar className="h-12 w-12 flex-shrink-0">
+                  <AvatarFallback>
+                    {getInitials(candidate.first_name, candidate.last_name)}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold truncate">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold mb-1">
                     {candidate.first_name} {candidate.last_name}
                   </h3>
-                  <Badge variant="destructive" className="flex items-center gap-1">
+                  <Badge variant="destructive" className="flex items-center gap-1 w-fit">
                     <XCircle className="h-3 w-3" />
                     Rejected
                   </Badge>
                 </div>
-
-                <p className="text-sm text-muted-foreground truncate mb-2">
-                  {candidate.position?.job_title}
-                </p>
-
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {candidate.email && (
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {candidate.email}
-                    </span>
-                  )}
-                  {candidate.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {candidate.phone}
-                    </span>
-                  )}
-                </div>
               </div>
 
-              <div className="text-right text-sm text-muted-foreground">
+              {/* Position */}
+              {candidate.position?.job_title && (
+                <p className="text-sm text-muted-foreground mb-3">
+                  {candidate.position.job_title}
+                </p>
+              )}
+
+              {/* Contact Info */}
+              <div className="space-y-2 mb-3">
+                {candidate.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{candidate.email}</span>
+                  </div>
+                )}
+                {candidate.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4 flex-shrink-0" />
+                    <span>{candidate.phone}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer: Rejection Stage + Timestamp */}
+              <div className="flex flex-wrap items-center gap-2 pt-3 border-t">
                 {candidate.current_stage && (
                   <Badge 
                     variant="outline" 
-                    className="mb-2"
+                    className="text-xs"
                     style={{ borderColor: candidate.current_stage.color_code }}
                   >
                     Rejected at: {candidate.current_stage.stage_name}
                   </Badge>
                 )}
-                <div className="text-xs">
+                <span className="text-xs text-muted-foreground ml-auto">
                   {candidate.updated_at && formatDistanceToNow(new Date(candidate.updated_at), { addSuffix: true })}
-                </div>
+                </span>
               </div>
             </div>
           ))}
