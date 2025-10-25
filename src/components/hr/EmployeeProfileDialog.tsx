@@ -183,7 +183,8 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="basic" className="w-full">
+          <>
+            <Tabs defaultValue="basic" className="w-full">
             <TabsList className="grid w-full grid-cols-10 text-xs">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="job-roles">Job Roles</TabsTrigger>
@@ -253,16 +254,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                     </Select>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
               </div>
             </TabsContent>
 
@@ -339,16 +330,6 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
-              </div>
             </TabsContent>
 
             {/* Time Off Tab */}
@@ -387,18 +368,19 @@ const EmployeeProfileDialog: React.FC<EmployeeProfileDialogProps> = ({
                   These notes are only visible to HR administrators and managers
                 </p>
               </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
-                </Button>
-              </div>
             </TabsContent>
           </Tabs>
+
+          <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save All Changes
+            </Button>
+          </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
