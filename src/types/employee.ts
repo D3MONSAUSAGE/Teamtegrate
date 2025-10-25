@@ -50,7 +50,17 @@ export interface TimeOffBalance {
   accrual_rate: number;
   year: number;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  
+  // California compliance fields
+  accrual_method?: 'frontload' | 'per_30_hours';
+  waiting_period_days?: number;
+  waiting_period_start_date?: string;
+  can_use_after_date?: string;
+  max_balance_cap?: number;
+  is_california_compliant?: boolean;
+  last_frontload_date?: string;
+  carryover_from_previous_year?: number;
 }
 
 export interface TimeOffRequest {
@@ -68,8 +78,31 @@ export interface TimeOffRequest {
   created_at: string;
 }
 
+export interface AccrualHistoryEntry {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  balance_id: string;
+  leave_type: string;
+  transaction_type: 'frontload' | 'carryover' | 'manual_adjustment' | 'admin_grant';
+  hours_change: number;
+  hours_before: number;
+  hours_after: number;
+  reason?: string;
+  created_by?: string;
+  created_at: string;
+}
+
+// California sick leave specific constants
+export const CALIFORNIA_SICK_LEAVE = {
+  ANNUAL_FRONTLOAD: 40,
+  MAX_BALANCE_CAP: 80,
+  WAITING_PERIOD_DAYS: 90,
+  HOURS_PER_30_WORKED: 1, // Alternative accrual method (not using for now)
+};
+
 export const DEFAULT_TIME_OFF_ALLOCATIONS = {
   vacation: 80, // 2 weeks
-  sick: 40, // 5 days
+  sick: 40, // 5 days (California compliant)
   personal: 16, // 2 days
 };

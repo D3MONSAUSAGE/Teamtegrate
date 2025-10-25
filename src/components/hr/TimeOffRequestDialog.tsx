@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,11 +19,12 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTimeOffRequests } from '@/hooks/useTimeOffRequests';
 import { useTimeOffBalances } from '@/hooks/useTimeOffBalances';
 import { format, differenceInBusinessDays } from 'date-fns';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface TimeOffRequestDialogProps {
@@ -39,7 +40,7 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
 }) => {
   const { user } = useAuth();
   const { createRequest } = useTimeOffRequests(userId);
-  const { getAvailableHours } = useTimeOffBalances(userId);
+  const { getAvailableHours, balances } = useTimeOffBalances(userId);
 
   const [leaveType, setLeaveType] = useState('vacation');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -49,6 +50,25 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableHours = getAvailableHours(leaveType);
+  const sickBalance = useMemo(() => balances.find(b => b.leave_type === 'sick'), [balances]);
+
+  const isInWaitingPeriod = useMemo(() => {
+    if (leaveType !== 'sick' || !sickBalance?.can_use_after_date) return false;
+    
+    const canUseDate = new Date(sickBalance.can_use_after_date);
+    const today = new Date();
+    
+    return today < canUseDate;
+  }, [leaveType, sickBalance]);
+
+  const waitingPeriodMessage = useMemo(() => {
+    if (!isInWaitingPeriod || !sickBalance?.can_use_after_date) return null;
+    
+    const canUseDate = new Date(sickBalance.can_use_after_date);
+    const daysRemaining = Math.ceil((canUseDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    
+    return `You can use sick leave after ${format(canUseDate, 'MMM d, yyyy')} (${daysRemaining} days remaining in waiting period)`;
+  }, [isInWaitingPeriod, sickBalance]);
 
   const calculateBusinessDays = () => {
     if (!startDate || !endDate) return 0;
@@ -58,6 +78,11 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
   const handleSubmit = async () => {
     if (!startDate || !endDate || !user?.organizationId) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (isInWaitingPeriod) {
+      toast.error(waitingPeriodMessage || 'Cannot use sick leave during waiting period');
       return;
     }
 
@@ -111,7 +136,9 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="vacation">Vacation</SelectItem>
-                <SelectItem value="sick">Sick Leave</SelectItem>
+                <SelectItem value="sick" disabled={isInWaitingPeriod}>
+                  Sick Leave {isInWaitingPeriod && '(Waiting Period)'}
+                </SelectItem>
                 <SelectItem value="personal">Personal Day</SelectItem>
                 <SelectItem value="unpaid">Unpaid Leave</SelectItem>
               </SelectContent>
@@ -122,6 +149,19 @@ const TimeOffRequestDialog: React.FC<TimeOffRequestDialogProps> = ({
               </p>
             )}
           </div>
+
+          {/* Waiting Period Warning */}
+          {isInWaitingPeriod && leaveType === 'sick' && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>90-Day Waiting Period</AlertTitle>
+              <AlertDescription>
+                {waitingPeriodMessage}
+                <br />
+                <span className="text-xs">California law allows a 90-day waiting period from hire date.</span>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

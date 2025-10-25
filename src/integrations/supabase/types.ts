@@ -2985,39 +2985,63 @@ export type Database = {
       }
       employee_time_off_balances: {
         Row: {
+          accrual_method: string | null
           accrual_rate: number | null
+          can_use_after_date: string | null
+          carryover_from_previous_year: number | null
           created_at: string | null
           id: string
+          is_california_compliant: boolean | null
+          last_frontload_date: string | null
           leave_type: string
+          max_balance_cap: number | null
           organization_id: string
           total_hours: number | null
           updated_at: string | null
           used_hours: number | null
           user_id: string
+          waiting_period_days: number | null
+          waiting_period_start_date: string | null
           year: number
         }
         Insert: {
+          accrual_method?: string | null
           accrual_rate?: number | null
+          can_use_after_date?: string | null
+          carryover_from_previous_year?: number | null
           created_at?: string | null
           id?: string
+          is_california_compliant?: boolean | null
+          last_frontload_date?: string | null
           leave_type: string
+          max_balance_cap?: number | null
           organization_id: string
           total_hours?: number | null
           updated_at?: string | null
           used_hours?: number | null
           user_id: string
+          waiting_period_days?: number | null
+          waiting_period_start_date?: string | null
           year?: number
         }
         Update: {
+          accrual_method?: string | null
           accrual_rate?: number | null
+          can_use_after_date?: string | null
+          carryover_from_previous_year?: number | null
           created_at?: string | null
           id?: string
+          is_california_compliant?: boolean | null
+          last_frontload_date?: string | null
           leave_type?: string
+          max_balance_cap?: number | null
           organization_id?: string
           total_hours?: number | null
           updated_at?: string | null
           used_hours?: number | null
           user_id?: string
+          waiting_period_days?: number | null
+          waiting_period_start_date?: string | null
           year?: number
         }
         Relationships: [
@@ -11780,6 +11804,108 @@ export type Database = {
             columns: ["correction_request_id"]
             isOneToOne: false
             referencedRelation: "time_entry_correction_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_off_accrual_history: {
+        Row: {
+          balance_id: string
+          created_at: string | null
+          created_by: string | null
+          hours_after: number
+          hours_before: number
+          hours_change: number
+          id: string
+          leave_type: string
+          organization_id: string
+          reason: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          balance_id: string
+          created_at?: string | null
+          created_by?: string | null
+          hours_after: number
+          hours_before: number
+          hours_change: number
+          id?: string
+          leave_type: string
+          organization_id: string
+          reason?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          balance_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          hours_after?: number
+          hours_before?: number
+          hours_change?: number
+          id?: string
+          leave_type?: string
+          organization_id?: string
+          reason?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_off_accrual_history_balance_id_fkey"
+            columns: ["balance_id"]
+            isOneToOne: false
+            referencedRelation: "employee_time_off_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "document_compliance_tracking"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "organization_user_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_off_accrual_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

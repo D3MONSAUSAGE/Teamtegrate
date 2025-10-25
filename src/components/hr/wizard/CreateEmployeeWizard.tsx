@@ -175,8 +175,35 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
         if (teamError) throw teamError;
       }
 
-      // Create time off balances
+      // Create time off balances with California compliance
       const currentYear = new Date().getFullYear();
+      
+      // Calculate prorated sick leave for mid-year hires
+      const calculateProratedSickLeave = (hireDate: string): number => {
+        const hire = new Date(hireDate);
+        const yearStart = new Date(hire.getFullYear(), 0, 1);
+        const yearEnd = new Date(hire.getFullYear(), 11, 31);
+        
+        const totalDaysInYear = Math.ceil((yearEnd.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+        const remainingDays = Math.ceil((yearEnd.getTime() - hire.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Prorate based on remaining days
+        const proratedHours = Math.ceil((40 / totalDaysInYear) * remainingDays);
+        return Math.max(24, proratedHours); // Minimum 24 hours per CA law
+      };
+
+      // Calculate waiting period end date
+      const calculateWaitingPeriodEnd = (hireDate: string): string => {
+        const hire = new Date(hireDate);
+        const waitingEnd = new Date(hire);
+        waitingEnd.setDate(waitingEnd.getDate() + 90);
+        return waitingEnd.toISOString().split('T')[0];
+      };
+
+      const proratedSickHours = formData.hire_date 
+        ? calculateProratedSickLeave(formData.hire_date)
+        : 40;
+
       const timeOffBalances = [
         {
           organization_id: user.organizationId,
@@ -186,15 +213,27 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
           used_hours: 0,
           accrual_rate: formData.vacation_hours_annual / 26, // Bi-weekly
           year: currentYear,
+          accrual_method: 'frontload',
+          is_california_compliant: false,
         },
         {
           organization_id: user.organizationId,
           user_id: newUserId,
           leave_type: 'sick',
-          total_hours: formData.sick_hours_annual,
+          total_hours: proratedSickHours,
           used_hours: 0,
-          accrual_rate: formData.sick_hours_annual / 26,
+          accrual_rate: 0, // Not used in frontload method
           year: currentYear,
+          accrual_method: 'frontload',
+          waiting_period_days: 90,
+          waiting_period_start_date: formData.hire_date || new Date().toISOString().split('T')[0],
+          can_use_after_date: formData.hire_date 
+            ? calculateWaitingPeriodEnd(formData.hire_date)
+            : calculateWaitingPeriodEnd(new Date().toISOString().split('T')[0]),
+          max_balance_cap: 80,
+          is_california_compliant: true,
+          last_frontload_date: new Date().toISOString().split('T')[0],
+          carryover_from_previous_year: 0,
         },
         {
           organization_id: user.organizationId,
@@ -204,6 +243,8 @@ const CreateEmployeeWizard: React.FC<CreateEmployeeWizardProps> = ({
           used_hours: 0,
           accrual_rate: formData.personal_hours_annual / 26,
           year: currentYear,
+          accrual_method: 'frontload',
+          is_california_compliant: false,
         },
       ];
 
