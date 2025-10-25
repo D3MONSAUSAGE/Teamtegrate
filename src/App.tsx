@@ -52,7 +52,6 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import DedicatedTeamManagement from "@/components/team/management/DedicatedTeamManagement";
 import TeamDetailPage from "@/pages/TeamDetailPage";
 import OrganizationRolesPage from "@/pages/OrganizationRolesPage";
-import EmployeeActionsPage from "@/pages/EmployeeActionsPage";
 import RequestTypesPage from "@/pages/RequestTypesPage";
 import HRManagementPage from "@/pages/HRManagementPage";
 import SchedulePage from "@/pages/SchedulePage";
@@ -152,7 +151,6 @@ function App() {
                   <Route path="organization/roles" element={<RoleProtectedRoute requiredRole="manager"><OrganizationRolesPage /></RoleProtectedRoute>} />
                    <Route path="organization/request-types" element={<RoleProtectedRoute requiredRole="manager"><RequestTypesPage /></RoleProtectedRoute>} />
                    <Route path="hr" element={<RoleProtectedRoute requiredRole="manager"><HRManagementPage /></RoleProtectedRoute>} />
-                   <Route path="employee-actions" element={<RoleProtectedRoute requiredRole="manager"><EmployeeActionsPage /></RoleProtectedRoute>} />
                    <Route path="recruitment" element={<RoleProtectedRoute requiredRole="manager"><RecruitmentDashboard /></RoleProtectedRoute>} />
                    <Route path="recruitment/candidate/:id" element={<RoleProtectedRoute requiredRole="manager"><CandidateDetailPage /></RoleProtectedRoute>} />
                   <Route path="focus" element={<FocusZonePage />} />
